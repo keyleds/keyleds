@@ -1,0 +1,11 @@
+# udev rules for Logitech devices' hidraw
+#   => Give access to control interface to members of plugdev group
+#   => Do not to give control over other interfaces
+
+ACTION=="add", KERNEL=="hidraw*", ATTRS{idVendor}=="046d", GOTO="logitech"
+GOTO="end"
+
+LABEL="logitech"
+ATTRS{bInterfaceProtocol}=="00", GROUP="plugdev", MODE="0660"
+
+LABEL="end"
