@@ -249,7 +249,7 @@ int main_info(int argc, char * argv[])
         if (info->protocols[idx].is_active) { (void)printf(" [active]"); }
         (void)putchar('\n');
     }
-    free(info);
+    keyleds_free_device_version(info);
 
     /* Device feature support */
     feature_count = keyleds_get_feature_count(device, KEYLEDS_TARGET_DEFAULT);

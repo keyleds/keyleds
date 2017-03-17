@@ -47,7 +47,11 @@ bool keyleds_get_protocol(struct keyleds_device * device, uint8_t target_id,
 
     if (keyleds_send(device, command) &&
         keyleds_receive(device, response)) {
-        if (response->feature_idx == KEYLEDS_FEATURE_IDX_ROOT &&
+        if (response->feature_idx == 0x8f) {
+            if (version != NULL) { *version = 1; }
+            if (handler != NULL) { *handler = 0; }
+            result = true;
+        } else if (response->feature_idx == KEYLEDS_FEATURE_IDX_ROOT &&
             response->function == F_PING &&
             response->app_id == device->app_id) {
             if (version != NULL) { *version = (unsigned)response->data[0]; }

@@ -139,3 +139,8 @@ bool keyleds_get_device_type(Keyleds * device, uint8_t target_id, keyleds_device
     *out = (keyleds_device_type_t)data[0];
     return true;
 }
+
+void keyleds_free_device_version(struct keyleds_device_version * version)
+{
+    free(version);
+}

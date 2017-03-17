@@ -48,6 +48,7 @@ Keyleds * keyleds_open(const char * path, uint8_t app_id)
     KEYLEDS_LOG(DEBUG, "Opening device %s", path);
     if ((dev->fd = open(path, O_RDWR)) < 0) {
         keyleds_set_error_errno();
+        KEYLEDS_LOG(DEBUG, "Open failed: %s", keyleds_get_error_str());
         goto error_free_dev;
     }
     fcntl(dev->fd, F_SETFD, FD_CLOEXEC);
@@ -75,8 +76,19 @@ Keyleds * keyleds_open(const char * path, uint8_t app_id)
     }
 
     dev->buffer = malloc(dev->max_report_size + 1);
+
     if (!keyleds_get_protocol(dev, KEYLEDS_TARGET_DEFAULT, &version, NULL)) {
         keyleds_set_error_string("invalid hid device");
+        goto error_free_buffer;
+    }
+
+    if (version < 2) {
+        keyleds_set_error_string("hid++ v1 device");
+        goto error_free_buffer;
+    }
+
+    if (!keyleds_ping(dev, KEYLEDS_TARGET_DEFAULT)) {
+        keyleds_set_error_string("synchronization with device failed");
         goto error_free_buffer;
     }
 

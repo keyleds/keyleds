@@ -22,13 +22,15 @@
 #include <stdio.h>
 
 #define LOGITECH_VENDOR_ID  ((uint16_t)0x046d)
+#define KEYLEDS_TARGET_DEFAULT ((uint8_t)0xff)
 
-struct keyleds_device;
 typedef struct keyleds_device Keyleds;
-#define KEYLEDS_TARGET_DEFAULT (0xff)
 
 /****************************************************************************/
 /* Device setup */
+
+#define KEYLEDS_APP_ID_MIN  ((uint8_t)0x0)
+#define KEYLEDS_APP_ID_MAX  ((uint8_t)0xf)
 
 Keyleds * keyleds_open(const char * path, uint8_t app_id);
 void keyleds_close(Keyleds * device);
@@ -46,7 +48,7 @@ typedef enum {
 
 bool keyleds_get_protocol(Keyleds * device, uint8_t target_id,
                           unsigned * version, keyleds_device_handler_t * handler);
-bool keyleds_ping(Keyleds * device, uint8_t target_id);
+bool keyleds_ping(Keyleds * device, uint8_t target_id); /* re-sync with device after error */
 unsigned keyleds_get_feature_count(Keyleds * dev, uint8_t target_id);
 uint16_t keyleds_get_feature_id(Keyleds * dev, uint8_t target_id, uint8_t feature_idx);
 uint8_t keyleds_get_feature_index(Keyleds * dev, uint8_t target_id, uint16_t feature_id);
@@ -84,11 +86,12 @@ typedef enum {
 } keyleds_device_type_t;
 
 bool keyleds_get_device_name(Keyleds * device, uint8_t target_id,
-                             /*@out@*/ char ** out);
+                             /*@out@*/ char ** out);    /* caller must free() on success */
 bool keyleds_get_device_type(Keyleds * device, uint8_t target_id,
                              /*@out@*/ keyleds_device_type_t * out);
 bool keyleds_get_device_version(Keyleds * device, uint8_t target_id,
                                 /*@out@*/ struct keyleds_device_version ** out);
+void keyleds_free_device_version(/*@only@*/ /*@out@*/ struct keyleds_device_version *);
 
 /****************************************************************************/
 /* Reportrate feature */
@@ -121,8 +124,8 @@ struct keyleds_keyblocks_info {
 };
 
 struct keyleds_key_color {
-    unsigned    keycode;        /* as reported when pressing keys */
-    uint8_t     id;
+    unsigned    keycode;        /* as reported by event device when pressing keys */
+    uint8_t     id;             /* as reported by keyboard */
     uint8_t     red;
     uint8_t     green;
     uint8_t     blue;
@@ -141,14 +144,14 @@ bool keyleds_set_led_block(Keyleds * device, uint8_t target_id, keyleds_block_id
 bool keyleds_commit_leds(Keyleds * device, uint8_t target_id);
 
 /****************************************************************************/
-/* Leds features */
+/* Gamemode feature */
 
 bool keyleds_gamemode_max(Keyleds * device, uint8_t target_id, /*@out@*/ unsigned * nb);
 bool keyleds_gamemode_set(Keyleds * device, uint8_t target_id,
-                          const uint8_t * ids, unsigned ids_nb);
+                          const uint8_t * ids, unsigned ids_nb);    /* add some keys */
 bool keyleds_gamemode_clear(Keyleds * device, uint8_t target_id,
-                            const uint8_t * ids, unsigned ids_nb);
-bool keyleds_gamemode_reset(Keyleds * device, uint8_t target_id);
+                            const uint8_t * ids, unsigned ids_nb);  /* remove some keys */
+bool keyleds_gamemode_reset(Keyleds * device, uint8_t target_id);   /* remove all keys */
 
 /****************************************************************************/
 /* Error and logging */
@@ -157,7 +160,7 @@ bool keyleds_gamemode_reset(Keyleds * device, uint8_t target_id);
 
 extern /*@null@*/ FILE * g_keyleds_debug_stream;
 extern int g_keyleds_debug_level;
-extern int g_keyleds_debug_hid;
+extern int g_keyleds_debug_hid;     /* set to KEYLEDS_LOG_DEBUG to see parser output */
 #define KEYLEDS_LOG_ERROR       (1)
 #define KEYLEDS_LOG_WARNING     (2)
 #define KEYLEDS_LOG_INFO        (3)
@@ -180,6 +183,9 @@ extern const struct keyleds_indexed_string keyleds_keycode_names[];
 unsigned keyleds_string_id(const struct keyleds_indexed_string *,
                            const char * str);
 
+/* keycode is code event (eg KEY_F1)
+ * scancode is physical key id as defined by USB standards
+ * The keycode/scancode translation only applies to keys from block 0x01 (keys block) */
 unsigned keyleds_translate_scancode(uint8_t scancode);
 uint8_t keyleds_translate_keycode(unsigned keycode);
 
