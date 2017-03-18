@@ -84,7 +84,9 @@ cdef class KeyColor:
 cdef class Device:
     cdef pykeyleds.Keyleds * _device
     cdef uint8_t _target_id
+    cdef unsigned _gamemode_max
 
+    cdef str path
     cdef object _protocol_version
     cdef object _handler
     cdef object _features
@@ -95,6 +97,7 @@ cdef class Device:
     cdef object _leds
 
     def __cinit__(self, str path, uint8_t app_id, uint8_t target_id=0xff):
+        self.path = path
         b_path = path.encode('UTF-8')
         self._device = pykeyleds.keyleds_open(b_path, app_id)
         self._target_id = target_id
@@ -114,23 +117,39 @@ cdef class Device:
         self._protocol_version = version
         self._handler = handler
 
+    def close(self):
+        if self._device is not NULL:
+            pykeyleds.keyleds_close(self._device)
+            self._device = NULL
+
     @property
     def fd(self):
+        if self._device is NULL:
+            return -1
         return pykeyleds.keyleds_device_fd(self._device)
 
     @property
     def protocol(self):
+        if self._device is NULL:
+            raise ValueError('I/O operation on closed device.')
+
         if self._protocol_version is None:
             self._query_protocol()
         return self._protocol_version
 
     @property
     def handler(self):
+        if self._device is NULL:
+            raise ValueError('I/O operation on closed device.')
+
         if self._handler is None:
             self._query_protocol()
         return self._handler
 
     def ping(self):
+        if self._device is NULL:
+            raise ValueError('I/O operation on closed device.')
+
         if not pykeyleds.keyleds_ping(self._device, self._target_id):
             raise IOError(pykeyleds.keyleds_get_error_str().decode('UTF-8'))
 
@@ -139,6 +158,8 @@ cdef class Device:
         cdef unsigned count
         cdef tuple feature_list
         cdef object f_id
+        if self._device is NULL:
+            raise ValueError('I/O operation on closed device.')
 
         if self._features is None:
             count = pykeyleds.keyleds_get_feature_count(self._device, self._target_id)
@@ -158,6 +179,9 @@ cdef class Device:
     @property
     def name(self):
         cdef char * name
+        if self._device is NULL:
+            raise ValueError('I/O operation on closed device.')
+
         if self._name is None:
             if not pykeyleds.keyleds_get_device_name(self._device, self._target_id, &name):
                 raise IOError(pykeyleds.keyleds_get_error_str().decode('UTF-8'))
@@ -169,6 +193,9 @@ cdef class Device:
     def type(self):
         cdef pykeyleds.keyleds_device_type_t dev_type
         cdef const char * type_name
+        if self._device is NULL:
+            raise ValueError('I/O operation on closed device.')
+
         if self._type is None:
             if not pykeyleds.keyleds_get_device_type(self._device, self._target_id, &dev_type):
                 raise IOError(pykeyleds.keyleds_get_error_str().decode('UTF-8'))
@@ -181,6 +208,9 @@ cdef class Device:
     @property
     def version(self):
         cdef pykeyleds.keyleds_device_version * version
+        if self._device is NULL:
+            raise ValueError('I/O operation on closed device.')
+
         if self._version is None:
             if not pykeyleds.keyleds_get_device_version(self._device, self._target_id, &version):
                 raise IOError(pykeyleds.keyleds_get_error_str().decode('UTF-8'))
@@ -212,6 +242,9 @@ cdef class Device:
     @property
     def report_rates(self):
         cdef unsigned * rates
+        if self._device is NULL:
+            raise ValueError('I/O operation on closed device.')
+
         if self._supported_rates is None:
             if not pykeyleds.keyleds_get_reportrates(self._device, self._target_id, &rates):
                 raise IOError(pykeyleds.keyleds_get_error_str().decode('UTF-8'))
@@ -228,17 +261,26 @@ cdef class Device:
 
     def get_report_rate(self):
         cdef unsigned rate
+        if self._device is NULL:
+            raise ValueError('I/O operation on closed device.')
+
         if not pykeyleds.keyleds_get_reportrate(self._device, self._target_id, &rate):
             raise IOError(pykeyleds.keyleds_get_error_str().decode('UTF-8'))
         return rate
 
     def set_report_rate(self, unsigned rate):
+        if self._device is NULL:
+            raise ValueError('I/O operation on closed device.')
+
         if not pykeyleds.keyleds_set_reportrate(self._device, self._target_id, rate):
             raise IOError(pykeyleds.keyleds_get_error_str().decode('UTF-8'))
 
     @property
     def leds(self):
         cdef pykeyleds.keyleds_keyblocks_info * info
+        if self._device is NULL:
+            raise ValueError('I/O operation on closed device.')
+
         if self._leds is None:
             if not pykeyleds.keyleds_get_block_info(self._device, self._target_id, &info):
                 raise IOError(pykeyleds.keyleds_get_error_str().decode('UTF-8'))
@@ -258,8 +300,38 @@ cdef class Device:
         return self._leds
 
     def commit_leds(self):
+        if self._device is NULL:
+            raise ValueError('I/O operation on closed device.')
+
         if not pykeyleds.keyleds_commit_leds(self._device, self._target_id):
             raise IOError(pykeyleds.keyleds_get_error_str().decode('UTF-8'))
+
+    def set_gamemode_keys(self, keys):
+        cdef uint8_t * ids
+        cdef size_t count = len(keys)
+        if self._device is NULL:
+            raise ValueError('I/O operation on closed device.')
+
+        if self._gamemode_max == 0:
+            if not pykeyleds.keyleds_gamemode_max(self._device, self._target_id, &self._gamemode_max):
+                raise IOError(pykeyleds.keyleds_get_error_str().decode('UTF-8'))
+        if count > self._gamemode_max:
+            raise ValueError('Too many keys for gamemode, maximum is %s' % self._gamemode_max)
+
+        ids = <uint8_t*>malloc(sizeof(uint8_t) * count)
+        try:
+            for idx, key_code in enumerate(keys):
+                ids[idx] = key_code
+
+            if (not pykeyleds.keyleds_gamemode_reset(self._device, self._target_id) or
+                not pykeyleds.keyleds_gamemode_set(self._device, self._target_id, ids, count)):
+                raise IOError(pykeyleds.keyleds_get_error_str().decode('UTF-8'))
+        finally:
+            free(ids)
+
+    def __repr__(self):
+        state = ' <closed>' if self._device is NULL else ''
+        return '%s(%r%s)' % (self.__class__.__name__, self.path, state)
 
 
 cdef class KeyBlock:
@@ -287,6 +359,9 @@ cdef class KeyBlock:
         cdef keyleds_key_color * keys
         cdef int start, stop, step, count
 
+        if self._device._device is NULL:
+            raise ValueError('I/O operation on closed device.')
+
         keys = <keyleds_key_color*>malloc(sizeof(keyleds_key_color) * self.nb_keys)
         try:
             if not pykeyleds.keyleds_get_leds(self._device._device, self._device._target_id,
@@ -309,6 +384,9 @@ cdef class KeyBlock:
         cdef keyleds_key_color * keys
         cdef int start, stop, step, count
 
+        if self._device._device is NULL:
+            raise ValueError('I/O operation on closed device.')
+
         count = len(colors)
         keys = <keyleds_key_color*>malloc(sizeof(keyleds_key_color) * count)
         try:
@@ -325,6 +403,9 @@ cdef class KeyBlock:
             free(keys)
 
     def set_all_keys(self, Color color):
+        if self._device._device is NULL:
+            raise ValueError('I/O operation on closed device.')
+
         if not pykeyleds.keyleds_set_led_block(self._device._device, self._device._target_id,
                                                self.block_id,                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        color.red, color.green, color.blue):
             raise IOError(pykeyleds.keyleds_get_error_str().decode('UTF-8'))

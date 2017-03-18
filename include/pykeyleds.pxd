@@ -94,6 +94,13 @@ cdef extern from "keyleds.h":
                                uint8_t red, uint8_t green, uint8_t blue)
     bint keyleds_commit_leds(Keyleds * device, uint8_t target_id)
 
+    bint keyleds_gamemode_max(Keyleds * device, uint8_t target_id, unsigned * nb)
+    bint keyleds_gamemode_set(Keyleds * device, uint8_t target_id,
+                              const uint8_t * ids, unsigned ids_nb)
+    bint keyleds_gamemode_clear(Keyleds * device, uint8_t target_id,
+                              const uint8_t * ids, unsigned ids_nb)
+    bint keyleds_gamemode_reset(Keyleds * device, uint8_t target_id)
+
     const char * keyleds_get_error_str()
 
     cdef struct keyleds_indexed_string:
