@@ -75,33 +75,27 @@ Keyleds * keyleds_open(const char * path, uint8_t app_id)
         goto error_free_reports;
     }
 
-    dev->buffer = malloc(dev->max_report_size + 1);
-
     if (!keyleds_get_protocol(dev, KEYLEDS_TARGET_DEFAULT, &version, NULL)) {
         keyleds_set_error_string("invalid hid device");
-        goto error_free_buffer;
+        goto error_free_reports;
     }
 
     if (version < 2) {
         keyleds_set_error_string("hid++ v1 device");
-        goto error_free_buffer;
+        goto error_free_reports;
     }
 
     if (!keyleds_ping(dev, KEYLEDS_TARGET_DEFAULT)) {
         keyleds_set_error_string("synchronization with device failed");
-        goto error_free_buffer;
+        goto error_free_reports;
     }
 
-    dev->path = malloc(strlen(path) + 1);
-    strcpy(dev->path, path);
     dev->features = malloc(sizeof(struct keyleds_device_feature));
     dev->features[0].id = 0;
 
     KEYLEDS_LOG(INFO, "Opened device %s protocol version %d", path, version);
     return dev;
 
-error_free_buffer:
-    free(dev->buffer);
 error_free_reports:
     free(dev->reports);
 error_close_fd:
@@ -114,11 +108,9 @@ error_free_dev:
 void keyleds_close(Keyleds * device)
 {
     assert(device != NULL);
-    free(device->path);
     close(device->fd);
     free(device->reports);
     free(device->features);
-    free(device->buffer);
     free(device);
 }
 
@@ -129,14 +121,12 @@ int keyleds_device_fd(Keyleds * device)
 
 /****************************************************************************/
 
-static char * format_buffer(const uint8_t * data, unsigned size)
+static void format_buffer(const uint8_t * data, unsigned size, char * buffer)
 {
-    char * buffer = malloc(3 * size + 1);
     for (unsigned idx = 0; idx < size; idx += 1) {
         sprintf(buffer + 3 * idx, "%02x ", data[idx]);
     }
     buffer[3 * size - 1] = '\0';
-    return buffer;
 }
 
 
@@ -144,6 +134,8 @@ bool keyleds_send(Keyleds * device, const struct keyleds_command * cmd)
 {
     unsigned idx;
     ssize_t size, nwritten;
+
+    assert(device != NULL);
     assert(cmd != NULL);
     assert(cmd->function <= 0xf);
     assert(cmd->app_id <= 0xf);
@@ -156,19 +148,23 @@ bool keyleds_send(Keyleds * device, const struct keyleds_command * cmd)
     }
     size = 1 + device->reports[idx].size;
 
-    device->buffer[0] = device->reports[idx].id;
-    device->buffer[1] = cmd->target_id;
-    device->buffer[2] = cmd->feature_idx;
-    device->buffer[3] = cmd->function << 4 | cmd->app_id;
-    memcpy(&device->buffer[4], cmd->data, cmd->length);
-    memset(&device->buffer[4 + cmd->length], 0, size - 4 - cmd->length);
+    {
+        uint8_t buffer[size];
+        buffer[0] = device->reports[idx].id;
+        buffer[1] = cmd->target_id;
+        buffer[2] = cmd->feature_idx;
+        buffer[3] = cmd->function << 4 | cmd->app_id;
+        memcpy(&buffer[4], cmd->data, cmd->length);
+        memset(&buffer[4 + cmd->length], 0, size - 4 - cmd->length);
 
-    if (g_keyleds_debug_level >= KEYLEDS_LOG_DEBUG) {
-        char * debug_buffer = format_buffer(device->buffer, size);
-        KEYLEDS_LOG(DEBUG, "Send [%s]", debug_buffer);
-        free(debug_buffer);
+        if (g_keyleds_debug_level >= KEYLEDS_LOG_DEBUG) {
+            char debug_buffer[3 * size + 1];
+            format_buffer(buffer, size, debug_buffer);
+            KEYLEDS_LOG(DEBUG, "Send [%s]", debug_buffer);
+        }
+
+        nwritten = write(device->fd, buffer, size);
     }
-    nwritten = write(device->fd, device->buffer, size);
     return nwritten == size;
 }
 
@@ -177,6 +173,9 @@ bool keyleds_receive(Keyleds * device, struct keyleds_command * cmd)
     fd_set set;
     struct timeval timeout;
     int nread;
+
+    assert(device != NULL);
+    assert(cmd != NULL);
 
     FD_ZERO(&set);
     FD_SET(device->fd, &set);
@@ -187,34 +186,28 @@ bool keyleds_receive(Keyleds * device, struct keyleds_command * cmd)
         return false;
     }
 
-    if ((nread = read(device->fd, device->buffer, device->max_report_size + 1)) < 0) {
-        return false;
-    }
+    {
+        uint8_t buffer[device->max_report_size + 1];
+        if ((nread = read(device->fd, buffer, device->max_report_size + 1)) < 0) {
+            return false;
+        }
 
-    if (g_keyleds_debug_level >= KEYLEDS_LOG_DEBUG) {
-        char * debug_buffer = format_buffer(device->buffer, nread);
-        KEYLEDS_LOG(DEBUG, "Recv [%s]", debug_buffer);
-        free(debug_buffer);
-    }
+        if (g_keyleds_debug_level >= KEYLEDS_LOG_DEBUG) {
+            char debug_buffer[3 * nread + 1];
+            format_buffer(buffer, nread, debug_buffer);
+            KEYLEDS_LOG(DEBUG, "Recv [%s]", debug_buffer);
+        }
 
-    cmd->target_id      = device->buffer[1];
-    cmd->feature_idx    = device->buffer[2];
-    cmd->function       = device->buffer[3] >> 4;
-    cmd->app_id         = device->buffer[3] & 0xf;
-    memcpy(cmd->data, &device->buffer[4],
-           cmd->length < (unsigned)nread - 4 ? cmd->length : (unsigned)nread - 4);
-    cmd->length         = nread - 4;
+        cmd->target_id      = buffer[1];
+        cmd->feature_idx    = buffer[2];
+        cmd->function       = buffer[3] >> 4;
+        cmd->app_id         = buffer[3] & 0xf;
+        memcpy(cmd->data, &buffer[4],
+               cmd->length < (unsigned)nread - 4 ? cmd->length : (unsigned)nread - 4);
+        cmd->length         = nread - 4;
+    }
     return true;
 }
-
-bool keyleds_flush_queue(Keyleds * device)
-{
-    fcntl(device->fd, F_SETFL, O_RDWR | O_NONBLOCK);
-    while (read(device->fd, device->buffer, device->max_report_size + 1) >= 0);
-    fcntl(device->fd, F_SETFL, O_RDWR);
-    return true;
-}
-
 
 bool keyleds_call_command(Keyleds * device, const struct keyleds_command * command,
                           struct keyleds_command * response)

@@ -29,6 +29,7 @@
 #define KEYLEDS_FEATURE_LED_EFFECTS         (0x8070)
 #define KEYLEDS_FEATURE_LEDS                (0x8080)
 
+/* Those are hardcoded, always at those indices */
 #define KEYLEDS_FEATURE_IDX_ROOT    (0x00)
 #define KEYLEDS_FEATURE_IDX_FEATURE (0x01)
 

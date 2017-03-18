@@ -21,22 +21,18 @@ struct keyleds_device_feature {
 };
 
 struct keyleds_device {
-    char *      path;   /* path used to open */
-    int         fd;
-    uint8_t     app_id;
-    uint8_t     ping_seq;
+    int         fd;                             /* device file descriptor */
+    uint8_t     app_id;                         /* our application identifier */
+    uint8_t     ping_seq;                       /* using for resyncing after errors */
 
-    struct keyleds_device_reports * reports;
-    unsigned    max_report_size;
+    struct keyleds_device_reports * reports;    /* list of device-supported hid reports */
+    unsigned    max_report_size;                /* maximum number of bytes in a report */
 
-    struct keyleds_device_feature * features;
-
-    uint8_t *   buffer;
+    struct keyleds_device_feature * features;   /* feature index cache */
 };
 
 bool keyleds_send(Keyleds * device, const struct keyleds_command * command);
 bool keyleds_receive(Keyleds * device, struct keyleds_command * response);
-bool keyleds_flush_queue(Keyleds * device);
 bool keyleds_call_command(Keyleds * device, const struct keyleds_command * command,
                           struct keyleds_command * response);
 int keyleds_call(Keyleds * device, /*@null@*/ /*@out@*/ uint8_t * result, unsigned result_len,
