@@ -116,11 +116,13 @@ void keyleds_close(Keyleds * device)
 
 int keyleds_device_fd(Keyleds * device)
 {
+    assert(device != NULL);
     return device->fd;
 }
 
 /****************************************************************************/
 
+#ifndef NDEBUG
 static void format_buffer(const uint8_t * data, unsigned size, char * buffer)
 {
     for (unsigned idx = 0; idx < size; idx += 1) {
@@ -128,6 +130,7 @@ static void format_buffer(const uint8_t * data, unsigned size, char * buffer)
     }
     buffer[3 * size - 1] = '\0';
 }
+#endif
 
 
 bool keyleds_send(Keyleds * device, const struct keyleds_command * cmd)
@@ -139,10 +142,12 @@ bool keyleds_send(Keyleds * device, const struct keyleds_command * cmd)
     assert(cmd != NULL);
     assert(cmd->function <= 0xf);
     assert(cmd->app_id <= 0xf);
+    assert(cmd->length + 3 <= device->max_report_size);
 
     for (idx = 0; device->reports[idx].size < 3 + cmd->length; idx += 1) {
         if (device->reports[idx].id == DEVICE_REPORT_INVALID) {
-            KEYLEDS_LOG(ERROR, "Command data too long: %u", cmd->length);
+            KEYLEDS_LOG(ERROR, "Command data of %u bytes exceeds max report size of %u bytes",
+                        cmd->length, device->max_report_size);
             return false;
         }
     }
@@ -156,13 +161,13 @@ bool keyleds_send(Keyleds * device, const struct keyleds_command * cmd)
         buffer[3] = cmd->function << 4 | cmd->app_id;
         memcpy(&buffer[4], cmd->data, cmd->length);
         memset(&buffer[4 + cmd->length], 0, size - 4 - cmd->length);
-
+#ifndef NDEBUG
         if (g_keyleds_debug_level >= KEYLEDS_LOG_DEBUG) {
             char debug_buffer[3 * size + 1];
             format_buffer(buffer, size, debug_buffer);
             KEYLEDS_LOG(DEBUG, "Send [%s]", debug_buffer);
         }
-
+#endif
         nwritten = write(device->fd, buffer, size);
     }
     return nwritten == size;
@@ -177,6 +182,7 @@ bool keyleds_receive(Keyleds * device, struct keyleds_command * cmd)
     assert(device != NULL);
     assert(cmd != NULL);
 
+#if KEYLEDS_CALL_TIMEOUT_US > 0
     FD_ZERO(&set);
     FD_SET(device->fd, &set);
     timeout.tv_sec = KEYLEDS_CALL_TIMEOUT_US / 1000000;
@@ -185,19 +191,20 @@ bool keyleds_receive(Keyleds * device, struct keyleds_command * cmd)
         KEYLEDS_LOG(WARNING, "Device timeout while reading fd %d", device->fd);
         return false;
     }
+#endif
 
     {
         uint8_t buffer[device->max_report_size + 1];
         if ((nread = read(device->fd, buffer, device->max_report_size + 1)) < 0) {
             return false;
         }
-
+#ifndef NDEBUG
         if (g_keyleds_debug_level >= KEYLEDS_LOG_DEBUG) {
             char debug_buffer[3 * nread + 1];
             format_buffer(buffer, nread, debug_buffer);
             KEYLEDS_LOG(DEBUG, "Recv [%s]", debug_buffer);
         }
-
+#endif
         cmd->target_id      = buffer[1];
         cmd->feature_idx    = buffer[2];
         cmd->function       = buffer[3] >> 4;
@@ -244,6 +251,7 @@ int keyleds_call(Keyleds * device, uint8_t * result, unsigned result_len,
     int ret;
 
     assert(device != NULL);
+    assert(result != NULL || result_len == 0);
     assert(function <= 0xf);
 
     if (feature_id == KEYLEDS_FEATURE_ROOT) {

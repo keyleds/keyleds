@@ -157,7 +157,7 @@ bool keyleds_set_leds(Keyleds * device, uint8_t target_id, keyleds_block_id_t bl
         command->data[3] = (uint8_t)(batch_length >> 0);
         for (idx = 0; idx < batch_length; idx += 1) {
             uint8_t id = keys[offset + idx].id;
-            if (id == 0 && block_id == KEYLEDS_BLOCK_KEYS) {
+            if (id == KEYLEDS_KEY_ID_INVALID && block_id == KEYLEDS_BLOCK_KEYS) {
                 id = keyleds_translate_keycode(keys[offset + idx].keycode);
             }
             command->data[4 + idx * 4 + 0] = id;

@@ -25,6 +25,11 @@
 #include "keyleds/logging.h"
 
 /****************************************************************************/
+/* This is a partial HID report parser.
+ * It misses push/pop support and does not properly associate local items
+ * with their described input/outputs.
+ * As Logitech hidpp does not use local items, it does not matter.
+ */
 
 typedef enum hid_type {
     HID_TYPE_MAIN = 0 << 2,

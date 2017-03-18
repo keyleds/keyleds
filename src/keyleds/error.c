@@ -14,6 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <assert.h>
 #include <errno.h>
 #include <string.h>
 
@@ -41,5 +42,6 @@ void keyleds_set_error_errno()
 
 void keyleds_set_error_string(const char * str)
 {
+    assert(str != NULL);
     keyleds_error = str;
 }

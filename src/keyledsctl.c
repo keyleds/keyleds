@@ -41,7 +41,6 @@ int main_info(int argc, char * argv[]);
 int main_get_leds(int argc, char * argv[]);
 int main_set_leds(int argc, char * argv[]);
 int main_gamemode(int argc, char * argv[]);
-int main_animate(int argc, char * argv[]);
 
 static const struct main_modes main_modes[] = {
     { "help", main_help,
@@ -56,8 +55,6 @@ static const struct main_modes main_modes[] = {
       "Usage: %s [-dqv] %s [-d path] [key1=color1 [key2=color2 [...]]]\n" },
     { "gamemode", main_gamemode,
       "Usage: %s [-dqv] %s [-d path] [key1 [key2 [...]]]\n" },
-    { "animate", main_animate,
-      "Usage: %s [-dqv] %s\n" }
 };
 
 /****************************************************************************/
@@ -642,13 +639,4 @@ int main_gamemode(int argc, char * argv[])
     keyleds_close(device);
     free(options.key_ids);
     return result;
-}
-
-/****************************************************************************/
-
-int main_animate(int argc, char * argv[])
-{
-    (void)argc, (void)argv;
-    fprintf(stderr, "Not yet implemented\n");
-    return 2;
 }
