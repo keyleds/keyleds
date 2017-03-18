@@ -1,5 +1,5 @@
 
-cimport pykeyleds
+cimport keyleds as pykeyleds
 from libc.stdio cimport sprintf
 from libc.stdlib cimport free, malloc
 from cpython cimport Py_INCREF, PyTuple_New, PyTuple_SET_ITEM
