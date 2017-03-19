@@ -48,13 +48,13 @@ static const struct main_modes main_modes[] = {
     { "list", main_list,
       "Usage: %s [-dqv] %s\n" },
     { "info", main_info,
-      "Usage: %s [-dqv] %s [device]\n" },
+      "Usage: %s [-dqv] %s [-d device]\n" },
     { "get-leds", main_get_leds,
-      "Usage: %s [-dqv] %s [-d path] [key1 [key2 [...]]]\n" },
+      "Usage: %s [-dqv] %s [-d device] [key1 [key2 [...]]]\n" },
     { "set-leds", main_set_leds,
-      "Usage: %s [-dqv] %s [-d path] [key1=color1 [key2=color2 [...]]]\n" },
+      "Usage: %s [-dqv] %s [-d device] [key1=color1 [key2=color2 [...]]]\n" },
     { "gamemode", main_gamemode,
-      "Usage: %s [-dqv] %s [-d path] [key1 [key2 [...]]]\n" },
+      "Usage: %s [-dqv] %s [-d device] [key1 [key2 [...]]]\n" },
 };
 
 /****************************************************************************/
@@ -186,8 +186,35 @@ int main_list(int argc, char * argv[])
 
 /****************************************************************************/
 
+struct info_options {
+    const char *        device;
+};
+
+bool parse_info_options(int argc, char * argv[], /*@out@*/ struct info_options * options)
+{
+    int opt;
+    options->device = NULL;
+
+    reset_getopt(argc, argv, "-d:");
+    while((opt = getopt(argc, argv, "-d:")) != -1) {
+        switch(opt) {
+        case 'd':
+            if (options->device != NULL) {
+                fprintf(stderr, "%s: -d option can only be used once.\n", argv[0]);
+                return false;
+            }
+            options->device = optarg;
+            break;
+        default:
+            return false;
+        }
+    }
+    return true;
+}
+
 int main_info(int argc, char * argv[])
 {
+    struct info_options options;
     Keyleds * device;
     unsigned idx;
     char * name;
@@ -200,7 +227,9 @@ int main_info(int argc, char * argv[])
     struct keyleds_keyblocks_info * led_info;
     int result = EXIT_SUCCESS;
 
-    device = auto_select_device(optind < argc ? argv[optind++] : NULL);
+    if (!parse_info_options(argc, argv, &options)) { return 1; }
+
+    device = auto_select_device(options.device);
     if (device == NULL) { return 2; }
 
     /* Device name */
@@ -309,9 +338,9 @@ bool parse_get_leds_options(int argc, char * argv[],
     options->device = NULL;
     options->block_id = KEYLEDS_BLOCK_KEYS;
 
-    reset_getopt(argc, argv, "b:d:");
+    reset_getopt(argc, argv, "-b:d:");
 
-    while((opt = getopt(argc, argv, "b:d:")) != -1) {
+    while((opt = getopt(argc, argv, "-b:d:")) != -1) {
         switch(opt) {
         case 'b':
             options->block_id = keyleds_string_id(keyleds_block_id_names, optarg);

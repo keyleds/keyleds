@@ -1,0 +1,9 @@
+Template: keyleds/install_udev
+Type: boolean
+Default: true
+Description: Install udev rules to allow plugdev access
+ By default, Logitech devices are only usable by root. This means
+ you will need to run keyledsctl as root.
+ If you say Yes to this option, new udev rules will be installed to
+ make Logitech devices usable by all members of the "plugdev" group,
+ avoiding the need to run keyledsctl as root.

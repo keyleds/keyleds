@@ -1,0 +1,16 @@
+#!/bin/sh -e
+
+UDEV_RULES=/etc/udev/rules.d/99-logitech-hidpp.rules
+
+ACTION=$1
+
+if [ "$ACTION" = "purge" -a -e /usr/share/debconf/confmodule ]; then
+    . /usr/share/debconf/confmodule
+    db_purge
+fi
+
+#DEBHELPER#
+
+if [ "$ACTION" = "purge" ]; then
+    rm -f "$UDEV_RULES" >/dev/null 2>&1
+fi

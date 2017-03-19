@@ -1,0 +1,241 @@
+.\" (C) Copyright 2017 Julien Hartmann <juli1.hartmann@gmail.com>,
+.\"
+.TH KEYLEDS 1 "March 19 2017"
+.SH NAME
+keyledsctl \- control per-key lighting on Logitech keyboard
+.SH SYNOPSIS
+.B keyledsctl
+.RB [ \-dqv ]
+.B help
+.RI [ subcommand ]
+.br
+.B keyledsctl
+.RB [ \-dqv ]
+.B list
+.br
+.B keyledsctl
+.RB [ \-dqv ]
+.B info
+.RB [ \-d
+.IR device ]
+.br
+.B keyledsctl
+.RB [ \-dqv ]
+.B get-leds
+.RB [ \-d
+.IR device ]
+.RB [ \-b
+.IR block ]
+.br
+.B keyledsctl
+.RB [ \-dqv ]
+.B set-leds
+.RB [ \-d
+.IR device ]
+.RB [ \-b
+.IR block ]
+[
+.IB key = color
+]...
+.br
+.B keyledsctl
+.RB [ \-dqv ]
+.B gamemode
+.RB [ \-d
+.IR device ]
+.RI [ key1 ]...
+.SH DESCRIPTION
+.B keyledsctl
+queries and manipulates Logitech keyboard devices with per-key lighting
+support such as the G410 Atlas Spectrum. Subcommands are:
+.BR list ", " info ", " get-leds ", "
+.BR set-leds " and " gamemode .
+Their role and arguments are described in the SUBCOMMANDS section.
+.SH COMMON OPTIONS
+Common options must appear before the subcommand. They are:
+.TP
+.B \-d
+Enable libkeyleds USB debugging. Specify it two times to increase verbosity.
+.TP
+.B \-q
+Quiet mode. Suppresses all messages excepts errors.
+.TP
+.B \-v
+Increase
+.B keyledsctl
+verbosity. Specify it two times for maximum verbosity.
+.PP
+.SH SUBCOMMANDS
+.TP 10
+.B list
+List all supported devices.
+.TP 10
+.B info
+Query a device to get extended information.
+.RS 10
+.TP 3
+.B \-d
+.I device
+is a description of a Logitech device. It can be specified either as a
+path to the device node (a list can be obtained using
+.BR "keyledsctl list" ),
+or as a USB serial number, if
+.BR udev (7)
+support was compiled in.
+.br
+When omitted, the
+.B KEYLEDS_DEVICE
+environment variable is used instead. If it is not defined,
+.B keyledsctl
+will scan available devices and, if it detects exactly one supported device,
+use it automatically.
+.RE
+.TP 10
+.B get-leds
+Query a device to get current per-key light status.
+.RS 10
+.TP 3
+.B \-d
+.I device
+.RB "same as " info .
+.TP 3
+.B \-b
+.I block
+is a set of keys on the keyboard. Logitech keyboard group keys by feature
+and enforces that keys are manipulated block by block. Known blocks are
+.BR keys ", " media ", " gkeys ", "
+.BR logo " and " modes .
+Available key blocks depend on the specific keyboard model. Use the
+.B info
+subcommand to see which are supported on a given device.
+.br
+When omitted, the default key block is the first one, that is, normal keys.
+.RE
+.TP 10
+.B set-leds
+Change per-key light status. This command accepts an arbitraty number
+of directives in the form
+.IR key = color .
+The directives are aggregated and sent to the device in the order they
+are specified. This means that if multiples directives affect a key, the last
+wins.
+.RS 10
+.TP 6
+.I key
+is a key definition. It can be in any of the following formats:
+.RS 6
+.TP 5
+.B all
+A special keyword meaning all keys of current key block.
+.TP 5
+.I name
+The descriptive name of a single key. Valid only with key block
+.BR keys .
+Use the
+.B get-all
+subcommand to get the list of supported names for a device.
+.TP 5
+.I nn
+The decimal number of a single key. For key block
+.B keys
+this is the keycode value used by Linux events. You can test them using the
+following command:
+.IP "" 5
+.nf
+.BI "evtest /dev/input/by-id/" device-name " | grep 'EV_KEY.*1$'"
+.fi
+.IP "" 5
+Where
+.I device-name
+matches the description of your keyboard device.
+.br
+For other key blocks, the decimal number is the raw number of the key
+as reported by the keyboard.
+.TP 5
+.BI x xx
+The hexadecimal number of a single key. Same as above, except in hexa.
+.LP
+Note that when parsing a key definition,
+.B keyledsctl
+uses the first method that matches. Therefore,
+.BR 5 " represents the key that has glyph " 5
+on it. To represent key number
+.BR 5 ", use either " 05 " or " x5 .
+.RE
+.TP 6
+.I color
+uses CSS-style notation. That is, either a CSS color name such as
+.B greenyellow
+or an hexadecimal RGB value such as
+.BR #00cdff .
+The hash sign can be omitted to avoid escaping issues.
+.RE
+.IP "" 10
+In addition, the
+.B set-leds
+subcommand accepts the following options:
+.RS 9
+.TP 3
+.B \-d
+.I device
+.RB "same as " info .
+.TP 3
+.B \-b
+.I block
+.RB "same as " get-leds
+except it can appear several times. Every use sets the key block
+for all subsequent directives, up to the next
+.B \-b
+.IR block .
+.RE
+.TP 10
+.B gamemode
+Change gamemode-disabled keys. This command accepts a list of
+.I keys
+(see
+.BR set-leds )
+to make inactive when keyboard's game mode is enabled.
+.br
+If no key is specified, the list of keys is cleared and keyboard's
+game mode does nothing.
+.SH EXIT STATUS
+.B keyledsctl
+returns
+.B 0
+on success,
+.B 1
+if the arguments were incorrect and increasingly higher values depending
+on how far it could go before the error happened.
+.SH ENVIRONMENT
+.TP
+.B KEYLEDS_DEVICE
+The device to use when none is specified on the command line. It
+accepts the same values as corresponding
+.BI \-d device
+option.
+.SH FILES
+.TP
+.B /sys
+Queried through
+.BR udev (7)
+to locate supported devices. Only if
+.BR libudev (3)
+support was enabled at compile-time. Otherwise, device node paths are
+hard-coded into
+.B keyledsctl
+itself.
+.TP
+.BI /dev/hidraw n
+Typical location of actual device nodes opened to communicate with Logitech
+devices. On
+.BR udev (7)
+-enabled systems, their location is determined at runtime.
+.SH NOTES
+Automatic device detection involves systematically opening all connected
+HID devices and attempting to communicate with them. This can take
+some time, so while this feature is convenient when using the program
+interactively, it is recommended that scripts always set the
+.B KEYLEDS_DEVICE
+environment variable or pass it on the command line.
+.SH AUTHOR
+Julien Hartmann <juli1.hartmann@gmail.com>

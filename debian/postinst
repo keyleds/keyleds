@@ -1,0 +1,20 @@
+#!/bin/sh -e
+
+UDEV_RULES=/etc/udev/rules.d/99-logitech-hidpp.rules
+
+# Source debconf library.
+. /usr/share/debconf/confmodule
+
+db_get keyleds/install_udev
+INSTALL_UDEV="$RET"
+db_stop
+
+#DEBHELPER#
+
+# Apply configuration
+if [ "$INSTALL_UDEV" = "true" ]; then
+    cp -f /usr/share/keyleds/logitech.rules "$UDEV_RULES"
+else
+    rm -f "$UDEV_RULES"
+fi
+
