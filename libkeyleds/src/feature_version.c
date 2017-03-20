@@ -22,6 +22,7 @@
 #include "keyleds.h"
 #include "keyleds/command.h"
 #include "keyleds/device.h"
+#include "keyleds/error.h"
 #include "keyleds/features.h"
 #include "keyleds/logging.h"
 
@@ -54,7 +55,7 @@ bool keyleds_get_device_version(Keyleds * device, uint8_t target_id,
 
     length = (unsigned)data[0];
     info = malloc(sizeof(*info) + length * sizeof(info->protocols[0]));
-    if (info == NULL) { return false;}
+    if (info == NULL) { keyleds_set_error_errno(); return false;}
     memcpy(info->serial, &data[1], 4);
     info->transport = data[5] << 8 | data[6];
     memcpy(info->model, &data[7], 6);
@@ -104,7 +105,10 @@ bool keyleds_get_device_name(Keyleds * device, uint8_t target_id, char ** out)
     }
 
     length = (unsigned)data[0];
-    if ((buffer = malloc((length + 1) * sizeof(char))) == NULL) { return false; }
+    if ((buffer = malloc((length + 1) * sizeof(char))) == NULL) {
+        keyleds_set_error_errno();
+        return false;
+    }
 
     done = 0;
     while (done < length) {

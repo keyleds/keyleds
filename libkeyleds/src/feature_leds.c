@@ -22,6 +22,7 @@
 #include "keyleds.h"
 #include "keyleds/command.h"
 #include "keyleds/device.h"
+#include "keyleds/error.h"
 #include "keyleds/features.h"
 #include "keyleds/logging.h"
 
@@ -60,7 +61,7 @@ bool keyleds_get_block_info(Keyleds * device, uint8_t target_id,
     if (length == 0) { return false; }
 
     info = malloc(sizeof(*info) + length * sizeof(info->blocks[0]));
-    if (!info) { return false; }
+    if (!info) { keyleds_set_error_errno(); return false; }
     info->length = length;
 
     info_idx = 0;
@@ -109,7 +110,10 @@ bool keyleds_get_leds(Keyleds * device, uint8_t target_id, keyleds_block_id_t bl
                                  4, block_id >> 8, block_id, offset >> 8, offset);
         if (data_size < 0) { return false; }
         if (data[2] != (offset >> 8) ||
-            data[3] != (offset & 0x00ff)) { return false; }
+            data[3] != (offset & 0x00ff)) {
+            keyleds_set_error(KEYLEDS_ERROR_RESPONSE);
+            return false;
+        }
 
         for (data_offset = 4; data_offset < (unsigned)data_size; data_offset += 4) {
             keys[done].id = data[data_offset];

@@ -20,6 +20,6 @@
 const char * keyleds_get_error_str();
 
 void keyleds_set_error_errno();
-void keyleds_set_error_string(const char *);
+void keyleds_set_error(keyleds_error_t err);
 
 #endif

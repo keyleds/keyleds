@@ -18,7 +18,9 @@
 #include <stdlib.h>
 
 #include "config.h"
+#include "keyleds.h"
 #include "keyleds/command.h"
+#include "keyleds/error.h"
 
 
 KeyledsCommand * keyleds_command_alloc(uint8_t target_id,
@@ -26,7 +28,10 @@ KeyledsCommand * keyleds_command_alloc(uint8_t target_id,
                                        uint8_t app_id, unsigned length)
 {
     KeyledsCommand * cmd = malloc(sizeof(KeyledsCommand) + length);
-    if (cmd == NULL) { return NULL; }
+    if (cmd == NULL) {
+        keyleds_set_error_errno();
+        return NULL;
+    }
     cmd->target_id = target_id;
     cmd->feature_idx = feature_idx;
     cmd->function = function;
@@ -38,7 +43,10 @@ KeyledsCommand * keyleds_command_alloc(uint8_t target_id,
 KeyledsCommand * keyleds_command_alloc_empty(unsigned length)
 {
     KeyledsCommand * cmd = malloc(sizeof(KeyledsCommand) + length);
-    if (cmd == NULL) { return NULL; }
+    if (cmd == NULL) {
+        keyleds_set_error_errno();
+        return NULL;
+    }
     cmd->length = length;
     return cmd;
 }

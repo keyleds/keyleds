@@ -22,6 +22,7 @@
 #include "keyleds.h"
 #include "keyleds/command.h"
 #include "keyleds/device.h"
+#include "keyleds/error.h"
 #include "keyleds/features.h"
 #include "keyleds/logging.h"
 
@@ -51,7 +52,7 @@ bool keyleds_get_reportrates(Keyleds * device, uint8_t target_id, unsigned ** ou
     }
 
     rates = malloc((length + 1) * sizeof(rates[0]));
-    if (rates == NULL) { return false; }
+    if (rates == NULL) { keyleds_set_error_errno(); return false; }
 
     rate_idx = 0;
     for (idx = 0; idx < 8; idx += 1) {

@@ -205,6 +205,9 @@ bool parse_info_options(int argc, char * argv[], /*@out@*/ struct info_options *
             }
             options->device = optarg;
             break;
+        case 1:
+            fprintf(stderr, "%s: unexpected argument -- '%s'\n", argv[0], optarg);
+            /* fall through */
         default:
             return false;
         }
@@ -356,6 +359,9 @@ bool parse_get_leds_options(int argc, char * argv[],
             }
             options->device = optarg;
             break;
+        case 1:
+            fprintf(stderr, "%s: unexpected argument -- '%s'\n", argv[0], optarg);
+            /* fall through */
         default:
             return false;
         }

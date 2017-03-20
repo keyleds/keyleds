@@ -48,7 +48,6 @@ Keyleds * keyleds_open(const char * path, uint8_t app_id)
     KEYLEDS_LOG(DEBUG, "Opening device %s", path);
     if ((dev->fd = open(path, O_RDWR)) < 0) {
         keyleds_set_error_errno();
-        KEYLEDS_LOG(DEBUG, "Open failed: %s", keyleds_get_error_str());
         goto error_free_dev;
     }
     fcntl(dev->fd, F_SETFD, FD_CLOEXEC);
@@ -67,26 +66,24 @@ Keyleds * keyleds_open(const char * path, uint8_t app_id)
     /* Parse report descriptor */
     if (!keyleds_parse_hid(descriptor.value, descriptor.size,
                            &dev->reports, &dev->max_report_size)) {
-        keyleds_set_error_string("could not parse report descriptor.");
+        keyleds_set_error(KEYLEDS_ERROR_HIDREPORT);
         goto error_close_fd;
     }
     if (dev->max_report_size == 0) {
-        keyleds_set_error_string("no valid report id found in report descriptor.");
+        keyleds_set_error(KEYLEDS_ERROR_HIDREPORT);
         goto error_free_reports;
     }
 
     if (!keyleds_get_protocol(dev, KEYLEDS_TARGET_DEFAULT, &version, NULL)) {
-        keyleds_set_error_string("invalid hid device");
         goto error_free_reports;
     }
 
     if (version < 2) {
-        keyleds_set_error_string("hid++ v1 device");
+        keyleds_set_error(KEYLEDS_ERROR_HIDVERSION);
         goto error_free_reports;
     }
 
     if (!keyleds_ping(dev, KEYLEDS_TARGET_DEFAULT)) {
-        keyleds_set_error_string("synchronization with device failed");
         goto error_free_reports;
     }
 
@@ -148,6 +145,7 @@ bool keyleds_send(Keyleds * device, const struct keyleds_command * cmd)
         if (device->reports[idx].id == DEVICE_REPORT_INVALID) {
             KEYLEDS_LOG(ERROR, "Command data of %u bytes exceeds max report size of %u bytes",
                         cmd->length, device->max_report_size);
+            keyleds_set_error(KEYLEDS_ERROR_CMDSIZE);
             return false;
         }
     }
@@ -170,6 +168,7 @@ bool keyleds_send(Keyleds * device, const struct keyleds_command * cmd)
 #endif
         nwritten = write(device->fd, buffer, size);
     }
+    if (nwritten < 0) { keyleds_set_error_errno(); }
     return nwritten == size;
 }
 
@@ -177,7 +176,7 @@ bool keyleds_receive(Keyleds * device, struct keyleds_command * cmd)
 {
     fd_set set;
     struct timeval timeout;
-    int nread;
+    int err, nread;
 
     assert(device != NULL);
     assert(cmd != NULL);
@@ -187,8 +186,13 @@ bool keyleds_receive(Keyleds * device, struct keyleds_command * cmd)
     FD_SET(device->fd, &set);
     timeout.tv_sec = KEYLEDS_CALL_TIMEOUT_US / 1000000;
     timeout.tv_usec = KEYLEDS_CALL_TIMEOUT_US % 1000000;
-    if (select(device->fd + 1, &set, NULL, NULL, &timeout) <= 0) {
+    if ((err = select(device->fd + 1, &set, NULL, NULL, &timeout)) < 0) {
+        keyleds_set_error_errno();
+        return false;
+    }
+    if (err == 0) {
         KEYLEDS_LOG(WARNING, "Device timeout while reading fd %d", device->fd);
+        keyleds_set_error(KEYLEDS_ERROR_TIMEDOUT);
         return false;
     }
 #endif
@@ -196,6 +200,7 @@ bool keyleds_receive(Keyleds * device, struct keyleds_command * cmd)
     {
         uint8_t buffer[device->max_report_size + 1];
         if ((nread = read(device->fd, buffer, device->max_report_size + 1)) < 0) {
+            keyleds_set_error_errno();
             return false;
         }
 #ifndef NDEBUG
@@ -231,11 +236,13 @@ bool keyleds_call_command(Keyleds * device, const struct keyleds_command * comma
     if (response->feature_idx != command->feature_idx) {
         KEYLEDS_LOG(ERROR, "Invalid response feature: 0x%02x (expected 0x%02x)",
                       response->feature_idx, command->feature_idx);
+        keyleds_set_error(KEYLEDS_ERROR_RESPONSE);
         return false;
     }
     if (response->function != command->function) {
         KEYLEDS_LOG(ERROR, "Invalid response function: 0x%x (expected 0x%x)",
                       response->function, command->function);
+        keyleds_set_error(KEYLEDS_ERROR_RESPONSE);
         return false;
     }
     return true;

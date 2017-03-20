@@ -156,7 +156,19 @@ bool keyleds_gamemode_reset(Keyleds * device, uint8_t target_id);   /* remove al
 /****************************************************************************/
 /* Error and logging */
 
+typedef enum {
+    KEYLEDS_NO_ERROR    = 0,
+    KEYLEDS_ERROR_ERRNO,         /* system error, look it up in errno */
+    KEYLEDS_ERROR_HIDREPORT,
+    KEYLEDS_ERROR_HIDVERSION,
+    KEYLEDS_ERROR_SYNC,
+    KEYLEDS_ERROR_CMDSIZE,
+    KEYLEDS_ERROR_TIMEDOUT,
+    KEYLEDS_ERROR_RESPONSE
+} keyleds_error_t;
+
 /*@observer@*/ const char * keyleds_get_error_str();
+keyleds_error_t             keyleds_get_errno();
 
 extern /*@null@*/ FILE * g_keyleds_debug_stream;
 extern int g_keyleds_debug_level;

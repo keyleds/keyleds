@@ -21,29 +21,60 @@
 #include "config.h"
 #include "keyleds.h"
 #include "keyleds/error.h"
+#include "keyleds/logging.h"
 
+static const char * const error_strings[] = {
+    "no error",
+    NULL,                                       /* errno-based error */
+    "invalid device (could not parse report descriptor)",
+    "invalid device (hid++ v1)",
+    "synchronization with device failed",
+    "command too long",
+    "device timeout",
+    "invalid response from device"
+};
+
+
+static thread_local keyleds_error_t keyleds_errno = KEYLEDS_NO_ERROR;
+static thread_local int keyleds_saved_errno = 0;
 #ifdef POSIX_STRERROR_R_FOUND
 static thread_local char keyleds_error_buffer[256];
 #endif
-static thread_local const char * keyleds_error = "no error";
 
 const char * keyleds_get_error_str()
 {
-    return keyleds_error;
+    if (keyleds_errno == KEYLEDS_ERROR_ERRNO) {
+#ifdef POSIX_STRERROR_R_FOUND
+        strerror_r(keyleds_saved_errno, keyleds_error_buffer,
+                   sizeof(keyleds_error_buffer));
+        return keyleds_error_buffer;
+#else
+        return strerror(keyleds_saved_errno);
+#endif
+    }
+    return error_strings[keyleds_errno];
 }
+
+keyleds_error_t keyleds_get_errno()
+{
+    if (keyleds_errno == KEYLEDS_ERROR_ERRNO) {
+        errno = keyleds_saved_errno;
+    }
+    return keyleds_errno;
+}
+
 
 void keyleds_set_error_errno()
 {
-#ifdef POSIX_STRERROR_R_FOUND
-    strerror_r(errno, keyleds_error_buffer, sizeof(keyleds_error_buffer));
-    keyleds_error = keyleds_error_buffer;
-#else
-    keyleds_error = strerror(errno);
-#endif
+    keyleds_errno = KEYLEDS_ERROR_ERRNO;
+    keyleds_saved_errno = errno;
+    KEYLEDS_LOG(DEBUG, "%s", keyleds_get_error_str());
 }
 
-void keyleds_set_error_string(const char * str)
+void keyleds_set_error(keyleds_error_t err)
 {
-    assert(str != NULL);
-    keyleds_error = str;
+    assert(err >= 0);
+    assert(err < sizeof(error_strings) / sizeof(error_strings[0]));
+    keyleds_errno = err;
+    KEYLEDS_LOG(DEBUG, "%s", error_strings[err]);
 }
