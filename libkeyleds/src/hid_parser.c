@@ -157,7 +157,7 @@ static int32_t get_signed_integer(const struct hid_item * state)
                              ((uint32_t)state->data[1] << 8)  |
                              ((uint32_t)state->data[0] << 0));
     }
-    assert(false);
+    abort();
 }
 
 static bool aggregate_main_item(const struct hid_item * state, unsigned state_items,

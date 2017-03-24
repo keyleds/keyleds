@@ -25,21 +25,18 @@ extern int g_keyleds_debug_level;
 extern int g_keyleds_debug_hid;
 
 #if !defined(NDEBUG) && !defined(S_SPLINT_S)
-#define KEYLEDS_LOG(level, ...) \
+#define KEYLEDS_LOG(level, str, ...) \
     do { if (g_keyleds_debug_level >= KEYLEDS_LOG_##level) { \
         FILE * stream = g_keyleds_debug_stream == NULL ? stderr : g_keyleds_debug_stream; \
-        (void)fprintf(stream, "%s:%d: ", strstr(__FILE__, "src/keyleds") + 4, __LINE__); \
-        (void)fprintf(stream, __VA_ARGS__); \
-        (void)fprintf(stream, "\n"); \
+        (void)fprintf(stream, "libkeyleds:%s:%d: " str "\n", \
+                      strstr(__FILE__, "src/") + 4, __LINE__, ##__VA_ARGS__); \
         (void)fflush(stream); \
     } } while (0)
 #else
-#define KEYLEDS_LOG(level, ...) \
+#define KEYLEDS_LOG(level, str, ...) \
     do { if (g_keyleds_debug_level >= KEYLEDS_LOG_##level) { \
         FILE * stream = g_keyleds_debug_stream == NULL ? stderr : g_keyleds_debug_stream; \
-        (void)fprintf(stream, "keyleds: "); \
-        (void)fprintf(stream, __VA_ARGS__); \
-        (void)fprintf(stream, "\n"); \
+        (void)fprintf(stream, "libkeyleds: " str "\n", ##__VA_ARGS__); \
         (void)fflush(stream); \
     } } while (0)
 #endif

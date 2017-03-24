@@ -399,8 +399,8 @@ int main_get_leds(int argc, char * argv[])
 
     {
     struct keyleds_key_color keys[nb_keys];
-    if (keyleds_get_leds(device, KEYLEDS_TARGET_DEFAULT, options.block_id,
-                         keys, 0, nb_keys) < 0) {
+    if (!keyleds_get_leds(device, KEYLEDS_TARGET_DEFAULT, options.block_id,
+                          keys, 0, nb_keys)) {
         fprintf(stderr, "Failed to read led status: %s\n", keyleds_get_error_str());
         return 5;
     }

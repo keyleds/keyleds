@@ -1,6 +1,6 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: keyleds
-Source: <url://example.com>
+Source: https://github.com/spectras/keyleds
 
 Files: *
 Copyright: 2017 Julien Hartmann <juli1.hartmann@gmail.com>

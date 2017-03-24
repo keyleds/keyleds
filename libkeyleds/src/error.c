@@ -74,7 +74,7 @@ void keyleds_set_error_errno()
 void keyleds_set_error(keyleds_error_t err)
 {
     assert(err >= 0);
-    assert(err < sizeof(error_strings) / sizeof(error_strings[0]));
+    assert((unsigned)err < sizeof(error_strings) / sizeof(error_strings[0]));
     keyleds_errno = err;
     KEYLEDS_LOG(DEBUG, "%s", error_strings[err]);
 }

@@ -96,7 +96,7 @@ bool keyleds_get_leds(Keyleds * device, uint8_t target_id, keyleds_block_id_t bl
     unsigned done = 0;
 
     assert(device != NULL);
-    assert(block_id <= UINT16_MAX);
+    assert((unsigned)block_id <= UINT16_MAX);
     assert(keys != NULL);
     assert(keys_nb + offset <= UINT16_MAX);
 
@@ -141,7 +141,7 @@ bool keyleds_set_leds(Keyleds * device, uint8_t target_id, keyleds_block_id_t bl
     bool result = true;
 
     assert(device != NULL);
-    assert(block_id <= UINT16_MAX);
+    assert((unsigned)block_id <= UINT16_MAX);
     assert(keys != NULL);
     assert(keys_nb <= UINT16_MAX);
 
@@ -186,7 +186,7 @@ bool keyleds_set_led_block(Keyleds * device, uint8_t target_id, keyleds_block_id
                            uint8_t red, uint8_t green, uint8_t blue)
 {
     assert(device != NULL);
-    assert(block_id <= UINT16_MAX);
+    assert((unsigned)block_id <= UINT16_MAX);
     return keyleds_call(device, NULL, 0, target_id, KEYLEDS_FEATURE_LEDS, F_SET_BLOCK_LEDS,
                         5, block_id >> 8, block_id, red, green, blue) >= 0;
 }
