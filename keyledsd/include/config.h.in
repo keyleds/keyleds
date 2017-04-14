@@ -1,0 +1,44 @@
+/* Keyleds -- Gaming keyboard tool
+ * Copyright (C) 2017 Julien Hartmann, juli1.hartmann@gmail.com
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+#ifndef CONFIG_H
+#define CONFIG_H
+
+#cmakedefine GCC_THREAD_LOCAL_FOUND
+#cmakedefine C11_THREAD_LOCAL_FOUND
+#cmakedefine GNU_STRERROR_R_FOUND
+#cmakedefine POSIX_STRERROR_R_FOUND
+
+/* Language features */
+
+#if defined GCC_THREAD_LOCAL_FOUND
+#define thread_local __thread
+#elif defined C11_THREAD_LOCAL_FOUND
+#define thread_local _Thread_local
+#else
+#define thread_local    /* tls */
+#endif
+
+#ifdef Q_MOC_RUN
+#define final       /* final */
+#endif
+
+/* App-wide definitions */
+
+#define KEYLEDSD_VERSION_STR    "0.1dev"
+#define KEYLEDSD_APP_ID (0x4)
+
+#endif

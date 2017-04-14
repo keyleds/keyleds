@@ -1,0 +1,90 @@
+cmake_minimum_required (VERSION 2.8)
+project(keyledsd CXX)
+include(CheckCXXSourceCompiles)
+
+##############################################################################
+# Sources
+
+# Look for header files in build directory (for config.h) and include dir
+include_directories("${PROJECT_BINARY_DIR}" "include")
+
+# List of sources
+set(keyledsd_SRCS
+    src/keyledsd/AnimationLoop.cxx
+    src/keyledsd/Configuration.cxx
+    src/keyledsd/Device.cxx
+    src/keyledsd/Service.cxx
+    src/tools/accelerated.c
+    src/tools/accelerated_mmx.c
+    src/tools/accelerated_plain.c
+    src/tools/accelerated_sse2.c
+    src/tools/DeviceWatcher.cxx
+    src/tools/SessionWatcher.cxx
+    src/tools/YAMLParser.cxx
+    src/logging.cxx
+    src/main.cxx
+)
+set_source_files_properties(src/tools/accelerated_mmx.cxx PROPERTIES COMPILE_FLAGS -mmmx)
+set_source_files_properties(src/tools/accelerated_sse2.cxx PROPERTIES COMPILE_FLAGS -msse2)
+
+##############################################################################
+# Dependencies
+
+find_package(Qt4 REQUIRED QtCore)
+qt4_wrap_cpp(moc_sources
+    include/keyledsd/AnimationLoop.h
+    include/keyledsd/Device.h
+    include/keyledsd/Service.h
+    include/tools/DeviceWatcher.h
+    include/tools/SessionWatcher.h
+)
+set(keyledsd_SRCS ${keyledsd_SRCS} ${moc_sources})
+
+find_library(LIBUDEV udev)
+IF(NOT LIBUDEV)
+    MESSAGE(SEND_ERROR "libudev is required for keyledsd")
+ENDIF(NOT LIBUDEV)
+
+find_library(LIBRT rt)
+IF(NOT LIBRT)
+    MESSAGE(SEND_ERROR "librt is required for keyledsd")
+ENDIF(NOT LIBRT)
+
+find_library(LIBYAML yaml)
+IF(NOT LIBYAML)
+    MESSAGE(SEND_ERROR "libyaml is required for keyledsd")
+ENDIF(NOT LIBYAML)
+
+# Compiler and lib quirks
+check_c_source_compiles("__thread int tls; int main() { return 0; }"
+    GCC_THREAD_LOCAL_FOUND
+)
+check_c_source_compiles("_Thread_local int tls; int main() { return 0; }"
+    C11_THREAD_LOCAL_FOUND
+)
+check_c_source_compiles(
+    "#include <string.h>\nint main() { char buf; return strerror_r(0, &buf, 1); }"
+    POSIX_STRERROR_R_FOUND
+)
+check_c_source_compiles(
+    "#include <string.h>
+    int main() { char buf; char * r = strerror_r(0, &buf, 1); (void) r; return 0; }"
+    GNU_STRERROR_R_FOUND
+)
+
+
+set(keyledsd_DEPS "${keyledsd_DEPS}"
+    Qt4::QtCore Qt4::QtDBus
+    "${LIBUDEV}" "${LIBRT}" "${LIBYAML}"
+)
+configure_file("include/config.h.in" "config.h")
+
+##############################################################################
+# Targets
+
+# CLI tool
+add_executable(keyledsd ${keyledsd_SRCS})
+target_link_libraries(keyledsd libkeyleds ${keyledsd_DEPS})
+
+# Installing stuff (stub)
+install(TARGETS keyledsd DESTINATION bin)
