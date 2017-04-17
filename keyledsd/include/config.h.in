@@ -17,20 +17,7 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#cmakedefine GCC_THREAD_LOCAL_FOUND
-#cmakedefine C11_THREAD_LOCAL_FOUND
-#cmakedefine GNU_STRERROR_R_FOUND
-#cmakedefine POSIX_STRERROR_R_FOUND
-
 /* Language features */
-
-#if defined GCC_THREAD_LOCAL_FOUND
-#define thread_local __thread
-#elif defined C11_THREAD_LOCAL_FOUND
-#define thread_local _Thread_local
-#else
-#define thread_local    /* tls */
-#endif
 
 #ifdef Q_MOC_RUN
 #define final       /* final */

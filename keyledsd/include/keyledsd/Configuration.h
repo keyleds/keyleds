@@ -20,18 +20,23 @@ public:
 public:
                         Configuration() {}
                         Configuration(path_list && pluginPaths,
+                                      path_list && layoutPaths,
                                       stack_map && stacks,
                                       device_map && deviceStacks)
                             : m_pluginPaths(pluginPaths),
+                              m_layoutPaths(layoutPaths),
                               m_stacks(stacks),
                               m_deviceStacks(deviceStacks) {}
 
     const path_list &   pluginPaths() const { return m_pluginPaths; }
+    const path_list &   layoutPaths() const { return m_layoutPaths; }
           stack_map &   stacks() { return m_stacks; }
     const stack_map &   stacks() const { return m_stacks; }
 
-    void                addDeviceStack(std::string serial, std::string name) { m_deviceStacks[serial] = name; }
-    void                removeDeviceStack(const std::string & serial) { m_deviceStacks.erase(serial); }
+    void                addDeviceStack(std::string serial, std::string name)
+                            { m_deviceStacks[serial] = name; }
+    void                removeDeviceStack(const std::string & serial)
+                            { m_deviceStacks.erase(serial); }
     const Stack &       stackFor(const std::string & serial) const;
 
     static Configuration loadFile(const std::string & path);
@@ -41,6 +46,7 @@ private:
 
 private:
     path_list           m_pluginPaths;
+    path_list           m_layoutPaths;
     stack_map           m_stacks;
     device_map          m_deviceStacks;
 };

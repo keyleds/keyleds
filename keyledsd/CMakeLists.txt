@@ -13,6 +13,7 @@ set(keyledsd_SRCS
     src/keyledsd/AnimationLoop.cxx
     src/keyledsd/Configuration.cxx
     src/keyledsd/Device.cxx
+    src/keyledsd/Layout.cxx
     src/keyledsd/Service.cxx
     src/tools/accelerated.c
     src/tools/accelerated_mmx.c
@@ -55,27 +56,13 @@ IF(NOT LIBYAML)
     MESSAGE(SEND_ERROR "libyaml is required for keyledsd")
 ENDIF(NOT LIBYAML)
 
-# Compiler and lib quirks
-check_c_source_compiles("__thread int tls; int main() { return 0; }"
-    GCC_THREAD_LOCAL_FOUND
-)
-check_c_source_compiles("_Thread_local int tls; int main() { return 0; }"
-    C11_THREAD_LOCAL_FOUND
-)
-check_c_source_compiles(
-    "#include <string.h>\nint main() { char buf; return strerror_r(0, &buf, 1); }"
-    POSIX_STRERROR_R_FOUND
-)
-check_c_source_compiles(
-    "#include <string.h>
-    int main() { char buf; char * r = strerror_r(0, &buf, 1); (void) r; return 0; }"
-    GNU_STRERROR_R_FOUND
-)
-
+find_package(LibXml2 REQUIRED)
+include_directories(${LIBXML2_INCLUDE_DIR})
+set(keyledsd_DEPS ${keyledsd_DEPS} ${LIBXML2_LIBRARIES})
 
 set(keyledsd_DEPS "${keyledsd_DEPS}"
     Qt4::QtCore Qt4::QtDBus
-    "${LIBUDEV}" "${LIBRT}" "${LIBYAML}"
+    ${LIBUDEV} ${LIBRT} ${LIBYAML}
 )
 configure_file("include/config.h.in" "config.h")
 

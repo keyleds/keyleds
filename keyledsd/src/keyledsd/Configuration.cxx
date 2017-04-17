@@ -38,6 +38,7 @@ public:
 
 public:
     Configuration::path_list    m_pluginPaths;
+    Configuration::path_list    m_layoutPaths;
     Configuration::stack_map    m_stacks;
     Configuration::device_map   m_devices;
 };
@@ -236,7 +237,9 @@ public:
     state_ptr sequenceEntry(ConfigurationBuilder & builder, const std::string & key,
                            const std::string &) override
     {
-        if (key == "plugin_paths")  { return std::make_unique<StringSequenceBuildState>(); }
+        if (key == "plugin_paths" || key == "layout_paths")  {
+            return std::make_unique<StringSequenceBuildState>();
+        }
         throw builder.makeError("unknown section");
     }
 
@@ -252,6 +255,8 @@ public:
     {
         if (m_currentKey == "plugin_paths") {
             builder.m_pluginPaths = state.as<StringSequenceBuildState>().result();
+        } else if (m_currentKey == "layout_paths") {
+            builder.m_layoutPaths = state.as<StringSequenceBuildState>().result();
         } else if (m_currentKey == "stacks") {
             builder.m_stacks = state.as<StackListState>().result();
         } else if (m_currentKey == "devices") {
@@ -341,6 +346,7 @@ Configuration Configuration::loadFile(const std::string & path)
     builder.parse(file);
     return Configuration(
         std::move(builder.m_pluginPaths),
+        std::move(builder.m_layoutPaths),
         std::move(builder.m_stacks),
         std::move(builder.m_devices)
     );
