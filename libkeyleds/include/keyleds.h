@@ -124,7 +124,6 @@ struct keyleds_keyblocks_info {
 };
 
 struct keyleds_key_color {
-    unsigned    keycode;        /* as reported by event device when pressing keys */
     uint8_t     id;             /* as reported by keyboard */
     uint8_t     red;
     uint8_t     green;

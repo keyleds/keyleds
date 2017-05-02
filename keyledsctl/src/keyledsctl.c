@@ -408,10 +408,10 @@ int main_get_leds(int argc, char * argv[])
     for (idx = 0; idx < nb_keys; idx += 1) {
         if (keys[idx].id == 0) { continue; }
         if (options.block_id == KEYLEDS_BLOCK_KEYS) {
-            const char * name = keyleds_lookup_string(keyleds_keycode_names,
-                                                      keys[idx].keycode);
+            const unsigned keycode = keyleds_translate_scancode(keys[idx].id);
+            const char * name = keyleds_lookup_string(keyleds_keycode_names, keycode);
             if (name == NULL) {
-                printf("x%02x", keys[idx].keycode);
+                printf("x%02x", keycode);
             } else {
                 printf("%s", name);
             }

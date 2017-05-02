@@ -77,7 +77,6 @@ cdef extern from "keyleds.h":
         keyleds_keyblocks_info_block blocks[0]
 
     cdef struct keyleds_key_color:
-        unsigned        keycode
         uint8_t         id
         uint8_t         red
         uint8_t         green

@@ -117,9 +117,6 @@ bool keyleds_get_leds(Keyleds * device, uint8_t target_id, keyleds_block_id_t bl
 
         for (data_offset = 4; data_offset < (unsigned)data_size; data_offset += 4) {
             keys[done].id = data[data_offset];
-            keys[done].keycode = block_id == KEYLEDS_BLOCK_KEYS
-                               ? keyleds_translate_scancode(data[data_offset])
-                               : 0;
             keys[done].red = data[data_offset + 1];
             keys[done].green = data[data_offset + 2];
             keys[done].blue = data[data_offset + 3];
@@ -160,11 +157,7 @@ bool keyleds_set_leds(Keyleds * device, uint8_t target_id, keyleds_block_id_t bl
         command->data[2] = (uint8_t)(batch_length >> 8);
         command->data[3] = (uint8_t)(batch_length >> 0);
         for (idx = 0; idx < batch_length; idx += 1) {
-            uint8_t id = keys[offset + idx].id;
-            if (id == KEYLEDS_KEY_ID_INVALID && block_id == KEYLEDS_BLOCK_KEYS) {
-                id = keyleds_translate_keycode(keys[offset + idx].keycode);
-            }
-            command->data[4 + idx * 4 + 0] = id;
+            command->data[4 + idx * 4 + 0] = keys[offset + idx].id;
             command->data[4 + idx * 4 + 1] = keys[offset + idx].red;
             command->data[4 + idx * 4 + 2] = keys[offset + idx].green;
             command->data[4 + idx * 4 + 3] = keys[offset + idx].blue;
