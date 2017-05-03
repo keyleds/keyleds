@@ -129,7 +129,7 @@ bool keyleds_get_leds(Keyleds * device, uint8_t target_id, keyleds_block_id_t bl
 }
 
 bool keyleds_set_leds(Keyleds * device, uint8_t target_id, keyleds_block_id_t block_id,
-                      struct keyleds_key_color * keys, unsigned keys_nb)
+                      const struct keyleds_key_color * keys, unsigned keys_nb)
 {
     unsigned per_call = (device->max_report_size - 3 - 4) / 4;
     unsigned offset, idx;

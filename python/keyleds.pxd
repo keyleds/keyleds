@@ -6,10 +6,7 @@ cdef extern from "keyleds.h":
         pass
 
     ctypedef enum keyleds_device_handler_t:
-        KEYLEDS_DEVICE_HANDLER_DEVICE,
-        KEYLEDS_DEVICE_HANDLER_GAMING,
-        KEYLEDS_DEVICE_HANDLER_PREFERENCE,
-        KEYLEDS_DEVICE_HANDLER_FEATURE
+        pass
 
     cdef struct keyleds_device_version_protocol:
         uint8_t     type
@@ -28,14 +25,7 @@ cdef extern from "keyleds.h":
         keyleds_device_version_protocol protocols[0]
 
     ctypedef enum keyleds_device_type_t:
-        KEYLEDS_DEVICE_TYPE_KEYBOARD
-        KEYLEDS_DEVICE_TYPE_REMOTE
-        KEYLEDS_DEVICE_TYPE_NUMPAD
-        KEYLEDS_DEVICE_TYPE_MOUSE
-        KEYLEDS_DEVICE_TYPE_TOUCHPAD
-        KEYLEDS_DEVICE_TYPE_TRACKBALL
-        KEYLEDS_DEVICE_TYPE_PRESENTER
-        KEYLEDS_DEVICE_TYPE_RECEIVER
+        pass
 
     Keyleds * keyleds_open(const char * path, uint8_t app_id)
     void keyleds_close(Keyleds * device)
@@ -53,17 +43,25 @@ cdef extern from "keyleds.h":
     bint keyleds_get_device_version(Keyleds * device, uint8_t target_id,
                                     keyleds_device_version ** out)
 
+    bint keyleds_gamemode_max(Keyleds * device, uint8_t target_id, unsigned * nb)
+    bint keyleds_gamemode_set(Keyleds * device, uint8_t target_id,
+                              const uint8_t * ids, unsigned ids_nb)
+    bint keyleds_gamemode_clear(Keyleds * device, uint8_t target_id,
+                              const uint8_t * ids, unsigned ids_nb)
+    bint keyleds_gamemode_reset(Keyleds * device, uint8_t target_id)
+
+
+    ctypedef enum keyleds_keyboard_layout_t:
+        KEYLEDS_KEYBOARD_LAYOUT_INVALID
+
+    keyleds_keyboard_layout_t keyleds_keyboard_layout(Keyleds * device, uint8_t target_id)
+
     bint keyleds_get_reportrates(Keyleds * device, uint8_t target_id, unsigned ** out)
     bint keyleds_get_reportrate(Keyleds * device, uint8_t target_id, unsigned * rate)
     bint keyleds_set_reportrate(Keyleds * device, uint8_t target_id, unsigned rate)
 
     ctypedef enum keyleds_block_id_t:
-        KEYLEDS_BLOCK_KEYS
-        KEYLEDS_BLOCK_MULTIMEDIA
-        KEYLEDS_BLOCK_GKEYS
-        KEYLEDS_BLOCK_LOGO
-        KEYLEDS_BLOCK_MODES
-        KEYLEDS_BLOCK_INVALID
+        pass
 
     cdef struct keyleds_keyblocks_info_block:
         keyleds_block_id_t  block_id
@@ -92,13 +90,6 @@ cdef extern from "keyleds.h":
     bint keyleds_set_led_block(Keyleds * device, uint8_t target_id, keyleds_block_id_t block_id,
                                uint8_t red, uint8_t green, uint8_t blue)
     bint keyleds_commit_leds(Keyleds * device, uint8_t target_id)
-
-    bint keyleds_gamemode_max(Keyleds * device, uint8_t target_id, unsigned * nb)
-    bint keyleds_gamemode_set(Keyleds * device, uint8_t target_id,
-                              const uint8_t * ids, unsigned ids_nb)
-    bint keyleds_gamemode_clear(Keyleds * device, uint8_t target_id,
-                              const uint8_t * ids, unsigned ids_nb)
-    bint keyleds_gamemode_reset(Keyleds * device, uint8_t target_id)
 
     const char * keyleds_get_error_str()
 

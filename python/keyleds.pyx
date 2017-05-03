@@ -93,6 +93,7 @@ cdef class Device:
     cdef object _name
     cdef object _type
     cdef object _version
+    cdef object _layout
     cdef object _supported_rates
     cdef object _leds
 
@@ -233,11 +234,22 @@ cdef class Device:
                     proto_obj.product_id = version[0].protocols[idx].product_id
                     Py_INCREF(proto_obj) # SET_ITEM steals the ref
                     PyTuple_SET_ITEM(protocols, idx, proto_obj)
-                version_obj.protocols = tuple(protocols)
+                version_obj.protocols = protocols
             finally:
                 free(version)
             self._version = version_obj
         return self._version
+
+    @property
+    def layout(self):
+        if self._device is NULL:
+            raise ValueError('I/O operation on closed device.')
+
+        if self._layout is None:
+            self._layout = pykeyleds.keyleds_keyboard_layout(self._device, self._target_id)
+        if self._layout == pykeyleds.KEYLEDS_KEYBOARD_LAYOUT_INVALID:
+            raise AttributeError('Device does not define a layout')
+        return self._layout
 
     @property
     def report_rates(self):

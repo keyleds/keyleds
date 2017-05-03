@@ -94,6 +94,26 @@ bool keyleds_get_device_version(Keyleds * device, uint8_t target_id,
 void keyleds_free_device_version(/*@only@*/ /*@out@*/ struct keyleds_device_version *);
 
 /****************************************************************************/
+/* Gamemode feature */
+
+bool keyleds_gamemode_max(Keyleds * device, uint8_t target_id, /*@out@*/ unsigned * nb);
+bool keyleds_gamemode_set(Keyleds * device, uint8_t target_id,
+                          const uint8_t * ids, unsigned ids_nb);    /* add some keys */
+bool keyleds_gamemode_clear(Keyleds * device, uint8_t target_id,
+                            const uint8_t * ids, unsigned ids_nb);  /* remove some keys */
+bool keyleds_gamemode_reset(Keyleds * device, uint8_t target_id);   /* remove all keys */
+
+/****************************************************************************/
+/* Keyboard layout feature */
+
+typedef enum {
+    KEYLEDS_KEYBOARD_LAYOUT_FRA = 5,
+    KEYLEDS_KEYBOARD_LAYOUT_INVALID = -1
+} keyleds_keyboard_layout_t;
+
+keyleds_keyboard_layout_t keyleds_keyboard_layout(Keyleds * device, uint8_t target_id);
+
+/****************************************************************************/
 /* Reportrate feature */
 
 bool keyleds_get_reportrates(Keyleds * device, uint8_t target_id, /*@out@*/ unsigned ** out);
@@ -137,20 +157,10 @@ void keyleds_free_block_info(/*@only@*/ /*@out@*/ struct keyleds_keyblocks_info 
 bool keyleds_get_leds(Keyleds * device, uint8_t target_id, keyleds_block_id_t block_id,
                       struct keyleds_key_color * keys, uint16_t offset, unsigned keys_nb);
 bool keyleds_set_leds(Keyleds * device, uint8_t target_id, keyleds_block_id_t block_id,
-                      struct keyleds_key_color * keys, unsigned keys_nb);
+                      const struct keyleds_key_color * keys, unsigned keys_nb);
 bool keyleds_set_led_block(Keyleds * device, uint8_t target_id, keyleds_block_id_t block_id,
                            uint8_t red, uint8_t green, uint8_t blue);
 bool keyleds_commit_leds(Keyleds * device, uint8_t target_id);
-
-/****************************************************************************/
-/* Gamemode feature */
-
-bool keyleds_gamemode_max(Keyleds * device, uint8_t target_id, /*@out@*/ unsigned * nb);
-bool keyleds_gamemode_set(Keyleds * device, uint8_t target_id,
-                          const uint8_t * ids, unsigned ids_nb);    /* add some keys */
-bool keyleds_gamemode_clear(Keyleds * device, uint8_t target_id,
-                            const uint8_t * ids, unsigned ids_nb);  /* remove some keys */
-bool keyleds_gamemode_reset(Keyleds * device, uint8_t target_id);   /* remove all keys */
 
 /****************************************************************************/
 /* Error and logging */
