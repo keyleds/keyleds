@@ -26,12 +26,26 @@
 static const char * const error_strings[] = {
     "no error",
     NULL,                                       /* errno-based error */
+    NULL,                                       /* device_error_string */
+    "wrong I/O length",
     "invalid device (could not parse report descriptor)",
     "invalid device (hid++ v1)",
+    "feature not found on device",
     "synchronization with device failed",
-    "command too long",
-    "device timeout",
     "invalid response from device"
+};
+
+static const char * const device_error_strings[] = {
+    "no error",
+    "unknown device error",
+    "invalid argument sent to device",
+    "out of range value sent to device",
+    "hardware error",
+    "internal logitech error",
+    "invalid feature index sent to device",
+    "invalid function id sent to device",
+    "device busy",
+    "unsupported operation"
 };
 
 
@@ -51,6 +65,8 @@ const char * keyleds_get_error_str()
 #else
         return strerror(keyleds_saved_errno);
 #endif
+    } else if (keyleds_errno == KEYLEDS_ERROR_DEVICE) {
+        return device_error_strings[keyleds_saved_errno];
     }
     return error_strings[keyleds_errno];
 }
@@ -69,6 +85,16 @@ void keyleds_set_error_errno()
     keyleds_errno = KEYLEDS_ERROR_ERRNO;
     keyleds_saved_errno = errno;
     KEYLEDS_LOG(DEBUG, "%s", keyleds_get_error_str());
+}
+
+void keyleds_set_error_hidpp(uint8_t code)
+{
+    if (code >= sizeof(device_error_strings) / sizeof(device_error_strings[0])) {
+        code = 1;
+    }
+    keyleds_errno = KEYLEDS_ERROR_DEVICE;
+    keyleds_saved_errno = (signed)(unsigned)code;
+    KEYLEDS_LOG(DEBUG, "%s", device_error_strings[code]);
 }
 
 void keyleds_set_error(keyleds_error_t err)

@@ -16,7 +16,6 @@
  */
 #include <assert.h>
 #include <fcntl.h>
-#include <stdarg.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -27,7 +26,6 @@
 
 #include "config.h"
 #include "keyleds.h"
-#include "keyleds/command.h"
 #include "keyleds/device.h"
 #include "keyleds/error.h"
 #include "keyleds/features.h"
@@ -130,167 +128,143 @@ static void format_buffer(const uint8_t * data, unsigned size, char * buffer)
 #endif
 
 
-bool keyleds_send(Keyleds * device, const struct keyleds_command * cmd)
+bool keyleds_send(Keyleds * device, uint8_t target_id, uint8_t feature_idx,
+                  uint8_t function, size_t length, const uint8_t * data)
 {
-    unsigned idx;
-    ssize_t size, nwritten;
-
     assert(device != NULL);
-    assert(cmd != NULL);
-    assert(cmd->function <= 0xf);
-    assert(cmd->app_id <= 0xf);
-    assert(cmd->length + 3 <= device->max_report_size);
+    assert(function <= 0xf);
+    assert(length + 3 <= device->max_report_size);
+    assert(length == 0 || data != NULL);
 
-    for (idx = 0; device->reports[idx].size < 3 + cmd->length; idx += 1) {
-        if (device->reports[idx].id == DEVICE_REPORT_INVALID) {
-            KEYLEDS_LOG(ERROR, "Command data of %u bytes exceeds max report size of %u bytes",
-                        cmd->length, device->max_report_size);
-            keyleds_set_error(KEYLEDS_ERROR_CMDSIZE);
-            return false;
-        }
-    }
-    size = 1 + device->reports[idx].size;
+    unsigned idx = 0;
+    while (device->reports[idx].size < 3 + length) { idx += 1; }
 
-    {
-        uint8_t buffer[size];
-        buffer[0] = device->reports[idx].id;
-        buffer[1] = cmd->target_id;
-        buffer[2] = cmd->feature_idx;
-        buffer[3] = cmd->function << 4 | cmd->app_id;
-        memcpy(&buffer[4], cmd->data, cmd->length);
-        memset(&buffer[4 + cmd->length], 0, size - 4 - cmd->length);
+    size_t report_size = device->reports[idx].size;
+    uint8_t buffer[1 + report_size];
+
+    buffer[0] = device->reports[idx].id;
+    buffer[1] = target_id;
+    buffer[2] = feature_idx;
+    buffer[3] = function << 4 | device->app_id;
+    memcpy(&buffer[4], data, length);
+    memset(&buffer[4 + length], 0, report_size - 3 - length);
+
 #ifndef NDEBUG
-        if (g_keyleds_debug_level >= KEYLEDS_LOG_DEBUG) {
-            char debug_buffer[3 * size + 1];
-            format_buffer(buffer, size, debug_buffer);
-            KEYLEDS_LOG(DEBUG, "Send [%s]", debug_buffer);
-        }
-#endif
-        nwritten = write(device->fd, buffer, size);
+    if (g_keyleds_debug_level >= KEYLEDS_LOG_DEBUG) {
+        char debug_buffer[3 * (1 + report_size) + 1];
+        format_buffer(buffer, (1 + report_size), debug_buffer);
+        KEYLEDS_LOG(DEBUG, "Send [%s]", debug_buffer);
     }
-    if (nwritten < 0) { keyleds_set_error_errno(); }
-    return nwritten == size;
-}
+#endif
 
-bool keyleds_receive(Keyleds * device, struct keyleds_command * cmd)
-{
-    fd_set set;
-    struct timeval timeout;
-    int err, nread;
-
-    assert(device != NULL);
-    assert(cmd != NULL);
-
-#if KEYLEDS_CALL_TIMEOUT_US > 0
-    FD_ZERO(&set);
-    FD_SET(device->fd, &set);
-    timeout.tv_sec = KEYLEDS_CALL_TIMEOUT_US / 1000000;
-    timeout.tv_usec = KEYLEDS_CALL_TIMEOUT_US % 1000000;
-    if ((err = select(device->fd + 1, &set, NULL, NULL, &timeout)) < 0) {
+    ssize_t nwritten = write(device->fd, buffer, 1 + report_size);
+    if (nwritten < 0) {
         keyleds_set_error_errno();
         return false;
     }
-    if (err == 0) {
-        KEYLEDS_LOG(WARNING, "Device timeout while reading fd %d", device->fd);
-        keyleds_set_error(KEYLEDS_ERROR_TIMEDOUT);
+    if ((size_t)nwritten != 1 + report_size) {
+        keyleds_set_error(KEYLEDS_ERROR_IO_LENGTH);
         return false;
     }
-#endif
+    return true;
+}
 
-    {
-        uint8_t buffer[device->max_report_size + 1];
-        if ((nread = read(device->fd, buffer, device->max_report_size + 1)) < 0) {
+bool keyleds_receive(Keyleds * device, uint8_t target_id, uint8_t feature_idx,
+                     uint8_t * message, size_t * size)
+{
+    int err, nread;
+
+    assert(device != NULL);
+    assert(message != NULL);
+
+    do {
+#if KEYLEDS_CALL_TIMEOUT_US > 0
+        fd_set set;
+        struct timeval timeout;
+
+        FD_ZERO(&set);
+        FD_SET(device->fd, &set);
+        timeout.tv_sec = KEYLEDS_CALL_TIMEOUT_US / 1000000;
+        timeout.tv_usec = KEYLEDS_CALL_TIMEOUT_US % 1000000;
+        if ((err = select(device->fd + 1, &set, NULL, NULL, &timeout)) < 0) {
             keyleds_set_error_errno();
             return false;
         }
+        if (err == 0) {
+            KEYLEDS_LOG(WARNING, "Device timeout while reading fd %d", device->fd);
+            keyleds_set_error(KEYLEDS_ERROR_TIMEDOUT);
+            return false;
+        }
+#endif
+
+        if ((nread = read(device->fd, message, device->max_report_size + 1)) < 0) {
+            keyleds_set_error_errno();
+            return false;
+        }
+        if (nread < 1 + device->reports[0].size) {
+            keyleds_set_error(KEYLEDS_ERROR_IO_LENGTH);
+            return false;
+        }
+
 #ifndef NDEBUG
         if (g_keyleds_debug_level >= KEYLEDS_LOG_DEBUG) {
             char debug_buffer[3 * nread + 1];
-            format_buffer(buffer, nread, debug_buffer);
+            format_buffer(message, nread, debug_buffer);
             KEYLEDS_LOG(DEBUG, "Recv [%s]", debug_buffer);
         }
 #endif
-        cmd->target_id      = buffer[1];
-        cmd->feature_idx    = buffer[2];
-        cmd->function       = buffer[3] >> 4;
-        cmd->app_id         = buffer[3] & 0xf;
-        memcpy(cmd->data, &buffer[4],
-               cmd->length < (unsigned)nread - 4 ? cmd->length : (unsigned)nread - 4);
-        cmd->length         = nread - 4;
+
+    } while(!(
+        message[1] == target_id && (                /* message is from this device */
+        (
+            message[2] == feature_idx &&            /* message is for correct feature */
+            (message[3] & 0xf) == device->app_id    /* message is for us */
+        ) || (
+            message[2] == 0xff &&                   /* message is an error */
+            message[3] == feature_idx &&            /* message if for correct feature */
+            (message[4] & 0xf) == device->app_id    /* message is for us */
+        ) || (                                          /* special handling for getprotocol */
+            message[2] == 0x8f &&                       /* message is HIDPP1 error */
+            message[3] == KEYLEDS_FEATURE_IDX_ROOT &&   /* feature is root feature */
+            (message[4] & 0xf) == device->app_id        /* message is for us */
+        )
+    )));
+
+    if (message[2] == 0xff) {
+        keyleds_set_error_hidpp(message[5]);
+        return false;
     }
+
+    if (size) { *size = nread; }
     return true;
 }
 
-bool keyleds_call_command(Keyleds * device, const struct keyleds_command * command,
-                          struct keyleds_command * response)
+int keyleds_call(Keyleds * device, uint8_t * result, size_t result_len,
+    uint8_t target_id, uint16_t feature_id, uint8_t function,
+    size_t length, const uint8_t * data)
 {
-    unsigned response_length = response->length;
-    if (!keyleds_send(device, command)) { return false; }
-
-    do {
-        response->length = response_length; /* it is modified every call */
-        if (!keyleds_receive(device, response)) { return false; }
-    } while (response->target_id != command->target_id ||
-             response->app_id != command->app_id);
-
-    if (response->feature_idx != command->feature_idx) {
-        KEYLEDS_LOG(ERROR, "Invalid response feature: 0x%02x (expected 0x%02x)",
-                      response->feature_idx, command->feature_idx);
-        keyleds_set_error(KEYLEDS_ERROR_RESPONSE);
-        return false;
-    }
-    if (response->function != command->function) {
-        KEYLEDS_LOG(ERROR, "Invalid response function: 0x%x (expected 0x%x)",
-                      response->function, command->function);
-        keyleds_set_error(KEYLEDS_ERROR_RESPONSE);
-        return false;
-    }
-    return true;
-}
-
-int keyleds_call(Keyleds * device, uint8_t * result, unsigned result_len,
-    uint8_t target_id, uint16_t feature_id, uint8_t function, unsigned length, ...)
-{
-    va_list ap;
-    unsigned idx;
-    uint8_t feature_idx;
-    struct keyleds_command * command, * response;
-    int ret;
-
     assert(device != NULL);
     assert(result != NULL || result_len == 0);
     assert(function <= 0xf);
 
+    uint8_t feature_idx;
     if (feature_id == KEYLEDS_FEATURE_ROOT) {
         feature_idx = KEYLEDS_FEATURE_IDX_ROOT;
     } else {
         feature_idx = keyleds_get_feature_index(device, target_id, feature_id);
-        if (feature_idx == 0) {
-            KEYLEDS_LOG(ERROR, "Unknown feature %04x", feature_id);
-            return -1;
-        }
+        if (feature_idx == 0) { return -1; }
     }
 
-    command = keyleds_command_alloc(
-        target_id, feature_idx, function, device->app_id, length
-    );
-    va_start(ap, length);
-    for (idx = 0; idx < length; idx += 1) {
-        command->data[idx] = va_arg(ap, int);
-    }
-    va_end(ap);
-    response = keyleds_command_alloc_empty(result_len);
+    if (!keyleds_send(device, target_id, feature_idx, function, length, data)) { return -1; }
 
-    if (keyleds_call_command(device, command, response)) {
-        ret = result_len < response->length ? result_len : response->length;
-        if (result != NULL) {
-            memcpy(result, response->data, ret);
-        }
-    } else {
-        ret = -1;
-    }
+    uint8_t buffer[1 + device->max_report_size];
+    size_t nread;
+    if (!keyleds_receive(device, target_id, feature_idx, buffer, &nread)) { return -1; }
 
-    keyleds_command_free(command);
-    keyleds_command_free(response);
+    const uint8_t * res_data = keyleds_response_data(device, buffer);
+    size_t ret = nread - (res_data - buffer);
+    if (result_len < ret) { ret = result_len; }
+    if (result != NULL) { memcpy(result, res_data, ret); }
+
     return ret;
 }

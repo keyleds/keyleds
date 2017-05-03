@@ -19,8 +19,8 @@
 
 #include "config.h"
 #include "keyleds.h"
-#include "keyleds/command.h"
 #include "keyleds/device.h"
+#include "keyleds/error.h"
 #include "keyleds/features.h"
 #include "keyleds/logging.h"
 
@@ -36,33 +36,25 @@ enum feature_feature_function {
 bool keyleds_get_protocol(struct keyleds_device * device, uint8_t target_id,
                           unsigned * version, keyleds_device_handler_t * handler)
 {
-    KeyledsCommand * command, * response;
-    bool result = false;
-
-    command = keyleds_command_alloc(
-        target_id, KEYLEDS_FEATURE_IDX_ROOT, F_PING,
-        device->app_id, 0
-    );
-    response = keyleds_command_alloc_empty(2);
-
-    if (keyleds_send(device, command) &&
-        keyleds_receive(device, response)) {
-        if (response->feature_idx == 0x8f) {
-            if (version != NULL) { *version = 1; }
-            if (handler != NULL) { *handler = 0; }
-            result = true;
-        } else if (response->feature_idx == KEYLEDS_FEATURE_IDX_ROOT &&
-            response->function == F_PING &&
-            response->app_id == device->app_id) {
-            if (version != NULL) { *version = (unsigned)response->data[0]; }
-            if (handler != NULL) { *handler = (keyleds_device_handler_t)response->data[1]; }
-            result = true;
-        }
+    if (!keyleds_send(device, target_id, KEYLEDS_FEATURE_IDX_ROOT, F_PING, 0, NULL)) {
+        return false;
     }
 
-    keyleds_command_free(command);
-    keyleds_command_free(response);
-    return result;
+    size_t size;
+    uint8_t buffer[1 + device->max_report_size];
+    if (!keyleds_receive(device, target_id, KEYLEDS_FEATURE_IDX_ROOT, buffer, &size)) {
+        return false;
+    }
+
+    if (buffer[2] == 0x8f) {
+        if (version != NULL) { *version = 1; }
+        if (handler != NULL) { *handler = 0; }
+    } else {
+        const uint8_t * data = keyleds_response_data(device, buffer);
+        if (version != NULL) { *version = (unsigned)data[0]; }
+        if (handler != NULL) { *handler = (keyleds_device_handler_t)data[1]; }
+    }
+    return true;
 }
 
 /* Re-synchronize exchanges: send a ping and discard all received
@@ -70,45 +62,29 @@ bool keyleds_get_protocol(struct keyleds_device * device, uint8_t target_id,
  */
 bool keyleds_ping(Keyleds * device, uint8_t target_id)
 {
-    KeyledsCommand * command, * response;
-    bool result = false;
-
     uint8_t payload = device->ping_seq;
     device->ping_seq = payload == UINT8_MAX ? (uint8_t)1 : payload + 1;
 
-    command = keyleds_command_alloc(
-        target_id, KEYLEDS_FEATURE_IDX_ROOT, F_PING,
-        device->app_id, 3);
-    command->data[0] = 0;
-    command->data[1] = 0;
-    command->data[2] = payload;
-    response = keyleds_command_alloc_empty(3);
+    if (!keyleds_send(device, target_id, KEYLEDS_FEATURE_IDX_ROOT, F_PING,
+                      3, (uint8_t[]){0, 0, payload})) {
+        return false;
+    }
 
-    if (!keyleds_send(device, command)) { goto ping_err_free_commands; }
-
+    uint8_t buffer[1 + device->max_report_size];
     do {
-        response->length = 3;   /* gets overwritten at each invocation */
-        if (!keyleds_receive(device, response)) { goto ping_err_free_commands; }
-
-        if (response->feature_idx == KEYLEDS_FEATURE_IDX_ROOT &&
-            response->function == F_PING &&
-            response->app_id == device->app_id &&
-            response->data[2] == payload) {
-            result = true;
+        if (!keyleds_receive(device, target_id, KEYLEDS_FEATURE_IDX_ROOT, buffer, NULL)) {
+            return false;
         }
-    } while (!result);
+    } while (keyleds_response_data(device, buffer)[2] != payload);
 
-ping_err_free_commands:
-    keyleds_command_free(command);
-    keyleds_command_free(response);
-    return result;
+    return true;
 }
 
 unsigned keyleds_get_feature_count(struct keyleds_device * device, uint8_t target_id)
 {
     uint8_t data[1];
-    if (keyleds_call(device, data, (unsigned)sizeof(data),
-                     target_id, KEYLEDS_FEATURE_FEATURE, F_GET_FEATURE_COUNT, 0) < 0) {
+    if (keyleds_call(device, data, sizeof(data),
+                     target_id, KEYLEDS_FEATURE_FEATURE, F_GET_FEATURE_COUNT, 0, NULL) < 0) {
         return 0;
     }
     return (unsigned)data[0];
@@ -131,9 +107,9 @@ uint16_t keyleds_get_feature_id(struct keyleds_device * device,
         }
     }
 
-    if (keyleds_call(device, data, (unsigned)sizeof(data),
+    if (keyleds_call(device, data, sizeof(data),
                      target_id, KEYLEDS_FEATURE_FEATURE, F_GET_FEATURE_ID,
-                     1, feature_idx) < 0) {
+                     1, (uint8_t[]){feature_idx}) < 0) {
         KEYLEDS_LOG(ERROR, "get_feature_id failed");
         return 0;
     }
@@ -169,14 +145,19 @@ uint8_t keyleds_get_feature_index(struct keyleds_device * device,
         }
     }
 
-    if (keyleds_call(device, data, (unsigned)sizeof(data),
+    if (keyleds_call(device, data, sizeof(data),
                      target_id, KEYLEDS_FEATURE_ROOT, F_GET_FEATURE,
-                     2, feature_id >> 8, feature_id) < 0) {
+                     2, (uint8_t[]){feature_id >> 8, feature_id}) < 0) {
         KEYLEDS_LOG(ERROR, "get_feature_index failed");
         return 0;
     }
 
     feature_idx = data[0];
+    if (feature_idx == 0) {
+        keyleds_set_error(KEYLEDS_ERROR_FEATURE_NOT_FOUND);
+        return 0;
+    }
+
     device->features = realloc(device->features, (idx + 2) * sizeof(device->features[0]));
     device->features[idx].target_id = target_id;
     device->features[idx].id = feature_id;

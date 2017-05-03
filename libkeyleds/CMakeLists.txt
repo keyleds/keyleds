@@ -11,7 +11,6 @@ include_directories(BEFORE "${PROJECT_BINARY_DIR}" "include")
 
 # List of sources
 set(libkeyleds_SRCS
-    src/command.c
     src/device.c
     src/error.c
     src/feature_core.c

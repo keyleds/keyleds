@@ -158,10 +158,11 @@ bool keyleds_gamemode_reset(Keyleds * device, uint8_t target_id);   /* remove al
 typedef enum {
     KEYLEDS_NO_ERROR    = 0,
     KEYLEDS_ERROR_ERRNO,         /* system error, look it up in errno */
+    KEYLEDS_ERROR_DEVICE,        /* error return by device */
+    KEYLEDS_ERROR_IO_LENGTH,
     KEYLEDS_ERROR_HIDREPORT,
     KEYLEDS_ERROR_HIDVERSION,
-    KEYLEDS_ERROR_SYNC,
-    KEYLEDS_ERROR_CMDSIZE,
+    KEYLEDS_ERROR_FEATURE_NOT_FOUND,
     KEYLEDS_ERROR_TIMEDOUT,
     KEYLEDS_ERROR_RESPONSE
 } keyleds_error_t;

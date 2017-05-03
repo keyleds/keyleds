@@ -20,7 +20,6 @@
 
 #include "config.h"
 #include "keyleds.h"
-#include "keyleds/command.h"
 #include "keyleds/device.h"
 #include "keyleds/error.h"
 #include "keyleds/features.h"
@@ -42,7 +41,7 @@ bool keyleds_get_reportrates(Keyleds * device, uint8_t target_id, unsigned ** ou
     assert(out != NULL);
 
     if (keyleds_call(device, data, (unsigned)sizeof(data),
-                     target_id, KEYLEDS_FEATURE_REPORTRATE, F_GET_SUPPORTED_RATES, 0) < 0) {
+                     target_id, KEYLEDS_FEATURE_REPORTRATE, F_GET_SUPPORTED_RATES, 0, NULL) < 0) {
         return false;
     }
 
@@ -75,7 +74,7 @@ bool keyleds_get_reportrate(Keyleds * device, uint8_t target_id, unsigned * rate
     assert(rate != NULL);
 
     if (keyleds_call(device, data, (unsigned)sizeof(data),
-                     target_id, KEYLEDS_FEATURE_REPORTRATE, F_GET_REPORT_RATE, 0) < 0) {
+                     target_id, KEYLEDS_FEATURE_REPORTRATE, F_GET_REPORT_RATE, 0, NULL) < 0) {
         return false;
     }
     *rate = (unsigned)data[0];
@@ -86,7 +85,7 @@ bool keyleds_set_reportrate(Keyleds * device, uint8_t target_id, unsigned rate)
 {
     if (keyleds_call(device, NULL, 0,
                      target_id, KEYLEDS_FEATURE_REPORTRATE, F_SET_REPORT_RATE,
-                     1, rate) < 0) {
+                     1, (uint8_t[]){rate}) < 0) {
         return false;
     }
     return true;

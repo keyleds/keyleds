@@ -20,7 +20,6 @@
 
 #include "config.h"
 #include "keyleds.h"
-#include "keyleds/command.h"
 #include "keyleds/device.h"
 #include "keyleds/error.h"
 #include "keyleds/features.h"
@@ -49,7 +48,8 @@ bool keyleds_get_device_version(Keyleds * device, uint8_t target_id,
     assert(out != NULL);
 
     if (keyleds_call(device, data, (unsigned)sizeof(data),
-                     target_id, KEYLEDS_FEATURE_VERSION, F_GET_DEVICE_INFO, 0) < 0) {
+                     target_id, KEYLEDS_FEATURE_VERSION, F_GET_DEVICE_INFO,
+                     0, NULL) < 0) {
         return false;
     }
 
@@ -64,7 +64,7 @@ bool keyleds_get_device_version(Keyleds * device, uint8_t target_id,
     for (idx = 0; idx < length; idx += 1) {
         if (keyleds_call(device, data, (unsigned)sizeof(data),
                          target_id, KEYLEDS_FEATURE_VERSION, F_GET_FIRMWARE_INFO,
-                         1, idx) < 0) {
+                         1, (uint8_t[]){idx}) < 0) {
             goto err_get_dev_info_free;
         }
         info->protocols[idx].type = data[0];
@@ -100,7 +100,7 @@ bool keyleds_get_device_name(Keyleds * device, uint8_t target_id, char ** out)
     assert(out != NULL);
 
     if (keyleds_call(device, data, (unsigned)sizeof(data),
-                     target_id, KEYLEDS_FEATURE_NAME, F_GET_NAME_LENGTH, 0) < 0) {
+                     target_id, KEYLEDS_FEATURE_NAME, F_GET_NAME_LENGTH, 0, NULL) < 0) {
         return false;
     }
 
@@ -114,7 +114,7 @@ bool keyleds_get_device_name(Keyleds * device, uint8_t target_id, char ** out)
     while (done < length) {
         int nread = keyleds_call(device, (uint8_t*)buffer + done, length - done,
                                  target_id, KEYLEDS_FEATURE_NAME, F_GET_NAME,
-                                 1, done);
+                                 1, (uint8_t[]){done});
         if (nread < 0) {
             free(buffer);
             return false;
@@ -136,7 +136,7 @@ bool keyleds_get_device_type(Keyleds * device, uint8_t target_id, keyleds_device
     assert(out != NULL);
 
     if (keyleds_call(device, data, (unsigned)sizeof(data),
-                     target_id, KEYLEDS_FEATURE_NAME, G_GET_TYPE, 0) < 0) {
+                     target_id, KEYLEDS_FEATURE_NAME, G_GET_TYPE, 0, NULL) < 0) {
         return false;
     }
 

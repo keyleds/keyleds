@@ -20,7 +20,6 @@
 
 #include "config.h"
 #include "keyleds.h"
-#include "keyleds/command.h"
 #include "keyleds/device.h"
 #include "keyleds/error.h"
 #include "keyleds/features.h"
@@ -48,7 +47,7 @@ bool keyleds_get_block_info(Keyleds * device, uint8_t target_id,
     assert(out != NULL);
 
     if (keyleds_call(device, data, (unsigned)sizeof(data),
-                     target_id, KEYLEDS_FEATURE_LEDS, F_GET_KEYBLOCKS, 0) < 0) {
+                     target_id, KEYLEDS_FEATURE_LEDS, F_GET_KEYBLOCKS, 0, NULL) < 0) {
         return false;
     }
 
@@ -71,7 +70,7 @@ bool keyleds_get_block_info(Keyleds * device, uint8_t target_id,
 
         if (keyleds_call(device, data, (unsigned)sizeof(data),
                          target_id, KEYLEDS_FEATURE_LEDS, F_GET_BLOCK_INFO,
-                         2, block_id >> 8, block_id) < 0) { continue; }
+                         2, (uint8_t[]){block_id >> 8, block_id}) < 0) { continue; }
 
         info->blocks[info_idx].block_id = block_id;
         info->blocks[info_idx].nb_keys = (uint16_t)data[0] << 8 | data[1];
@@ -105,9 +104,10 @@ bool keyleds_get_leds(Keyleds * device, uint8_t target_id, keyleds_block_id_t bl
         int data_size;
         unsigned data_offset;
 
-        data_size = keyleds_call(device, data, (unsigned)sizeof(data),
+        data_size = keyleds_call(device, data, sizeof(data),
                                  target_id, KEYLEDS_FEATURE_LEDS, F_GET_LEDS,
-                                 4, block_id >> 8, block_id, offset >> 8, offset);
+                                 4, (uint8_t[]){block_id >> 8, block_id,
+                                                offset >> 8, offset});
         if (data_size < 0) { return false; }
         if (data[2] != (offset >> 8) ||
             data[3] != (offset & 0x00ff)) {
@@ -131,48 +131,36 @@ bool keyleds_get_leds(Keyleds * device, uint8_t target_id, keyleds_block_id_t bl
 bool keyleds_set_leds(Keyleds * device, uint8_t target_id, keyleds_block_id_t block_id,
                       struct keyleds_key_color * keys, unsigned keys_nb)
 {
-    struct keyleds_command * command, * response;
     unsigned per_call = (device->max_report_size - 3 - 4) / 4;
-    uint8_t feature_idx;
     unsigned offset, idx;
-    bool result = true;
 
     assert(device != NULL);
     assert((unsigned)block_id <= UINT16_MAX);
     assert(keys != NULL);
     assert(keys_nb <= UINT16_MAX);
 
-    feature_idx = keyleds_get_feature_index(device, target_id, KEYLEDS_FEATURE_LEDS);
-    if (feature_idx == 0) { return false; }
-
-    command = keyleds_command_alloc(
-        target_id, feature_idx, F_SET_LEDS, device->app_id, 4 + per_call * 4
-    );
-    response = keyleds_command_alloc_empty(0);
+    uint8_t data[4 + per_call * 4];
+    data[0] = (uint8_t)(block_id >> 8);
+    data[1] = (uint8_t)(block_id >> 0);
 
     for (offset = 0; offset < keys_nb; offset += per_call) {
         unsigned batch_length = offset + per_call > keys_nb ? keys_nb - offset : per_call;
-        command->data[0] = (uint8_t)(block_id >> 8);
-        command->data[1] = (uint8_t)(block_id >> 0);
-        command->data[2] = (uint8_t)(batch_length >> 8);
-        command->data[3] = (uint8_t)(batch_length >> 0);
+        data[2] = (uint8_t)(batch_length >> 8);
+        data[3] = (uint8_t)(batch_length >> 0);
         for (idx = 0; idx < batch_length; idx += 1) {
-            command->data[4 + idx * 4 + 0] = keys[offset + idx].id;
-            command->data[4 + idx * 4 + 1] = keys[offset + idx].red;
-            command->data[4 + idx * 4 + 2] = keys[offset + idx].green;
-            command->data[4 + idx * 4 + 3] = keys[offset + idx].blue;
+            data[4 + idx * 4 + 0] = keys[offset + idx].id;
+            data[4 + idx * 4 + 1] = keys[offset + idx].red;
+            data[4 + idx * 4 + 2] = keys[offset + idx].green;
+            data[4 + idx * 4 + 3] = keys[offset + idx].blue;
         }
-        command->length = 4 + batch_length * 4;
 
-        if (!keyleds_call_command(device, command, response)) {
-            result = false;
-            break;
+        if (keyleds_call(device, NULL, 0,
+                         target_id, KEYLEDS_FEATURE_LEDS, F_SET_LEDS,
+                         4 + batch_length * 4, data) < 0) {
+            return false;
         }
     }
-
-    keyleds_command_free(command);
-    keyleds_command_free(response);
-    return result;
+    return true;
 }
 
 bool keyleds_set_led_block(Keyleds * device, uint8_t target_id, keyleds_block_id_t block_id,
@@ -181,11 +169,12 @@ bool keyleds_set_led_block(Keyleds * device, uint8_t target_id, keyleds_block_id
     assert(device != NULL);
     assert((unsigned)block_id <= UINT16_MAX);
     return keyleds_call(device, NULL, 0, target_id, KEYLEDS_FEATURE_LEDS, F_SET_BLOCK_LEDS,
-                        5, block_id >> 8, block_id, red, green, blue) >= 0;
+                        5, (uint8_t[]){block_id >> 8, block_id, red, green, blue}) >= 0;
 }
 
 bool keyleds_commit_leds(Keyleds * device, uint8_t target_id)
 {
     assert(device != NULL);
-    return keyleds_call(device, NULL, 0, target_id, KEYLEDS_FEATURE_LEDS, F_COMMIT, 0) >= 0;
+    return keyleds_call(device, NULL, 0, target_id, KEYLEDS_FEATURE_LEDS, F_COMMIT,
+                        0, NULL) >= 0;
 }

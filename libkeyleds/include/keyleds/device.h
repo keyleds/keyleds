@@ -3,8 +3,6 @@
 
 #include <stdint.h>
 
-struct keyleds_command;
-
 struct keyleds_device_reports {
     uint8_t     id;
     uint8_t     size;
@@ -31,12 +29,27 @@ struct keyleds_device {
     struct keyleds_device_feature * features;   /* feature index cache */
 };
 
-bool keyleds_send(Keyleds * device, const struct keyleds_command * command);
-bool keyleds_receive(Keyleds * device, struct keyleds_command * response);
-bool keyleds_call_command(Keyleds * device, const struct keyleds_command * command,
-                          struct keyleds_command * response);
-int keyleds_call(Keyleds * device, /*@null@*/ /*@out@*/ uint8_t * result, unsigned result_len,
+/****************************************************************************/
+/* Core functions */
+
+bool keyleds_send(Keyleds * device, uint8_t target_id, uint8_t feature_idx,
+                  uint8_t function, size_t length, const uint8_t * data);
+bool keyleds_receive(Keyleds * device, uint8_t target_id, uint8_t feature_idx,
+                     uint8_t * message, size_t * size);
+int keyleds_call(Keyleds * device, /*@null@*/ /*@out@*/ uint8_t * result, size_t result_len,
                  uint8_t target_id, uint16_t feature_id, uint8_t function,
-                 unsigned length, ...);
+                 size_t length, const uint8_t * data);
+
+/****************************************************************************/
+/* Helpers */
+
+static inline const uint8_t * keyleds_response_data(Keyleds * device, const uint8_t * message)
+{
+    (void)device;
+    return message + 4;
+}
+
+/****************************************************************************/
+
 
 #endif
