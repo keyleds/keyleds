@@ -56,21 +56,55 @@ std::pair<std::string, std::ifstream> Service::openLayout(const Device & device)
     throw std::runtime_error("layout " + fileName + " not found");
 }
 
-void Service::onDeviceAdded(const device::DeviceDescription & device)
+void Service::onDeviceAdded(const device::DeviceDescription & description)
 {
     try {
-        m_devices.emplace(std::make_pair(device.devPath(), Device(device.devNode())));
-        std::cout <<"Device added: " <<device.devPath() <<std::endl;
+        auto usbDevDescription = description.parentWithType("usb", "usb_device");
+
+        // Open device
+        auto & device = m_devices.emplace(std::make_pair(
+            description.devPath(), Device(description.devNode())
+        )).first->second;
+
+        // Load layout description
+        std::unique_ptr<keyleds::Layout> layout;
+        if (device.hasLayout()) {
+            try {
+                auto layoutFile = openLayout(device);
+                try {
+                    layout = std::make_unique<keyleds::Layout>(layoutFile.second);
+                } catch (keyleds::Layout::ParseError & error) {
+                    std::cerr <<"Error in layout " <<layoutFile.first
+                            <<" line " <<error.line()
+                            <<": " <<error.what() <<std::endl;
+                } catch (std::exception & error) {
+                    std::cerr <<"Error in layout " <<layoutFile.first
+                            <<": " <<error.what() <<std::endl;
+                }
+            } catch (std::exception & error) {
+                std::cerr <<"Error opening layout for " <<description.devNode() <<": "
+                          <<error.what() <<std::endl;
+            }
+        }
+
+        // Write to the logs
+        std::cout <<"Added device " <<description.devNode()
+                  <<": serial " <<usbDevDescription.attributes().at("serial")
+                  <<", model " <<device.model()
+                  <<" firmware " <<device.firmware()
+                  <<", <" <<device.name() <<">" <<std::endl;
+
     } catch (Device::error & error) {
-        std::cerr <<"Not opening device: " <<error.what() <<std::endl;
+        std::cerr <<"Not opening device " <<description.devNode() <<": " <<error.what() <<std::endl;
     }
 }
 
-void Service::onDeviceRemoved(const device::DeviceDescription & device)
+void Service::onDeviceRemoved(const device::DeviceDescription & description)
 {
-    auto it = m_devices.find(device.devPath());
+    auto it = m_devices.find(description.devPath());
     if (it != m_devices.end()) {
+        auto usbDevDescription = description.parentWithType("usb", "usb_device");
+        std::cout <<"Removing device " <<usbDevDescription.attributes().at("serial") <<std::endl;
         m_devices.erase(it);
-        std::cout <<"Device removed: " <<device.devPath() <<std::endl;
     }
 }

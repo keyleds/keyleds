@@ -21,13 +21,6 @@ typedef struct {
 } KeyledsConfig;
 
 typedef struct {
-    uint8_t         red;
-    uint8_t         green;
-    uint8_t         blue;
-    uint8_t         alpha;
-} KeyledsColor;
-
-typedef struct {
     unsigned        block_id;       /**< key block the key belongs to */
     unsigned        scancode;       /**< keyboard code for key */
     unsigned        evcode;         /**< event code for key (event device) */

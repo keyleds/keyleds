@@ -1,7 +1,9 @@
 #include <signal.h>
 #include <QCoreApplication>
 #include <QTimer>
+#include <cstdlib>
 #include <iostream>
+#include <locale.h>
 #include "config.h"
 #include "keyledsd/Configuration.h"
 #include "keyledsd/Service.h"
@@ -10,20 +12,25 @@ static void quit_handler(int) { QCoreApplication::quit(); }
 
 int main(int argc, char * argv[])
 {
-    // Load configuration
     keyleds::Configuration configuration;
-    try {
-        configuration = keyleds::Configuration::loadFile("keyledsd.conf");
-    } catch (std::exception & error) {
-        std::cerr <<"Configuration error: " <<error.what() <<std::endl;
-        return 1;
-    }
 
     // Create event loop
     QCoreApplication app(argc, argv);
     app.setOrganizationDomain("etherdream.org");
     app.setApplicationName("keyledsd");
     app.setApplicationVersion(KEYLEDSD_VERSION_STR);
+
+    ::setlocale(LC_NUMERIC, "C"); // we deal with system stuff and config files
+
+    // Load configuration
+    const char * confFilePath = ::getenv("CONFIG");
+    if (confFilePath == NULL) { confFilePath = KEYLEDSD_CONFIG_PATH; }
+    try {
+        configuration = keyleds::Configuration::loadFile(confFilePath);
+    } catch (std::exception & error) {
+        std::cerr <<"Error reading " <<confFilePath <<": " <<error.what() <<std::endl;
+        return 1;
+    }
 
     // Setup application components
     auto service = new keyleds::Service(configuration, &app);
