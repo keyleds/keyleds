@@ -3,6 +3,13 @@ project(keyledsd CXX)
 include(CheckCXXSourceCompiles)
 
 ##############################################################################
+# Options
+
+if(NOT KEYLEDSD_DATA_PREFIX)
+    set(KEYLEDSD_DATA_PREFIX ${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME})
+endif()
+
+##############################################################################
 # Sources
 
 # Look for header files in build directory (for config.h) and include dir
@@ -70,8 +77,10 @@ configure_file("include/config.h.in" "config.h")
 # Targets
 
 # CLI tool
-add_executable(keyledsd ${keyledsd_SRCS})
-target_link_libraries(keyledsd libkeyleds ${keyledsd_DEPS})
+add_executable(${PROJECT_NAME} ${keyledsd_SRCS})
+target_link_libraries(${PROJECT_NAME} libkeyleds ${keyledsd_DEPS})
 
 # Installing stuff (stub)
-install(TARGETS keyledsd DESTINATION bin)
+install(TARGETS ${PROJECT_NAME} DESTINATION bin)
+install(DIRECTORY layouts/ DESTINATION ${KEYLEDSD_DATA_PREFIX}
+        FILES_MATCHING PATTERN "*.xml")

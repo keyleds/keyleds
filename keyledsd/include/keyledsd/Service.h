@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <string>
+#include <utility>
 #include <vector>
 #include "config.h"
 #include "keyledsd/Device.h"
@@ -27,6 +28,9 @@ public:
 public slots:
     void        init();
     void        setActive(bool val);
+
+private:
+    std::pair<std::string, std::ifstream> openLayout(const Device &) const;
 
 private slots:
     void        onDeviceAdded(const device::DeviceDescription &);

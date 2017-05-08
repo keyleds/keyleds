@@ -17,6 +17,9 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#define KEYLEDSD_CONFIG_PATH    "/etc/keyledsd.conf"
+#define KEYLEDSD_DATA_PREFIX    "@KEYLEDSD_DATA_PREFIX@"
+
 /* Language features */
 
 #ifdef Q_MOC_RUN

@@ -1,7 +1,13 @@
+#include <iomanip>
 #include <iostream>
+#include <memory>
+#include <fstream>
+#include <sstream>
 #include "keyledsd/Configuration.h"
 #include "keyledsd/Device.h"
+#include "keyledsd/Layout.h"
 #include "keyledsd/Service.h"
+#include "config.h"
 
 using keyleds::Service;
 
@@ -28,6 +34,26 @@ void Service::setActive(bool active)
 {
     m_deviceWatcher.setActive(active);
     m_active = active;
+}
+
+std::pair<std::string, std::ifstream> Service::openLayout(const Device & device) const
+{
+    auto paths = m_configuration.layoutPaths();
+    paths.push_back(KEYLEDSD_DATA_PREFIX);
+
+    std::ostringstream fileNameBuf;
+    fileNameBuf.fill('0');
+    fileNameBuf <<device.model() <<'_' <<std::hex <<std::setw(4) <<device.layout() <<".xml";
+    auto fileName = fileNameBuf.str();
+
+    for (auto it = paths.begin(); it != paths.end(); ++it) {
+        std::string fullName = *it + '/' + fileName;
+        std::ifstream file(fullName);
+        if (file) {
+            return std::make_pair(fullName, std::move(file));
+        }
+    }
+    throw std::runtime_error("layout " + fileName + " not found");
 }
 
 void Service::onDeviceAdded(const device::DeviceDescription & device)

@@ -1,0 +1,57 @@
+Files in this directory describe the physical layout of keyboards.
+Names follow format <model>_<layout>.xml
+    model: model code from device, 6 bytes written in hexadecimal. For USB devices,
+           this is the product id on 16 bits followed by 4 0-bytes.
+    layout: layout code from device, 2 bytes written in hexadecimal.
+
+Known layouts for feature 4540:
+    0001:   American
+    0002:   International (default)
+    0003:   British
+    0004:   German
+    0005:   French
+    0007:   Russian
+    0008:   Nordic
+    0009:   Korean
+    000a:   Japanese
+    000b:   Chinese / Taiwanese
+    000d:   Swiss multilingual
+    000e:   Turkish
+    000f:   Spanish
+    0033:   Thai
+    0037:   INTL2
+
+File format is XML, with the following structure:
+    root element (any tag)
+        attributes:
+            - (str)layout: gives name of layout
+        elements:
+            <keyboard> describe a block of keys
+
+    <keyboard> element (under root element)
+        attributes:
+            - (uint)zone: the block id of the keys appearing under this keyboard node
+            - (uint)x, (uint)y: the position of the block's top left corner
+            - (uint)width, (uint)height: the dimensions of the block
+        elements:
+            <row> wrap a row of keys in the block
+
+    <row> element (under keyboard element)
+            Describe a row of keys. Row height is the height of keyboard divided by
+            number of rows. Row width is equal to that of the keyboard.
+        no attributes
+        elements:
+            <key> describe a single key or lack thereof
+
+    <key> element (under row element)
+            Describe a single slot in a row. It may either be a key (if it has
+            a code attribute) or a hole. Key height is equal to that of the row.
+            Key width is equal to that of the row divided amongst all slots,
+            weighted by their width multiplier.
+        attributes:
+            - (uint)code: key scancode as emitted by keyboard. <key> elements without a
+                            code attribute describe a hole in the layout.
+            - (str)glyph: key name. Mostly useful for keys that have no keycode at OS
+                            level, such as FN key or GameMode key.
+            - (float)width: width multiplier for this key. Defaults to 1.
+        no elements
