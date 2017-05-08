@@ -1,12 +1,16 @@
 #ifndef KEYLEDSD_KEYBOARD_H
 #define KEYLEDSD_KEYBOARD_H
 
+#include <stdint.h>
 #include <memory>
+#include "keyleds.h"
 #include "tools/DeviceWatcher.h"
-struct keyleds_device;
-struct keyleds_keyblocks_info;
 
 namespace keyleds {
+
+struct Color {
+    uint8_t red, green, blue;
+};
 
 /****************************************************************************/
 
@@ -14,16 +18,17 @@ class Device
 {
     typedef std::unique_ptr<struct keyleds_device,
                             void(*)(struct keyleds_device *)> dev_ptr;
-    typedef std::unique_ptr<struct keyleds_keyblocks_info,
-                            void (*)(struct keyleds_keyblocks_info *)> blockinfo_ptr;
 public:
-    enum Type {
-        Keyboard, Remote, NumPad, Mouse, TouchPad, TrackBall, Presenter, Receiver
-    };
+    // Transient types
+    enum Type { Keyboard, Remote, NumPad, Mouse, TouchPad, TrackBall, Presenter, Receiver };
+    typedef struct keyleds_key_color ColorDirective;
+    typedef std::vector<ColorDirective> color_directive_list;
 
-    class Key;
+    // Data
     class KeyBlock;
+    typedef std::vector<KeyBlock> block_list;
 
+    // Exceptions
     class error : public std::runtime_error
     {
     public:
@@ -37,36 +42,58 @@ public:
     Device &            operator=(const Device &) = delete;
     Device &            operator=(Device &&) = default;
 
+    // Query
     int                 socket();
-    const std::string & name() const;
-    Type                type() const;
-    const std::string & serial() const;
+    Type                type() const { return m_type; }
+    const std::string & name() const { return m_name; }
+    const std::string & model() const { return m_model; }
+    const std::string & serial() const { return m_serial; }
+    const std::string & firmware() const { return m_firmware; }
+          bool          hasLayout() const { return m_layout != KEYLEDS_KEYBOARD_LAYOUT_INVALID; }
+          int           layout() const { return m_layout; }
+    const block_list &  blocks() const { return m_blocks; }
+
+    // Manipulate
+    void                fillColor(const KeyBlock & block, Color);
+    void                setColors(const KeyBlock & block, const color_directive_list &);
+    color_directive_list getColors(const KeyBlock & block);
+    void                commitColors();
+
+private:
+    void                cacheType();
+    void                cacheName();
+    void                cacheVersion();
+    void                cacheLayout();
+    void                loadBlocks();
 
 private:
     dev_ptr             m_device;
-    std::string         m_name;
     Type                m_type;
+    std::string         m_name;
+    std::string         m_model;
     std::string         m_serial;
-    blockinfo_ptr       m_blocks;
+    std::string         m_firmware;
+    int                 m_layout;
+    block_list          m_blocks;
 };
 
-class Device::Key
-{
-public:
-};
 
 class Device::KeyBlock
 {
 public:
-    typedef std::vector<Key> key_list;
+    typedef std::vector<uint8_t> key_list;
 public:
-                        KeyBlock(unsigned id, key_list &&);
+                        KeyBlock(keyleds_block_id_t id, key_list && keys, Color maxValues)
+                            : m_id(id), m_keys(keys), m_maxValues(maxValues) {}
 
-    unsigned            id() const { return m_id; }
+    keyleds_block_id_t  id() const { return m_id; }
     const key_list &    keys() const { return m_keys; }
+    const Color &       maxValues() const { return m_maxValues; }
+
 private:
-    unsigned            m_id;
+    keyleds_block_id_t  m_id;
     key_list            m_keys;
+    Color               m_maxValues;
 };
 
 /****************************************************************************/
