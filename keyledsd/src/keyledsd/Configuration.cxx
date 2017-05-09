@@ -1,7 +1,11 @@
+#include <cstdlib>
 #include <fstream>
+#include <iostream>
 #include <memory>
+#include <sstream>
 #include <stack>
 #include <system_error>
+#include <unistd.h>
 #include "keyledsd/Configuration.h"
 #include "tools/YAMLParser.h"
 #include "config.h"
@@ -350,6 +354,43 @@ Configuration Configuration::loadFile(const std::string & path)
         std::move(builder.m_stacks),
         std::move(builder.m_devices)
     );
+}
+
+Configuration Configuration::loadArguments(int & argc, char * argv[])
+{
+    int opt;
+    std::ostringstream msgBuf;
+
+    const char * configPath = nullptr;
+    bool autoQuit = false;
+
+    ::opterr = 0;
+    while ((opt = ::getopt(argc, argv, ":c:hs")) >= 0) {
+        switch(opt) {
+        case 'c':
+            if (configPath != nullptr) {
+                throw std::runtime_error("-c option can only be specified once");
+            }
+            configPath = optarg;
+            break;
+        case 'h':
+            std::cout <<"Usage: " <<argv[0] <<" [-c path] [-s]" <<std::endl;
+            ::exit(EXIT_SUCCESS);
+        case 's':
+            autoQuit = true;
+            break;
+        case ':':
+            msgBuf <<argv[0] <<": option -- '" <<(char)::optopt <<"' requires an argument";
+            throw std::runtime_error(msgBuf.str());
+        default:
+            msgBuf <<argv[0] <<": invalid option -- '" <<(char)::optopt <<"'";
+            throw std::runtime_error(msgBuf.str());
+        }
+    }
+
+    Configuration config = loadFile(configPath != nullptr ? configPath : KEYLEDSD_CONFIG_PATH);
+    config.m_autoQuit = autoQuit;
+    return config;
 }
 
 const Configuration::Stack & Configuration::defaultStack()

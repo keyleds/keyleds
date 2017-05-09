@@ -32,6 +32,7 @@ public:
     const path_list &   layoutPaths() const { return m_layoutPaths; }
           stack_map &   stacks() { return m_stacks; }
     const stack_map &   stacks() const { return m_stacks; }
+          bool          autoQuit() const { return m_autoQuit; }
 
     void                addDeviceStack(std::string serial, std::string name)
                             { m_deviceStacks[serial] = name; }
@@ -40,6 +41,7 @@ public:
     const Stack &       stackFor(const std::string & serial) const;
 
     static Configuration loadFile(const std::string & path);
+    static Configuration loadArguments(int & argc, char * argv[]);
 
 private:
     static const Stack & defaultStack();
@@ -49,6 +51,8 @@ private:
     path_list           m_layoutPaths;
     stack_map           m_stacks;
     device_map          m_deviceStacks;
+
+    bool                m_autoQuit;
 };
 
 /****************************************************************************/

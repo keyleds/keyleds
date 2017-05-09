@@ -1,3 +1,4 @@
+#include <QCoreApplication>
 #include <iomanip>
 #include <iostream>
 #include <memory>
@@ -106,5 +107,9 @@ void Service::onDeviceRemoved(const device::DeviceDescription & description)
         auto usbDevDescription = description.parentWithType("usb", "usb_device");
         std::cout <<"Removing device " <<usbDevDescription.attributes().at("serial") <<std::endl;
         m_devices.erase(it);
+
+        if (m_devices.empty() && m_configuration.autoQuit()) {
+            QCoreApplication::quit();
+        }
     }
 }

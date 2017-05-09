@@ -1,7 +1,6 @@
 #include <signal.h>
 #include <QCoreApplication>
 #include <QTimer>
-#include <cstdlib>
 #include <iostream>
 #include <locale.h>
 #include "config.h"
@@ -23,12 +22,10 @@ int main(int argc, char * argv[])
     ::setlocale(LC_NUMERIC, "C"); // we deal with system stuff and config files
 
     // Load configuration
-    const char * confFilePath = ::getenv("CONFIG");
-    if (confFilePath == NULL) { confFilePath = KEYLEDSD_CONFIG_PATH; }
     try {
-        configuration = keyleds::Configuration::loadFile(confFilePath);
+        configuration = keyleds::Configuration::loadArguments(argc, argv);
     } catch (std::exception & error) {
-        std::cerr <<"Error reading " <<confFilePath <<": " <<error.what() <<std::endl;
+        std::cerr <<error.what() <<std::endl;
         return 1;
     }
 
