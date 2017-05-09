@@ -20,8 +20,11 @@ set(keyledsd_SRCS
     src/keyledsd/AnimationLoop.cxx
     src/keyledsd/Configuration.cxx
     src/keyledsd/Device.cxx
+    src/keyledsd/DeviceManager.cxx
+    src/keyledsd/DeviceManagerAdaptor.cxx
     src/keyledsd/Layout.cxx
     src/keyledsd/Service.cxx
+    src/keyledsd/ServiceAdaptor.cxx
     src/tools/accelerated.c
     src/tools/accelerated_mmx.c
     src/tools/accelerated_plain.c
@@ -42,7 +45,10 @@ find_package(Qt4 REQUIRED QtCore)
 qt4_wrap_cpp(moc_sources
     include/keyledsd/AnimationLoop.h
     include/keyledsd/Device.h
+    include/keyledsd/DeviceManager.h
+    include/keyledsd/DeviceManagerAdaptor.h
     include/keyledsd/Service.h
+    include/keyledsd/ServiceAdaptor.h
     include/tools/DeviceWatcher.h
     include/tools/SessionWatcher.h
 )

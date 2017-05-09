@@ -2,11 +2,12 @@
 #define KEYLEDSD_KEYLEDSSERVICE
 
 #include <QObject>
+#include <map>
+#include <memory>
 #include <string>
-#include <utility>
-#include <vector>
 #include "config.h"
-#include "keyledsd/Device.h"
+#include "keyledsd/DeviceManager.h"
+#include "tools/DeviceWatcher.h"
 #include "tools/SessionWatcher.h"
 
 namespace keyleds {
@@ -18,23 +19,27 @@ class Service : public QObject
     Q_OBJECT
     Q_PROPERTY(bool active READ active WRITE setActive);
 public:
-    typedef std::map<std::string, Device> device_map;
+    typedef std::map<std::string, std::unique_ptr<DeviceManager>> device_map;
 public:
-                Service(Configuration & configuration, QObject *parent = 0);
-                Service(const Service &) = delete;
+                        Service(Configuration & configuration, QObject *parent = 0);
+                        Service(const Service &) = delete;
 
-    bool        active() const { return m_active; }
+    Configuration &     configuration() { return m_configuration; }
+    const Configuration & configuration() const { return m_configuration; }
+    bool                active() const { return m_active; }
+    const device_map &  devices() const { return m_devices; }
 
 public slots:
-    void        init();
-    void        setActive(bool val);
+    void                init();
+    void                setActive(bool val);
 
-private:
-    std::pair<std::string, std::ifstream> openLayout(const Device &) const;
+signals:
+    void                deviceManagerAdded(keyleds::DeviceManager &);
+    void                deviceManagerRemoved(keyleds::DeviceManager &);
 
 private slots:
-    void        onDeviceAdded(const device::DeviceDescription &);
-    void        onDeviceRemoved(const device::DeviceDescription &);
+    void                onDeviceAdded(const device::DeviceDescription &);
+    void                onDeviceRemoved(const device::DeviceDescription &);
 
 private:
     Configuration &         m_configuration;
@@ -42,7 +47,7 @@ private:
     device_map              m_devices;
 
     DeviceWatcher           m_deviceWatcher;
-    SessionWatcher          m_sessionWatcher;
+    ::SessionWatcher        m_sessionWatcher;
 };
 
 };

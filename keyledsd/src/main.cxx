@@ -6,6 +6,7 @@
 #include "config.h"
 #include "keyledsd/Configuration.h"
 #include "keyledsd/Service.h"
+#include "keyledsd/ServiceAdaptor.h"
 
 static void quit_handler(int) { QCoreApplication::quit(); }
 
@@ -30,7 +31,15 @@ int main(int argc, char * argv[])
     }
 
     // Setup application components
+    auto connection = QDBusConnection::systemBus();
     auto service = new keyleds::Service(configuration, &app);
+
+    new keyleds::ServiceAdaptor(service);
+    if (!connection.registerObject("/Service", service) ||
+        !connection.registerService("org.etherdream.KeyledsService")) {
+        std::cerr <<"DBus registration failed" <<std::endl;
+        return 2;
+    }
 
     // Register signals and go
     signal(SIGINT, quit_handler);
