@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <stdio.h>
-#include "keyledsd/logging.h"
+#include "logging.h"
 
 FILE * g_debug_stream = NULL;
 int g_debug_level = LOG_ERROR;

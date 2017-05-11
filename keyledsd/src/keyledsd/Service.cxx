@@ -15,10 +15,10 @@ Service::Service(Configuration & configuration, QObject * parent)
       m_sessionWatcher(this)
 {
     m_active = false;
-    QObject::connect(&m_deviceWatcher, SIGNAL(deviceAdded(const device::DeviceDescription &)),
-                     this, SLOT(onDeviceAdded(const device::DeviceDescription &)));
-    QObject::connect(&m_deviceWatcher, SIGNAL(deviceRemoved(const device::DeviceDescription &)),
-                     this, SLOT(onDeviceRemoved(const device::DeviceDescription &)));
+    QObject::connect(&m_deviceWatcher, SIGNAL(deviceAdded(const device::Description &)),
+                     this, SLOT(onDeviceAdded(const device::Description &)));
+    QObject::connect(&m_deviceWatcher, SIGNAL(deviceRemoved(const device::Description &)),
+                     this, SLOT(onDeviceRemoved(const device::Description &)));
 }
 
 void Service::init()
@@ -32,12 +32,12 @@ void Service::setActive(bool active)
     m_active = active;
 }
 
-void Service::onDeviceAdded(const device::DeviceDescription & description)
+void Service::onDeviceAdded(const device::Description & description)
 {
     try {
         auto device = Device(description.devNode());
         auto manager = std::make_unique<DeviceManager>(
-            std::move(device), device::DeviceDescription(description), m_configuration
+            std::move(device), device::Description(description), m_configuration
         );
         emit deviceManagerAdded(*manager);
 
@@ -54,7 +54,7 @@ void Service::onDeviceAdded(const device::DeviceDescription & description)
     }
 }
 
-void Service::onDeviceRemoved(const device::DeviceDescription & description)
+void Service::onDeviceRemoved(const device::Description & description)
 {
     auto it = m_devices.find(description.devPath());
     if (it != m_devices.end()) {

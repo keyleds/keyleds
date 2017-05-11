@@ -14,11 +14,11 @@ using keyleds::DeviceManager;
 using keyleds::Layout;
 
 
-DeviceManager::DeviceManager(Device && device, device::DeviceDescription && description,
+DeviceManager::DeviceManager(Device && device, device::Description && description,
                              const Configuration & conf, QObject *parent)
     : QObject(parent),
-      m_device(std::move(device)),
       m_description(std::move(description)),
+      m_device(std::move(device)),
       m_configuration(conf),
       m_loop(20, this)
 {

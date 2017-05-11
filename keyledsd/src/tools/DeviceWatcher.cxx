@@ -4,7 +4,7 @@
 #include <stdexcept>
 #include "tools/DeviceWatcher.h"
 
-using device::DeviceDescription;
+using device::Description;
 using device::DeviceWatcher;
 using device::FilteredDeviceWatcher;
 
@@ -12,7 +12,7 @@ typedef std::unique_ptr<struct udev_enumerate,struct udev_enumerate*(*)(struct u
 
 /****************************************************************************/
 
-DeviceDescription::DeviceDescription(struct udev_device * device)
+Description::Description(struct udev_device * device)
     : m_device(nullptr, udev_device_unref)
 {
     struct udev_list_entry * first, * current;
@@ -42,7 +42,7 @@ DeviceDescription::DeviceDescription(struct udev_device * device)
     m_device.reset(udev_device_ref(device));
 }
 
-DeviceDescription::DeviceDescription(const DeviceDescription & other)
+Description::Description(const Description & other)
     : m_device(nullptr, udev_device_unref)
 {
     m_properties = other.m_properties;
@@ -51,17 +51,17 @@ DeviceDescription::DeviceDescription(const DeviceDescription & other)
     m_device.reset(udev_device_ref(other.m_device.get()));
 }
 
-DeviceDescription DeviceDescription::parent() const
+Description Description::parent() const
 {
     struct udev_device * dev = udev_device_get_parent(m_device.get());  // unowned
     if (dev == NULL) {
         throw std::logic_error("Device " + sysPath() + " has no parent");
     }
-    return DeviceDescription(dev);
+    return Description(dev);
 }
 
-DeviceDescription DeviceDescription::parentWithType(const std::string & subsystem,
-                                                    const std::string & devtype) const
+Description Description::parentWithType(const std::string & subsystem,
+                                        const std::string & devtype) const
 {
     struct udev_device * dev;   // unowned
     dev = udev_device_get_parent_with_subsystem_devtype(
@@ -72,20 +72,20 @@ DeviceDescription DeviceDescription::parentWithType(const std::string & subsyste
     if (dev == NULL) {
         throw std::logic_error("No parent with specified type for device " + sysPath());
     }
-    return DeviceDescription(dev);
+    return Description(dev);
 }
 
-std::string DeviceDescription::devPath() const { return udev_device_get_devpath(m_device.get()); }
-std::string DeviceDescription::subsystem() const { return udev_device_get_subsystem(m_device.get()); }
-std::string DeviceDescription::devType() const { return udev_device_get_devtype(m_device.get()); }
-std::string DeviceDescription::sysPath() const { return udev_device_get_syspath(m_device.get()); }
-std::string DeviceDescription::sysName() const { return udev_device_get_sysname(m_device.get()); }
-std::string DeviceDescription::sysNum() const { return udev_device_get_sysnum(m_device.get()); }
-std::string DeviceDescription::devNode() const { return udev_device_get_devnode(m_device.get()); }
-std::string DeviceDescription::driver() const { return udev_device_get_driver(m_device.get()); }
-bool DeviceDescription::isInitialized() const { return udev_device_get_is_initialized(m_device.get()); }
+std::string Description::devPath() const { return udev_device_get_devpath(m_device.get()); }
+std::string Description::subsystem() const { return udev_device_get_subsystem(m_device.get()); }
+std::string Description::devType() const { return udev_device_get_devtype(m_device.get()); }
+std::string Description::sysPath() const { return udev_device_get_syspath(m_device.get()); }
+std::string Description::sysName() const { return udev_device_get_sysname(m_device.get()); }
+std::string Description::sysNum() const { return udev_device_get_sysnum(m_device.get()); }
+std::string Description::devNode() const { return udev_device_get_devnode(m_device.get()); }
+std::string Description::driver() const { return udev_device_get_driver(m_device.get()); }
+bool Description::isInitialized() const { return udev_device_get_is_initialized(m_device.get()); }
 
-unsigned long long DeviceDescription::usecSinceInitialized() const
+unsigned long long Description::usecSinceInitialized() const
 {
     return udev_device_get_usec_since_initialized(m_device.get());
 }
@@ -129,10 +129,10 @@ void DeviceWatcher::scan()
             result.emplace(std::make_pair(syspath, std::move(it->second)));
 
         } else {
-            DeviceDescription::udev_device_ptr device(nullptr, udev_device_unref);
+            Description::udev_device_ptr device(nullptr, udev_device_unref);
             device.reset(udev_device_new_from_syspath(m_udev.get(), syspath));
             if (device != nullptr) {
-                auto description = DeviceDescription(device.get());
+                auto description = Description(device.get());
                 if (isVisible(description)) {
                     result.emplace(std::make_pair(syspath, std::move(description)));
                 }
@@ -178,8 +178,8 @@ void DeviceWatcher::setActive(bool active)
 
 void DeviceWatcher::onMonitorReady(int)
 {
-    DeviceDescription::udev_device_ptr device(udev_monitor_receive_device(m_monitor.get()),
-                                              udev_device_unref);
+    Description::udev_device_ptr device(udev_monitor_receive_device(m_monitor.get()),
+                                        udev_device_unref);
     if (device == nullptr) {
         //TODO handle error
         return;
@@ -188,7 +188,7 @@ void DeviceWatcher::onMonitorReady(int)
     const char * syspath = udev_device_get_syspath(device.get());
     QString action = udev_device_get_action(device.get());
     if (action == "add") {
-        auto description = DeviceDescription(device.get());
+        auto description = Description(device.get());
         if (isVisible(description)) {
             if (m_known.find(syspath) == m_known.end()) {
                 auto result = m_known.emplace(std::make_pair(syspath, std::move(description)));
@@ -206,7 +206,7 @@ void DeviceWatcher::onMonitorReady(int)
 
 void DeviceWatcher::setupEnumerator(struct udev_enumerate &) const { return; }
 void DeviceWatcher::setupMonitor(struct udev_monitor &) const { return; }
-bool DeviceWatcher::isVisible(const DeviceDescription &) const { return true; }
+bool DeviceWatcher::isVisible(const Description &) const { return true; }
 
 /****************************************************************************/
 
@@ -240,7 +240,7 @@ void FilteredDeviceWatcher::setupMonitor(struct udev_monitor & monitor) const
     }
 }
 
-bool FilteredDeviceWatcher::isVisible(const DeviceDescription & dev) const
+bool FilteredDeviceWatcher::isVisible(const Description & dev) const
 {
     // Check attributes that either monitor or enumerate miss
     if (!m_matchDevType.empty() && m_matchDevType != dev.devType()) {

@@ -19,7 +19,7 @@ struct udev_device;
 
 namespace device {
 
-class DeviceDescription
+class Description
 {
 public:
     typedef struct udev_device * (*udev_device_deleter)(struct udev_device*);
@@ -28,13 +28,13 @@ public:
     typedef std::vector<std::string>           tag_list;
     typedef std::map<std::string, std::string> attribute_map;
 public:
-                    DeviceDescription(struct udev_device * device);
-    explicit        DeviceDescription(const DeviceDescription & other);
-                    DeviceDescription(DeviceDescription && other) = default;
+                    Description(struct udev_device * device);
+    explicit        Description(const Description & other);
+                    Description(Description && other) = default;
 
-    DeviceDescription parent() const;
-    DeviceDescription parentWithType(const std::string & subsystem,
-                                     const std::string & devtype) const;
+    Description     parent() const;
+    Description     parentWithType(const std::string & subsystem,
+                                   const std::string & devtype) const;
 
     std::string     devPath() const;
     std::string     subsystem() const;
@@ -71,7 +71,7 @@ protected:
     typedef struct udev*(*udev_deleter)(struct udev*);
     typedef std::unique_ptr<struct udev, udev_deleter> udev_ptr;
 
-    typedef std::map<std::string, DeviceDescription> device_map;
+    typedef std::map<std::string, Description> device_map;
 public:
                         DeviceWatcher(struct udev * udev = nullptr, QObject *parent = nullptr);
                         ~DeviceWatcher();
@@ -81,13 +81,13 @@ public slots:
     void                setActive(bool active=true);
 
 signals:
-    void                deviceAdded(const device::DeviceDescription &);
-    void                deviceRemoved(const device::DeviceDescription &);
+    void                deviceAdded(const device::Description &);
+    void                deviceRemoved(const device::Description &);
 
 protected:
     virtual void        setupEnumerator(struct udev_enumerate & enumerator) const;
     virtual void        setupMonitor(struct udev_monitor & monitor) const;
-    virtual bool        isVisible(const DeviceDescription & dev) const;
+    virtual bool        isVisible(const Description & dev) const;
 
 private slots:
     void                onMonitorReady(int socket);
@@ -120,14 +120,14 @@ public:
 protected:
     void    setupEnumerator(struct udev_enumerate & enumerator) const override;
     void    setupMonitor(struct udev_monitor & monitor) const override;
-    bool    isVisible(const DeviceDescription & dev) const override;
+    bool    isVisible(const Description & dev) const override;
 
 private:
-    std::string                         m_matchSubsystem;
-    std::string                         m_matchDevType;
-    DeviceDescription::property_map     m_matchProperties;
-    DeviceDescription::tag_list         m_matchTags;
-    DeviceDescription::attribute_map    m_matchAttributes;
+    std::string                 m_matchSubsystem;
+    std::string                 m_matchDevType;
+    Description::property_map   m_matchProperties;
+    Description::tag_list       m_matchTags;
+    Description::attribute_map  m_matchAttributes;
 };
 
 /****************************************************************************/

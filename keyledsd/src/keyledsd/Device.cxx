@@ -182,7 +182,7 @@ DeviceWatcher::DeviceWatcher(struct udev * udev, QObject *parent)
     setSubsystem("hidraw");
 }
 
-bool DeviceWatcher::isVisible(const device::DeviceDescription & dev) const
+bool DeviceWatcher::isVisible(const device::Description & dev) const
 {
     auto iface = dev.parentWithType("usb", "usb_interface");
     if (std::stoul(iface.attributes().at("bInterfaceProtocol"), nullptr, 16) != 0) {

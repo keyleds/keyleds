@@ -1,6 +1,6 @@
 #include <time.h>
 #include "config.h"
-#include "keyledsd/AnimationLoop.h"
+#include "tools/AnimationLoop.h"
 
 using keyleds::AnimationLoop;
 

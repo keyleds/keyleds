@@ -2,8 +2,8 @@
 #define KEYLEDSD_DEVICEMANAGER_H
 
 #include <QObject>
-#include "keyledsd/AnimationLoop.h"
 #include "keyledsd/Device.h"
+#include "tools/AnimationLoop.h"
 #include "tools/DeviceWatcher.h"
 #include <memory>
 #include <string>
@@ -21,14 +21,13 @@ public:
     typedef std::unique_ptr<Layout> layout_ptr;
 public:
                             DeviceManager(Device && device,
-                                          device::DeviceDescription && description,
+                                          device::Description && description,
                                           const Configuration &,
                                           QObject *parent = 0);
-                            DeviceManager(DeviceManager &&) = default;
     virtual                 ~DeviceManager();
 
+    const device::Description & description() const { return m_description; }
     const Device &          device() const { return m_device; }
-    const device::DeviceDescription & description() const { return m_description; }
     const std::string &     serial() const { return m_serial; }
           bool              hasLayout() const { return m_layout != nullptr; }
     const Layout &          layout() const { return *m_layout; }
@@ -38,8 +37,8 @@ private:
     layout_ptr              loadLayout(const Device &);
 
 private:
+    device::Description     m_description;
     Device                  m_device;
-    device::DeviceDescription m_description;
     std::string             m_serial;
     const Configuration &   m_configuration;
     layout_ptr              m_layout;

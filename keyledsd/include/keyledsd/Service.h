@@ -38,8 +38,8 @@ signals:
     void                deviceManagerRemoved(keyleds::DeviceManager &);
 
 private slots:
-    void                onDeviceAdded(const device::DeviceDescription &);
-    void                onDeviceRemoved(const device::DeviceDescription &);
+    void                onDeviceAdded(const device::Description &);
+    void                onDeviceRemoved(const device::Description &);
 
 private:
     Configuration &         m_configuration;

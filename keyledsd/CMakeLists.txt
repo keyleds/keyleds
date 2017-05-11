@@ -17,7 +17,6 @@ include_directories("${PROJECT_BINARY_DIR}" "include")
 
 # List of sources
 set(keyledsd_SRCS
-    src/keyledsd/AnimationLoop.cxx
     src/keyledsd/Configuration.cxx
     src/keyledsd/Device.cxx
     src/keyledsd/DeviceManager.cxx
@@ -29,6 +28,7 @@ set(keyledsd_SRCS
     src/tools/accelerated_mmx.c
     src/tools/accelerated_plain.c
     src/tools/accelerated_sse2.c
+    src/tools/AnimationLoop.cxx
     src/tools/DeviceWatcher.cxx
     src/tools/SessionWatcher.cxx
     src/tools/YAMLParser.cxx
@@ -43,12 +43,12 @@ set_source_files_properties(src/tools/accelerated_sse2.cxx PROPERTIES COMPILE_FL
 
 find_package(Qt4 REQUIRED QtCore)
 qt4_wrap_cpp(moc_sources
-    include/keyledsd/AnimationLoop.h
     include/keyledsd/Device.h
     include/keyledsd/DeviceManager.h
     include/keyledsd/DeviceManagerAdaptor.h
     include/keyledsd/Service.h
     include/keyledsd/ServiceAdaptor.h
+    include/tools/AnimationLoop.h
     include/tools/DeviceWatcher.h
     include/tools/SessionWatcher.h
 )

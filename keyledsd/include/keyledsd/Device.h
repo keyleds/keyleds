@@ -103,7 +103,7 @@ class DeviceWatcher : public device::FilteredDeviceWatcher
     Q_OBJECT
 public:
             DeviceWatcher(struct udev * udev = nullptr, QObject *parent = nullptr);
-    bool    isVisible(const device::DeviceDescription & dev) const override;
+    bool    isVisible(const device::Description & dev) const override;
 };
 
 /****************************************************************************/
