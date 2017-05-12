@@ -25,6 +25,7 @@ set(keyledsd_SRCS
     src/keyledsd/PluginManager.cxx
     src/keyledsd/Service.cxx
     src/keyledsd/ServiceAdaptor.cxx
+    src/plugins/fill.cxx
     src/tools/accelerated.c
     src/tools/accelerated_mmx.c
     src/tools/accelerated_plain.c
