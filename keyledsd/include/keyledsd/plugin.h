@@ -18,7 +18,7 @@ typedef struct {
         const char *key;
         const char *value;
     }               entries[];
-} KeyledsConfig;
+} KeyledsdConfig;
 
 typedef struct {
     unsigned        block_id;       /**< key block the key belongs to */
@@ -49,12 +49,14 @@ typedef struct {
     KeyledsdBlock * blocks;
 } KeyledsdKeyboard;
 
-
 typedef struct {
-    const struct keyledsd_keyboard * keyboard;
-    unsigned            delta;          /**< nanoseconds */
-    KeyledsdColors *    colors;         /**< all keys as one stream */
-    KeyledsdColors *    block_keys[];   /**< pointers into colors for each block */
+    uint8_t         red, green, blue, alpha;
+} KeyledsdColor;
+
+typedef struct KeyledsdTarget {
+    unsigned        delta;          /**< nanoseconds */
+    KeyledsdColor * colors;         /**< all keys as one stream */
+    KeyledsdColor * block_keys[];   /**< pointers into colors for each block */
 } KeyledsdTarget;
 
 /****************************************************************************/
@@ -68,7 +70,7 @@ extern void keyledsd_stop_animation(const KeyledsdKeyboard *);
 
 typedef enum {
     KEYLEDSD_PLUGIN_NORMAL = 0,
-    KEYLEDSD_PLUGIN_FILTER = (1<<1)     /**< if set, render will receive previous plugin's output */
+    KEYLEDSD_PLUGIN_FILTER = (1<<1),    /**< if set, render will receive previous plugin's output */
     KEYLEDSD_PLUGIN_ONCE = (1<<2)       /**< if set, keyledsd will prevent more than one use per device */
 } keyledsd_plugin_type_t;
 
@@ -125,7 +127,7 @@ struct _keyledsd_plugin {
      *       longer accessible. This is because keyledsd reacts to the user
      *       disconnecting the device from the host.
      */
-    void *          (*destroy)(void * ptr_g, void * ptr_k, const KeyledsdKeyboard * device);
+    void            (*destroy)(void * ptr_g, void * ptr_k, const KeyledsdKeyboard * device);
 
     /** Render leds
      *
@@ -144,14 +146,14 @@ struct _keyledsd_plugin {
      *                of render() had written in it, and will be alpha-blended
      *                over the render state once this function returns.
      */
-    void            (*render)(void * ptr_g, void * ptr_k, KeyledsTarget * target);
+    void            (*render)(void * ptr_g, void * ptr_k, KeyledsdTarget * target);
 };
 
-#define KEYLEDSD_DEF_MODULE(name, fn_instantiate, fn_destroy, fn_) \
+#define KEYLEDSD_DEF_MODULE(name, type, ...) \
     extern struct _keyledsd_plugin module_def = { \
         {KEYLEDSD_PLUGIN_MAGIC0, KEYLEDSD_PLUGIN_MAGIC1}, \
-        KEYLEDSD_PLUGIN_API_VERSION, #name, \
-        fn_instantiate, fn_destroy \
+        KEYLEDSD_PLUGIN_API_VERSION, #name, type, \
+        __VA_ARGS__ \
     }
 
 #ifdef __cplusplus

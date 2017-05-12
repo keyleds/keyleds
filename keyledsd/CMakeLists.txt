@@ -22,6 +22,7 @@ set(keyledsd_SRCS
     src/keyledsd/DeviceManager.cxx
     src/keyledsd/DeviceManagerAdaptor.cxx
     src/keyledsd/Layout.cxx
+    src/keyledsd/PluginManager.cxx
     src/keyledsd/Service.cxx
     src/keyledsd/ServiceAdaptor.cxx
     src/tools/accelerated.c

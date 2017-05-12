@@ -22,6 +22,8 @@
 
 /* Language features */
 
+#define USED    __attribute__((used))
+
 #ifdef Q_MOC_RUN
 #define final       /* final */
 #endif
