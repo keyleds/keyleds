@@ -6,6 +6,7 @@
 #include "keyledsd/Configuration.h"
 #include "keyledsd/DeviceManager.h"
 #include "keyledsd/Layout.h"
+#include "keyledsd/PluginManager.h"
 #include "keyledsd/Service.h"
 #include "config.h"
 
@@ -14,7 +15,7 @@ using keyleds::DeviceManager;
 using keyleds::Layout;
 
 
-DeviceManager::DeviceManager(Device && device, device::Description && description,
+DeviceManager::DeviceManager(device::Description && description, Device && device,
                              const Configuration & conf, QObject *parent)
     : QObject(parent),
       m_description(std::move(description)),
@@ -25,6 +26,7 @@ DeviceManager::DeviceManager(Device && device, device::Description && descriptio
     auto usbDevDescription = m_description.parentWithType("usb", "usb_device");
     m_serial = usbDevDescription.attributes().at("serial");
     m_layout = loadLayout(m_device);
+    loadRenderers();
 }
 
 DeviceManager::~DeviceManager()
@@ -63,4 +65,22 @@ std::unique_ptr<Layout> DeviceManager::loadLayout(const Device & device)
         }
     }
     throw std::runtime_error("layout " + fileName + " not found");
+}
+
+void DeviceManager::loadRenderers()
+{
+    const auto & plugins = m_configuration.stackFor(m_serial).plugins();
+    auto & manager = RendererPluginManager::instance();
+
+    renderer_list renderers;
+    for (auto it = plugins.begin(); it != plugins.end(); ++it) {
+        auto plugin = manager.get(it->name());
+        if (!plugin) {
+            std::cerr <<"Plugin " <<it->name() <<" not found" <<std::endl;
+            continue;
+        }
+        renderers.push_back(plugin->createRenderer(*this, *it));
+    }
+
+    m_renderers = std::move(renderers);
 }

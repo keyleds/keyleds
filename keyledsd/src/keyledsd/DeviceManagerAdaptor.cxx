@@ -12,9 +12,3 @@ DeviceManagerAdaptor::~DeviceManagerAdaptor()
 {
     // destructor
 }
-
-QString DeviceManagerAdaptor::serial() const
-{
-    auto usbDevDescription = parent()->description().parentWithType("usb", "usb_device");
-    return usbDevDescription.attributes().at("serial").c_str();
-}

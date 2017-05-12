@@ -37,7 +37,7 @@ void Service::onDeviceAdded(const device::Description & description)
     try {
         auto device = Device(description.devNode());
         auto manager = std::make_unique<DeviceManager>(
-            std::move(device), device::Description(description), m_configuration
+            device::Description(description), std::move(device), m_configuration
         );
         emit deviceManagerAdded(*manager);
 
@@ -58,12 +58,10 @@ void Service::onDeviceRemoved(const device::Description & description)
 {
     auto it = m_devices.find(description.devPath());
     if (it != m_devices.end()) {
-        auto usbDevDescription = description.parentWithType("usb", "usb_device");
-        std::cout <<"Removing device " <<usbDevDescription.attributes().at("serial") <<std::endl;
-
         auto manager = std::move(it->second);
         m_devices.erase(it);
 
+        std::cout <<"Removing device " <<manager->serial() <<std::endl;
         emit deviceManagerRemoved(*manager);
 
         if (m_devices.empty() && m_configuration.autoQuit()) {
