@@ -6,7 +6,7 @@
 
 AnimationLoop::AnimationLoop(unsigned fps, QObject * parent)
     : QThread(parent),
-      m_fps(fps),
+      m_period(1000000000 / fps),
       m_paused(false),
       m_abort(false),
       m_error(0)
@@ -58,7 +58,7 @@ void AnimationLoop::run()
             int err;
             scheduleNextTick(nextTick, lastTick);
 
-            if (!render(1000000000 / m_fps)) { return; }
+            if (!render(m_period)) { return; }
 
             /* Wait until next tick, an error or told to pause/terminate */
             do {
@@ -75,7 +75,7 @@ void AnimationLoop::run()
 
 void AnimationLoop::scheduleNextTick(struct timespec & next, const struct timespec & prev)
 {
-    next.tv_nsec = prev.tv_nsec + (1000000000 / m_fps);
+    next.tv_nsec = prev.tv_nsec + m_period;
     next.tv_sec = prev.tv_sec;
     if (next.tv_nsec >= 1000000000) {
         next.tv_sec += 1;

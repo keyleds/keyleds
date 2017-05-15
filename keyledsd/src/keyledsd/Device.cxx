@@ -141,6 +141,11 @@ void Device::loadBlocks()
 
 /****************************************************************************/
 
+void Device::setTimeout(unsigned us)
+{
+    keyleds_set_timeout(m_device.get(), us);
+}
+
 bool Device::resync()
 {
     return keyleds_ping(m_device.get(), KEYLEDS_TARGET_DEFAULT);
@@ -158,6 +163,14 @@ void Device::setColors(const KeyBlock & block, const color_directive_list & colo
 {
     if (!keyleds_set_leds(m_device.get(), KEYLEDS_TARGET_DEFAULT, block.id(),
                           colors.data(), colors.size())) {
+        throw Device::error(keyleds_get_error_str(), keyleds_get_errno());
+    }
+}
+
+void Device::setColors(const KeyBlock & block, const ColorDirective colors[], size_t size)
+{
+    if (!keyleds_set_leds(m_device.get(), KEYLEDS_TARGET_DEFAULT, block.id(),
+                          colors, size)) {
         throw Device::error(keyleds_get_error_str(), keyleds_get_errno());
     }
 }

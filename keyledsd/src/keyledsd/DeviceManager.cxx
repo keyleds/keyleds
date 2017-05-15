@@ -25,7 +25,7 @@ DeviceManager::DeviceManager(device::Description && description, Device && devic
     m_renderLoop = std::make_unique<RenderLoop>(
         m_device,
         loadRenderers(m_configuration.stackFor(m_serial)),
-        20
+        16
     );
     QObject::connect(m_renderLoop.get(), SIGNAL(finished()), this, SLOT(renderLoopFinished()));
     m_renderLoop->start();

@@ -56,9 +56,11 @@ public:
     const block_list &  blocks() const { return m_blocks; }
 
     // Manipulate
+    void                setTimeout(unsigned us);
     bool                resync();
     void                fillColor(const KeyBlock & block, RGBColor);
     void                setColors(const KeyBlock & block, const color_directive_list &);
+    void                setColors(const KeyBlock & block, const ColorDirective[], size_t size);
     color_directive_list getColors(const KeyBlock & block);
     void                commitColors();
 

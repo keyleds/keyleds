@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <iostream>
 #include "keyledsd/Device.h"
 #include "keyledsd/RenderLoop.h"
@@ -63,20 +64,21 @@ bool RenderLoop::render(unsigned long nanosec)
     const auto & blocks = m_device.blocks();
     for (size_t bidx = 0; bidx < blocks.size(); ++bidx) {
         const size_t nKeys = blocks[bidx].keys().size();
-        Device::color_directive_list directives;
+        Device::ColorDirective directives[nKeys];
+        size_t nDirectives = 0;
 
         for (size_t idx = 0; idx < nKeys; ++idx) {
             if (m_state.blocks[bidx][idx] != m_buffer.blocks[bidx][idx]) {
-                directives.push_back({
+                directives[nDirectives++] = Device::ColorDirective{
                     blocks[bidx].keys().at(idx),
                     m_buffer.blocks[bidx][idx].red,
                     m_buffer.blocks[bidx][idx].green,
                     m_buffer.blocks[bidx][idx].blue
-                });
+                };
             }
         }
-        if (!directives.empty()) {
-            m_device.setColors(blocks[bidx], directives);
+        if (nDirectives > 0) {
+            m_device.setColors(blocks[bidx], directives, nDirectives);
             hasChanges = true;
         }
     }
@@ -95,6 +97,8 @@ void RenderLoop::run()
         return;
     }
 
+    m_device.setTimeout(0); // disable timeout detection
+
     try {
         for (;;) {
             try {
@@ -105,7 +109,8 @@ void RenderLoop::run()
             }
         }
     } catch (Device::error & error) {
-        if (error.code() != KEYLEDS_ERROR_TIMEDOUT) {
+        if (!((error.code() == KEYLEDS_ERROR_ERRNO && errno == ENODEV) ||
+              error.code() == KEYLEDS_ERROR_TIMEDOUT)) {
             std::cerr <<"Device error in render loop: " <<error.what() <<std::endl;
         }
     } catch (std::exception & error) {

@@ -36,7 +36,7 @@ private:
     QMutex          m_mRunStatus;
     QWaitCondition  m_cRunStatus;
 
-    unsigned        m_fps;
+    unsigned        m_period;
     bool            m_paused;
     bool            m_abort;
     int             m_error;
