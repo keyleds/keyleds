@@ -41,6 +41,7 @@ signals:
 private slots:
     void                onDeviceAdded(const device::Description &);
     void                onDeviceRemoved(const device::Description &);
+    void                onDeviceLoopFinished();
 
 private:
     Configuration &         m_configuration;

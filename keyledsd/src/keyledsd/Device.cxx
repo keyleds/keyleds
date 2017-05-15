@@ -23,7 +23,7 @@ Device::Device(const std::string & path)
 {
     m_device.reset(keyleds_open(path.c_str(), KEYLEDSD_APP_ID));
     if (m_device == nullptr) {
-        throw Device::error(keyleds_get_error_str());
+        throw Device::error(keyleds_get_error_str(), keyleds_get_errno());
     }
 
     cacheType();
@@ -37,7 +37,7 @@ void Device::cacheType()
 {
     keyleds_device_type_t type;
     if (!keyleds_get_device_type(m_device.get(), KEYLEDS_TARGET_DEFAULT, &type)) {
-        throw Device::error(keyleds_get_error_str());
+        throw Device::error(keyleds_get_error_str(), keyleds_get_errno());
     }
     switch(type) {
     case KEYLEDS_DEVICE_TYPE_KEYBOARD:  m_type = Type::Keyboard; break;
@@ -57,7 +57,7 @@ void Device::cacheName()
 {
     char * name;
     if (!keyleds_get_device_name(m_device.get(), KEYLEDS_TARGET_DEFAULT, &name)) {
-        throw Device::error(keyleds_get_error_str());
+        throw Device::error(keyleds_get_error_str(), keyleds_get_errno());
     }
     auto name_p = std::unique_ptr<char, void(*)(void*)>(name, std::free);
     m_name = std::string(name);
@@ -67,7 +67,7 @@ void Device::cacheVersion()
 {
     struct keyleds_device_version * version;
     if (!keyleds_get_device_version(m_device.get(), KEYLEDS_TARGET_DEFAULT, &version)) {
-        throw Device::error(keyleds_get_error_str());
+        throw Device::error(keyleds_get_error_str(), keyleds_get_errno());
     }
     auto version_p = version_ptr(version, keyleds_free_device_version);
 
@@ -112,7 +112,7 @@ void Device::loadBlocks()
 
     struct keyleds_keyblocks_info * info;
     if (!keyleds_get_block_info(m_device.get(), KEYLEDS_TARGET_DEFAULT, &info)) {
-        throw Device::error(keyleds_get_error_str());
+        throw Device::error(keyleds_get_error_str(), keyleds_get_errno());
     }
     auto blockinfo_p = blockinfo_ptr(info, keyleds_free_block_info);
 
@@ -122,7 +122,7 @@ void Device::loadBlocks()
         struct keyleds_key_color keys[block.nb_keys];
         if (!keyleds_get_leds(m_device.get(), KEYLEDS_TARGET_DEFAULT, block.block_id,
                               keys, 0, block.nb_keys)) {
-            throw Device::error(keyleds_get_error_str());
+            throw Device::error(keyleds_get_error_str(), keyleds_get_errno());
         }
 
         KeyBlock::key_list key_ids;
@@ -141,11 +141,16 @@ void Device::loadBlocks()
 
 /****************************************************************************/
 
+bool Device::resync()
+{
+    return keyleds_ping(m_device.get(), KEYLEDS_TARGET_DEFAULT);
+}
+
 void Device::fillColor(const KeyBlock & block, RGBColor color)
 {
     if (!keyleds_set_led_block(m_device.get(), KEYLEDS_TARGET_DEFAULT, block.id(),
                                color.red, color.green, color.blue)) {
-        throw Device::error(keyleds_get_error_str());
+        throw Device::error(keyleds_get_error_str(), keyleds_get_errno());
     }
 }
 
@@ -153,7 +158,7 @@ void Device::setColors(const KeyBlock & block, const color_directive_list & colo
 {
     if (!keyleds_set_leds(m_device.get(), KEYLEDS_TARGET_DEFAULT, block.id(),
                           colors.data(), colors.size())) {
-        throw Device::error(keyleds_get_error_str());
+        throw Device::error(keyleds_get_error_str(), keyleds_get_errno());
     }
 }
 
@@ -162,7 +167,7 @@ Device::color_directive_list Device::getColors(const KeyBlock & block)
     color_directive_list result(block.keys().size());
     if (!keyleds_get_leds(m_device.get(), KEYLEDS_TARGET_DEFAULT, block.id(),
                           result.data(), 0, result.size())) {
-        throw Device::error(keyleds_get_error_str());
+        throw Device::error(keyleds_get_error_str(), keyleds_get_errno());
     }
     return result;
 }
@@ -170,7 +175,7 @@ Device::color_directive_list Device::getColors(const KeyBlock & block)
 void Device::commitColors()
 {
     if (!keyleds_commit_leds(m_device.get(), KEYLEDS_TARGET_DEFAULT)) {
-        throw Device::error(keyleds_get_error_str());
+        throw Device::error(keyleds_get_error_str(), keyleds_get_errno());
     }
 }
 

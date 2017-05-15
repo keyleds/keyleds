@@ -88,8 +88,29 @@ bool RenderLoop::render(unsigned long nanosec)
 
 void RenderLoop::run()
 {
-    getDeviceState(m_state);
-    AnimationLoop::run();
+    try {
+        getDeviceState(m_state);
+    } catch (Device::error & error) {
+        std::cerr <<"Device error: " <<error.what() <<std::endl;
+        return;
+    }
+
+    try {
+        for (;;) {
+            try {
+                AnimationLoop::run();
+                break;
+            } catch (Device::error & error) {
+                if (!m_device.resync()) { throw; }
+            }
+        }
+    } catch (Device::error & error) {
+        if (error.code() != KEYLEDS_ERROR_TIMEDOUT) {
+            std::cerr <<"Device error in render loop: " <<error.what() <<std::endl;
+        }
+    } catch (std::exception & error) {
+        std::cerr <<"Error in render loop: " <<error.what() <<std::endl;
+    }
 }
 
 void RenderLoop::getDeviceState(RenderTarget & state)

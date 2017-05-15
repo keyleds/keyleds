@@ -35,11 +35,17 @@ public:
           bool              hasLayout() const { return m_layout != nullptr; }
     const Layout &          layout() const { return *m_layout; }
 
+signals:
+    void                    stopped();
+
 private:
     static std::string      loadSerial(device::Description &);
     static std::string      layoutName(const Device &);
     layout_ptr              loadLayout(const Device &);
     RenderLoop::renderer_list loadRenderers(const Configuration::Stack &);
+
+private slots:
+    void                    renderLoopFinished();
 
 private:
     std::string             m_serial;

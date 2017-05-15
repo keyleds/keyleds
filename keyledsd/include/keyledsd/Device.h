@@ -30,7 +30,11 @@ public:
     class error : public std::runtime_error
     {
     public:
-                    error(std::string what) : std::runtime_error(what) {}
+                    error(std::string what, keyleds_error_t code)
+                        : std::runtime_error(what), m_code(code) {}
+        keyleds_error_t code() const { return m_code; }
+    private:
+        keyleds_error_t m_code;
     };
 
 public:
@@ -52,6 +56,7 @@ public:
     const block_list &  blocks() const { return m_blocks; }
 
     // Manipulate
+    bool                resync();
     void                fillColor(const KeyBlock & block, RGBColor);
     void                setColors(const KeyBlock & block, const color_directive_list &);
     color_directive_list getColors(const KeyBlock & block);

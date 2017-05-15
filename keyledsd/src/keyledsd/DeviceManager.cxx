@@ -27,12 +27,14 @@ DeviceManager::DeviceManager(device::Description && description, Device && devic
         loadRenderers(m_configuration.stackFor(m_serial)),
         20
     );
+    QObject::connect(m_renderLoop.get(), SIGNAL(finished()), this, SLOT(renderLoopFinished()));
     m_renderLoop->start();
 }
 
 DeviceManager::~DeviceManager()
 {
     m_renderLoop->stop();
+    m_renderLoop.reset();
 }
 
 std::string DeviceManager::loadSerial(device::Description & description)
@@ -54,7 +56,7 @@ std::unique_ptr<Layout> DeviceManager::loadLayout(const Device & device)
     if (!device.hasLayout()) { return nullptr; }
 
     auto paths = m_configuration.layoutPaths();
-    paths.push_back(KEYLEDSD_DATA_PREFIX);
+    paths.push_back(KEYLEDSD_DATA_PREFIX "/layouts");
     const auto fileName = layoutName(device);
 
     for (auto it = paths.begin(); it != paths.end(); ++it) {
@@ -90,4 +92,9 @@ keyleds::RenderLoop::renderer_list DeviceManager::loadRenderers(const Configurat
         renderers.push_back(plugin->createRenderer(*this, *it));
     }
     return renderers;
+}
+
+void DeviceManager::renderLoopFinished()
+{
+    emit stopped();
 }

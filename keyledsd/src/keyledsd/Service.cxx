@@ -47,6 +47,9 @@ void Service::onDeviceAdded(const device::Description & description)
         );
         emit deviceManagerAdded(*manager);
 
+        QObject::connect(manager.get(), SIGNAL(stopped()),
+                         this, SLOT(onDeviceLoopFinished()));
+
         std::cout <<"Opened device " <<description.devNode()
                   <<": serial " <<manager->serial()
                   <<", model " <<manager->device().model()
@@ -56,7 +59,11 @@ void Service::onDeviceAdded(const device::Description & description)
         m_devices[description.devPath()] = std::move(manager);
 
     } catch (Device::error & error) {
-        std::cerr <<"Not opening device " <<description.devNode() <<": " <<error.what() <<std::endl;
+        // Suppress hid version error, it just means it's not the kind of device we want
+        if (error.code() != KEYLEDS_ERROR_HIDVERSION) {
+            std::cerr <<"Not opening device " <<description.devNode()
+                      <<": " <<error.what() <<std::endl;
+        }
     }
 }
 
@@ -74,4 +81,10 @@ void Service::onDeviceRemoved(const device::Description & description)
             QCoreApplication::quit();
         }
     }
+}
+
+void Service::onDeviceLoopFinished()
+{
+    auto manager = static_cast<DeviceManager *>(QObject::sender());
+    onDeviceRemoved(manager->description());
 }
