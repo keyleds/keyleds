@@ -23,6 +23,7 @@ set(keyledsd_SRCS
     src/keyledsd/DeviceManagerAdaptor.cxx
     src/keyledsd/Layout.cxx
     src/keyledsd/PluginManager.cxx
+    src/keyledsd/RenderLoop.cxx
     src/keyledsd/Service.cxx
     src/keyledsd/ServiceAdaptor.cxx
     src/plugins/fill.cxx
@@ -48,6 +49,7 @@ qt4_wrap_cpp(moc_sources
     include/keyledsd/Device.h
     include/keyledsd/DeviceManager.h
     include/keyledsd/DeviceManagerAdaptor.h
+    include/keyledsd/RenderLoop.h
     include/keyledsd/Service.h
     include/keyledsd/ServiceAdaptor.h
     include/tools/AnimationLoop.h

@@ -6,26 +6,11 @@
 #include <string>
 #include "keyledsd/Configuration.h"
 #include "config.h"
-struct KeyledsdTarget;
 
 namespace keyleds {
 
 class DeviceManager;
-
-/****************************************************************************/
-/** Renderer interface
- *
- * An instance of a class supporting that interface is created for every link
- * in the rendering chain.
- */
-class IRenderer
-{
-public:
-    virtual             ~IRenderer();
-
-    virtual bool        isFilter() const = 0;
-    virtual void        render(KeyledsdTarget & target) const = 0;
-};
+class Renderer;
 
 /****************************************************************************/
 /** Renderer plugin interface
@@ -40,8 +25,8 @@ public:
     virtual std::string     name() const = 0;
     virtual bool            isUnloadable() const { return false; }
 
-    virtual std::unique_ptr<IRenderer> createRenderer(const DeviceManager &,
-                                                      const Configuration::Plugin &) = 0;
+    virtual std::unique_ptr<Renderer> createRenderer(const DeviceManager &,
+                                                     const Configuration::Plugin &) = 0;
 };
 
 /****************************************************************************/
@@ -87,8 +72,8 @@ public:
     }
 
     std::string name() const override { return m_name; }
-    std::unique_ptr<IRenderer> createRenderer(const DeviceManager & manager,
-                                              const Configuration::Plugin & conf) override
+    std::unique_ptr<Renderer> createRenderer(const DeviceManager & manager,
+                                             const Configuration::Plugin & conf) override
     {
         return std::make_unique<T>(manager, conf);
     }

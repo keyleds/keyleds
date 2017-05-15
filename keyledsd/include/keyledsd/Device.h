@@ -1,16 +1,14 @@
 #ifndef KEYLEDSD_KEYBOARD_H
 #define KEYLEDSD_KEYBOARD_H
 
-#include <stdint.h>
+#include <exception>
 #include <memory>
+#include <vector>
 #include "keyleds.h"
+#include "keyledsd/common.h"
 #include "tools/DeviceWatcher.h"
 
 namespace keyleds {
-
-struct Color {
-    uint8_t red, green, blue;
-};
 
 /****************************************************************************/
 
@@ -54,7 +52,7 @@ public:
     const block_list &  blocks() const { return m_blocks; }
 
     // Manipulate
-    void                fillColor(const KeyBlock & block, Color);
+    void                fillColor(const KeyBlock & block, RGBColor);
     void                setColors(const KeyBlock & block, const color_directive_list &);
     color_directive_list getColors(const KeyBlock & block);
     void                commitColors();
@@ -83,17 +81,17 @@ class Device::KeyBlock
 public:
     typedef std::vector<uint8_t> key_list;
 public:
-                        KeyBlock(keyleds_block_id_t id, key_list && keys, Color maxValues)
+                        KeyBlock(keyleds_block_id_t id, key_list && keys, RGBColor maxValues)
                             : m_id(id), m_keys(keys), m_maxValues(maxValues) {}
 
     keyleds_block_id_t  id() const { return m_id; }
     const key_list &    keys() const { return m_keys; }
-    const Color &       maxValues() const { return m_maxValues; }
+    const RGBColor &    maxValues() const { return m_maxValues; }
 
 private:
     keyleds_block_id_t  m_id;
     key_list            m_keys;
-    Color               m_maxValues;
+    RGBColor            m_maxValues;
 };
 
 /****************************************************************************/

@@ -134,14 +134,14 @@ void Device::loadBlocks()
         m_blocks.emplace_back(
             block.block_id,
             std::move(key_ids),
-            Color{block.red, block.green, block.blue}
+            RGBColor{block.red, block.green, block.blue}
         );
     }
 }
 
 /****************************************************************************/
 
-void Device::fillColor(const KeyBlock & block, Color color)
+void Device::fillColor(const KeyBlock & block, RGBColor color)
 {
     if (!keyleds_set_led_block(m_device.get(), KEYLEDS_TARGET_DEFAULT, block.id(),
                                color.red, color.green, color.blue)) {

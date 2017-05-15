@@ -1,82 +1,84 @@
+#include <iostream>
 #include <time.h>
 #include "config.h"
 #include "tools/AnimationLoop.h"
 
-using keyleds::AnimationLoop;
 
 AnimationLoop::AnimationLoop(unsigned fps, QObject * parent)
-    : QThread(parent), fps(fps)
+    : QThread(parent),
+      m_fps(fps),
+      m_paused(false),
+      m_abort(false),
+      m_error(0)
 {
-    paused = false;
-    abort = false;
-    error = 0;
 }
 
 AnimationLoop::~AnimationLoop()
 {
-    mRunStatus.lock();
-    abort = true;
-    cRunStatus.wakeOne();
-    mRunStatus.unlock();
+}
+
+void AnimationLoop::stop()
+{
+    m_mRunStatus.lock();
+    m_abort = true;
+    m_cRunStatus.wakeOne();
+    m_mRunStatus.unlock();
 
     wait();
 }
 
-void AnimationLoop::setPaused(bool val)
+void AnimationLoop::setPaused(bool paused)
 {
-    if (val != paused) {
-        mRunStatus.lock();
-        paused = val;
-        cRunStatus.wakeOne();
-        mRunStatus.unlock();
+    if (paused != m_paused) {
+        m_mRunStatus.lock();
+        m_paused = paused;
+        m_cRunStatus.wakeOne();
+        m_mRunStatus.unlock();
         emit pausedChanged(paused);
     }
 }
 
 void AnimationLoop::run()
 {
-    struct timespec nexttick;
+    struct timespec lastTick, nextTick;
 
-    while (!abort) {
-        mRunStatus.lock();
-        while (paused && !abort) {
-            cRunStatus.wait(&mRunStatus);
+    while (!m_abort) {
+        m_mRunStatus.lock();
+        while (m_paused && !m_abort) {
+            m_cRunStatus.wait(&m_mRunStatus);
         }
-        mRunStatus.unlock();
+        m_mRunStatus.unlock();
 
-        while (!paused && !abort) {
+        if (m_abort) { break; }
+
+        clock_gettime(CLOCK_REALTIME, &lastTick);
+        if (!render(0)) { return; }
+
+        while (!m_paused && !m_abort) {
             int err;
-            scheduleNextTick(&nexttick);
+            scheduleNextTick(nextTick, lastTick);
 
-            if (!render()) { return; }
-            emit rendered();
+            if (!render(1000000000 / m_fps)) { return; }
 
             /* Wait until next tick, an error or told to pause/terminate */
             do {
-                err = clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &nexttick, NULL);
-            } while (err == EINTR && !paused && !abort);
+                err = clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &nextTick, NULL);
+            } while (err == EINTR && !m_paused && !m_abort);
 
             if (err != 0 && err != EINTR) {
-                error = err;
+                m_error = err;
                 return;
             }
         }
     }
 }
 
-void AnimationLoop::scheduleNextTick(struct timespec * result)
+void AnimationLoop::scheduleNextTick(struct timespec & next, const struct timespec & prev)
 {
-    clock_gettime(CLOCK_REALTIME, result);
-    result->tv_nsec += 1000000000 / fps;
-    if (result->tv_nsec >= 1000000000) {
-        result->tv_sec += 1;
-        result->tv_nsec -= 1000000000;
+    next.tv_nsec = prev.tv_nsec + (1000000000 / m_fps);
+    next.tv_sec = prev.tv_sec;
+    if (next.tv_nsec >= 1000000000) {
+        next.tv_sec += 1;
+        next.tv_nsec -= 1000000000;
     }
 }
-
-bool AnimationLoop::render()
-{
-    /* TODO */
-    return true;
-}
-

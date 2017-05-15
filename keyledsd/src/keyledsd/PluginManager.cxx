@@ -1,15 +1,12 @@
 #include <dlfcn.h>
 #include <exception>
 #include <iostream>
-#include "keyledsd/plugin.h"
 #include "keyledsd/PluginManager.h"
 
-using keyleds::IRenderer;
+using keyleds::Renderer;
 using keyleds::IRendererPlugin;
 using keyleds::RendererPluginManager;
 
-
-IRenderer::~IRenderer() {}
 IRendererPlugin::~IRendererPlugin() {}
 
 void RendererPluginManager::registerPlugin(std::string name, IRendererPlugin * plugin)

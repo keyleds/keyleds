@@ -2,26 +2,26 @@
 #define KEYLEDSD_DEVICEMANAGER_H
 
 #include <QObject>
+#include "keyledsd/Configuration.h"
 #include "keyledsd/Device.h"
-#include "tools/AnimationLoop.h"
+#include "keyledsd/RenderLoop.h"
 #include "tools/DeviceWatcher.h"
+#include <list>
 #include <memory>
 #include <string>
+struct KeyledsdTarget;
 
 namespace keyleds {
 
-class Configuration;
 class Layout;
-class IRenderer;
-class Service;
+class RenderLoop;
 
 class DeviceManager : public QObject
 {
     Q_OBJECT
 public:
     typedef std::unique_ptr<Layout> layout_ptr;
-    typedef std::unique_ptr<IRenderer> renderer_ptr;
-    typedef std::list<renderer_ptr> renderer_list;
+    typedef std::unique_ptr<RenderLoop> renderloop_ptr;
 public:
                             DeviceManager(device::Description && description,
                                           Device && device,
@@ -36,19 +36,19 @@ public:
     const Layout &          layout() const { return *m_layout; }
 
 private:
+    static std::string      loadSerial(device::Description &);
     static std::string      layoutName(const Device &);
     layout_ptr              loadLayout(const Device &);
-    void                    loadRenderers();
+    RenderLoop::renderer_list loadRenderers(const Configuration::Stack &);
 
 private:
     std::string             m_serial;
     device::Description     m_description;
     Device                  m_device;
     layout_ptr              m_layout;
-    renderer_list           m_renderers;
+    renderloop_ptr          m_renderLoop;
 
     const Configuration &   m_configuration;
-    AnimationLoop           m_loop;
 };
 
 };

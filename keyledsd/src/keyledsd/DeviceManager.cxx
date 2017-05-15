@@ -3,34 +3,42 @@
 #include <iostream>
 #include <sstream>
 #include <assert.h>
-#include "keyledsd/Configuration.h"
 #include "keyledsd/DeviceManager.h"
 #include "keyledsd/Layout.h"
 #include "keyledsd/PluginManager.h"
-#include "keyledsd/Service.h"
 #include "config.h"
 
 using keyleds::Configuration;
 using keyleds::DeviceManager;
 using keyleds::Layout;
-
+using keyleds::RenderLoop;
 
 DeviceManager::DeviceManager(device::Description && description, Device && device,
                              const Configuration & conf, QObject *parent)
     : QObject(parent),
+      m_serial(loadSerial(description)),
       m_description(std::move(description)),
       m_device(std::move(device)),
-      m_configuration(conf),
-      m_loop(20, this)
+      m_configuration(conf)
 {
-    auto usbDevDescription = m_description.parentWithType("usb", "usb_device");
-    m_serial = usbDevDescription.attributes().at("serial");
     m_layout = loadLayout(m_device);
-    loadRenderers();
+    m_renderLoop = std::make_unique<RenderLoop>(
+        m_device,
+        loadRenderers(m_configuration.stackFor(m_serial)),
+        20
+    );
+    m_renderLoop->start();
 }
 
 DeviceManager::~DeviceManager()
 {
+    m_renderLoop->stop();
+}
+
+std::string DeviceManager::loadSerial(device::Description & description)
+{
+    auto usbDevDescription = description.parentWithType("usb", "usb_device");
+    return usbDevDescription.attributes().at("serial");
 }
 
 std::string DeviceManager::layoutName(const Device & device)
@@ -67,12 +75,12 @@ std::unique_ptr<Layout> DeviceManager::loadLayout(const Device & device)
     throw std::runtime_error("layout " + fileName + " not found");
 }
 
-void DeviceManager::loadRenderers()
+keyleds::RenderLoop::renderer_list DeviceManager::loadRenderers(const Configuration::Stack & conf)
 {
-    const auto & plugins = m_configuration.stackFor(m_serial).plugins();
+    const auto & plugins = conf.plugins();
     auto & manager = RendererPluginManager::instance();
 
-    renderer_list renderers;
+    RenderLoop::renderer_list renderers;
     for (auto it = plugins.begin(); it != plugins.end(); ++it) {
         auto plugin = manager.get(it->name());
         if (!plugin) {
@@ -81,6 +89,5 @@ void DeviceManager::loadRenderers()
         }
         renderers.push_back(plugin->createRenderer(*this, *it));
     }
-
-    m_renderers = std::move(renderers);
+    return renderers;
 }

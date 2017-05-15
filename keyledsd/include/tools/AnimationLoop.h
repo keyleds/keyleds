@@ -1,5 +1,5 @@
-#ifndef KEYLEDSD_ANIM_LOOP_H
-#define KEYLEDSD_ANIM_LOOP_H
+#ifndef TOOLS_ANIM_LOOP_H
+#define TOOLS_ANIM_LOOP_H
 
 #include <QMutex>
 #include <QThread>
@@ -7,42 +7,39 @@
 
 struct timespec;
 
-namespace keyleds {
-
 class AnimationLoop : public QThread
 {
     Q_OBJECT
-    Q_PROPERTY(bool paused READ isPaused WRITE setPaused NOTIFY pausedChanged);
+    Q_PROPERTY(bool paused READ paused WRITE setPaused NOTIFY pausedChanged);
+    Q_PROPERTY(int error READ error);
 
 public:
                     AnimationLoop(unsigned fps, QObject * parent = 0);
-                    ~AnimationLoop();
-    bool            isPaused() const { return paused; }
-    int             getError() const { return error; }
+                    ~AnimationLoop() override;
+
+    bool            paused() const { return m_paused; }
+    int             error() const { return m_error; }
 
 public slots:
-    void            setPaused(bool paused = true);
-
+    void            setPaused(bool paused);
+    void            stop();
 signals:
     void            pausedChanged(bool paused);
-    void            rendered(void);
 
 protected:
-    void            scheduleNextTick(struct timespec * res);
-    virtual bool    render();
+    void            scheduleNextTick(struct timespec & next, const struct timespec & prev);
+    virtual bool    render(unsigned long) = 0;
 
     void            run() override;
 
 private:
-    QMutex          mRunStatus;
-    QWaitCondition  cRunStatus;
+    QMutex          m_mRunStatus;
+    QWaitCondition  m_cRunStatus;
 
-    unsigned        fps;
-    bool            paused;
-    bool            abort;
-    int             error;
-};
-
+    unsigned        m_fps;
+    bool            m_paused;
+    bool            m_abort;
+    int             m_error;
 };
 
 #endif

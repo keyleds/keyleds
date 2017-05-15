@@ -23,6 +23,7 @@ public:
 public:
                         Service(Configuration & configuration, QObject *parent = 0);
                         Service(const Service &) = delete;
+                        ~Service() override;
 
     Configuration &     configuration() { return m_configuration; }
     const Configuration & configuration() const { return m_configuration; }

@@ -21,6 +21,12 @@ Service::Service(Configuration & configuration, QObject * parent)
                      this, SLOT(onDeviceRemoved(const device::Description &)));
 }
 
+Service::~Service()
+{
+    setActive(false);
+    m_devices.clear();
+}
+
 void Service::init()
 {
     setActive(true);
