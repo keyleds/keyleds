@@ -87,17 +87,22 @@ class Device::KeyBlock
 {
 public:
     typedef std::vector<uint8_t> key_list;
+    typedef std::vector<size_t> index_list;
 public:
-                        KeyBlock(keyleds_block_id_t id, key_list && keys, RGBColor maxValues)
-                            : m_id(id), m_keys(keys), m_maxValues(maxValues) {}
+                        KeyBlock(keyleds_block_id_t id, key_list && keys, RGBColor maxValues);
 
     keyleds_block_id_t  id() const { return m_id; }
+    const std::string & name() const { return m_name; }
     const key_list &    keys() const { return m_keys; }
     const RGBColor &    maxValues() const { return m_maxValues; }
 
+    index_list::value_type find(uint8_t id) const { return m_keysInverse[id]; }
+
 private:
     keyleds_block_id_t  m_id;
+    std::string         m_name;
     key_list            m_keys;
+    index_list          m_keysInverse;
     RGBColor            m_maxValues;
 };
 

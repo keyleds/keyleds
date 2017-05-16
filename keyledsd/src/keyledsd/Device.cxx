@@ -194,6 +194,20 @@ void Device::commitColors()
 
 /****************************************************************************/
 
+Device::KeyBlock::KeyBlock(keyleds_block_id_t id, key_list && keys, RGBColor maxValues)
+    : m_id(id),
+      m_name(keyleds_lookup_string(keyleds_block_id_names, id)),
+      m_keys(keys),
+      m_maxValues(maxValues)
+{
+    m_keysInverse.resize(256);
+    for (size_t idx = 0; idx < m_keys.size(); ++idx) {
+        m_keysInverse[m_keys[idx]] = idx;
+    }
+}
+
+/****************************************************************************/
+
 DeviceWatcher::DeviceWatcher(struct udev * udev, QObject *parent)
     : FilteredDeviceWatcher(udev, parent)
 {

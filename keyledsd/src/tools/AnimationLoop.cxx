@@ -1,4 +1,3 @@
-#include <iostream>
 #include <time.h>
 #include "config.h"
 #include "tools/AnimationLoop.h"
@@ -51,11 +50,12 @@ void AnimationLoop::run()
 
         if (m_abort) { break; }
 
-        clock_gettime(CLOCK_REALTIME, &lastTick);
+        clock_gettime(CLOCK_REALTIME, &nextTick);
         if (!render(0)) { return; }
 
         while (!m_paused && !m_abort) {
             int err;
+            lastTick = nextTick;
             scheduleNextTick(nextTick, lastTick);
 
             if (!render(m_period)) { return; }

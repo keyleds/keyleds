@@ -1,49 +1,37 @@
 #include <memory>
+#include "keyledsd/common.h"
 #include "keyledsd/DeviceManager.h"
 #include "keyledsd/PluginManager.h"
 
-using keyleds::RenderTarget;
-using keyleds::Renderer;
-using keyleds::IRendererPlugin;
-using keyleds::RendererPluginManager;
-using keyleds::RendererPlugin;
 
-class FillRenderer final : public Renderer
+class FillRenderer final : public keyleds::Renderer
 {
     const keyleds::Device & m_device;
 public:
     FillRenderer(const keyleds::DeviceManager & manager,
-                 const keyleds::Configuration::Plugin &)
+                 const keyleds::Configuration::Plugin & conf)
         : m_device(manager.device())
     {
-        m_increase = true;
-        m_red = 0;
-        m_green = 224;
-        m_blue = 255;
+        auto it = conf.items().find("color");
+        if (it != conf.items().end()) {
+            m_color = keyleds::RGBColor::parse(it->second);
+        }
     }
 
     bool isFilter() const override { return true; }
 
-    void render(unsigned long, RenderTarget & target) override
+    void render(unsigned long, keyleds::RenderTarget & target) override
     {
-        if (m_increase) {
-            if (++m_red == 255) { m_increase = false; }
-        } else {
-            if (--m_red == 0) { m_increase = true; }
-        }
         for (auto it = target.keys.begin(); it != target.keys.end(); ++it) {
-            it->red = m_red;
-            it->green = m_green;
-            it->blue = m_blue;
+            it->red = m_color.red;
+            it->green = m_color.green;
+            it->blue = m_color.blue;
             it->alpha = 255;
         }
     }
 
 private:
-    bool    m_increase;
-    uint8_t m_red;
-    uint8_t m_green;
-    uint8_t m_blue;
+    keyleds::RGBColor   m_color;
 };
 
-static const keyleds::RendererPlugin<FillRenderer> maker("fill");
+REGISTER_RENDERER("fill", FillRenderer)

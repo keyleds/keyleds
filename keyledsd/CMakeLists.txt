@@ -17,6 +17,7 @@ include_directories("${PROJECT_BINARY_DIR}" "include")
 
 # List of sources
 set(keyledsd_SRCS
+    src/keyledsd/common.cxx
     src/keyledsd/Configuration.cxx
     src/keyledsd/Device.cxx
     src/keyledsd/DeviceManager.cxx
