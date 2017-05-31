@@ -35,6 +35,7 @@ set(keyledsd_SRCS
     src/tools/AnimationLoop.cxx
     src/tools/DeviceWatcher.cxx
     src/tools/SessionWatcher.cxx
+    src/tools/XWindow.cxx
     src/tools/YAMLParser.cxx
     src/logging.cxx
     src/main.cxx
@@ -77,6 +78,9 @@ ENDIF(NOT LIBYAML)
 find_package(LibXml2 REQUIRED)
 include_directories(${LIBXML2_INCLUDE_DIR})
 set(keyledsd_DEPS ${keyledsd_DEPS} ${LIBXML2_LIBRARIES})
+
+find_package(X11)
+set(keyledsd_DEPS ${keyledsd_DEPS} ${X11_LIBRARIES} ${X11_Xinput_LIB})
 
 set(keyledsd_DEPS "${keyledsd_DEPS}"
     Qt4::QtCore Qt4::QtDBus
