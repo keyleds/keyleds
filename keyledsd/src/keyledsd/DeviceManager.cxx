@@ -2,7 +2,6 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
-#include <assert.h>
 #include "keyledsd/DeviceManager.h"
 #include "keyledsd/Layout.h"
 #include "keyledsd/PluginManager.h"
@@ -18,6 +17,7 @@ DeviceManager::DeviceManager(device::Description && description, Device && devic
     : QObject(parent),
       m_serial(loadSerial(description)),
       m_description(std::move(description)),
+      m_eventDevices(findEventDevices(m_description)),
       m_device(std::move(device)),
       m_configuration(conf)
 {
@@ -37,10 +37,24 @@ DeviceManager::~DeviceManager()
     m_renderLoop.reset();
 }
 
-std::string DeviceManager::loadSerial(device::Description & description)
+std::string DeviceManager::loadSerial(const device::Description & description)
 {
-    auto usbDevDescription = description.parentWithType("usb", "usb_device");
+    const auto usbDevDescription = description.parentWithType("usb", "usb_device");
     return usbDevDescription.attributes().at("serial");
+}
+
+DeviceManager::dev_list DeviceManager::findEventDevices(const device::Description & description)
+{
+    dev_list result;
+    const auto usbdev = description.parentWithType("usb", "usb_device");
+    const auto candidates = usbdev.descendantsWithType("input");
+    for (const auto & candidate : candidates) {
+        const auto devNode = candidate.devNode();
+        if (!devNode.empty()) {
+            result.push_back(devNode);
+        }
+    }
+    return result;
 }
 
 std::string DeviceManager::layoutName(const Device & device)

@@ -35,6 +35,7 @@ public:
     Description     parent() const;
     Description     parentWithType(const std::string & subsystem,
                                    const std::string & devtype) const;
+    std::vector<Description> descendantsWithType(const std::string & subsystem) const;
 
     std::string     devPath() const;
     std::string     subsystem() const;

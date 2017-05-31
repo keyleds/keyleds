@@ -75,14 +75,47 @@ Description Description::parentWithType(const std::string & subsystem,
     return Description(dev);
 }
 
-std::string Description::devPath() const { return udev_device_get_devpath(m_device.get()); }
-std::string Description::subsystem() const { return udev_device_get_subsystem(m_device.get()); }
-std::string Description::devType() const { return udev_device_get_devtype(m_device.get()); }
-std::string Description::sysPath() const { return udev_device_get_syspath(m_device.get()); }
-std::string Description::sysName() const { return udev_device_get_sysname(m_device.get()); }
-std::string Description::sysNum() const { return udev_device_get_sysnum(m_device.get()); }
-std::string Description::devNode() const { return udev_device_get_devnode(m_device.get()); }
-std::string Description::driver() const { return udev_device_get_driver(m_device.get()); }
+std::vector<Description> Description::descendantsWithType(const std::string & subsystem) const
+{
+    std::vector<Description> result;
+
+    auto udev = udev_device_get_udev(m_device.get());
+    udev_enumerate_ptr enumerator(udev_enumerate_new(udev), udev_enumerate_unref);
+
+    udev_enumerate_add_match_parent(enumerator.get(), m_device.get());
+    udev_enumerate_add_match_subsystem(enumerator.get(), subsystem.c_str());
+
+    if (udev_enumerate_scan_devices(enumerator.get()) < 0) {
+        return result;
+    }
+
+    struct udev_list_entry * first, * current;
+    first = udev_enumerate_get_list_entry(enumerator.get());
+
+    udev_list_entry_foreach(current, first) {
+        const char * syspath = udev_list_entry_get_name(current);
+        auto device = udev_device_ptr(
+            udev_device_new_from_syspath(udev, syspath),
+            udev_device_unref
+        );
+        if (device != nullptr) {
+            result.emplace_back(device.get());
+        }
+    }
+
+    return result;
+}
+
+static std::string safe(const char * s) { return s == nullptr ? std::string() : std::string(s); }
+
+std::string Description::devPath() const { return safe(udev_device_get_devpath(m_device.get())); }
+std::string Description::subsystem() const { return safe(udev_device_get_subsystem(m_device.get())); }
+std::string Description::devType() const { return safe(udev_device_get_devtype(m_device.get())); }
+std::string Description::sysPath() const { return safe(udev_device_get_syspath(m_device.get())); }
+std::string Description::sysName() const { return safe(udev_device_get_sysname(m_device.get())); }
+std::string Description::sysNum() const { return safe(udev_device_get_sysnum(m_device.get())); }
+std::string Description::devNode() const { return safe(udev_device_get_devnode(m_device.get())); }
+std::string Description::driver() const { return safe(udev_device_get_driver(m_device.get())); }
 bool Description::isInitialized() const { return udev_device_get_is_initialized(m_device.get()); }
 
 unsigned long long Description::usecSinceInitialized() const
