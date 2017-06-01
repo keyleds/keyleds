@@ -62,7 +62,7 @@ void AnimationLoop::run()
 
             /* Wait until next tick, an error or told to pause/terminate */
             do {
-                err = clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &nextTick, NULL);
+                err = clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &nextTick, nullptr);
             } while (err == EINTR && !m_paused && !m_abort);
 
             if (err != 0 && err != EINTR) {

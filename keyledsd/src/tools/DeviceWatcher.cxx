@@ -13,10 +13,10 @@ typedef std::unique_ptr<struct udev_enumerate,struct udev_enumerate*(*)(struct u
 /****************************************************************************/
 
 Description::Description(struct udev_device * device)
-    : m_device(nullptr, udev_device_unref)
+    : m_device(udev_device_ref(device), udev_device_unref)
 {
     struct udev_list_entry * first, * current;
-    assert(device != NULL);
+    assert(device != nullptr);
 
     first = udev_device_get_properties_list_entry(device);
     udev_list_entry_foreach(current, first) {
@@ -35,26 +35,24 @@ Description::Description(struct udev_device * device)
     udev_list_entry_foreach(current, first) {
         std::string key(udev_list_entry_get_name(current));
         const char * val = udev_device_get_sysattr_value(device, key.c_str());
-        if (val != NULL) {
+        if (val != nullptr) {
             m_attributes[key] = val;
         }
     }
-    m_device.reset(udev_device_ref(device));
 }
 
 Description::Description(const Description & other)
-    : m_device(nullptr, udev_device_unref)
+    : m_device(udev_device_ref(other.m_device.get()), udev_device_unref)
 {
     m_properties = other.m_properties;
     m_tags = other.m_tags;
     m_attributes = other.m_attributes;
-    m_device.reset(udev_device_ref(other.m_device.get()));
 }
 
 Description Description::parent() const
 {
-    struct udev_device * dev = udev_device_get_parent(m_device.get());  // unowned
-    if (dev == NULL) {
+    auto dev = udev_device_get_parent(m_device.get());  // unowned
+    if (dev == nullptr) {
         throw std::logic_error("Device " + sysPath() + " has no parent");
     }
     return Description(dev);
@@ -63,13 +61,12 @@ Description Description::parent() const
 Description Description::parentWithType(const std::string & subsystem,
                                         const std::string & devtype) const
 {
-    struct udev_device * dev;   // unowned
-    dev = udev_device_get_parent_with_subsystem_devtype(
+    auto dev = udev_device_get_parent_with_subsystem_devtype(
         m_device.get(),
-        subsystem.empty() ? NULL : subsystem.c_str(),
-        devtype.empty() ? NULL : devtype.c_str()
+        subsystem.empty() ? nullptr : subsystem.c_str(),
+        devtype.empty() ? nullptr : devtype.c_str()
     );
-    if (dev == NULL) {
+    if (dev == nullptr) {
         throw std::logic_error("No parent with specified type for device " + sysPath());
     }
     return Description(dev);
@@ -127,11 +124,10 @@ unsigned long long Description::usecSinceInitialized() const
 
 DeviceWatcher::DeviceWatcher(struct udev * udev, QObject *parent)
     : QObject(parent),
-      m_udev(nullptr, udev_unref),
+      m_udev(udev == nullptr ? udev_new() : udev_ref(udev), udev_unref),
       m_monitor(nullptr, udev_monitor_unref)
 {
     m_active = false;
-    m_udev.reset(udev == nullptr ? udev_new() : udev_ref(udev));
 }
 
 DeviceWatcher::~DeviceWatcher()
@@ -160,10 +156,11 @@ void DeviceWatcher::scan()
         auto it = m_known.find(syspath);
         if (it != m_known.end()) {
             result.emplace(std::make_pair(syspath, std::move(it->second)));
-
         } else {
-            Description::udev_device_ptr device(nullptr, udev_device_unref);
-            device.reset(udev_device_new_from_syspath(m_udev.get(), syspath));
+            Description::udev_device_ptr device(
+                udev_device_new_from_syspath(m_udev.get(), syspath),
+                udev_device_unref
+            );
             if (device != nullptr) {
                 auto description = Description(device.get());
                 if (isVisible(description)) {
@@ -173,12 +170,12 @@ void DeviceWatcher::scan()
         }
     }
 
-    for (auto i = m_known.begin(); i != m_known.end(); ++i) {
-        if (result.find(i->first) == result.end()) { emit deviceRemoved(i->second); }
+    for (const auto & entry : m_known) {
+        if (result.find(entry.first) == result.end()) { emit deviceRemoved(entry.second); }
     }
     m_known.swap(result);
-    for (auto i = m_known.begin(); i != m_known.end(); ++i) {
-        if (result.find(i->first) == result.end()) { emit deviceAdded(i->second); }
+    for (const auto & entry : m_known) {
+        if (result.find(entry.first) == result.end()) { emit deviceAdded(entry.second); }
     }
 }
 
@@ -248,14 +245,14 @@ void FilteredDeviceWatcher::setupEnumerator(struct udev_enumerate & enumerator) 
     if (!m_matchSubsystem.empty()) {
         udev_enumerate_add_match_subsystem(&enumerator, m_matchSubsystem.c_str());
     }
-    for (auto it = m_matchAttributes.begin(); it != m_matchAttributes.end(); ++it) {
-        udev_enumerate_add_match_sysattr(&enumerator, it->first.c_str(), it->second.c_str());
+    for (const auto & entry : m_matchAttributes) {
+        udev_enumerate_add_match_sysattr(&enumerator, entry.first.c_str(), entry.second.c_str());
     }
-    for (auto it = m_matchProperties.begin(); it != m_matchProperties.end(); ++it) {
-        udev_enumerate_add_match_property(&enumerator, it->first.c_str(), it->second.c_str());
+    for (const auto & entry : m_matchProperties) {
+        udev_enumerate_add_match_property(&enumerator, entry.first.c_str(), entry.second.c_str());
     }
-    for (auto it = m_matchTags.begin(); it != m_matchTags.end(); ++it) {
-        udev_enumerate_add_match_tag(&enumerator, it->c_str());
+    for (const auto & entry : m_matchTags) {
+        udev_enumerate_add_match_tag(&enumerator, entry.c_str());
     }
 }
 
@@ -265,7 +262,7 @@ void FilteredDeviceWatcher::setupMonitor(struct udev_monitor & monitor) const
         udev_monitor_filter_add_match_subsystem_devtype(
             &monitor,
             m_matchSubsystem.c_str(),
-            m_matchDevType.empty() ? NULL : m_matchDevType.c_str()
+            m_matchDevType.empty() ? nullptr : m_matchDevType.c_str()
         );
     }
     for (auto it = m_matchTags.begin(); it != m_matchTags.end(); ++it) {
@@ -280,13 +277,13 @@ bool FilteredDeviceWatcher::isVisible(const Description & dev) const
         return false;
     }
 
-    for (auto it = m_matchAttributes.begin(); it != m_matchAttributes.end(); ++it) {
-        auto devit = dev.attributes().find(it->first);
-        if (devit == dev.attributes().end() || it->second != devit->second) { return false; }
+    for (const auto & entry : m_matchAttributes) {
+        auto it = dev.attributes().find(entry.first);
+        if (it == dev.attributes().end() || entry.second != it->second) { return false; }
     }
-    for (auto it = m_matchProperties.begin(); it != m_matchProperties.end(); ++it) {
-        auto devit = dev.properties().find(it->first);
-        if (devit == dev.properties().end() || it->second != devit->second) { return false; }
+    for (const auto & entry : m_matchProperties) {
+        auto it = dev.properties().find(entry.first);
+        if (it == dev.properties().end() || entry.second != it->second) { return false; }
     }
     return true;
 }

@@ -1,13 +1,14 @@
 #ifndef KEYLEDSD_COMMON_H
 #define KEYLEDSD_COMMON_H
 
-#include <stdint.h>
 #include <iosfwd>
 
 namespace keyleds {
 
+/****************************************************************************/
+
 struct RGBColor {
-    typedef uint8_t channel_type;
+    typedef unsigned char channel_type;
 
     channel_type red;
     channel_type green;
@@ -30,9 +31,10 @@ static inline std::ostream & operator<<(std::ostream & out, const RGBColor & obj
     return out;
 }
 
+/****************************************************************************/
 
 struct RGBAColor {
-    typedef uint8_t channel_type;
+    typedef unsigned char channel_type;
 
     channel_type red;
     channel_type green;
@@ -54,6 +56,8 @@ static inline std::ostream & operator<<(std::ostream & out, const RGBAColor & ob
     obj.print(out);
     return out;
 }
+
+/****************************************************************************/
 
 };
 

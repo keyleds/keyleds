@@ -8,7 +8,7 @@
 #define TOOLS_YAML_PARSER_H
 
 #include <exception>
-#include <istream>
+#include <iosfwd>
 #include <string>
 
 class YAMLParser

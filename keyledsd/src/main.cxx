@@ -31,7 +31,7 @@ int main(int argc, char * argv[])
     }
 
     // Setup application components
-    auto connection = QDBusConnection::systemBus();
+    auto connection = QDBusConnection::sessionBus();
     auto service = new keyleds::Service(configuration, &app);
 
     new keyleds::ServiceAdaptor(service);

@@ -165,11 +165,9 @@ static const std::map<std::string, RGBColor> predefinedColors = {
 
 RGBColor RGBColor::parse(const std::string & str)
 {
-    uint32_t code;
-    char * endptr;
-
     /* Attempt parsing as hex color */
-    code = (uint32_t)::strtoul(str.c_str(), &endptr, 16);
+    char * endptr;
+    auto code = uint32_t(::strtoul(str.c_str(), &endptr, 16));
     if (*endptr == '\0') {
         return RGBColor{
             (uint8_t)(code >> 16),
@@ -183,7 +181,7 @@ RGBColor RGBColor::parse(const std::string & str)
     lower.reserve(str.size());
     std::transform(str.begin(), str.end(), lower.begin(), ::tolower);
 
-    auto it = predefinedColors.find(lower);
+    const auto it = predefinedColors.find(lower);
     if (it != predefinedColors.end()) {
         return it->second;
     }
@@ -193,8 +191,8 @@ RGBColor RGBColor::parse(const std::string & str)
 
 void RGBColor::print(std::ostream & out) const
 {
-    auto flags = out.flags(std::ios_base::hex | std::ios_base::left);
-    auto fillChar = out.fill('0');
+    const auto flags = out.flags(std::ios_base::hex | std::ios_base::left);
+    const auto fillChar = out.fill('0');
     out <<'#' <<std::setw(2) <<red <<std::setw(2) <<green <<std::setw(2) <<blue;
     out.flags(flags);
     out.fill(fillChar);
@@ -202,8 +200,8 @@ void RGBColor::print(std::ostream & out) const
 
 void RGBAColor::print(std::ostream & out) const
 {
-    auto flags = out.flags(std::ios_base::hex | std::ios_base::left);
-    auto fillChar = out.fill('0');
+    const auto flags = out.flags(std::ios_base::hex | std::ios_base::left);
+    const auto fillChar = out.fill('0');
     out <<'#' <<std::setw(2) <<red <<std::setw(2) <<green <<std::setw(2) <<blue;
     out <<std::setw(2) <<alpha;
     out.flags(flags);

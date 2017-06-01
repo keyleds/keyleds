@@ -71,6 +71,7 @@ private:
     conf_map            m_items;
 };
 
+/****************************************************************************/
 
 class Configuration::Stack final
 {

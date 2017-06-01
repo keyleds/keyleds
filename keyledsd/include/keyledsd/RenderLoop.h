@@ -34,7 +34,6 @@ class Renderer
 public:
     virtual             ~Renderer();
 
-    virtual bool        isFilter() const = 0;
     virtual void        render(unsigned long nanosec, RenderTarget & target) = 0;
 };
 

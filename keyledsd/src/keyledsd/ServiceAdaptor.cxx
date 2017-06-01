@@ -22,17 +22,16 @@ ServiceAdaptor::~ServiceAdaptor()
 
 QList<QDBusObjectPath> ServiceAdaptor::devicePaths() const
 {
-    const auto & devices = parent()->devices();
     QList<QDBusObjectPath> paths;
-    for (auto it = devices.cbegin(); it != devices.cend(); ++it) {
-        paths.push_back(QDBusObjectPath(managerPath(*it->second)));
+    for (const auto & entry : parent()->devices()) {
+        paths.push_back(QDBusObjectPath(managerPath(*entry.second)));
     }
     return paths;
 }
 
 void ServiceAdaptor::onDeviceManagerAdded(keyleds::DeviceManager & manager)
 {
-    auto connection = QDBusConnection::systemBus();
+    auto connection = QDBusConnection::sessionBus();
     new keyleds::DeviceManagerAdaptor(&manager);
     if (!connection.registerObject(managerPath(manager), &manager)) {
         std::cerr <<"DBus registration of device failed" <<std::endl;

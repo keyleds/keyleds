@@ -15,7 +15,7 @@ using keyleds::RenderLoop;
 DeviceManager::DeviceManager(device::Description && description, Device && device,
                              const Configuration & conf, QObject *parent)
     : QObject(parent),
-      m_serial(loadSerial(description)),
+      m_serial(getSerial(description)),
       m_description(std::move(description)),
       m_eventDevices(findEventDevices(m_description)),
       m_device(std::move(device)),
@@ -37,7 +37,7 @@ DeviceManager::~DeviceManager()
     m_renderLoop.reset();
 }
 
-std::string DeviceManager::loadSerial(const device::Description & description)
+std::string DeviceManager::getSerial(const device::Description & description)
 {
     const auto usbDevDescription = description.parentWithType("usb", "usb_device");
     return usbDevDescription.attributes().at("serial");
@@ -73,8 +73,8 @@ std::unique_ptr<Layout> DeviceManager::loadLayout(const Device & device)
     paths.push_back(KEYLEDSD_DATA_PREFIX "/layouts");
     const auto fileName = layoutName(device);
 
-    for (auto it = paths.begin(); it != paths.end(); ++it) {
-        std::string fullName = *it + '/' + fileName;
+    for (const auto & path : paths) {
+        std::string fullName = path + '/' + fileName;
         std::ifstream file(fullName);
         if (!file) { continue; }
         try {
@@ -91,19 +91,18 @@ std::unique_ptr<Layout> DeviceManager::loadLayout(const Device & device)
     throw std::runtime_error("layout " + fileName + " not found");
 }
 
-keyleds::RenderLoop::renderer_list DeviceManager::loadRenderers(const Configuration::Stack & conf)
+keyleds::RenderLoop::renderer_list DeviceManager::loadRenderers(const Configuration::Stack & stack)
 {
-    const auto & plugins = conf.plugins();
     auto & manager = RendererPluginManager::instance();
 
     RenderLoop::renderer_list renderers;
-    for (auto it = plugins.begin(); it != plugins.end(); ++it) {
-        auto plugin = manager.get(it->name());
+    for (const auto & pluginConf : stack.plugins()) {
+        auto plugin = manager.get(pluginConf.name());
         if (!plugin) {
-            std::cerr <<"Plugin " <<it->name() <<" not found" <<std::endl;
+            std::cerr <<"Plugin " <<pluginConf.name() <<" not found" <<std::endl;
             continue;
         }
-        renderers.push_back(plugin->createRenderer(*this, *it));
+        renderers.push_back(plugin->createRenderer(*this, pluginConf));
     }
     return renderers;
 }

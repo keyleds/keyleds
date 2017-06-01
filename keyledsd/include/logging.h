@@ -30,7 +30,7 @@ extern int g_debug_level;
 #if !defined(NDEBUG) && !defined(S_SPLINT_S)
 #define LOG(level, ...) \
     do { if (g_debug_level >= LOG_##level) { \
-        FILE * stream = g_debug_stream == NULL ? stderr : g_debug_stream; \
+        FILE * stream = g_debug_stream == nullptr ? stderr : g_debug_stream; \
         (void)std::fprintf(stream, "%s:%d: ", strstr(__FILE__, "src/") + 4, __LINE__); \
         (void)std::fprintf(stream, __VA_ARGS__); \
         (void)std::fprintf(stream, "\n"); \
@@ -39,7 +39,7 @@ extern int g_debug_level;
 #else
 #define LOG(level, ...) \
     do { if (g_debug_level >= LOG_##level) { \
-        FILE * stream = g_debug_stream == NULL ? stderr : g_debug_stream; \
+        FILE * stream = g_debug_stream == nullptr ? stderr : g_debug_stream; \
         (void)std::fprintf(stream, __VA_ARGS__); \
         (void)std::fprintf(stream, "\n"); \
         (void)std::fflush(stream); \

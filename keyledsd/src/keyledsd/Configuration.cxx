@@ -173,7 +173,7 @@ class PluginState final : public StringMappingBuildState
 public:
     Configuration::Plugin result(ConfigurationBuilder & builder)
     {
-        value_type value = StringMappingBuildState::result();
+        auto value = StringMappingBuildState::result();
         auto it_name = value.find("plugin");
         if (it_name == value.end()) { throw builder.makeError("plugin configuration must have a name"); }
         std::string name = it_name->second;
@@ -343,7 +343,7 @@ const Configuration::Stack & Configuration::stackFor(const std::string & serial)
 Configuration Configuration::loadFile(const std::string & path)
 {
     auto builder = ConfigurationBuilder();
-    std::ifstream file(path, std::ios::binary);
+    auto file = std::ifstream(path, std::ios::binary);
     if (!file) {
         throw std::system_error(errno, std::generic_category());
     }
@@ -388,7 +388,7 @@ Configuration Configuration::loadArguments(int & argc, char * argv[])
         }
     }
 
-    Configuration config = loadFile(configPath != nullptr ? configPath : KEYLEDSD_CONFIG_PATH);
+    auto config = loadFile(configPath != nullptr ? configPath : KEYLEDSD_CONFIG_PATH);
     config.m_autoQuit = autoQuit;
     return config;
 }

@@ -30,8 +30,8 @@ public:
     class error : public std::runtime_error
     {
     public:
-                    error(std::string what, keyleds_error_t code)
-                        : std::runtime_error(what), m_code(code) {}
+                        error(std::string what, keyleds_error_t code)
+                         : std::runtime_error(what), m_code(code) {}
         keyleds_error_t code() const { return m_code; }
     private:
         keyleds_error_t m_code;
@@ -65,11 +65,11 @@ public:
     void                commitColors();
 
 private:
-    void                cacheType();
-    void                cacheName();
+    static dev_ptr      openDevice(const std::string &);
+    static Type         getType(struct keyleds_device *);
+    static std::string  getName(struct keyleds_device *);
+    static block_list   getBlocks(struct keyleds_device *);
     void                cacheVersion();
-    void                cacheLayout();
-    void                loadBlocks();
 
 private:
     dev_ptr             m_device;

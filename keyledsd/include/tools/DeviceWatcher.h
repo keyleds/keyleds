@@ -7,6 +7,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 class QSocketNotifier;
@@ -19,7 +20,7 @@ struct udev_device;
 
 namespace device {
 
-class Description
+class Description final
 {
 public:
     typedef struct udev_device * (*udev_device_deleter)(struct udev_device*);
@@ -53,9 +54,8 @@ public:
     const tag_list &        tags() const { return m_tags; };
     const attribute_map &   attributes() const { return m_attributes; };
 
-protected:
-    udev_device_ptr m_device;
 private:
+    udev_device_ptr m_device;
     property_map    m_properties;
     tag_list        m_tags;
     attribute_map   m_attributes;
@@ -72,7 +72,7 @@ protected:
     typedef struct udev*(*udev_deleter)(struct udev*);
     typedef std::unique_ptr<struct udev, udev_deleter> udev_ptr;
 
-    typedef std::map<std::string, Description> device_map;
+    typedef std::unordered_map<std::string, Description> device_map;
 public:
                         DeviceWatcher(struct udev * udev = nullptr, QObject *parent = nullptr);
                         ~DeviceWatcher();

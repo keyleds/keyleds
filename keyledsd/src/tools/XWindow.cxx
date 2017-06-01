@@ -52,7 +52,7 @@ std::unique_ptr<xlib::Window> xlib::Display::getActiveWindow()
 
 xlib::Display::display_ptr xlib::Display::openDisplay(const std::string & name)
 {
-    handle_type display = XOpenDisplay(name.empty() ? NULL : name.c_str());
+    handle_type display = XOpenDisplay(name.empty() ? nullptr : name.c_str());
     if (display == nullptr) {
         throw std::runtime_error("Failed to open display " + name);
     }

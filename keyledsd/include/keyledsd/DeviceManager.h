@@ -41,7 +41,7 @@ signals:
     void                    stopped();
 
 private:
-    static std::string      loadSerial(const device::Description &);
+    static std::string      getSerial(const device::Description &);
     static dev_list         findEventDevices(const device::Description &);
     static std::string      layoutName(const Device &);
     layout_ptr              loadLayout(const Device &);

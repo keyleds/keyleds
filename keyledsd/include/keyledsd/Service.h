@@ -2,9 +2,9 @@
 #define KEYLEDSD_KEYLEDSSERVICE
 
 #include <QObject>
-#include <map>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include "config.h"
 #include "keyledsd/DeviceManager.h"
 #include "tools/DeviceWatcher.h"
@@ -19,7 +19,7 @@ class Service : public QObject
     Q_OBJECT
     Q_PROPERTY(bool active READ active WRITE setActive);
 public:
-    typedef std::map<std::string, std::unique_ptr<DeviceManager>> device_map;
+    typedef std::unordered_map<std::string, std::unique_ptr<DeviceManager>> device_map;
 public:
                         Service(Configuration & configuration, QObject *parent = 0);
                         Service(const Service &) = delete;
@@ -44,12 +44,12 @@ private slots:
     void                onDeviceLoopFinished();
 
 private:
-    Configuration &         m_configuration;
-    bool                    m_active;
-    device_map              m_devices;
+    Configuration &     m_configuration;
+    bool                m_active;
+    device_map          m_devices;
 
-    DeviceWatcher           m_deviceWatcher;
-    ::SessionWatcher        m_sessionWatcher;
+    DeviceWatcher       m_deviceWatcher;
+    SessionWatcher      m_sessionWatcher;
 };
 
 };

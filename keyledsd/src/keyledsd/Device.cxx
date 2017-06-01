@@ -19,48 +19,51 @@ typedef std::unique_ptr<struct keyleds_device_version,
 /****************************************************************************/
 
 Device::Device(const std::string & path)
-    : m_device(nullptr, keyleds_close)
+    : m_device(openDevice(path)),
+      m_type(getType(m_device.get())),
+      m_name(getName(m_device.get())),
+      m_layout(keyleds_keyboard_layout(m_device.get(), KEYLEDS_TARGET_DEFAULT)),
+      m_blocks(getBlocks(m_device.get()))
 {
-    m_device.reset(keyleds_open(path.c_str(), KEYLEDSD_APP_ID));
-    if (m_device == nullptr) {
-        throw Device::error(keyleds_get_error_str(), keyleds_get_errno());
-    }
-
-    cacheType();
-    cacheName();
     cacheVersion();
-    cacheLayout();
-    loadBlocks();
 }
 
-void Device::cacheType()
+Device::dev_ptr Device::openDevice(const std::string & path)
+{
+    auto device = keyleds_open(path.c_str(), KEYLEDSD_APP_ID);
+    if (device == nullptr) {
+        throw Device::error(keyleds_get_error_str(), keyleds_get_errno());
+    }
+    return dev_ptr(device, keyleds_close);
+}
+
+Device::Type Device::getType(struct keyleds_device * device)
 {
     keyleds_device_type_t type;
-    if (!keyleds_get_device_type(m_device.get(), KEYLEDS_TARGET_DEFAULT, &type)) {
+    if (!keyleds_get_device_type(device, KEYLEDS_TARGET_DEFAULT, &type)) {
         throw Device::error(keyleds_get_error_str(), keyleds_get_errno());
     }
     switch(type) {
-    case KEYLEDS_DEVICE_TYPE_KEYBOARD:  m_type = Type::Keyboard; break;
-    case KEYLEDS_DEVICE_TYPE_REMOTE:    m_type = Type::Remote; break;
-    case KEYLEDS_DEVICE_TYPE_NUMPAD:    m_type = Type::NumPad; break;
-    case KEYLEDS_DEVICE_TYPE_MOUSE:     m_type = Type::Mouse; break;
-    case KEYLEDS_DEVICE_TYPE_TOUCHPAD:  m_type = Type::TouchPad; break;
-    case KEYLEDS_DEVICE_TYPE_TRACKBALL: m_type = Type::TrackBall; break;
-    case KEYLEDS_DEVICE_TYPE_PRESENTER: m_type = Type::Presenter; break;
-    case KEYLEDS_DEVICE_TYPE_RECEIVER:  m_type = Type::Receiver; break;
-    default:
-        throw std::logic_error("Invalid device type");
+    case KEYLEDS_DEVICE_TYPE_KEYBOARD:  return Type::Keyboard;
+    case KEYLEDS_DEVICE_TYPE_REMOTE:    return Type::Remote;
+    case KEYLEDS_DEVICE_TYPE_NUMPAD:    return Type::NumPad;
+    case KEYLEDS_DEVICE_TYPE_MOUSE:     return Type::Mouse;
+    case KEYLEDS_DEVICE_TYPE_TOUCHPAD:  return Type::TouchPad;
+    case KEYLEDS_DEVICE_TYPE_TRACKBALL: return Type::TrackBall;
+    case KEYLEDS_DEVICE_TYPE_PRESENTER: return Type::Presenter;
+    case KEYLEDS_DEVICE_TYPE_RECEIVER:  return Type::Receiver;
     }
+    throw std::logic_error("Invalid device type");
 }
 
-void Device::cacheName()
+std::string Device::getName(struct keyleds_device * device)
 {
     char * name;
-    if (!keyleds_get_device_name(m_device.get(), KEYLEDS_TARGET_DEFAULT, &name)) {
+    if (!keyleds_get_device_name(device, KEYLEDS_TARGET_DEFAULT, &name)) {
         throw Device::error(keyleds_get_error_str(), keyleds_get_errno());
     }
     auto name_p = std::unique_ptr<char, void(*)(void*)>(name, std::free);
-    m_name = std::string(name);
+    return std::string(name);
 }
 
 void Device::cacheVersion()
@@ -101,17 +104,12 @@ void Device::cacheVersion()
     }
 }
 
-void Device::cacheLayout()
+Device::block_list Device::getBlocks(struct keyleds_device * device)
 {
-    m_layout = keyleds_keyboard_layout(m_device.get(), KEYLEDS_TARGET_DEFAULT);
-}
-
-void Device::loadBlocks()
-{
-    m_blocks.clear();
+    block_list blocks;
 
     struct keyleds_keyblocks_info * info;
-    if (!keyleds_get_block_info(m_device.get(), KEYLEDS_TARGET_DEFAULT, &info)) {
+    if (!keyleds_get_block_info(device, KEYLEDS_TARGET_DEFAULT, &info)) {
         throw Device::error(keyleds_get_error_str(), keyleds_get_errno());
     }
     auto blockinfo_p = blockinfo_ptr(info, keyleds_free_block_info);
@@ -120,7 +118,7 @@ void Device::loadBlocks()
         const auto & block = info->blocks[i];
 
         struct keyleds_key_color keys[block.nb_keys];
-        if (!keyleds_get_leds(m_device.get(), KEYLEDS_TARGET_DEFAULT, block.block_id,
+        if (!keyleds_get_leds(device, KEYLEDS_TARGET_DEFAULT, block.block_id,
                               keys, 0, block.nb_keys)) {
             throw Device::error(keyleds_get_error_str(), keyleds_get_errno());
         }
@@ -131,12 +129,13 @@ void Device::loadBlocks()
             if (keys[key_idx].id != 0) { key_ids.push_back(keys[key_idx].id); }
         }
 
-        m_blocks.emplace_back(
+        blocks.emplace_back(
             block.block_id,
             std::move(key_ids),
             RGBColor{block.red, block.green, block.blue}
         );
     }
+    return blocks;
 }
 
 /****************************************************************************/

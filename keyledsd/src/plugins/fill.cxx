@@ -18,8 +18,6 @@ public:
         }
     }
 
-    bool isFilter() const override { return true; }
-
     void render(unsigned long, keyleds::RenderTarget & target) override
     {
         for (auto it = target.keys.begin(); it != target.keys.end(); ++it) {

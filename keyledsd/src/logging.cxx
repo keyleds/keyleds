@@ -17,5 +17,5 @@
 #include <stdio.h>
 #include "logging.h"
 
-FILE * g_debug_stream = NULL;
+FILE * g_debug_stream = nullptr;
 int g_debug_level = LOG_ERROR;

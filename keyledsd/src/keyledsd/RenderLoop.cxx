@@ -21,8 +21,8 @@ RenderTarget::RenderTarget(const Device & device)
     const auto & devblocks = device.blocks();
 
     size_t totalKeys = 0;
-    for (auto it = devblocks.begin(); it != devblocks.end(); ++it) {
-        totalKeys += it->keys().size();
+    for (const auto & block : devblocks) {
+        totalKeys += block.keys().size();
         totalKeys = align(totalKeys, alignment);
     }
     keys.resize(totalKeys);
@@ -55,8 +55,8 @@ RenderLoop::~RenderLoop() {}
 bool RenderLoop::render(unsigned long nanosec)
 {
     // Run all renderers
-    for (auto rit = m_renderers.begin(); rit != m_renderers.end(); ++rit) {
-        (*rit)->render(nanosec, m_buffer);
+    for (const auto & renderer : m_renderers) {
+        renderer->render(nanosec, m_buffer);
     }
 
     // Compute diff
@@ -83,8 +83,10 @@ bool RenderLoop::render(unsigned long nanosec)
         }
     }
 
+    // Commit color changes
     if (hasChanges) { m_device.commitColors(); }
     std::swap(m_state, m_buffer);
+
     return true;
 }
 

@@ -2,7 +2,8 @@
 #define KEYLEDSD_SERVICEADAPTOR_H
 
 #include <QtDBus>
-#include <QStringList>
+#include <QList>
+#include <QString>
 #include "keyledsd/Configuration.h"
 #include "keyledsd/Service.h"
 

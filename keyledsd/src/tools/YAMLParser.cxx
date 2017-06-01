@@ -63,7 +63,7 @@ private:
     static int readHandler(void * stream_ptr, unsigned char * buffer,
                            size_t size, size_t * size_read)
     {
-        std::istream & stream = *reinterpret_cast<std::istream*>(stream_ptr);
+        auto & stream = *reinterpret_cast<std::istream*>(stream_ptr);
         if (!stream.eof()) {
             stream.read(reinterpret_cast<std::istream::char_type*>(buffer), size);
             *size_read = stream.gcount();
@@ -83,7 +83,7 @@ private:
 };
 
 static const char * toStr(const yaml_char_t * str) {
-    if (str == NULL) { return ""; }
+    if (str == nullptr) { return ""; }
     return reinterpret_cast<const char *>(str);
 }
 

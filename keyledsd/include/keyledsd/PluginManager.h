@@ -1,9 +1,9 @@
 #ifndef KEYLEDSD_PLUGIN_MANAGER_H
 #define KEYLEDSD_PLUGIN_MANAGER_H
 
-#include <map>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include "keyledsd/Configuration.h"
 #include "config.h"
 
@@ -46,7 +46,7 @@ public:
 
     // Plugin management
 public:
-    typedef std::map<std::string, IRendererPlugin *> plugin_map;
+    typedef std::unordered_map<std::string, IRendererPlugin *> plugin_map;
 public:
 
     const plugin_map &      plugins() const { return m_plugins; }

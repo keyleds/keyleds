@@ -1,7 +1,7 @@
 #ifndef KEYLEDSD_LAYOUT_H
 #define KEYLEDSD_LAYOUT_H
 
-#include <stdint.h>
+#include <iosfwd>
 #include <string>
 #include <vector>
 
@@ -19,7 +19,7 @@ public:
 public:
                         Layout(std::istream & stream) { parse(stream); }
                         Layout(std::string name, key_list && keys)
-                            : m_name(name), m_keys(keys) {}
+                            : m_name(name), m_keys(keys), m_bounds(computeBounds()) {}
 
     const std::string & name() const { return m_name; }
     const key_list &    keys() const { return m_keys; }
@@ -27,7 +27,7 @@ public:
 
 private:
     void                parse(std::istream &);
-    void                computeBounds();
+    Rect                computeBounds();
 
 private:
     std::string         m_name;
@@ -39,11 +39,14 @@ private:
 
 class Layout::Key final {
 public:
-                Key(uint8_t block, uint8_t code, Rect position, std::string name)
+    typedef unsigned short block_type;
+    typedef unsigned short code_type;
+public:
+                Key(block_type block, code_type code, Rect position, std::string name)
                     : block(block), code(code), position(position), name(name) {}
 public:
-    uint8_t     block;
-    uint8_t     code;
+    block_type  block;
+    code_type   code;
     Rect        position;
     std::string name;
 };
