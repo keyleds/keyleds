@@ -34,7 +34,6 @@ set(keyledsd_SRCS
     src/tools/accelerated_sse2.c
     src/tools/AnimationLoop.cxx
     src/tools/DeviceWatcher.cxx
-    src/tools/SessionWatcher.cxx
     src/tools/XWindow.cxx
     src/tools/YAMLParser.cxx
     src/logging.cxx
@@ -56,7 +55,6 @@ qt4_wrap_cpp(moc_sources
     include/keyledsd/ServiceAdaptor.h
     include/tools/AnimationLoop.h
     include/tools/DeviceWatcher.h
-    include/tools/SessionWatcher.h
 )
 set(keyledsd_SRCS ${keyledsd_SRCS} ${moc_sources})
 

@@ -8,7 +8,6 @@
 #include "config.h"
 #include "keyledsd/DeviceManager.h"
 #include "tools/DeviceWatcher.h"
-#include "tools/SessionWatcher.h"
 
 namespace keyleds {
 
@@ -49,7 +48,6 @@ private:
     device_map          m_devices;
 
     DeviceWatcher       m_deviceWatcher;
-    SessionWatcher      m_sessionWatcher;
 };
 
 };

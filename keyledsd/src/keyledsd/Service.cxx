@@ -11,8 +11,7 @@ using keyleds::Service;
 Service::Service(Configuration & configuration, QObject * parent)
     : QObject(parent),
       m_configuration(configuration),
-      m_deviceWatcher(nullptr, this),
-      m_sessionWatcher(this)
+      m_deviceWatcher(nullptr, this)
 {
     m_active = false;
     QObject::connect(&m_deviceWatcher, SIGNAL(deviceAdded(const device::Description &)),
