@@ -22,9 +22,7 @@ class IRendererPlugin
 public:
     virtual                 ~IRendererPlugin();
 
-    virtual std::string     name() const = 0;
-    virtual bool            isUnloadable() const { return false; }
-
+    virtual const std::string & name() const noexcept = 0;
     virtual std::unique_ptr<Renderer> createRenderer(const DeviceManager &,
                                                      const Configuration::Plugin &) = 0;
 };
@@ -71,7 +69,7 @@ public:
         RendererPluginManager::instance().registerPlugin(m_name, this);
     }
 
-    std::string name() const override { return m_name; }
+    const std::string & name() const noexcept override { return m_name; }
     std::unique_ptr<Renderer> createRenderer(const DeviceManager & manager,
                                              const Configuration::Plugin & conf) override
     {

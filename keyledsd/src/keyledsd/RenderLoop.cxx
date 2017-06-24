@@ -2,6 +2,9 @@
 #include <iostream>
 #include "keyledsd/Device.h"
 #include "keyledsd/RenderLoop.h"
+#include "logging.h"
+
+LOGGING("render-loop");
 
 using keyleds::RenderTarget;
 using keyleds::Renderer;
@@ -42,8 +45,8 @@ Renderer::~Renderer() {}
 
 /****************************************************************************/
 
-RenderLoop::RenderLoop(Device & device, renderer_list && renderers, unsigned fps, QObject *parent)
-    : AnimationLoop(fps, parent),
+RenderLoop::RenderLoop(Device & device, renderer_list && renderers, unsigned fps)
+    : AnimationLoop(fps),
       m_device(device),
       m_renderers(std::move(renderers)),
       m_state(device),
@@ -55,8 +58,11 @@ RenderLoop::~RenderLoop() {}
 bool RenderLoop::render(unsigned long nanosec)
 {
     // Run all renderers
-    for (const auto & renderer : m_renderers) {
-        renderer->render(nanosec, m_buffer);
+    {
+        std::lock_guard<std::mutex> lock(m_mRenderers);
+        for (const auto & renderer : m_renderers) {
+            renderer->render(nanosec, m_buffer);
+        }
     }
 
     // Compute diff
@@ -95,7 +101,7 @@ void RenderLoop::run()
     try {
         getDeviceState(m_state);
     } catch (Device::error & error) {
-        std::cerr <<"Device error: " <<error.what() <<std::endl;
+        ERROR("device error: ", error.what());
         return;
     }
 
@@ -113,10 +119,10 @@ void RenderLoop::run()
     } catch (Device::error & error) {
         if (!((error.code() == KEYLEDS_ERROR_ERRNO && errno == ENODEV) ||
               error.code() == KEYLEDS_ERROR_TIMEDOUT)) {
-            std::cerr <<"Device error in render loop: " <<error.what() <<std::endl;
+            ERROR("device error: ", error.what());
         }
     } catch (std::exception & error) {
-        std::cerr <<"Error in render loop: " <<error.what() <<std::endl;
+        ERROR(error.what());
     }
 }
 

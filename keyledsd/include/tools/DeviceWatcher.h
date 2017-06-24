@@ -1,3 +1,8 @@
+/** C++ wrapper for libudev
+ *
+ * This wrapper presents a C++ interface for reading device information and
+ * getting notifications from libudev.
+ */
 #ifndef TOOLS_DEVICE_WATCHER_H
 #define TOOLS_DEVICE_WATCHER_H
 
@@ -16,15 +21,27 @@ struct udev_monitor;
 struct udev_enumerate;
 struct udev_device;
 
+namespace std {
+    template<> struct default_delete<struct udev> { void operator()(struct udev *) const; };
+    template<> struct default_delete<struct udev_monitor> { void operator()(struct udev_monitor *) const; };
+    template<> struct default_delete<struct udev_enumerate> { void operator()(struct udev_enumerate *) const; };
+    template<> struct default_delete<struct udev_device> { void operator()(struct udev_device *) const; };
+}
+
 /****************************************************************************/
 
 namespace device {
 
+class Error : public std::runtime_error
+{
+public:
+    Error(const std::string & what) : std::runtime_error(what) {}
+};
+
+
 class Description final
 {
 public:
-    typedef struct udev_device * (*udev_device_deleter)(struct udev_device*);
-    typedef std::unique_ptr<struct udev_device, udev_device_deleter> udev_device_ptr;
     typedef std::map<std::string, std::string> property_map;
     typedef std::vector<std::string>           tag_list;
     typedef std::map<std::string, std::string> attribute_map;
@@ -55,7 +72,7 @@ public:
     const attribute_map &   attributes() const { return m_attributes; };
 
 private:
-    udev_device_ptr m_device;
+    std::unique_ptr<struct udev_device> m_device;
     property_map    m_properties;
     tag_list        m_tags;
     attribute_map   m_attributes;
@@ -66,20 +83,15 @@ private:
 class DeviceWatcher : public QObject
 {
     Q_OBJECT
-protected:
-    typedef struct udev_monitor*(*udev_monitor_deleter)(struct udev_monitor*);
-    typedef std::unique_ptr<struct udev_monitor, udev_monitor_deleter> udev_monitor_ptr;
-    typedef struct udev*(*udev_deleter)(struct udev*);
-    typedef std::unique_ptr<struct udev, udev_deleter> udev_ptr;
-
+private:
     typedef std::unordered_map<std::string, Description> device_map;
 public:
                         DeviceWatcher(struct udev * udev = nullptr, QObject *parent = nullptr);
-                        ~DeviceWatcher();
+                        ~DeviceWatcher() override;
 
 public slots:
     void                scan();
-    void                setActive(bool active=true);
+    void                setActive(bool active);
 
 signals:
     void                deviceAdded(const device::Description &);
@@ -94,11 +106,11 @@ private slots:
     void                onMonitorReady(int socket);
 
 private:
-    bool                m_active;
-    udev_ptr            m_udev;
-    udev_monitor_ptr    m_monitor;
-    std::unique_ptr<QSocketNotifier> m_udevNotifier;
-    device_map          m_known;
+    bool                                    m_active;
+    std::unique_ptr<struct udev>            m_udev;
+    std::unique_ptr<struct udev_monitor>    m_monitor;
+    std::unique_ptr<QSocketNotifier>        m_udevNotifier;
+    device_map                              m_known;
 };
 
 /****************************************************************************/

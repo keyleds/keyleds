@@ -25,9 +25,9 @@ class Parser final
 {
 public:
     Parser(std::istream & stream)
+     : m_done(false),
+       m_hasEvent(false)
     {
-        m_done = false;
-        m_hasEvent = false;
         if (yaml_parser_initialize(&m_parser) == 0) {
             throw std::runtime_error("YAML parser initialization failed");
         }
@@ -57,11 +57,11 @@ public:
         if (event.type == YAML_STREAM_END_EVENT) { m_done = true; }
     }
 
-    bool done() const { return m_done; }
+    bool done() const noexcept { return m_done; }
 
 private:
     static int readHandler(void * stream_ptr, unsigned char * buffer,
-                           size_t size, size_t * size_read)
+                           size_t size, size_t * size_read) noexcept
     {
         auto & stream = *reinterpret_cast<std::istream*>(stream_ptr);
         if (!stream.eof()) {

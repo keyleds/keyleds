@@ -13,20 +13,34 @@ struct KeyledsdTarget;
 
 namespace keyleds {
 
+class Context;
 class Layout;
-class RenderLoop;
 
 class DeviceManager : public QObject
 {
     Q_OBJECT
+private:
+    class LoadedProfile final
+    {
+    public:
+        typedef std::vector<std::unique_ptr<Renderer>> renderer_list;
+    public:
+                            LoadedProfile(renderer_list && renderers)
+                             : m_renderers(std::move(renderers)) {}
+                            LoadedProfile(LoadedProfile &&) = default;
+        RenderLoop::renderer_list renderers() const;
+    private:
+        renderer_list   m_renderers;
+    };
+
 public:
     typedef std::unique_ptr<Layout> layout_ptr;
-    typedef std::unique_ptr<RenderLoop> renderloop_ptr;
     typedef std::vector<std::string> dev_list;
 public:
                             DeviceManager(device::Description && description,
                                           Device && device,
                                           const Configuration &,
+                                          const Context &,
                                           QObject *parent = 0);
     virtual                 ~DeviceManager();
 
@@ -37,28 +51,32 @@ public:
           bool              hasLayout() const { return m_layout != nullptr; }
     const Layout &          layout() const { return *m_layout; }
 
-signals:
-    void                    stopped();
+          bool              paused() const { return m_renderLoop.paused(); }
+
+public slots:
+    void                    setContext(const Context &);
+    void                    setPaused(bool);
+    void                    reloadConfiguration();
 
 private:
     static std::string      getSerial(const device::Description &);
     static dev_list         findEventDevices(const device::Description &);
     static std::string      layoutName(const Device &);
     layout_ptr              loadLayout(const Device &);
-    RenderLoop::renderer_list loadRenderers(const Configuration::Stack &);
-
-private slots:
-    void                    renderLoopFinished();
+    RenderLoop::renderer_list loadRenderers(const Context &);
+    LoadedProfile &         getProfile(const Configuration::Profile &);
 
 private:
+    const Configuration &   m_configuration;
+
     std::string             m_serial;
     device::Description     m_description;
     dev_list                m_eventDevices;
     Device                  m_device;
     layout_ptr              m_layout;
-    renderloop_ptr          m_renderLoop;
 
-    const Configuration &   m_configuration;
+    std::unordered_map<Configuration::Profile::id_type, LoadedProfile> m_profiles;
+    RenderLoop              m_renderLoop;
 };
 
 };

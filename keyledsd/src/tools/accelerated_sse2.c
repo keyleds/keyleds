@@ -17,7 +17,7 @@ void blend_sse2(uint8_t * restrict dst, const uint8_t * restrict src, unsigned l
     assert(length % 16 == 0);
     length /= 16;
 
-    while (length-- > 0) {
+    do {
         __m128i packed_dst = _mm_load_si128(dstv);
         __m128i packed_src = _mm_load_si128(srcv);
 
@@ -43,5 +43,5 @@ void blend_sse2(uint8_t * restrict dst, const uint8_t * restrict src, unsigned l
         _mm_store_si128(dstv, _mm_packus_epi16(final_dst0, final_dst1));
         srcv += 1;
         dstv += 1;
-    }
+    } while (--length > 0);
 }

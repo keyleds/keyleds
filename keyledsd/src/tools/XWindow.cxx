@@ -11,14 +11,14 @@ int errorHandler(Display * display, XErrorEvent * error)
 {
     throw xlib::Error(display, error);
 }
-static auto initialHandler = XSetErrorHandler(errorHandler);
+static const auto initialHandler = XSetErrorHandler(errorHandler);
 
 /****************************************************************************/
 
 xlib::Display::Display(std::string name)
-    : m_name(name),
-      m_display(openDisplay(name)),
-      m_root(*this, XDefaultRootWindow(m_display.get()))
+    : m_display(openDisplay(name)),
+      m_name(DisplayString(m_display.get())),
+      m_root(*this, DefaultRootWindow(m_display.get()))
 {
 }
 
@@ -28,7 +28,7 @@ xlib::Display::~Display()
 
 int xlib::Display::connection() const
 {
-    return XConnectionNumber(m_display.get());
+    return ConnectionNumber(m_display.get());
 }
 
 Atom xlib::Display::atom(const std::string & name) const
@@ -46,24 +46,27 @@ std::unique_ptr<xlib::Window> xlib::Display::getActiveWindow()
 {
     std::string data = m_root.getProperty(atom(activeWindowAtom), XA_WINDOW);
     ::Window handle = *reinterpret_cast<const ::Window *>(data.data());
-    if (handle == 0) { return std::unique_ptr<xlib::Window>(nullptr); }
+    if (handle == 0) { return nullptr; }
     return std::make_unique<xlib::Window>(*this, handle);
 }
 
-xlib::Display::display_ptr xlib::Display::openDisplay(const std::string & name)
+std::unique_ptr<::Display> xlib::Display::openDisplay(const std::string & name)
 {
     handle_type display = XOpenDisplay(name.empty() ? nullptr : name.c_str());
     if (display == nullptr) {
-        throw std::runtime_error("Failed to open display " + name);
+        throw xlib::Error(name.empty()
+                          ? "failed to open default display"
+                          : ("failed to open display " + name));
     }
-    return xlib::Display::display_ptr(display, XCloseDisplay);
+    return std::unique_ptr<::Display>(display);
 }
 
 /****************************************************************************/
 
 void xlib::Window::changeAttributes(unsigned long mask, const XSetWindowAttributes & attrs)
 {
-    XChangeWindowAttributes(m_display.handle(), m_window, mask, const_cast<XSetWindowAttributes*>(&attrs));
+    XChangeWindowAttributes(m_display.handle(), m_window, mask,
+                            const_cast<XSetWindowAttributes*>(&attrs));
 }
 
 std::string xlib::Window::name() const
@@ -171,7 +174,7 @@ std::string xlib::Device::getProperty(Atom atom, Atom type) const
         case 8: itemBytes = sizeof(char); break;
         case 16: itemBytes = sizeof(short); break;
         case 32: itemBytes = sizeof(long); break;
-        default: throw std::logic_error("Invalid actualFormat returned by XGetDeviceProperty");
+        default: throw xlib::Error("invalid actualFormat returned by XGetDeviceProperty");
     }
     return std::string(reinterpret_cast<char *>(valptr.get()), nItems * itemBytes);
 }
@@ -186,7 +189,7 @@ std::string xlib::Error::makeMessage(::Display *display, XErrorEvent *event)
     if (XGetErrorText(display, event->error_code, buffer, sizeof(buffer)) == Success) {
         msg <<buffer;
     } else {
-        msg <<"Error code " <<event->error_code;
+        msg <<"error code " <<event->error_code;
     }
     msg <<" on display " <<DisplayString(display)
         <<" while performing request " <<+event->request_code <<"." <<+event->minor_code;

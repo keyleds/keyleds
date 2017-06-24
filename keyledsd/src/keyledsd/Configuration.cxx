@@ -1,3 +1,5 @@
+#include <algorithm>
+#include <atomic>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -7,25 +9,37 @@
 #include <system_error>
 #include <unistd.h>
 #include "keyledsd/Configuration.h"
+#include "keyledsd/Context.h"
 #include "tools/YAMLParser.h"
 #include "config.h"
 
 using keyleds::Configuration;
+static const std::vector<std::string> truthy = {"yes", "1", "true"};
+static const std::vector<std::string> falsy = {"no", "0", "false"};
 
 /****************************************************************************/
-
-class BuildState;
-typedef std::unique_ptr<BuildState> state_ptr;
-
-class ConfigurationBuilder : public YAMLParser
+/****************************************************************************/
+/** Builder class that creates a Configuration object from a YAML file.
+ *
+ * It uses a variant of the State pattern where state gets pushed onto a stack
+ * when entering a collection and popped back when exiting. Each state class
+ * represent a type of object that can appear in the configuration file, and
+ * knows how to interpret sub-items.
+ *
+ * Builder also keeps cross-state data such as aliases dictionary.
+ */
+class ConfigurationBuilder final : public YAMLParser
 {
-    std::stack<state_ptr>               m_state;
-    std::map<std::string, std::string>  m_scalarAliases;
+public:
+    class BuildState;
+    typedef std::unique_ptr<BuildState> state_ptr;
 public:
     ConfigurationBuilder();
 
     void addScalarAlias(std::string anchor, std::string value);
     const std::string & getScalarAlias(const std::string & anchor);
+    void addGroupAlias(std::string anchor, const Configuration::key_list &);
+    const Configuration::key_list & getGroupAlias(std::string anchor);
 
     void streamStart() override {}
     void streamEnd() override {}
@@ -38,19 +52,45 @@ public:
     void alias(const std::string & anchor) override;
     void scalar(const std::string & value, const std::string &, const std::string & anchor) override;
 
-    ParseError makeError(const std::string & what) const { return YAMLParser::makeError(what); }
+    ParseError makeError(const std::string & what);
 
+    template<typename T> T parseScalar(const std::string &);
 public:
+    bool                        m_autoQuit;
+    bool                        m_noDBus;
     Configuration::path_list    m_pluginPaths;
     Configuration::path_list    m_layoutPaths;
-    Configuration::stack_map    m_stacks;
     Configuration::device_map   m_devices;
+    Configuration::group_map    m_groups;
+    Configuration::profile_map  m_profiles;
+
+private:
+    std::stack<state_ptr>               m_state;
+    std::map<std::string, std::string>  m_scalarAliases;
+    std::map<std::string, Configuration::key_list> m_groupAliases;
 };
 
-
-
-struct BuildState
+template<> bool ConfigurationBuilder::parseScalar<bool>(const std::string & val)
 {
+    if (std::find(truthy.begin(), truthy.end(), val) != truthy.end()) { return true; }
+    if (std::find(falsy.begin(), falsy.end(), val) != falsy.end()) { return false; }
+    throw makeError("Invalid boolean value <" + val + ">");
+}
+
+/****************************************************************************/
+
+class ConfigurationBuilder::BuildState
+{
+public:
+    typedef std::unique_ptr<BuildState> state_ptr;
+    typedef unsigned int state_type;
+
+public:
+    BuildState(state_type type = 0) : m_type(type) {}
+    state_type type() const { return m_type; }
+    virtual void print(std::ostream &) const = 0;
+
+public:
     virtual state_ptr sequenceStart(ConfigurationBuilder & builder, const std::string &)
         { throw builder.makeError("unexpected sequence"); }
     virtual state_ptr mappingStart(ConfigurationBuilder & builder, const std::string &)
@@ -62,11 +102,26 @@ struct BuildState
         { throw builder.makeError("unexpected scalar"); }
 
     template<class T> T & as() { return static_cast<T&>(*this); }
+
+private:
+    state_type  m_type;
 };
 
-class MappingBuildState : public BuildState
+std::ostream & operator<<(std::ostream & out, ConfigurationBuilder::BuildState & state)
+{
+    state.print(out);
+    return out;
+}
+
+/****************************************************************************/
+/****************************************************************************/
+// Generic inheritable build state for mappings
+
+class MappingBuildState : public ConfigurationBuilder::BuildState
 {
 public:
+    MappingBuildState(state_type type) : BuildState(type) {}
+
     virtual state_ptr sequenceEntry(ConfigurationBuilder & builder, const std::string &, const std::string &)
         { throw builder.makeError("unexpected sequence"); }
     virtual state_ptr mappingEntry(ConfigurationBuilder & builder, const std::string &, const std::string &)
@@ -77,13 +132,13 @@ public:
                              const std::string &, const std::string &)
         { throw builder.makeError("unexpected scalar"); }
 
-    state_ptr sequenceStart(ConfigurationBuilder & builder, const std::string & anchor) override
+    state_ptr sequenceStart(ConfigurationBuilder & builder, const std::string & anchor) final override
     {
         if (m_currentKey.empty()) { throw builder.makeError("unexpected sequence"); }
         return sequenceEntry(builder, m_currentKey, anchor);
     }
 
-    state_ptr mappingStart(ConfigurationBuilder & builder, const std::string & anchor) override
+    state_ptr mappingStart(ConfigurationBuilder & builder, const std::string & anchor) final override
     {
         if (m_currentKey.empty()) { throw builder.makeError("unexpected mapping"); }
         return mappingEntry(builder, m_currentKey, anchor);
@@ -91,7 +146,7 @@ public:
 
     void subStateEnd(ConfigurationBuilder &, BuildState &) override { m_currentKey.clear(); }
 
-    void alias(ConfigurationBuilder & builder, const std::string & anchor) override
+    void alias(ConfigurationBuilder & builder, const std::string & anchor) final override
     {
         if (m_currentKey.empty()) {
             m_currentKey = builder.getScalarAlias(anchor);
@@ -102,7 +157,7 @@ public:
     }
 
     void scalar(ConfigurationBuilder & builder, const std::string & value,
-                const std::string & anchor) override
+                const std::string & anchor) final override
     {
         if (m_currentKey.empty()) {
             m_currentKey = value;
@@ -113,16 +168,24 @@ public:
     }
 
 protected:
+    const std::string & currentKey() const { return m_currentKey; }
+
+private:
     std::string     m_currentKey;
 };
 
 /****************************************************************************/
+// Generic build states for string sequence and string map
 
-class StringSequenceBuildState : public BuildState
+class StringSequenceBuildState final : public ConfigurationBuilder::BuildState
 {
 public:
     typedef std::vector<std::string>    value_type;
 public:
+    StringSequenceBuildState(state_type type = 0) : BuildState(type) {}
+    void print(std::ostream & out) const override { out <<"string-sequence"; }
+
+
     void alias(ConfigurationBuilder & builder, const std::string & anchor) override
     {
         m_value.push_back(builder.getScalarAlias(anchor));
@@ -141,11 +204,14 @@ private:
     value_type      m_value;
 };
 
-class StringMappingBuildState : public MappingBuildState
+class StringMappingBuildState final : public MappingBuildState
 {
 public:
     typedef std::map<std::string, std::string> value_type;
 public:
+    StringMappingBuildState(state_type type = 0) : MappingBuildState(type) {}
+    void print(std::ostream & out) const override { out <<"string-mapping"; }
+
     void aliasEntry(ConfigurationBuilder & builder, const std::string & key,
                     const std::string & anchor) override
     {
@@ -167,64 +233,187 @@ private:
 
 
 /****************************************************************************/
+/****************************************************************************/
+// Specific types for keyledsd configuration
 
-class PluginState final : public StringMappingBuildState
+class GroupListState final : public MappingBuildState
 {
 public:
-    Configuration::Plugin result(ConfigurationBuilder & builder)
-    {
-        auto value = StringMappingBuildState::result();
-        auto it_name = value.find("plugin");
-        if (it_name == value.end()) { throw builder.makeError("plugin configuration must have a name"); }
-        std::string name = it_name->second;
-        value.erase(it_name);
-        return Configuration::Plugin(std::move(name), std::move(value));
-    }
-};
-
-class StackState final : public BuildState
-{
+    typedef std::map<std::string, Configuration::key_list> value_type;
 public:
-    StackState(std::string name) : m_name(name) {}
+    GroupListState(state_type type) : MappingBuildState(type) {}
+    void print(std::ostream & out) const override { out <<"group-list"; }
 
-    state_ptr mappingStart(ConfigurationBuilder &, const std::string &) override
+    state_ptr sequenceEntry(ConfigurationBuilder &, const std::string &,
+                            const std::string & anchor) override
     {
-        return std::make_unique<PluginState>();
+        m_currentAnchor = anchor;
+        return std::make_unique<StringSequenceBuildState>();
     }
 
     void subStateEnd(ConfigurationBuilder & builder, BuildState & state) override
     {
-        m_plugins.emplace_back(state.as<PluginState>().result(builder));
+        auto it = m_value.emplace(std::make_pair(
+            currentKey(),
+            state.as<StringSequenceBuildState>().result()
+        )).first;
+        if (!m_currentAnchor.empty()) {
+            builder.addGroupAlias(m_currentAnchor, it->second);
+        }
+        MappingBuildState::subStateEnd(builder, state);
+    }
+
+    void aliasEntry(ConfigurationBuilder & builder, const std::string & key,
+                    const std::string & anchor) override
+    {
+        m_value.emplace(std::make_pair(key, builder.getGroupAlias(anchor)));
+    }
+
+    value_type && result() { return std::move(m_value); }
+
+private:
+    std::string     m_currentAnchor;
+    value_type      m_value;
+};
+
+
+class PluginListState final : public ConfigurationBuilder::BuildState
+{
+public:
+    typedef Configuration::Profile::plugin_list value_type;
+public:
+    PluginListState(state_type type) : BuildState(type) {}
+    void print(std::ostream & out) const override { out <<"plugins-list"; }
+
+    state_ptr mappingStart(ConfigurationBuilder &, const std::string &) override
+    {
+        return std::make_unique<StringMappingBuildState>();
+    }
+
+    void subStateEnd(ConfigurationBuilder & builder, BuildState & state) override
+    {
+        auto conf_map = state.as<StringMappingBuildState>().result();
+        auto it_name = conf_map.find("plugin");
+        if (it_name == conf_map.end()) { throw builder.makeError("plugin configuration must have a name"); }
+
+        auto name = it_name->second;
+        conf_map.erase(it_name);
+
+        m_value.emplace_back(std::move(name), std::move(conf_map));
     }
 
     void scalar(ConfigurationBuilder &, const std::string & value, const std::string &) override
     {
-        m_plugins.emplace_back(Configuration::Plugin(value, Configuration::Plugin::conf_map()));
+        m_value.emplace_back(Configuration::Plugin(value, Configuration::Plugin::conf_map()));
     }
 
-    Configuration::Stack result()
-    {
-        return Configuration::Stack(std::move(m_name), std::move(m_plugins));
-    }
+    value_type && result() { return std::move(m_value); }
 
 private:
-    std::string                       m_name;
-    Configuration::Stack::plugin_list m_plugins;
+    value_type      m_value;
 };
 
-class StackListState final : public MappingBuildState
+
+class ProfileState final: public MappingBuildState
 {
+    enum SubState : state_type { Lookup, DeviceList, GroupList, PluginList };
 public:
-    typedef std::map<std::string, Configuration::Stack> value_type;
-public:
-    state_ptr sequenceEntry(ConfigurationBuilder &, const std::string & key, const std::string &) override
+    ProfileState(std::string name, state_type type = 0)
+      : MappingBuildState(type), m_name(name), m_isDefault(false) {}
+    void print(std::ostream & out) const override { out <<"profile(" <<m_name <<')'; }
+
+    state_ptr sequenceEntry(ConfigurationBuilder & builder, const std::string & key, const std::string &) override
     {
-        return std::make_unique<StackState>(key);
+        if (key == "plugins") { return std::make_unique<PluginListState>(SubState::PluginList); }
+        if (key == "devices") { return std::make_unique<StringSequenceBuildState>(SubState::DeviceList); }
+        throw builder.makeError("unknown section");
+    }
+
+    state_ptr mappingEntry(ConfigurationBuilder & builder, const std::string & key, const std::string &) override
+    {
+        if (key == "lookup") {
+            if (m_name == "default") {
+                throw builder.makeError("default profile cannot have filters defined");
+            }
+            return std::make_unique<StringMappingBuildState>(SubState::Lookup);
+        }
+        if (key == "groups") { return std::make_unique<GroupListState>(SubState::GroupList); }
+        throw builder.makeError("unknown section");
+    }
+
+    void scalarEntry(ConfigurationBuilder & builder, const std::string & key,
+                     const std::string & value, const std::string &)
+    {
+        if (key == "default")   { m_isDefault = builder.parseScalar<bool>(value); }
+        else throw builder.makeError("unknown setting");
     }
 
     void subStateEnd(ConfigurationBuilder & builder, BuildState & state) override
     {
-        m_value.emplace(std::make_pair(m_currentKey, state.as<StackState>().result()));
+        switch(state.type()) {
+            case SubState::Lookup: {
+                auto items = state.as<StringMappingBuildState>().result();
+                m_lookup = Configuration::Profile::Lookup(
+                    items["title"],
+                    items["class"],
+                    items["instance"]
+                );
+                break;
+            }
+            case SubState::DeviceList: {
+                m_devices = state.as<StringSequenceBuildState>().result();
+                break;
+            }
+            case SubState::GroupList: {
+                m_groups = state.as<GroupListState>().result();
+                break;
+            }
+            case SubState::PluginList: {
+                m_plugins = state.as<PluginListState>().result();
+                break;
+            }
+        }
+        MappingBuildState::subStateEnd(builder, state);
+    }
+
+    Configuration::Profile result()
+    {
+        return Configuration::Profile(
+            std::move(m_name),
+            m_isDefault,
+            std::move(m_lookup),
+            std::move(m_devices),
+            std::move(m_groups),
+            std::move(m_plugins)
+        );
+    }
+
+private:
+    std::string                         m_name;
+    bool                                m_isDefault;
+    Configuration::Profile::Lookup      m_lookup;
+    Configuration::Profile::device_list m_devices;
+    Configuration::Profile::group_map   m_groups;
+    Configuration::Profile::plugin_list m_plugins;
+};
+
+
+class ProfileListState final : public MappingBuildState
+{
+public:
+    typedef std::map<std::string, Configuration::Profile> value_type;
+public:
+    ProfileListState(state_type type) : MappingBuildState(type) {}
+    void print(std::ostream & out) const override { out <<"profile-map"; }
+
+    state_ptr mappingEntry(ConfigurationBuilder &, const std::string & key, const std::string &) override
+    {
+        return std::make_unique<ProfileState>(key);
+    }
+
+    void subStateEnd(ConfigurationBuilder & builder, BuildState & state) override
+    {
+        m_value.emplace(std::make_pair(currentKey(), state.as<ProfileState>().result()));
         MappingBuildState::subStateEnd(builder, state);
     }
 
@@ -237,43 +426,67 @@ private:
 
 class RootState final : public MappingBuildState
 {
+    enum SubState : state_type { Plugins, Layouts, Devices, Groups, Profiles };
 public:
+    RootState() : MappingBuildState(0) {}
+    void print(std::ostream & out) const override { out <<"root"; }
+
     state_ptr sequenceEntry(ConfigurationBuilder & builder, const std::string & key,
                            const std::string &) override
     {
-        if (key == "plugin_paths" || key == "layout_paths")  {
-            return std::make_unique<StringSequenceBuildState>();
-        }
+        if (key == "layouts") { return std::make_unique<StringSequenceBuildState>(SubState::Layouts); }
+        if (key == "plugins") { return std::make_unique<StringSequenceBuildState>(SubState::Plugins); }
         throw builder.makeError("unknown section");
     }
 
     state_ptr mappingEntry(ConfigurationBuilder & builder, const std::string & key,
                            const std::string &) override
     {
-        if (key == "stacks")        { return std::make_unique<StackListState>(); }
-        else if (key == "devices")  { return std::make_unique<StringMappingBuildState>(); }
+        if (key == "devices")   { return std::make_unique<StringMappingBuildState>(SubState::Devices); }
+        if (key == "groups")    { return std::make_unique<GroupListState>(SubState::Groups); }
+        if (key == "profiles")  { return std::make_unique<ProfileListState>(SubState::Profiles); }
         throw builder.makeError("unknown section");
+    }
+
+    void scalarEntry(ConfigurationBuilder & builder, const std::string & key,
+                     const std::string & value, const std::string &)
+    {
+        if (key == "auto_quit")     { builder.m_autoQuit = builder.parseScalar<bool>(value); }
+        else if (key == "dbus")     { builder.m_noDBus = !builder.parseScalar<bool>(value); }
+        else if (key == "plugins")  { builder.m_pluginPaths = { value }; }
+        else if (key == "layouts")  { builder.m_layoutPaths = { value }; }
+        else throw builder.makeError("unknown setting");
     }
 
     void subStateEnd(ConfigurationBuilder & builder, BuildState & state) override
     {
-        if (m_currentKey == "plugin_paths") {
+        switch (state.type()) {
+        case SubState::Plugins:
             builder.m_pluginPaths = state.as<StringSequenceBuildState>().result();
-        } else if (m_currentKey == "layout_paths") {
+            break;
+        case SubState::Layouts:
             builder.m_layoutPaths = state.as<StringSequenceBuildState>().result();
-        } else if (m_currentKey == "stacks") {
-            builder.m_stacks = state.as<StackListState>().result();
-        } else if (m_currentKey == "devices") {
+            break;
+        case SubState::Devices:
             builder.m_devices = state.as<StringMappingBuildState>().result();
+            break;
+        case SubState::Groups:
+            builder.m_groups = state.as<GroupListState>().result();
+            break;
+        case SubState::Profiles:
+            builder.m_profiles = state.as<ProfileListState>().result();
+            break;
         }
         MappingBuildState::subStateEnd(builder, state);
     }
 };
 
 
-class InitialState final : public BuildState
+class InitialState final : public ConfigurationBuilder::BuildState
 {
 public:
+    void print(std::ostream &) const override { }
+
     state_ptr mappingStart(ConfigurationBuilder &, const std::string &) override
     {
         return std::make_unique<RootState>();
@@ -295,6 +508,18 @@ const std::string & ConfigurationBuilder::getScalarAlias(const std::string & anc
     auto it = m_scalarAliases.find(anchor);
     if (it == m_scalarAliases.end()) {
         throw makeError("unknown anchor or invalid anchor target");
+    }
+    return it->second;
+}
+
+void ConfigurationBuilder::addGroupAlias(std::string anchor, const Configuration::key_list & value) {
+    m_groupAliases.emplace(std::make_pair(anchor, value));
+}
+
+const Configuration::key_list & ConfigurationBuilder::getGroupAlias(std::string anchor) {
+    auto it = m_groupAliases.find(anchor);
+    if (it == m_groupAliases.end()) {
+        throw makeError("unknown anchor or anchor is not a key group");
     }
     return it->second;
 }
@@ -327,18 +552,22 @@ void ConfigurationBuilder::scalar(const std::string & value, const std::string &
     m_state.top()->scalar(*this, value, anchor);
 }
 
-/****************************************************************************/
-
-const std::string Configuration::c_defaultStackName("default");
-
-const Configuration::Stack & Configuration::stackFor(const std::string & serial) const
+ConfigurationBuilder::ParseError ConfigurationBuilder::makeError(const std::string & what)
 {
-    auto it = m_deviceStacks.find(serial);
-    const std::string & name = (it != m_deviceStacks.end() ? it->second : c_defaultStackName);
-
-    auto stackIt = m_stacks.find(name);
-    return stackIt != m_stacks.end() ? stackIt->second : defaultStack();
+    auto state = std::vector<decltype(m_state)::value_type>();
+    state.reserve(m_state.size());
+    while (!m_state.empty()) {
+        state.push_back(std::move(m_state.top()));
+        m_state.pop();
+    }
+    std::ostringstream msg;
+    msg <<what <<" in ";
+    std::for_each(state.rbegin() + 1, state.rend(),
+                  [&msg](const auto & statep){ msg <<'/' <<*statep; });
+    return YAMLParser::makeError(msg.str());
 }
+
+/****************************************************************************/
 
 Configuration Configuration::loadFile(const std::string & path)
 {
@@ -349,12 +578,26 @@ Configuration Configuration::loadFile(const std::string & path)
     }
     builder.parse(file);
     return Configuration(
+        builder.m_autoQuit,
+        builder.m_noDBus,
         std::move(builder.m_pluginPaths),
         std::move(builder.m_layoutPaths),
-        std::move(builder.m_stacks),
-        std::move(builder.m_devices)
+        std::move(builder.m_devices),
+        std::move(builder.m_groups),
+        std::move(builder.m_profiles)
     );
 }
+
+#ifdef _GNU_SOURCE
+#include <getopt.h>
+static const struct option options[] = {
+    {"config",    1, nullptr, 'c' },
+    {"help",      0, nullptr, 'h' },
+    {"single",    0, nullptr, 's' },
+    {"no-dbus",   0, nullptr, 'D' },
+    {nullptr, 0, nullptr, 0}
+};
+#endif
 
 Configuration Configuration::loadArguments(int & argc, char * argv[])
 {
@@ -363,9 +606,14 @@ Configuration Configuration::loadArguments(int & argc, char * argv[])
 
     const char * configPath = nullptr;
     bool autoQuit = false;
+    bool noDBus = false;
 
     ::opterr = 0;
-    while ((opt = ::getopt(argc, argv, ":c:hs")) >= 0) {
+#ifdef _GNU_SOURCE
+    while ((opt = ::getopt_long(argc, argv, ":c:hsD", options, nullptr)) >= 0) {
+#else
+    while ((opt = ::getopt(argc, argv, ":c:hsD")) >= 0) {
+#endif
         switch(opt) {
         case 'c':
             if (configPath != nullptr) {
@@ -374,10 +622,13 @@ Configuration Configuration::loadArguments(int & argc, char * argv[])
             configPath = optarg;
             break;
         case 'h':
-            std::cout <<"Usage: " <<argv[0] <<" [-c path] [-s]" <<std::endl;
+            std::cout <<"Usage: " <<argv[0] <<" [-c path] [-s] [-D]" <<std::endl;
             ::exit(EXIT_SUCCESS);
         case 's':
             autoQuit = true;
+            break;
+        case 'D':
+            noDBus = true;
             break;
         case ':':
             msgBuf <<argv[0] <<": option -- '" <<(char)::optopt <<"' requires an argument";
@@ -389,12 +640,30 @@ Configuration Configuration::loadArguments(int & argc, char * argv[])
     }
 
     auto config = loadFile(configPath != nullptr ? configPath : KEYLEDSD_CONFIG_PATH);
-    config.m_autoQuit = autoQuit;
+    if (autoQuit) { config.m_autoQuit = true; }
+    if (noDBus) { config.m_noDBus = true; }
     return config;
 }
 
-const Configuration::Stack & Configuration::defaultStack()
+/****************************************************************************/
+
+Configuration::Profile::id_type Configuration::Profile::makeId()
 {
-    static Configuration::Stack defaultStack(c_defaultStackName);
-    return defaultStack;
+    static std::atomic<id_type> counter(1);
+    return ++counter;
+}
+
+/****************************************************************************/
+
+bool Configuration::Profile::Lookup::match(const Context & context) const
+{
+    if (!m_didCompileRE) {
+        m_titleRE.assign(m_titleFilter, std::regex::nosubs | std::regex::optimize);
+        m_classNameRE.assign(m_classNameFilter, std::regex::nosubs | std::regex::optimize);
+        m_instanceNameRE.assign(m_instanceNameFilter, std::regex::nosubs | std::regex::optimize);
+        m_didCompileRE = true;
+    }
+    return (m_titleFilter.empty() || std::regex_match(context["title"], m_titleRE)) &&
+           (m_classNameFilter.empty() || std::regex_match(context["class"], m_classNameRE)) &&
+           (m_instanceNameFilter.empty() || std::regex_match(context["instance"], m_instanceNameRE));
 }

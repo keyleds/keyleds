@@ -11,10 +11,14 @@
 using keyleds::Device;
 using keyleds::DeviceWatcher;
 
-typedef std::unique_ptr<struct keyleds_keyblocks_info,
-                        void (*)(struct keyleds_keyblocks_info *)> blockinfo_ptr;
-typedef std::unique_ptr<struct keyleds_device_version,
-                        void (*)(struct keyleds_device_version*)> version_ptr;
+namespace std {
+    template<> struct default_delete<struct keyleds_keyblocks_info> {
+        void operator()(struct keyleds_keyblocks_info *p) const { keyleds_free_block_info(p); }
+    };
+    template<> struct default_delete<struct keyleds_device_version> {
+        void operator()(struct keyleds_device_version *p) const { keyleds_free_device_version(p); }
+    };
+}
 
 /****************************************************************************/
 
@@ -28,13 +32,15 @@ Device::Device(const std::string & path)
     cacheVersion();
 }
 
-Device::dev_ptr Device::openDevice(const std::string & path)
+std::unique_ptr<struct keyleds_device> Device::openDevice(const std::string & path)
 {
-    auto device = keyleds_open(path.c_str(), KEYLEDSD_APP_ID);
+    auto device = std::unique_ptr<struct keyleds_device>(
+        keyleds_open(path.c_str(), KEYLEDSD_APP_ID)
+    );
     if (device == nullptr) {
         throw Device::error(keyleds_get_error_str(), keyleds_get_errno());
     }
-    return dev_ptr(device, keyleds_close);
+    return device;
 }
 
 Device::Type Device::getType(struct keyleds_device * device)
@@ -72,7 +78,7 @@ void Device::cacheVersion()
     if (!keyleds_get_device_version(m_device.get(), KEYLEDS_TARGET_DEFAULT, &version)) {
         throw Device::error(keyleds_get_error_str(), keyleds_get_errno());
     }
-    auto version_p = version_ptr(version, keyleds_free_device_version);
+    auto version_p = std::unique_ptr<struct keyleds_device_version>(version);
 
     std::ostringstream model;
     model <<std::hex <<std::setfill('0')
@@ -112,7 +118,7 @@ Device::block_list Device::getBlocks(struct keyleds_device * device)
     if (!keyleds_get_block_info(device, KEYLEDS_TARGET_DEFAULT, &info)) {
         throw Device::error(keyleds_get_error_str(), keyleds_get_errno());
     }
-    auto blockinfo_p = blockinfo_ptr(info, keyleds_free_block_info);
+    auto blockinfo_p = std::unique_ptr<struct keyleds_keyblocks_info>(info);
 
     for (unsigned i = 0; i < info->length; i += 1) {
         const auto & block = info->blocks[i];
@@ -215,12 +221,12 @@ DeviceWatcher::DeviceWatcher(struct udev * udev, QObject *parent)
 
 bool DeviceWatcher::isVisible(const device::Description & dev) const
 {
-    auto iface = dev.parentWithType("usb", "usb_interface");
+    const auto & iface = dev.parentWithType("usb", "usb_interface");
     if (std::stoul(iface.attributes().at("bInterfaceProtocol"), nullptr, 16) != 0) {
         return false;
     }
 
-    auto usbdev = dev.parentWithType("usb", "usb_device");
+    const auto & usbdev = dev.parentWithType("usb", "usb_device");
     if (std::stoul(usbdev.attributes().at("idVendor"), nullptr, 16) != LOGITECH_VENDOR_ID) {
         return false;
     }

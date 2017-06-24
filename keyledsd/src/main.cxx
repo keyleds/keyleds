@@ -1,12 +1,16 @@
-#include <signal.h>
 #include <QCoreApplication>
 #include <QTimer>
+#include <csignal>
 #include <iostream>
 #include <locale.h>
 #include "config.h"
+#include "dbus/ServiceAdaptor.h"
 #include "keyledsd/Configuration.h"
+#include "keyledsd/ContextWatcher.h"
 #include "keyledsd/Service.h"
-#include "keyledsd/ServiceAdaptor.h"
+#include "logging.h"
+
+LOGGING("main");
 
 static void quit_handler(int) { QCoreApplication::quit(); }
 
@@ -24,28 +28,39 @@ int main(int argc, char * argv[])
 
     // Load configuration
     try {
-        configuration = keyleds::Configuration::loadArguments(argc, argv);
+        configuration = std::move(keyleds::Configuration::loadArguments(argc, argv));
     } catch (std::exception & error) {
-        std::cerr <<error.what() <<std::endl;
+        std::cerr <<"Could not load configuration: " <<error.what() <<std::endl;
         return 1;
     }
 
     // Setup application components
-    auto connection = QDBusConnection::sessionBus();
     auto service = new keyleds::Service(configuration, &app);
 
-    new keyleds::ServiceAdaptor(service);
-    if (!connection.registerObject("/Service", service) ||
-        !connection.registerService("org.etherdream.KeyledsService")) {
-        std::cerr <<"DBus registration failed" <<std::endl;
-        return 2;
+    try {
+        auto contextWatcher = new keyleds::XContextWatcher(service);
+        QObject::connect(contextWatcher, SIGNAL(contextChanged(const keyleds::Context &)),
+                         service, SLOT(setContext(const keyleds::Context &)));
+        INFO("using display ", contextWatcher->display().name(), " for events");
+    } catch (xlib::Error & error) {
+        ERROR("skipping display events: ", error.what());
+    }
+
+    if (!configuration.noDBus()) {
+        auto connection = QDBusConnection::sessionBus();
+        new dbus::ServiceAdaptor(service);   // service takes ownership
+        if (!connection.registerObject("/Service", service) ||
+            !connection.registerService("org.etherdream.KeyledsService")) {
+            CRITICAL("DBus registration failed");
+            return 2;
+        }
     }
 
     // Register signals and go
-    signal(SIGINT, quit_handler);
-    signal(SIGQUIT, quit_handler);
-    signal(SIGTERM, quit_handler);
-    signal(SIGHUP, quit_handler);
+    std::signal(SIGINT, quit_handler);
+    std::signal(SIGQUIT, quit_handler);
+    std::signal(SIGTERM, quit_handler);
+    std::signal(SIGHUP, SIG_IGN);
     QTimer::singleShot(0, service, SLOT(init()));
 
     return app.exec();

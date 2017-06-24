@@ -6,6 +6,7 @@
 #include <string>
 #include <unordered_map>
 #include "config.h"
+#include "keyledsd/Context.h"
 #include "keyledsd/DeviceManager.h"
 #include "tools/DeviceWatcher.h"
 
@@ -26,12 +27,14 @@ public:
 
     Configuration &     configuration() { return m_configuration; }
     const Configuration & configuration() const { return m_configuration; }
+    const Context &     context() const { return m_context; }
     bool                active() const { return m_active; }
     const device_map &  devices() const { return m_devices; }
 
 public slots:
     void                init();
     void                setActive(bool val);
+    void                setContext(const keyleds::Context &);
 
 signals:
     void                deviceManagerAdded(keyleds::DeviceManager &);
@@ -40,10 +43,10 @@ signals:
 private slots:
     void                onDeviceAdded(const device::Description &);
     void                onDeviceRemoved(const device::Description &);
-    void                onDeviceLoopFinished();
 
 private:
     Configuration &     m_configuration;
+    Context             m_context;
     bool                m_active;
     device_map          m_devices;
 

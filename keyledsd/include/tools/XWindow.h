@@ -1,3 +1,8 @@
+/** C++ wrapper for Xlib
+ *
+ * This simple wrapper presents a C++ interface for reading some information
+ * about windows and devices from an X display.
+ */
 #ifndef TOOLS_WINDOW_H
 #define TOOLS_WINDOW_H
 
@@ -6,6 +11,12 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+
+namespace std {
+    template <> struct default_delete<::Display> {
+        void operator()(::Display *p) const { XCloseDisplay(p); }
+    };
+}
 
 namespace xlib {
 
@@ -74,8 +85,7 @@ private:
 class Display final
 {
 public:
-    typedef std::unique_ptr<::Display, int(*)(::Display*)> display_ptr;
-    typedef display_ptr::pointer handle_type;
+    typedef ::Display *     handle_type;
     typedef std::unordered_map<std::string, Atom> atom_map;
 public:
                             Display(std::string name = std::string());
@@ -95,11 +105,11 @@ public:
     std::unique_ptr<Window> getActiveWindow();
 
 private:
-    static display_ptr      openDisplay(const std::string &);
+    static std::unique_ptr<::Display> openDisplay(const std::string &);
 
 private:
+    std::unique_ptr<::Display> m_display;
     std::string             m_name;
-    display_ptr             m_display;
     Window                  m_root;
     mutable atom_map        m_atomCache;
 };

@@ -17,16 +17,18 @@ include_directories("${PROJECT_BINARY_DIR}" "include")
 
 # List of sources
 set(keyledsd_SRCS
+    src/dbus/DeviceManagerAdaptor.cxx
+    src/dbus/ServiceAdaptor.cxx
     src/keyledsd/common.cxx
     src/keyledsd/Configuration.cxx
+    src/keyledsd/Context.cxx
+    src/keyledsd/ContextWatcher.cxx
     src/keyledsd/Device.cxx
     src/keyledsd/DeviceManager.cxx
-    src/keyledsd/DeviceManagerAdaptor.cxx
     src/keyledsd/Layout.cxx
     src/keyledsd/PluginManager.cxx
     src/keyledsd/RenderLoop.cxx
     src/keyledsd/Service.cxx
-    src/keyledsd/ServiceAdaptor.cxx
     src/plugins/fill.cxx
     src/tools/accelerated.c
     src/tools/accelerated_mmx.c
@@ -47,16 +49,17 @@ set_source_files_properties(src/tools/accelerated_sse2.cxx PROPERTIES COMPILE_FL
 
 find_package(Qt4 REQUIRED QtCore)
 qt4_wrap_cpp(moc_sources
+    include/dbus/DeviceManagerAdaptor.h
+    include/dbus/ServiceAdaptor.h
+    include/keyledsd/ContextWatcher.h
     include/keyledsd/Device.h
     include/keyledsd/DeviceManager.h
-    include/keyledsd/DeviceManagerAdaptor.h
-    include/keyledsd/RenderLoop.h
     include/keyledsd/Service.h
-    include/keyledsd/ServiceAdaptor.h
-    include/tools/AnimationLoop.h
     include/tools/DeviceWatcher.h
 )
 set(keyledsd_SRCS ${keyledsd_SRCS} ${moc_sources})
+
+find_package(Threads REQUIRED)
 
 find_library(LIBUDEV udev)
 IF(NOT LIBUDEV)
@@ -82,7 +85,7 @@ set(keyledsd_DEPS ${keyledsd_DEPS} ${X11_LIBRARIES} ${X11_Xinput_LIB})
 
 set(keyledsd_DEPS "${keyledsd_DEPS}"
     Qt4::QtCore Qt4::QtDBus
-    ${LIBUDEV} ${LIBRT} ${LIBYAML}
+    ${CMAKE_THREAD_LIBS_INIT} ${LIBUDEV} ${LIBRT} ${LIBYAML}
 )
 configure_file("include/config.h.in" "config.h")
 

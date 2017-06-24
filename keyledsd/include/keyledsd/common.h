@@ -7,7 +7,7 @@ namespace keyleds {
 
 /****************************************************************************/
 
-struct RGBColor {
+struct RGBColor final {
     typedef unsigned char channel_type;
 
     channel_type red;
@@ -33,7 +33,7 @@ static inline std::ostream & operator<<(std::ostream & out, const RGBColor & obj
 
 /****************************************************************************/
 
-struct RGBAColor {
+struct RGBAColor final {
     typedef unsigned char channel_type;
 
     channel_type red;

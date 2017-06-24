@@ -179,7 +179,7 @@ RGBColor RGBColor::parse(const std::string & str)
     /* Attempt using a predefined color */
     std::string lower;
     lower.reserve(str.size());
-    std::transform(str.begin(), str.end(), lower.begin(), ::tolower);
+    std::transform(str.begin(), str.end(), std::back_inserter(lower), ::tolower);
 
     const auto it = predefinedColors.find(lower);
     if (it != predefinedColors.end()) {

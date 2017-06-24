@@ -1,9 +1,9 @@
 #ifndef KEYLEDS_RENDER_LOOP_H
 #define KEYLEDS_RENDER_LOOP_H
 
-#include <QObject>
 #include <list>
 #include <memory>
+#include <mutex>
 #include "keyledsd/common.h"
 #include "tools/AnimationLoop.h"
 
@@ -40,28 +40,28 @@ public:
 /****************************************************************************/
 /** Render loop
  */
-class RenderLoop : public AnimationLoop
+class RenderLoop final : public AnimationLoop
 {
-    Q_OBJECT
 public:
-    typedef std::unique_ptr<Renderer> renderer_ptr;
-    typedef std::list<renderer_ptr> renderer_list;
+    typedef std::vector<Renderer *> renderer_list;
 public:
-                    RenderLoop(Device & device, renderer_list && renderers,
-                               unsigned fps, QObject *parent = 0);
+                    RenderLoop(Device & device, renderer_list && renderers, unsigned fps);
                     ~RenderLoop() override;
 
-    renderer_list & renderers() { return m_renderers; }
+          renderer_list & renderers() { return m_renderers; }
+    const renderer_list & renderers() const { return m_renderers; }
+    std::unique_lock<std::mutex> renderersLock() { return std::unique_lock<std::mutex>(m_mRenderers); }
 
-protected:
+private:
     bool            render(unsigned long) override;
     void            run() override;
 
     void            getDeviceState(RenderTarget & state);
 
-protected:
+private:
     Device &        m_device;
     renderer_list   m_renderers;
+    std::mutex      m_mRenderers;
 
     RenderTarget    m_state;
     RenderTarget    m_buffer;

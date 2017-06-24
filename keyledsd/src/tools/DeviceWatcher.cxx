@@ -1,19 +1,27 @@
 #include <QtCore>
-#include <assert.h>
 #include <libudev.h>
+#include <cassert>
 #include <stdexcept>
+#include <string>
 #include "tools/DeviceWatcher.h"
 
 using device::Description;
 using device::DeviceWatcher;
 using device::FilteredDeviceWatcher;
 
-typedef std::unique_ptr<struct udev_enumerate,struct udev_enumerate*(*)(struct udev_enumerate*)> udev_enumerate_ptr;
+void std::default_delete<struct udev>::operator()(struct udev *ptr) const
+    { udev_unref(ptr); }
+void std::default_delete<struct udev_monitor>::operator()(struct udev_monitor *ptr) const
+    { udev_monitor_unref(ptr); }
+void std::default_delete<struct udev_enumerate>::operator()(struct udev_enumerate *ptr) const
+    { udev_enumerate_unref(ptr); }
+void std::default_delete<struct udev_device>::operator()(struct udev_device *ptr) const
+    { udev_device_unref(ptr); }
 
 /****************************************************************************/
 
 Description::Description(struct udev_device * device)
-    : m_device(udev_device_ref(device), udev_device_unref)
+    : m_device(udev_device_ref(device))
 {
     struct udev_list_entry * first, * current;
     assert(device != nullptr);
@@ -42,7 +50,7 @@ Description::Description(struct udev_device * device)
 }
 
 Description::Description(const Description & other)
-    : m_device(udev_device_ref(other.m_device.get()), udev_device_unref)
+    : m_device(udev_device_ref(other.m_device.get()))
 {
     m_properties = other.m_properties;
     m_tags = other.m_tags;
@@ -77,7 +85,7 @@ std::vector<Description> Description::descendantsWithType(const std::string & su
     std::vector<Description> result;
 
     auto udev = udev_device_get_udev(m_device.get());
-    udev_enumerate_ptr enumerator(udev_enumerate_new(udev), udev_enumerate_unref);
+    auto enumerator = std::unique_ptr<struct udev_enumerate>(udev_enumerate_new(udev));
 
     udev_enumerate_add_match_parent(enumerator.get(), m_device.get());
     udev_enumerate_add_match_subsystem(enumerator.get(), subsystem.c_str());
@@ -91,9 +99,8 @@ std::vector<Description> Description::descendantsWithType(const std::string & su
 
     udev_list_entry_foreach(current, first) {
         const char * syspath = udev_list_entry_get_name(current);
-        auto device = udev_device_ptr(
-            udev_device_new_from_syspath(udev, syspath),
-            udev_device_unref
+        auto device = std::unique_ptr<struct udev_device>(
+            udev_device_new_from_syspath(udev, syspath)
         );
         if (device != nullptr) {
             result.emplace_back(device.get());
@@ -124,10 +131,12 @@ unsigned long long Description::usecSinceInitialized() const
 
 DeviceWatcher::DeviceWatcher(struct udev * udev, QObject *parent)
     : QObject(parent),
-      m_udev(udev == nullptr ? udev_new() : udev_ref(udev), udev_unref),
-      m_monitor(nullptr, udev_monitor_unref)
+      m_active(false),
+      m_udev(udev == nullptr ? udev_new() : udev_ref(udev))
 {
-    m_active = false;
+    if (m_udev == nullptr) {
+        throw Error("udev initialization failed");
+    }
 }
 
 DeviceWatcher::~DeviceWatcher()
@@ -137,13 +146,12 @@ DeviceWatcher::~DeviceWatcher()
 
 void DeviceWatcher::scan()
 {
-    udev_enumerate_ptr enumerator(udev_enumerate_new(m_udev.get()), udev_enumerate_unref);
+    auto enumerator = std::unique_ptr<struct udev_enumerate>(udev_enumerate_new(m_udev.get()));
 
     setupEnumerator(*enumerator);
 
     if (udev_enumerate_scan_devices(enumerator.get()) < 0) {
-        //TODO error handling
-        return;
+        throw Error("udev device scan failed");
     }
 
     device_map result;
@@ -157,9 +165,8 @@ void DeviceWatcher::scan()
         if (it != m_known.end()) {
             result.emplace(std::make_pair(syspath, std::move(it->second)));
         } else {
-            Description::udev_device_ptr device(
-                udev_device_new_from_syspath(m_udev.get(), syspath),
-                udev_device_unref
+            auto device = std::unique_ptr<struct udev_device>(
+                udev_device_new_from_syspath(m_udev.get(), syspath)
             );
             if (device != nullptr) {
                 auto description = Description(device.get());
@@ -185,15 +192,14 @@ void DeviceWatcher::setActive(bool active)
     if (active) {
         m_monitor.reset(udev_monitor_new_from_netlink(m_udev.get(), "udev"));
         if (m_monitor == nullptr) {
-            //TODO handle error
-            return;
+            throw Error("udev notification initialization failed");
         }
 
         setupMonitor(*m_monitor);
 
         udev_monitor_enable_receiving(m_monitor.get());
         int fd = udev_monitor_get_fd(m_monitor.get());
-        m_udevNotifier.reset(new QSocketNotifier(fd, QSocketNotifier::Read, this));
+        m_udevNotifier.reset(new QSocketNotifier(fd, QSocketNotifier::Read));
 
         QObject::connect(m_udevNotifier.get(), SIGNAL(activated(int)),
                          this, SLOT(onMonitorReady(int)));
@@ -208,15 +214,13 @@ void DeviceWatcher::setActive(bool active)
 
 void DeviceWatcher::onMonitorReady(int)
 {
-    Description::udev_device_ptr device(udev_monitor_receive_device(m_monitor.get()),
-                                        udev_device_unref);
+    auto device = std::unique_ptr<struct udev_device>(udev_monitor_receive_device(m_monitor.get()));
     if (device == nullptr) {
-        //TODO handle error
-        return;
+        throw Error("failed to read notification details from udev");
     }
 
     const char * syspath = udev_device_get_syspath(device.get());
-    QString action = udev_device_get_action(device.get());
+    auto action = std::string(udev_device_get_action(device.get()));
     if (action == "add") {
         auto description = Description(device.get());
         if (isVisible(description)) {
@@ -265,8 +269,8 @@ void FilteredDeviceWatcher::setupMonitor(struct udev_monitor & monitor) const
             m_matchDevType.empty() ? nullptr : m_matchDevType.c_str()
         );
     }
-    for (auto it = m_matchTags.begin(); it != m_matchTags.end(); ++it) {
-        udev_monitor_filter_add_match_tag(&monitor, it->c_str());
+    for (const auto & tag : m_matchTags) {
+        udev_monitor_filter_add_match_tag(&monitor, tag.c_str());
     }
 }
 

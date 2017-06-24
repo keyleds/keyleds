@@ -8,14 +8,18 @@
 #include "keyledsd/common.h"
 #include "tools/DeviceWatcher.h"
 
+namespace std {
+    template <> struct default_delete<struct keyleds_device> {
+        void operator()(struct keyleds_device *p) { keyleds_close(p); }
+    };
+}
+
 namespace keyleds {
 
 /****************************************************************************/
 
-class Device
+class Device final
 {
-    typedef std::unique_ptr<struct keyleds_device,
-                            void(*)(struct keyleds_device *)> dev_ptr;
 public:
     // Transient types
     enum Type { Keyboard, Remote, NumPad, Mouse, TouchPad, TrackBall, Presenter, Receiver };
@@ -65,14 +69,14 @@ public:
     void                commitColors();
 
 private:
-    static dev_ptr      openDevice(const std::string &);
+    static std::unique_ptr<struct keyleds_device> openDevice(const std::string &);
     static Type         getType(struct keyleds_device *);
     static std::string  getName(struct keyleds_device *);
     static block_list   getBlocks(struct keyleds_device *);
     void                cacheVersion();
 
 private:
-    dev_ptr             m_device;
+    std::unique_ptr<struct keyleds_device> m_device;
     Type                m_type;
     std::string         m_name;
     std::string         m_model;
@@ -83,7 +87,7 @@ private:
 };
 
 
-class Device::KeyBlock
+class Device::KeyBlock final
 {
 public:
     typedef std::vector<uint8_t> key_list;

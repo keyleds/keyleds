@@ -17,33 +17,96 @@
 #ifndef LOGGING_H
 #define LOGGING_H
 
-#include <cstdio>
+#include <iosfwd>
+#include <sstream>
 
-extern /*@null@*/ std::FILE * g_debug_stream;
-extern int g_debug_level;
+/****************************************************************************/
 
-#define LOG_ERROR       (1)
-#define LOG_WARNING     (2)
-#define LOG_INFO        (3)
-#define LOG_DEBUG       (4)
+class Logger final
+{
+public:
+    typedef enum { Critical, Error, Warning, Info, Debug } level_t;
 
-#if !defined(NDEBUG) && !defined(S_SPLINT_S)
-#define LOG(level, ...) \
-    do { if (g_debug_level >= LOG_##level) { \
-        FILE * stream = g_debug_stream == nullptr ? stderr : g_debug_stream; \
-        (void)std::fprintf(stream, "%s:%d: ", strstr(__FILE__, "src/") + 4, __LINE__); \
-        (void)std::fprintf(stream, __VA_ARGS__); \
-        (void)std::fprintf(stream, "\n"); \
-        (void)std::fflush(stream); \
-    } } while (0)
-#else
-#define LOG(level, ...) \
-    do { if (g_debug_level >= LOG_##level) { \
-        FILE * stream = g_debug_stream == nullptr ? stderr : g_debug_stream; \
-        (void)std::fprintf(stream, __VA_ARGS__); \
-        (void)std::fprintf(stream, "\n"); \
-        (void)std::fflush(stream); \
-    } } while (0)
+    class Policy
+    {
+    public:
+        virtual             ~Policy() = 0;
+        virtual void        open(const std::string &) {}
+        virtual void        close() {}
+        virtual void        write(level_t, const std::string & name, const std::string & msg) = 0;
+    };
+public:
+                        Logger(std::string name, Policy * policy = nullptr);
+                        Logger(const Logger &) = delete;
+                        ~Logger();
+
+    void                setPolicy(Policy * policy);
+
+    template<Logger::level_t level, typename...Args> void print(Args...args);
+
+private:
+                                          void print_bits(std::ostream &) {}
+    template<typename T, typename...Args> void print_bits(std::ostream &, T, Args...);
+
+private:
+    const std::string   m_name;
+    Policy *            m_policy;
+
+    static Policy &     defaultPolicy();
+};
+
+
+
+template<Logger::level_t level, typename...Args> void Logger::print(Args...args)
+{
+    std::ostringstream buffer;
+    print_bits(buffer, args...);
+    auto & policy = (m_policy != nullptr) ? *m_policy : defaultPolicy();
+    policy.write(level, m_name, buffer.str());
+}
+
+#ifdef NDEBUG
+template<typename...Args> void Logger::print<Logger::Debug>(Args...args) {}
 #endif
+
+template<typename T, typename...Args> void Logger::print_bits(std::ostream & out, T val, Args...args)
+{
+    out <<val;
+    print_bits(out, args...);
+}
+
+#define LOGGING(name) static Logger l_logger(name)
+
+#define CRITICAL    l_logger.print<Logger::Critical>
+#define ERROR       l_logger.print<Logger::Error>
+#define WARNING     l_logger.print<Logger::Warning>
+#define INFO        l_logger.print<Logger::Info>
+#define DEBUG       l_logger.print<Logger::Debug>
+
+/****************************************************************************/
+
+class StreamPolicy : public Logger::Policy
+{
+public:
+                        StreamPolicy(std::ostream & stream)
+                         : m_stream(stream) {}
+    void                write(Logger::level_t, const std::string &, const std::string &) override;
+protected:
+    std::ostream &      m_stream;
+};
+
+/****************************************************************************/
+
+class FilePolicy : public Logger::Policy
+{
+public:
+                        FilePolicy(int fd);
+    void                write(Logger::level_t, const std::string &, const std::string &) override;
+protected:
+    int                 m_fd;
+    bool                m_tty;
+};
+
+/****************************************************************************/
 
 #endif
