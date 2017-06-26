@@ -4,11 +4,10 @@
 #include <QObject>
 #include <memory>
 #include <string>
+#include "keyledsd/Context.h"
 #include "tools/XWindow.h"
 
 namespace keyleds {
-
-class Context;
 
 class XContextWatcher : public QObject
 {
@@ -27,6 +26,7 @@ protected:
     virtual void    setupDisplay(xlib::Display &);
     virtual void    handleEvent(XEvent &);
     virtual void    onActiveWindowChanged(xlib::Window *);
+    void            setContext(xlib::Window *);
 
 private slots:
     void            onDisplayEvent(int);
@@ -34,6 +34,7 @@ private slots:
 protected:
     xlib::Display                   m_display;
     std::unique_ptr<xlib::Window>   m_activeWindow;
+    Context                         m_context;
 };
 
 
