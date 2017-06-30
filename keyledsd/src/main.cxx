@@ -39,6 +39,7 @@ int main(int argc, char * argv[])
 
     try {
         auto contextWatcher = new keyleds::XContextWatcher(service);
+        service->setContext(contextWatcher->current());
         QObject::connect(contextWatcher, SIGNAL(contextChanged(const keyleds::Context &)),
                          service, SLOT(setContext(const keyleds::Context &)));
         INFO("using display ", contextWatcher->display().name(), " for events");

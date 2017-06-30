@@ -17,6 +17,8 @@ public:
                     XContextWatcher(std::string display, QObject *parent = nullptr);
                     XContextWatcher(xlib::Display && display, QObject *parent = nullptr);
 
+    const Context & current() const noexcept { return m_context; }
+
     const xlib::Display & display() const { return m_display; }
 
 signals:
