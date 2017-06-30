@@ -102,7 +102,7 @@ public:
 
     typedef unsigned int id_type;
     typedef std::vector<std::string> device_list;
-    typedef std::map<std::string, key_list> group_map;
+    typedef Configuration::group_map group_map;
     typedef std::vector<Configuration::Plugin> plugin_list;
 public:
                         Profile(std::string name,

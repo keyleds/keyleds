@@ -253,10 +253,12 @@ public:
 
     void subStateEnd(ConfigurationBuilder & builder, BuildState & state) override
     {
-        auto it = m_value.emplace(std::make_pair(
-            currentKey(),
-            state.as<StringSequenceBuildState>().result()
-        )).first;
+        auto keys = state.as<StringSequenceBuildState>().result();
+        for (auto & key : keys) {
+            std::transform(key.begin(), key.end(), key.begin(), ::toupper);
+        }
+
+        auto it = m_value.emplace(currentKey(), std::move(keys)).first;
         if (!m_currentAnchor.empty()) {
             builder.addGroupAlias(m_currentAnchor, it->second);
         }
@@ -467,9 +469,12 @@ public:
         case SubState::Layouts:
             builder.m_layoutPaths = state.as<StringSequenceBuildState>().result();
             break;
-        case SubState::Devices:
-            builder.m_devices = state.as<StringMappingBuildState>().result();
+        case SubState::Devices: {
+            for (const auto & item : state.as<StringMappingBuildState>().result()) {
+                builder.m_devices.emplace(item.second, item.first);
+            }
             break;
+        }
         case SubState::Groups:
             builder.m_groups = state.as<GroupListState>().result();
             break;

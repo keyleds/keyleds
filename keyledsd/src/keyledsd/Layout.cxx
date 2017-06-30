@@ -1,6 +1,7 @@
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 #include <stddef.h>
+#include <algorithm>
 #include <cstring>
 #include <istream>
 #include <sstream>
@@ -121,6 +122,9 @@ static void parseKeyboard(const xmlNode * keyboard, Layout::key_list & keys)
                 const char * const codeName = glyph != nullptr
                                             ? (const char*)glyph.get()
                                             : resolveCode(codeVal);
+                auto codeNameStr = codeName != nullptr ? std::string(codeName) : std::string();
+                std::transform(codeNameStr.begin(), codeNameStr.end(), codeNameStr.begin(), ::toupper);
+
                 keys.emplace_back(
                     kbZone,
                     codeVal,
@@ -130,7 +134,7 @@ static void parseKeyboard(const xmlNode * keyboard, Layout::key_list & keys)
                         kbX + xOffset + keyWidth - 1,
                         kbY + (rowIdx + 1) * (kbHeight / nbRows) - 1
                     },
-                    codeName != nullptr ? std::string(codeName) : std::string()
+                    codeNameStr
                 );
             }
             xOffset += keyWidth;
