@@ -37,15 +37,14 @@ public:
     typedef std::unique_ptr<Layout> layout_ptr;
     typedef std::vector<std::string> dev_list;
 public:
-                            DeviceManager(device::Description && description,
-                                          Device && device,
+                            DeviceManager(const device::Description &,
+                                          Device &&,
                                           const Configuration &,
                                           const Context &,
                                           QObject *parent = 0);
     virtual                 ~DeviceManager();
 
     const std::string &     serial() const { return m_serial; }
-    const device::Description & description() const { return m_description; }
     const dev_list &        eventDevices() const { return m_eventDevices; }
     const Device &          device() const { return m_device; }
           bool              hasLayout() const { return m_layout != nullptr; }
@@ -70,7 +69,6 @@ private:
     const Configuration &   m_configuration;
 
     std::string             m_serial;
-    device::Description     m_description;
     dev_list                m_eventDevices;
     Device                  m_device;
     layout_ptr              m_layout;

@@ -12,9 +12,6 @@ class DeviceManagerAdaptor: public QDBusAbstractAdaptor
     Q_OBJECT
     Q_CLASSINFO("D-Bus Interface", "org.etherdream.keyleds.DeviceManager")
     Q_PROPERTY(QString serial READ serial)
-    Q_PROPERTY(QString devPath READ devPath)
-    Q_PROPERTY(QString devType READ devType)
-    Q_PROPERTY(QString devNode READ devNode)
     Q_PROPERTY(QStringList eventDevices READ eventDevices)
     Q_PROPERTY(QString name READ name)
     Q_PROPERTY(QString model READ model)
@@ -29,9 +26,6 @@ public:
 
 public:
     QString     serial() const { return parent()->serial().c_str(); }
-    QString     devPath() const { return parent()->description().devPath().c_str(); }
-    QString     devType() const { return parent()->description().devType().c_str(); }
-    QString     devNode() const { return parent()->description().devNode().c_str(); }
     QStringList eventDevices() const {
         QStringList result;
         result.reserve(parent()->eventDevices().size());

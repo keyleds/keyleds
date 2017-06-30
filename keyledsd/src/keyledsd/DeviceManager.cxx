@@ -49,13 +49,12 @@ static std::vector<const Configuration::Profile *> profilesForContext(
 
 /****************************************************************************/
 
-DeviceManager::DeviceManager(device::Description && description, Device && device,
+DeviceManager::DeviceManager(const device::Description & description, Device && device,
                              const Configuration & conf, const Context & context, QObject *parent)
     : QObject(parent),
       m_configuration(conf),
       m_serial(getSerial(description)),
-      m_description(std::move(description)),
-      m_eventDevices(findEventDevices(m_description)),
+      m_eventDevices(findEventDevices(description)),
       m_device(std::move(device)),
       m_layout(loadLayout(m_device)),
       m_renderLoop(m_device, loadRenderers(context), 16)
