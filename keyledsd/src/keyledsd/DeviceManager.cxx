@@ -68,6 +68,17 @@ DeviceManager::~DeviceManager()
     m_renderLoop.stop();
 }
 
+keyleds::Device::key_indices DeviceManager::resolveKeyName(const std::string & name) const
+{
+    if (m_layout == nullptr) {
+        return m_device.resolveKey(name);
+    }
+    auto kit = std::find_if(m_layout->keys().begin(), m_layout->keys().end(),
+                            [&name](const auto & key) { return key.name == name; });
+    if (kit == m_layout->keys().end()) { return Device::key_npos; }
+    return m_device.resolveKey(kit->block, kit->code);
+}
+
 void DeviceManager::setContext(const Context & context)
 {
     auto lock = m_renderLoop.renderersLock();

@@ -25,6 +25,8 @@ namespace std {
 
 /****************************************************************************/
 
+constexpr Device::key_indices Device::key_npos;
+
 Device::Device(const std::string & path)
     : m_device(openDevice(path)),
       m_type(getType(m_device.get())),
@@ -152,6 +154,25 @@ Device::block_list Device::getBlocks(struct keyleds_device * device)
 bool Device::hasLayout() const
 {
     return m_layout != KEYLEDS_KEYBOARD_LAYOUT_INVALID;
+}
+
+Device::key_indices Device::resolveKey(const std::string & name) const
+{
+    unsigned code = keyleds_string_id(keyleds_keycode_names, name.c_str());
+    if (code == KEYLEDS_STRING_INVALID) { return key_npos; }
+    return resolveKey(KEYLEDS_BLOCK_KEYS, code);
+}
+
+Device::key_indices Device::resolveKey(key_block_id_type blockId, key_id_type keyId) const
+{
+    auto bit = std::find_if(m_blocks.begin(), m_blocks.end(),
+                            [blockId](const auto & block) { return block.id() == blockId; });
+    if (bit == m_blocks.end()) { return key_npos; }
+
+    auto kidx = bit->find(keyId);
+    if (kidx == KeyBlock::key_npos) { return key_npos; }
+
+    return { std::distance(m_blocks.begin(), bit), kidx };
 }
 
 /****************************************************************************/

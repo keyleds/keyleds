@@ -50,6 +50,8 @@ public:
           bool              hasLayout() const { return m_layout != nullptr; }
     const Layout &          layout() const { return *m_layout; }
 
+    Device::key_indices     resolveKeyName(const std::string &) const;
+
           bool              paused() const { return m_renderLoop.paused(); }
 
 public slots:

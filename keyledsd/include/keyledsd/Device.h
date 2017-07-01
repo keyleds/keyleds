@@ -35,6 +35,9 @@ public:
     typedef std::vector<KeyBlock> block_list;
     typedef std::vector<key_id_type> key_list;
 
+    typedef std::pair<block_list::size_type, key_list::size_type> key_indices;
+    static constexpr key_indices key_npos = { -1, -1 };
+
     // Exceptions
     class error : public std::runtime_error
     {
@@ -63,6 +66,9 @@ public:
           bool          hasLayout() const;
           int           layout() const { return m_layout; }
     const block_list &  blocks() const { return m_blocks; }
+
+    key_indices         resolveKey(const std::string &) const;
+    key_indices         resolveKey(key_block_id_type, key_id_type) const;
 
     // Manipulate
     void                setTimeout(unsigned us);
