@@ -63,8 +63,10 @@ void Service::onDeviceAdded(const device::Description & description)
         );
         emit deviceManagerAdded(*manager);
 
+        auto dit = m_configuration.devices().find(manager->serial());
         INFO("opened device ", description.devNode(),
              ": serial ", manager->serial(),
+             " [", dit != m_configuration.devices().end() ? dit->second : std::string(), ']',
              ", model ", manager->device().model(),
              " firmware ", manager->device().firmware(),
              ", <", manager->device().name(), ">");
