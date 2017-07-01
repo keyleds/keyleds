@@ -169,11 +169,7 @@ RGBColor RGBColor::parse(const std::string & str)
     char * endptr;
     auto code = uint32_t(::strtoul(str.c_str(), &endptr, 16));
     if (*endptr == '\0') {
-        return RGBColor{
-            (uint8_t)(code >> 16),
-            (uint8_t)(code >> 8),
-            (uint8_t)(code >> 0)
-        };
+        return RGBColor(code >> 16, code >> 8, code >> 0);
     }
 
     /* Attempt using a predefined color */
@@ -186,7 +182,7 @@ RGBColor RGBColor::parse(const std::string & str)
         return it->second;
     }
 
-    throw std::runtime_error("Invalid color " + str);
+    throw std::runtime_error("invalid color " + str);
 }
 
 void RGBColor::print(std::ostream & out) const
@@ -196,6 +192,18 @@ void RGBColor::print(std::ostream & out) const
     out <<'#' <<std::setw(2) <<red <<std::setw(2) <<green <<std::setw(2) <<blue;
     out.flags(flags);
     out.fill(fillChar);
+}
+
+
+RGBAColor RGBAColor::parse(const std::string & str)
+{
+    char * endptr;
+    auto code = uint32_t(::strtoul(str.c_str(), &endptr, 16));
+    if (*endptr == '\0') {
+        return RGBAColor(code >> 24, code >> 16, code >> 8, code >> 0);
+    }
+
+    return RGBAColor(RGBColor::parse(str));
 }
 
 void RGBAColor::print(std::ostream & out) const

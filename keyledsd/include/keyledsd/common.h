@@ -2,6 +2,7 @@
 #define KEYLEDSD_COMMON_H
 
 #include <iosfwd>
+#include <limits>
 
 namespace keyleds {
 
@@ -13,6 +14,10 @@ struct RGBColor final {
     channel_type red;
     channel_type green;
     channel_type blue;
+
+    RGBColor() = default;
+    RGBColor(channel_type r, channel_type g, channel_type b)
+     : red(r), green(g), blue(b) {}
 
     static RGBColor parse(const std::string &);
     void print(std::ostream &) const;
@@ -41,6 +46,13 @@ struct RGBAColor final {
     channel_type blue;
     channel_type alpha;
 
+    RGBAColor() = default;
+    RGBAColor(channel_type r, channel_type g, channel_type b, channel_type a)
+     : red(r), green(g), blue(b), alpha(a) {}
+    explicit RGBAColor(const RGBColor & c, channel_type a = std::numeric_limits<channel_type>::max())
+     : red(c.red), green(c.green), blue(c.blue), alpha(a) {}
+
+    static RGBAColor parse(const std::string &);
     void print(std::ostream &) const;
 };
 
