@@ -39,8 +39,8 @@ private:
 
 class Layout::Key final {
 public:
-    typedef unsigned short block_type;
-    typedef unsigned short code_type;
+    typedef unsigned int block_type;
+    typedef unsigned int code_type;
 public:
                 Key(block_type block, code_type code, Rect position, std::string name)
                     : block(block), code(code), position(position), name(name) {}

@@ -12,6 +12,9 @@ using keyleds::Device;
 using keyleds::DeviceWatcher;
 
 namespace std {
+    void default_delete<struct keyleds_device>::operator()(struct keyleds_device *p) const {
+        keyleds_close(p);
+    }
     template<> struct default_delete<struct keyleds_keyblocks_info> {
         void operator()(struct keyleds_keyblocks_info *p) const { keyleds_free_block_info(p); }
     };
@@ -129,7 +132,7 @@ Device::block_list Device::getBlocks(struct keyleds_device * device)
             throw Device::error(keyleds_get_error_str(), keyleds_get_errno());
         }
 
-        KeyBlock::key_list key_ids;
+        key_list key_ids;
         key_ids.reserve(block.nb_keys);
         for (unsigned key_idx = 0; key_idx < block.nb_keys; key_idx += 1) {
             if (keys[key_idx].id != 0) { key_ids.push_back(keys[key_idx].id); }
@@ -146,6 +149,13 @@ Device::block_list Device::getBlocks(struct keyleds_device * device)
 
 /****************************************************************************/
 
+bool Device::hasLayout() const
+{
+    return m_layout != KEYLEDS_KEYBOARD_LAYOUT_INVALID;
+}
+
+/****************************************************************************/
+
 void Device::setTimeout(unsigned us)
 {
     keyleds_set_timeout(m_device.get(), us);
@@ -158,7 +168,7 @@ bool Device::resync()
 
 void Device::fillColor(const KeyBlock & block, RGBColor color)
 {
-    if (!keyleds_set_led_block(m_device.get(), KEYLEDS_TARGET_DEFAULT, block.id(),
+    if (!keyleds_set_led_block(m_device.get(), KEYLEDS_TARGET_DEFAULT, keyleds_block_id_t(block.id()),
                                color.red, color.green, color.blue)) {
         throw Device::error(keyleds_get_error_str(), keyleds_get_errno());
     }
@@ -166,7 +176,7 @@ void Device::fillColor(const KeyBlock & block, RGBColor color)
 
 void Device::setColors(const KeyBlock & block, const color_directive_list & colors)
 {
-    if (!keyleds_set_leds(m_device.get(), KEYLEDS_TARGET_DEFAULT, block.id(),
+    if (!keyleds_set_leds(m_device.get(), KEYLEDS_TARGET_DEFAULT, keyleds_block_id_t(block.id()),
                           colors.data(), colors.size())) {
         throw Device::error(keyleds_get_error_str(), keyleds_get_errno());
     }
@@ -174,7 +184,7 @@ void Device::setColors(const KeyBlock & block, const color_directive_list & colo
 
 void Device::setColors(const KeyBlock & block, const ColorDirective colors[], size_t size)
 {
-    if (!keyleds_set_leds(m_device.get(), KEYLEDS_TARGET_DEFAULT, block.id(),
+    if (!keyleds_set_leds(m_device.get(), KEYLEDS_TARGET_DEFAULT, keyleds_block_id_t(block.id()),
                           colors, size)) {
         throw Device::error(keyleds_get_error_str(), keyleds_get_errno());
     }
@@ -183,7 +193,7 @@ void Device::setColors(const KeyBlock & block, const ColorDirective colors[], si
 Device::color_directive_list Device::getColors(const KeyBlock & block)
 {
     color_directive_list result(block.keys().size());
-    if (!keyleds_get_leds(m_device.get(), KEYLEDS_TARGET_DEFAULT, block.id(),
+    if (!keyleds_get_leds(m_device.get(), KEYLEDS_TARGET_DEFAULT, keyleds_block_id_t(block.id()),
                           result.data(), 0, result.size())) {
         throw Device::error(keyleds_get_error_str(), keyleds_get_errno());
     }
@@ -199,14 +209,16 @@ void Device::commitColors()
 
 /****************************************************************************/
 
-Device::KeyBlock::KeyBlock(keyleds_block_id_t id, key_list && keys, RGBColor maxValues)
+constexpr Device::key_list::size_type Device::KeyBlock::key_npos;
+
+Device::KeyBlock::KeyBlock(key_block_id_type id, key_list && keys, RGBColor maxValues)
     : m_id(id),
       m_name(keyleds_lookup_string(keyleds_block_id_names, id)),
       m_keys(keys),
+      m_keysInverse(256, key_npos),
       m_maxValues(maxValues)
 {
-    m_keysInverse.resize(256);
-    for (size_t idx = 0; idx < m_keys.size(); ++idx) {
+    for (key_list::size_type idx = 0; idx < m_keys.size(); ++idx) {
         m_keysInverse[m_keys[idx]] = idx;
     }
 }

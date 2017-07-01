@@ -4,15 +4,17 @@
 #include <exception>
 #include <memory>
 #include <vector>
-#include "keyleds.h"
 #include "keyledsd/common.h"
 #include "tools/DeviceWatcher.h"
 
+struct keyleds_device;
+struct keyleds_key_color;
+
 namespace std {
     template <> struct default_delete<struct keyleds_device> {
-        void operator()(struct keyleds_device *p) { keyleds_close(p); }
+        void operator()(struct keyleds_device *) const;
     };
-}
+};
 
 namespace keyleds {
 
@@ -28,11 +30,15 @@ public:
 
     // Data
     class KeyBlock;
+    typedef uint8_t key_block_id_type;
+    typedef uint8_t key_id_type;
     typedef std::vector<KeyBlock> block_list;
+    typedef std::vector<key_id_type> key_list;
 
     // Exceptions
     class error : public std::runtime_error
     {
+        typedef unsigned int keyleds_error_t;
     public:
                         error(std::string what, keyleds_error_t code)
                          : std::runtime_error(what), m_code(code) {}
@@ -49,13 +55,12 @@ public:
     Device &            operator=(Device &&) = default;
 
     // Query
-    int                 socket();
     Type                type() const { return m_type; }
     const std::string & name() const { return m_name; }
     const std::string & model() const { return m_model; }
     const std::string & serial() const { return m_serial; }
     const std::string & firmware() const { return m_firmware; }
-          bool          hasLayout() const { return m_layout != KEYLEDS_KEYBOARD_LAYOUT_INVALID; }
+          bool          hasLayout() const;
           int           layout() const { return m_layout; }
     const block_list &  blocks() const { return m_blocks; }
 
@@ -90,20 +95,20 @@ private:
 class Device::KeyBlock final
 {
 public:
-    typedef std::vector<uint8_t> key_list;
-    typedef std::vector<size_t> index_list;
+    typedef std::vector<key_list::size_type> index_list;
+    static constexpr key_list::size_type key_npos = std::numeric_limits<key_list::size_type>::max();
 public:
-                        KeyBlock(keyleds_block_id_t id, key_list && keys, RGBColor maxValues);
+                        KeyBlock(key_block_id_type id, key_list && keys, RGBColor maxValues);
 
-    keyleds_block_id_t  id() const { return m_id; }
+    key_block_id_type   id() const { return m_id; }
     const std::string & name() const { return m_name; }
     const key_list &    keys() const { return m_keys; }
     const RGBColor &    maxValues() const { return m_maxValues; }
 
-    index_list::value_type find(uint8_t id) const { return m_keysInverse[id]; }
+    key_list::size_type find(key_id_type id) const { return m_keysInverse[id]; }
 
 private:
-    keyleds_block_id_t  m_id;
+    key_block_id_type   m_id;
     std::string         m_name;
     key_list            m_keys;
     index_list          m_keysInverse;
