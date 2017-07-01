@@ -5,6 +5,7 @@
 #include <string>
 #include <unordered_map>
 #include "keyledsd/Configuration.h"
+#include "keyledsd/Device.h"
 #include "config.h"
 
 namespace keyleds {
@@ -20,11 +21,14 @@ class Renderer;
 class IRendererPlugin
 {
 public:
+    typedef std::map<std::string, std::vector<Device::key_indices>> group_map;
+public:
     virtual                 ~IRendererPlugin();
 
     virtual const std::string & name() const noexcept = 0;
     virtual std::unique_ptr<Renderer> createRenderer(const DeviceManager &,
-                                                     const Configuration::Plugin &) = 0;
+                                                     const Configuration::Plugin &,
+                                                     const group_map &) = 0;
 };
 
 /****************************************************************************/
@@ -71,9 +75,10 @@ public:
 
     const std::string & name() const noexcept override { return m_name; }
     std::unique_ptr<Renderer> createRenderer(const DeviceManager & manager,
-                                             const Configuration::Plugin & conf) override
+                                             const Configuration::Plugin & conf,
+                                             const group_map & groups) override
     {
-        return std::make_unique<T>(manager, conf);
+        return std::make_unique<T>(manager, conf, groups);
     }
 protected:
     const std::string       m_name;

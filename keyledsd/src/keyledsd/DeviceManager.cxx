@@ -170,8 +170,36 @@ DeviceManager::LoadedProfile & DeviceManager::getProfile(const Configuration::Pr
         if (it != m_profiles.end()) { return it->second; }
     }
 
-    auto & manager = RendererPluginManager::instance();
+    // Load groups
+    keyleds::IRendererPlugin::group_map groups;
+    for (const auto & group : conf.groups()) {
+        auto keys = decltype(groups)::mapped_type();
+        for (const auto & name : group.second) {
+            auto indices = resolveKeyName(name);
+            if (indices != Device::key_npos) {
+                keys.push_back(indices);
+            } else {
+                WARNING("unknown key ", name, " for device ", m_serial, " in profile ", conf.name());
+            }
+        }
+        groups.emplace(group.first, std::move(keys));
+    }
+    for (const auto & group : m_configuration.groups()) {
+        if (groups.find(group.first) != groups.end()) { continue; }
+        auto keys = decltype(groups)::mapped_type();
+        for (const auto & name : group.second) {
+            auto indices = resolveKeyName(name);
+            if (indices != Device::key_npos) {
+                keys.push_back(indices);
+            } else {
+                DEBUG("ignoring global key ", name, ": not found on device ", m_serial);
+            }
+        }
+        groups.emplace(group.first, std::move(keys));
+    }
 
+    // Load renderers
+    auto & manager = RendererPluginManager::instance();
     LoadedProfile::renderer_list renderers;
     for (const auto & pluginConf : conf.plugins()) {
         auto plugin = manager.get(pluginConf.name());
@@ -180,10 +208,10 @@ DeviceManager::LoadedProfile & DeviceManager::getProfile(const Configuration::Pr
             continue;
         }
         DEBUG("loaded plugin ", pluginConf.name());
-        renderers.push_back(plugin->createRenderer(*this, pluginConf));
+        renderers.push_back(plugin->createRenderer(*this, pluginConf, groups));
     }
 
-    auto it = m_profiles.emplace(std::make_pair(conf.id(), LoadedProfile(std::move(renderers)))).first;
+    auto it = m_profiles.emplace(conf.id(), LoadedProfile(std::move(renderers))).first;
     return it->second;
 }
 
