@@ -5,6 +5,7 @@
 #include "keyledsd/Device.h"
 #include "keyledsd/Service.h"
 #include "config.h"
+#include "keyleds.h"
 #include "logging.h"
 
 LOGGING("service");
