@@ -1,8 +1,13 @@
 #include <errno.h>
+#include <cstdlib>
 #include <iostream>
+#include <type_traits>
 #include "keyledsd/Device.h"
 #include "keyledsd/RenderLoop.h"
+#include "keyleds.h"
 #include "logging.h"
+
+static_assert(std::is_pod<keyleds::RGBAColor>::value, "RGBAColor must be a POD type");
 
 LOGGING("render-loop");
 
@@ -17,26 +22,55 @@ static size_t align(size_t value, size_t alignment)
 
 /****************************************************************************/
 
-const size_t RenderTarget::alignment = 4;
-
-RenderTarget::RenderTarget(const Device & device)
+RenderTarget::RenderTarget(const std::vector<std::size_t> & block_sizes)
+ : m_colors(nullptr)
 {
-    const auto & devblocks = device.blocks();
+    m_blocks.reserve(block_sizes.size());
 
-    size_t totalKeys = 0;
-    for (const auto & block : devblocks) {
-        totalKeys += block.keys().size();
-        totalKeys = align(totalKeys, alignment);
+    std::size_t totalColors = 0;
+    for (auto nbColors : block_sizes) {
+        totalColors = align(totalColors + nbColors, align_colors);
     }
-    keys.resize(totalKeys);
 
-    totalKeys = 0;
-    blocks.resize(devblocks.size());
-    for (size_t idx = 0; idx < devblocks.size(); idx += 1) {
-        blocks[idx] = &keys.data()[totalKeys];
-        totalKeys += devblocks[idx].keys().size();
-        totalKeys = align(totalKeys, alignment);
+    ::posix_memalign(reinterpret_cast<void**>(&m_colors), align_bytes, totalColors * sizeof(m_colors[0]));
+    if (m_colors == nullptr) { throw std::bad_alloc(); }
+    m_nbColors = totalColors;
+
+    totalColors = 0;
+    for (auto nbColors : block_sizes) {
+        m_blocks.push_back(&m_colors[totalColors]);
+        totalColors = align(totalColors + nbColors, align_colors);
     }
+}
+
+RenderTarget::RenderTarget(RenderTarget && other)
+{
+    m_colors = other.m_colors;
+    m_nbColors = other.m_nbColors;
+    m_blocks = std::move(other.m_blocks);
+    other.m_colors = nullptr;
+}
+
+RenderTarget::~RenderTarget()
+{
+    free(m_colors);
+}
+
+RenderTarget RenderTarget::for_device(const Device & device)
+{
+    std::vector<std::size_t> block_sizes;
+    block_sizes.reserve(device.blocks().size());
+    for (const auto & block : device.blocks()) {
+        block_sizes.push_back(block.keys().size());
+    }
+    return RenderTarget(block_sizes);
+}
+
+template <> void std::swap<RenderTarget>(RenderTarget & lhs, RenderTarget & rhs)
+{
+    std::swap(lhs.m_colors, rhs.m_colors);
+    std::swap(lhs.m_nbColors, rhs.m_nbColors);
+    std::swap(lhs.m_blocks, rhs.m_blocks);
 }
 
 /****************************************************************************/
@@ -49,8 +83,8 @@ RenderLoop::RenderLoop(Device & device, renderer_list && renderers, unsigned fps
     : AnimationLoop(fps),
       m_device(device),
       m_renderers(std::move(renderers)),
-      m_state(device),
-      m_buffer(device)
+      m_state(RenderTarget::for_device(device)),
+      m_buffer(RenderTarget::for_device(device))
 {}
 
 RenderLoop::~RenderLoop() {}
@@ -74,12 +108,10 @@ bool RenderLoop::render(unsigned long nanosec)
         size_t nDirectives = 0;
 
         for (size_t idx = 0; idx < nKeys; ++idx) {
-            if (m_state.blocks[bidx][idx] != m_buffer.blocks[bidx][idx]) {
+            const auto & color = m_buffer.get(bidx, idx);
+            if (color != m_state.get(bidx, idx)) {
                 directives[nDirectives++] = Device::ColorDirective{
-                    blocks[bidx].keys().at(idx),
-                    m_buffer.blocks[bidx][idx].red,
-                    m_buffer.blocks[bidx][idx].green,
-                    m_buffer.blocks[bidx][idx].blue
+                    blocks[bidx].keys()[idx], color.red, color.green, color.blue
                 };
             }
         }
@@ -134,10 +166,11 @@ void RenderLoop::getDeviceState(RenderTarget & state)
         auto colors = m_device.getColors(blocks[block_idx]);
 
         for (size_t idx = 0; idx < colors.size(); ++idx) {
-            state.blocks[block_idx][idx].red = colors[idx].red;
-            state.blocks[block_idx][idx].green = colors[idx].green;
-            state.blocks[block_idx][idx].blue = colors[idx].blue;
-            state.blocks[block_idx][idx].alpha = 255;
+            auto & color = state.get(block_idx, idx);
+            color.red = colors[idx].red;
+            color.green = colors[idx].green;
+            color.blue = colors[idx].blue;
+            color.alpha = 255;
         }
     }
 }
