@@ -52,9 +52,7 @@ public:
                     RenderLoop(Device & device, renderer_list && renderers, unsigned fps);
                     ~RenderLoop() override;
 
-          renderer_list & renderers() { return m_renderers; }
-    const renderer_list & renderers() const { return m_renderers; }
-    std::unique_lock<std::mutex> renderersLock() { return std::unique_lock<std::mutex>(m_mRenderers); }
+    void            setRenderers(renderer_list && renderers);
 
 private:
     bool            render(unsigned long) override;

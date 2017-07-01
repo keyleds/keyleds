@@ -89,6 +89,13 @@ RenderLoop::RenderLoop(Device & device, renderer_list && renderers, unsigned fps
 
 RenderLoop::~RenderLoop() {}
 
+void RenderLoop::setRenderers(renderer_list && renderers)
+{
+    std::lock_guard<std::mutex> lock(m_mRenderers);
+    m_renderers = std::move(renderers);
+    DEBUG("enabled ", m_renderers.size(), " renderers for loop ", this);
+}
+
 bool RenderLoop::render(unsigned long nanosec)
 {
     // Run all renderers

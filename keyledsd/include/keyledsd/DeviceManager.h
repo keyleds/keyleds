@@ -26,7 +26,7 @@ private:
         typedef std::vector<std::unique_ptr<Renderer>> renderer_list;
     public:
                             LoadedProfile(renderer_list && renderers)
-                             : m_renderers(std::move(renderers)) {}
+                             : m_renderers(std::forward<renderer_list>(renderers)) {}
                             LoadedProfile(LoadedProfile &&) = default;
         RenderLoop::renderer_list renderers() const;
     private:

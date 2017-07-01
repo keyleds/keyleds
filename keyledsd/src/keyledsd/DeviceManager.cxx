@@ -59,7 +59,6 @@ DeviceManager::DeviceManager(const device::Description & description, Device && 
       m_layout(loadLayout(m_device)),
       m_renderLoop(m_device, loadRenderers(context), 16)
 {
-    DEBUG("Device(", m_serial, ") enabled ", m_renderLoop.renderers().size(), " renderers");
     m_renderLoop.setPaused(false);
 }
 
@@ -81,9 +80,7 @@ keyleds::Device::key_indices DeviceManager::resolveKeyName(const std::string & n
 
 void DeviceManager::setContext(const Context & context)
 {
-    auto lock = m_renderLoop.renderersLock();
-    m_renderLoop.renderers() = loadRenderers(context);
-    DEBUG("Device(", m_serial, ") enabled ", m_renderLoop.renderers().size(), " renderers");
+    m_renderLoop.setRenderers(loadRenderers(context));
 }
 
 void DeviceManager::setPaused(bool val)
@@ -94,8 +91,7 @@ void DeviceManager::setPaused(bool val)
 void DeviceManager::reloadConfiguration()
 {
     DEBUG("Device(", this, ") clearing renderers cache");
-    auto lock = m_renderLoop.renderersLock();
-    m_renderLoop.renderers().clear();
+    m_renderLoop.setRenderers({});
     m_profiles.clear();
 }
 
