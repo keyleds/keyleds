@@ -32,8 +32,9 @@ RenderTarget::RenderTarget(const std::vector<std::size_t> & block_sizes)
         totalColors = align(totalColors + nbColors, align_colors);
     }
 
-    ::posix_memalign(reinterpret_cast<void**>(&m_colors), align_bytes, totalColors * sizeof(m_colors[0]));
-    if (m_colors == nullptr) { throw std::bad_alloc(); }
+    if (::posix_memalign(reinterpret_cast<void**>(&m_colors), align_bytes, totalColors * sizeof(m_colors[0])) != 0) {
+        throw std::bad_alloc();
+    }
     m_nbColors = totalColors;
 
     totalColors = 0;

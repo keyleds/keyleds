@@ -4,6 +4,7 @@
 #include <X11/Xatom.h>
 #include <X11/extensions/XInput2.h>
 #include "tools/XWindow.h"
+#include "config.h"
 
 const std::string activeWindowAtom = "_NET_ACTIVE_WINDOW";
 
@@ -11,7 +12,7 @@ int errorHandler(Display * display, XErrorEvent * error)
 {
     throw xlib::Error(display, error);
 }
-static const auto initialHandler = XSetErrorHandler(errorHandler);
+static const USED auto initialHandler = XSetErrorHandler(errorHandler);
 
 /****************************************************************************/
 
