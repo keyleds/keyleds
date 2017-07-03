@@ -145,7 +145,14 @@ static void parseKeyboard(const xmlNode * keyboard, Layout::key_list & keys)
 
 /****************************************************************************/
 
-void Layout::parse(std::istream & stream)
+Layout::Layout(std::string name, key_list keys)
+ : m_name(name),
+   m_keys(std::move(keys)),
+   m_bounds(computeBounds(m_keys))
+{
+}
+
+Layout Layout::parse(std::istream & stream)
 {
     // Parser context
     xmlParserCtxt_ptr context(xmlNewParserCtxt(), xmlFreeParserCtxt);
@@ -173,27 +180,30 @@ void Layout::parse(std::istream & stream)
 
     // Search for keyboard nodes
     const xmlNode * const root = xmlDocGetRootElement(document.get());
-    xmlString name(xmlGetProp(root, ROOT_ATTR_NAME), xmlFree);
-    m_name = std::string(reinterpret_cast<std::string::const_pointer>(name.get()));
+    auto name = xmlString(xmlGetProp(root, ROOT_ATTR_NAME), xmlFree);
 
+    key_list keys;
     for (const xmlNode * node = root->children; node != nullptr; node = node->next) {
         if (node->type == XML_ELEMENT_NODE && xmlStrcmp(node->name, KEYBOARD_TAG) == 0) {
-            parseKeyboard(node, m_keys);
+            parseKeyboard(node, keys);
         }
     }
 
     // Finalize
-    m_bounds = computeBounds();
+    return Layout(
+        std::string(reinterpret_cast<std::string::const_pointer>(name.get())),
+        std::move(keys)
+    );
 }
 
-Layout::Rect Layout::computeBounds()
+Layout::Rect Layout::computeBounds(const key_list & keys)
 {
-    auto bounds = m_keys.front().position;
-    for (const auto & key : m_keys) {
-        if (key.position.x0 < m_bounds.x0) { m_bounds.x0 = key.position.x0; }
-        if (key.position.y0 < m_bounds.y0) { m_bounds.y0 = key.position.y0; }
-        if (key.position.x1 > m_bounds.x1) { m_bounds.x1 = key.position.x1; }
-        if (key.position.y1 > m_bounds.y1) { m_bounds.y1 = key.position.y1; }
+    auto bounds = keys.front().position;
+    for (const auto & key : keys) {
+        if (key.position.x0 < bounds.x0) { bounds.x0 = key.position.x0; }
+        if (key.position.y0 < bounds.y0) { bounds.y0 = key.position.y0; }
+        if (key.position.x1 > bounds.x1) { bounds.x1 = key.position.x1; }
+        if (key.position.y1 > bounds.y1) { bounds.y1 = key.position.y1; }
     }
     return bounds;
 }

@@ -136,7 +136,7 @@ std::unique_ptr<Layout> DeviceManager::loadLayout(const Device & device)
         auto file = std::ifstream(fullName);
         if (!file) { continue; }
         try {
-            auto result = std::make_unique<Layout>(file);
+            auto result = std::make_unique<Layout>(Layout::parse(file));
             INFO("loaded layout ", fullName);
             return result;
         } catch (Layout::ParseError & error) {

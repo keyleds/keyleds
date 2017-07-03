@@ -1,10 +1,27 @@
-/** C++ wrapper for libudev
+/* Keyleds -- Gaming keyboard tool
+ * Copyright (C) 2017 Julien Hartmann, juli1.hartmann@gmail.com
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+/** @file
+ * @brief C++ wrapper for libudev
  *
  * This wrapper presents a C++ interface for reading device information and
  * getting notifications from libudev.
  */
-#ifndef TOOLS_DEVICE_WATCHER_H
-#define TOOLS_DEVICE_WATCHER_H
+#ifndef TOOLS_DEVICE_WATCHER_H_20E285D9
+#define TOOLS_DEVICE_WATCHER_H_20E285D9
 
 /****************************************************************************/
 
@@ -21,6 +38,10 @@ struct udev_monitor;
 struct udev_enumerate;
 struct udev_device;
 
+/* We use unique_ptr to get automatic disposal of libudev structures
+ * Declare the custom deleters here to ensure they are always used
+ * Implement them in cxx file to prevent leakage of libudev.h into other modules
+ */
 namespace std {
     template<> struct default_delete<struct udev> { void operator()(struct udev *) const; };
     template<> struct default_delete<struct udev_monitor> { void operator()(struct udev_monitor *) const; };
@@ -38,7 +59,12 @@ public:
     Error(const std::string & what) : std::runtime_error(what) {}
 };
 
-
+/** Device description
+ *
+ * Wraps a struct udev_device instance, which describes a single device.
+ * Pre-loads all device properties and attributes for faster access, but at
+ * the cost of heavier initializaiton.
+ */
 class Description final
 {
 public:
@@ -72,14 +98,27 @@ public:
     const attribute_map &   attributes() const { return m_attributes; };
 
 private:
-    std::unique_ptr<struct udev_device> m_device;
-    property_map    m_properties;
-    tag_list        m_tags;
-    attribute_map   m_attributes;
+    std::unique_ptr<struct udev_device> m_device;   ///< underlying libudev device instance
+    property_map    m_properties;                   ///< key-value map of libudev properties
+    tag_list        m_tags;                         ///< string list of libudev tags
+    attribute_map   m_attributes;                   ///< key-value map of libudev attributes
 };
 
 /****************************************************************************/
 
+/** Device watcher and enumerator
+ *
+ * Actively scans or passively monitors devices through libudev. Every device
+ * addition or removal detected is run through filters and emits a signal
+ * if it passes them.
+ *
+ * Scanning is incremental: first scan will emit a deviceAdded for all devices,
+ * and subsequent scans will emit a combination of deviceAdded and deviceRemoved
+ * signals for matching changes. When in active mode, changes are continuously
+ * monitored and signals are emitted as changes happen.
+ *
+ * Deleting the watcher does not emit deviceRemoved signals.
+ */
 class DeviceWatcher : public QObject
 {
     Q_OBJECT
@@ -106,15 +145,22 @@ private slots:
     void                onMonitorReady(int socket);
 
 private:
-    bool                                    m_active;
-    std::unique_ptr<struct udev>            m_udev;
-    std::unique_ptr<struct udev_monitor>    m_monitor;
-    std::unique_ptr<QSocketNotifier>        m_udevNotifier;
-    device_map                              m_known;
+    bool                                    m_active;       ///< If set, the watcher is monitoring
+                                                            ///  device changes
+    std::unique_ptr<struct udev>            m_udev;         ///< Connection to udev, or nullptr
+    std::unique_ptr<struct udev_monitor>    m_monitor;      ///< Monitoring endpoint, or nullptr
+    std::unique_ptr<QSocketNotifier>        m_udevNotifier; ///< Connection monitor for event loop
+    device_map                              m_known;        ///< Map of device syspath to description
 };
 
 /****************************************************************************/
 
+/** Simple filter-based device watcher
+ *
+ * A device watcher that filters devices based on simple rules. All rules must
+ * pass for a device to be matched. Rules will not update while the watcher
+ * is active.
+ */
 class FilteredDeviceWatcher : public DeviceWatcher
 {
     Q_OBJECT

@@ -1,5 +1,21 @@
-#ifndef KEYLEDSD_CONFIGURATION_H
-#define KEYLEDSD_CONFIGURATION_H
+/* Keyleds -- Gaming keyboard tool
+ * Copyright (C) 2017 Julien Hartmann, juli1.hartmann@gmail.com
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+#ifndef KEYLEDSD_CONFIGURATION_H_603C2B68
+#define KEYLEDSD_CONFIGURATION_H_603C2B68
 
 #include <map>
 #include <regex>
@@ -10,6 +26,12 @@ namespace keyleds {
 
 class Context;
 
+/** Complete service configuration
+ *
+ * Holds all configuration data to run an instance of the service,
+ * along with helper methods to load it from a file or program
+ * arguments.
+ */
 class Configuration final
 {
 public:
@@ -24,18 +46,18 @@ public:
 private:
                         Configuration(bool autoQuit,
                                       bool noDBus,
-                                      path_list && pluginPaths,
-                                      path_list && layoutPaths,
-                                      device_map && devices,
-                                      group_map && groups,
-                                      profile_map && profiles)
+                                      path_list pluginPaths,
+                                      path_list layoutPaths,
+                                      device_map devices,
+                                      group_map groups,
+                                      profile_map profiles)
                             : m_autoQuit(autoQuit),
                               m_noDBus(noDBus),
-                              m_pluginPaths(pluginPaths),
-                              m_layoutPaths(layoutPaths),
-                              m_devices(devices),
-                              m_groups(groups),
-                              m_profiles(profiles) {}
+                              m_pluginPaths(std::move(pluginPaths)),
+                              m_layoutPaths(std::move(layoutPaths)),
+                              m_devices(std::move(devices)),
+                              m_groups(std::move(groups)),
+                              m_profiles(std::move(profiles)) {}
 
 public:
                         Configuration() = default;
@@ -60,25 +82,32 @@ public:
     static Configuration loadArguments(int & argc, char * argv[]);
 
 private:
-    bool                m_autoQuit;
-    bool                m_noDBus;
+    bool                m_autoQuit;     ///< If set, the service will exit when last device is removed.
+    bool                m_noDBus;       ///< If set, DBus adapters are not loaded on startup
 
-    path_list           m_pluginPaths;
-    path_list           m_layoutPaths;
-    device_map          m_devices;
-    group_map           m_groups;
-    profile_map         m_profiles;
+    path_list           m_pluginPaths;  ///< List of directories to search for plugins
+    path_list           m_layoutPaths;  ///< List of directories to search for layout files
+    device_map          m_devices;      ///< Map of device serials to device names
+    group_map           m_groups;       ///< Map of key group names to lists of key names
+    profile_map         m_profiles;     ///< Map of profile names to profile configurations
 };
 
 /****************************************************************************/
 
+/** Profile configuration
+ *
+ * Holds the configuration of a single keyboard profile. Each profile
+ * has a unique identifier used to be able to differentiate two otherwise
+ * similar profiles.
+ */
 class Configuration::Profile final
 {
 public:
+    /// Filters a context to determine whether a profile should be enabled
     class Lookup final
     {
     public:
-        Lookup() {}
+        Lookup() = default;
         Lookup(std::string title, std::string className, std::string instanceName)
          : m_titleFilter(title),
            m_classNameFilter(className),
@@ -91,13 +120,13 @@ public:
         bool                match(const Context &) const;
 
     private:
-        std::string         m_titleFilter;
-        std::string         m_classNameFilter;
-        std::string         m_instanceNameFilter;
-        mutable bool        m_didCompileRE;
-        mutable std::regex  m_titleRE;
-        mutable std::regex  m_classNameRE;
-        mutable std::regex  m_instanceNameRE;
+        std::string         m_titleFilter;          ///< Regexp matched against context's "title" item
+        std::string         m_classNameFilter;      ///< Regexp matched against context's "class" item
+        std::string         m_instanceNameFilter;   ///< Regexp matched against context's "instance" item
+        mutable bool        m_didCompileRE;         ///< Set when regexps have been compiled into objects below
+        mutable std::regex  m_titleRE;              ///< Compiled version of m_titleFilter
+        mutable std::regex  m_classNameRE;          ///< Compiled version of m_classNameFilter
+        mutable std::regex  m_instanceNameRE;       ///< Compiled version of m_instanceNameFilter
     };
 
     typedef unsigned int id_type;
@@ -107,17 +136,17 @@ public:
 public:
                         Profile(std::string name,
                                 bool isDefault,
-                                Lookup && lookup,
-                                device_list && devices,
-                                group_map && groups,
-                                plugin_list && plugins)
+                                Lookup lookup,
+                                device_list devices,
+                                group_map groups,
+                                plugin_list plugins)
                          : m_id(makeId()),
                            m_name(name),
                            m_isDefault(isDefault),
-                           m_lookup(lookup),
-                           m_devices(devices),
-                           m_groups(groups),
-                           m_plugins(plugins) {}
+                           m_lookup(std::move(lookup)),
+                           m_devices(std::move(devices)),
+                           m_groups(std::move(groups)),
+                           m_plugins(std::move(plugins)) {}
           id_type       id() const noexcept { return m_id; }
     const std::string & name() const { return m_name; }
           bool          isDefault() const { return m_isDefault; }
@@ -130,29 +159,35 @@ private:
     static id_type      makeId();
 
 private:
-    id_type             m_id;
-    std::string         m_name;
-    bool                m_isDefault;
-    Lookup              m_lookup;
-    device_list         m_devices;
-    group_map           m_groups;
-    plugin_list         m_plugins;
+    id_type             m_id;           ///< Unique throughout a service lifetime
+    std::string         m_name;         ///< User-readable name
+    bool                m_isDefault;    ///< If set, m_lookup is ignored and this profile applies
+                                        ///  if and only if no non-default profile applies.
+    Lookup              m_lookup;       ///< Matched against a context to determine whether to apply the profile
+    device_list         m_devices;      ///< List of device names this profile is restricted to
+    group_map           m_groups;       ///< Map of profile-specific key group names to lists of key names
+    plugin_list         m_plugins;      ///< List of plugin configurations
 };
 
 /****************************************************************************/
 
+/** Plugin configuration
+ *
+ * Holds the configuration of a single rendering plugin. It is a simple string
+ * map, and a plugin name used to look it up in the plugin manager.
+ */
 class Configuration::Plugin final
 {
 public:
     typedef std::map<std::string, std::string> conf_map;
 public:
-                        Plugin(std::string name, conf_map && items)
-                            : m_name(name), m_items(items) {}
+                        Plugin(std::string name, conf_map items)
+                            : m_name(name), m_items(std::move(items)) {}
     const std::string & name() const { return m_name; }
     const conf_map &    items() const { return m_items; }
 private:
-    std::string         m_name;
-    conf_map            m_items;
+    std::string         m_name;         ///< Plugin name as registered in plugin manager
+    conf_map            m_items;        ///< Flat string map passed through to plugin
 };
 
 };

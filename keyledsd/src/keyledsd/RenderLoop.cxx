@@ -8,6 +8,7 @@
 #include "logging.h"
 
 static_assert(std::is_pod<keyleds::RGBAColor>::value, "RGBAColor must be a POD type");
+static_assert(sizeof(keyleds::RGBAColor) == 4, "RGBAColor must be tightly packed");
 
 LOGGING("render-loop");
 
@@ -80,7 +81,7 @@ Renderer::~Renderer() {}
 
 /****************************************************************************/
 
-RenderLoop::RenderLoop(Device & device, renderer_list && renderers, unsigned fps)
+RenderLoop::RenderLoop(Device & device, renderer_list renderers, unsigned fps)
     : AnimationLoop(fps),
       m_device(device),
       m_renderers(std::move(renderers)),
@@ -90,7 +91,7 @@ RenderLoop::RenderLoop(Device & device, renderer_list && renderers, unsigned fps
 
 RenderLoop::~RenderLoop() {}
 
-void RenderLoop::setRenderers(renderer_list && renderers)
+void RenderLoop::setRenderers(renderer_list renderers)
 {
     std::lock_guard<std::mutex> lock(m_mRenderers);
     m_renderers = std::move(renderers);

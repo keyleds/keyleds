@@ -1,14 +1,31 @@
-#ifndef KEYLEDSD_DEVICEMANAGER_H
-#define KEYLEDSD_DEVICEMANAGER_H
+/* Keyleds -- Gaming keyboard tool
+ * Copyright (C) 2017 Julien Hartmann, juli1.hartmann@gmail.com
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+#ifndef KEYLEDSD_DEVICEMANAGER_H_0517383B
+#define KEYLEDSD_DEVICEMANAGER_H_0517383B
 
 #include <QObject>
 #include "keyledsd/Configuration.h"
 #include "keyledsd/Device.h"
 #include "keyledsd/RenderLoop.h"
 #include "tools/DeviceWatcher.h"
-#include <list>
 #include <memory>
 #include <string>
+#include <unordered_map>
+#include <vector>
 struct KeyledsdTarget;
 
 namespace keyleds {
@@ -16,10 +33,22 @@ namespace keyleds {
 class Context;
 class Layout;
 
+/** Main device manager
+ *
+ * Centralizes all operations and information for a specific device.
+ * It is given a device instance to manage and a reference to current
+ * configuration at creation time, and coordinates feature detection,
+ * layout management, and related objects' life cycle.
+ */
 class DeviceManager : public QObject
 {
     Q_OBJECT
 private:
+    /** A profile, fully loaded with plugins
+     *
+     * Holds a list of loaded renderers to include while rendering device status
+     * and the matching profile configuration is enabled.
+     */
     class LoadedProfile final
     {
     public:
@@ -32,6 +61,7 @@ private:
     private:
         renderer_list   m_renderers;
     };
+    typedef std::unordered_map<Configuration::Profile::id_type, LoadedProfile> profile_map;
 
 public:
     typedef std::unique_ptr<Layout> layout_ptr;
@@ -68,15 +98,16 @@ private:
     LoadedProfile &         getProfile(const Configuration::Profile &);
 
 private:
-    const Configuration &   m_configuration;
+    const Configuration &   m_configuration;    ///< Reference to service configuration
 
-    std::string             m_serial;
-    dev_list                m_eventDevices;
-    Device                  m_device;
-    layout_ptr              m_layout;
+    std::string             m_serial;           ///< Device serial number
+    dev_list                m_eventDevices;     ///< List of event device paths that the
+                                                ///  physical device can communicate on.
+    Device                  m_device;           ///< The device handled by this manager
+    layout_ptr              m_layout;           ///< Loaded layout of the device, or nullptr if none
 
-    std::unordered_map<Configuration::Profile::id_type, LoadedProfile> m_profiles;
-    RenderLoop              m_renderLoop;
+    profile_map             m_profiles;         ///< Map of profile id to loaded profile instance
+    RenderLoop              m_renderLoop;       ///< The RenderLoop in charge of the device
 };
 
 };

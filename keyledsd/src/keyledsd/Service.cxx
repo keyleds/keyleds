@@ -3,6 +3,7 @@
 #include "keyledsd/Configuration.h"
 #include "keyledsd/ContextWatcher.h"
 #include "keyledsd/Device.h"
+#include "keyledsd/DeviceManager.h"
 #include "keyledsd/Service.h"
 #include "config.h"
 #include "keyleds.h"

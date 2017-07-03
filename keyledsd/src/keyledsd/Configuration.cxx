@@ -1,3 +1,19 @@
+/* Keyleds -- Gaming keyboard tool
+ * Copyright (C) 2017 Julien Hartmann, juli1.hartmann@gmail.com
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 #include <algorithm>
 #include <atomic>
 #include <cstdlib>
@@ -79,6 +95,12 @@ template<> bool ConfigurationBuilder::parseScalar<bool>(const std::string & val)
 
 /****************************************************************************/
 
+/** Builder parsing state
+ *
+ * Tracks the current state of the configuration builder. Each possible state
+ * must inherit this class and implement methods matching allowable events in
+ * that state.
+ */
 class ConfigurationBuilder::BuildState
 {
 public:
@@ -87,7 +109,7 @@ public:
 
 public:
     BuildState(state_type type = 0) : m_type(type) {}
-    state_type type() const { return m_type; }
+    state_type type() const noexcept { return m_type; }
     virtual void print(std::ostream &) const = 0;
 
 public:
@@ -101,10 +123,12 @@ public:
     virtual void scalar(ConfigurationBuilder & builder, const std::string &, const std::string &)
         { throw builder.makeError("unexpected scalar"); }
 
-    template<class T> T & as() { return static_cast<T&>(*this); }
+    template<class T> T & as() noexcept { return static_cast<T&>(*this); }
 
 private:
-    state_type  m_type;
+    state_type  m_type;         ///< State subtype, used by parent state to identify
+                                ///  which state this object represents, when several
+                                ///  substates use the same class.
 };
 
 std::ostream & operator<<(std::ostream & out, ConfigurationBuilder::BuildState & state)
@@ -115,8 +139,9 @@ std::ostream & operator<<(std::ostream & out, ConfigurationBuilder::BuildState &
 
 /****************************************************************************/
 /****************************************************************************/
-// Generic inheritable build state for mappings
-
+/// Generic inheritable build state for mappings
+/** Pairs events two by two to associate a key scalar to the following event.
+ */
 class MappingBuildState : public ConfigurationBuilder::BuildState
 {
 public:
@@ -185,7 +210,6 @@ public:
     StringSequenceBuildState(state_type type = 0) : BuildState(type) {}
     void print(std::ostream & out) const override { out <<"string-sequence"; }
 
-
     void alias(ConfigurationBuilder & builder, const std::string & anchor) override
     {
         m_value.push_back(builder.getScalarAlias(anchor));
@@ -236,6 +260,7 @@ private:
 /****************************************************************************/
 // Specific types for keyledsd configuration
 
+/// Configuration builder state: withing a key group list
 class GroupListState final : public MappingBuildState
 {
 public:
@@ -279,6 +304,7 @@ private:
 };
 
 
+/// Configuration builder state: within a profile's plugin list
 class PluginListState final : public ConfigurationBuilder::BuildState
 {
 public:
@@ -316,6 +342,7 @@ private:
 };
 
 
+/// Configuration builder state: within a profile
 class ProfileState final: public MappingBuildState
 {
     enum SubState : state_type { Lookup, DeviceList, GroupList, PluginList };
@@ -400,6 +427,7 @@ private:
 };
 
 
+/// Configuration builder state: within a profile list
 class ProfileListState final : public MappingBuildState
 {
 public:
@@ -426,6 +454,7 @@ private:
 };
 
 
+/// Configuration builder state: at document root
 class RootState final : public MappingBuildState
 {
     enum SubState : state_type { Plugins, Layouts, Devices, Groups, Profiles };
@@ -487,6 +516,7 @@ public:
 };
 
 
+/// Configuration builder state: parsing just started
 class InitialState final : public ConfigurationBuilder::BuildState
 {
 public:

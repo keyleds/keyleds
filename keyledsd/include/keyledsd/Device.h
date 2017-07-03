@@ -1,5 +1,21 @@
-#ifndef KEYLEDSD_KEYBOARD_H
-#define KEYLEDSD_KEYBOARD_H
+/* Keyleds -- Gaming keyboard tool
+ * Copyright (C) 2017 Julien Hartmann, juli1.hartmann@gmail.com
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+#ifndef KEYLEDSD_KEYBOARD_H_F57B19AC
+#define KEYLEDSD_KEYBOARD_H_F57B19AC
 
 #include <exception>
 #include <memory>
@@ -20,6 +36,12 @@ namespace keyleds {
 
 /****************************************************************************/
 
+/** Physical device interface
+ *
+ * Handles communication with the underlying device. This class is built as a
+ * wrapper around libkeyleds, with additional checks and caching. It also
+ * converts library errors into exceptions.
+ */
 class Device final
 {
 public:
@@ -87,17 +109,21 @@ private:
     void                cacheVersion();
 
 private:
-    std::unique_ptr<struct keyleds_device> m_device;
-    Type                m_type;
-    std::string         m_name;
-    std::string         m_model;
-    std::string         m_serial;
-    std::string         m_firmware;
-    int                 m_layout;
-    block_list          m_blocks;
+    std::unique_ptr<struct keyleds_device> m_device;    ///< Underlying libkeyleds opaque handle
+    Type                m_type;             ///< The kind of libkeyleds device
+    std::string         m_name;             ///< User-friendly name of the device, eg "Logitech G410"
+    std::string         m_model;            ///< Model identification string, eg "c3300000"
+    std::string         m_serial;           ///< Device-declared serial - note: usually not unique
+    std::string         m_firmware;         ///< Detected firmware version
+    int                 m_layout;           ///< Device-declared layout number - used to locate a layout file
+    block_list          m_blocks;           ///< List of key blocks detected on device
 };
 
 
+/** Physical device key block description
+ *
+ * Holds the detected characteristics of a physical key block.
+ */
 class Device::KeyBlock final
 {
 public:
@@ -114,15 +140,20 @@ public:
     key_list::size_type find(key_id_type id) const { return m_keysInverse[id]; }
 
 private:
-    key_block_id_type   m_id;
-    std::string         m_name;
-    key_list            m_keys;
-    index_list          m_keysInverse;
-    RGBColor            m_maxValues;
+    key_block_id_type   m_id;           ///< Block identifier, eg: 0 for normal keys, 64 for game/light keys, ...
+    std::string         m_name;         ///< USer-readable block name
+    key_list            m_keys;         ///< List of key identifiers in block
+    index_list          m_keysInverse;  ///< Reverse list of keys in blocks (key id N is at m_keys' index I)
+    RGBColor            m_maxValues;    ///< Color values that represent maximum light power for the block
 };
 
 /****************************************************************************/
 
+/** Keyleds-specific device watcher
+ *
+ * A device::FilteredDeviceWatcher that further filters detected devices to only
+ * let Logitech devices through.
+ */
 class DeviceWatcher : public device::FilteredDeviceWatcher
 {
     Q_OBJECT

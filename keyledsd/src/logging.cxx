@@ -60,11 +60,11 @@ void StreamPolicy::write(Logger::level_t, const std::string & name, const std::s
 /****************************************************************************/
 
 static const std::map<Logger::level_t, std::string> levels = {
-    { Logger::Critical, "\033[1;31m<C>\033[;39m" },
-    { Logger::Error, "\033[1;31m<E>\033[;39m" },
-    { Logger::Warning, "\033[33m<W>\033[39m" },
-    { Logger::Info, "\033[1m<I>\033[m" },
-    { Logger::Debug, "\033[2m<D>\033[m" }
+    { Logger::critical::value(), "\033[1;31m<C>\033[;39m" },
+    { Logger::error::value(), "\033[1;31m<E>\033[;39m" },
+    { Logger::warning::value(), "\033[33m<W>\033[39m" },
+    { Logger::info::value(), "\033[1m<I>\033[m" },
+    { Logger::debug::value(), "\033[2m<D>\033[m" }
 };
 static const std::string nameEnter = "\033[1m";
 static const std::string nameExit = "\033[m";

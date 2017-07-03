@@ -49,7 +49,7 @@ set_source_files_properties(src/tools/accelerated_sse2.cxx PROPERTIES COMPILE_FL
 ##############################################################################
 # Dependencies
 
-find_package(Qt4 REQUIRED QtCore)
+find_package(Qt4 REQUIRED QtCore QtDBus)
 qt4_wrap_cpp(moc_sources
     include/dbus/DeviceManagerAdaptor.h
     include/dbus/ServiceAdaptor.h
