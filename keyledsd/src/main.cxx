@@ -4,7 +4,9 @@
 #include <iostream>
 #include <locale.h>
 #include "config.h"
+#ifndef NO_DBUS
 #include "dbus/ServiceAdaptor.h"
+#endif
 #include "keyledsd/Configuration.h"
 #include "keyledsd/ContextWatcher.h"
 #include "keyledsd/Service.h"
@@ -47,6 +49,7 @@ int main(int argc, char * argv[])
         ERROR("skipping display events: ", error.what());
     }
 
+#ifndef NO_DBUS
     if (!configuration.noDBus()) {
         auto connection = QDBusConnection::sessionBus();
         new dbus::ServiceAdaptor(service);   // service takes ownership
@@ -56,6 +59,7 @@ int main(int argc, char * argv[])
             return 2;
         }
     }
+#endif
 
     // Register signals and go
     std::signal(SIGINT, quit_handler);

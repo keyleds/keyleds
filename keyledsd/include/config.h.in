@@ -17,6 +17,7 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#cmakedefine NO_DBUS
 #define KEYLEDSD_CONFIG_PATH    "/etc/keyledsd.conf"
 #define KEYLEDSD_DATA_PREFIX    "@KEYLEDSD_DATA_PREFIX@"
 

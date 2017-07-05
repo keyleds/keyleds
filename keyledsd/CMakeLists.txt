@@ -5,6 +5,8 @@ include(CheckCXXSourceCompiles)
 ##############################################################################
 # Options
 
+option(NO_DBUS "Do not compile DBus support" OFF)
+
 if(NOT KEYLEDSD_DATA_PREFIX)
     set(KEYLEDSD_DATA_PREFIX ${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME})
 endif()
@@ -19,8 +21,6 @@ include_directories("${PROJECT_BINARY_DIR}" "include")
 
 # List of sources
 set(keyledsd_SRCS
-    src/dbus/DeviceManagerAdaptor.cxx
-    src/dbus/ServiceAdaptor.cxx
     src/keyledsd/common.cxx
     src/keyledsd/Configuration.cxx
     src/keyledsd/Context.cxx
@@ -43,16 +43,26 @@ set(keyledsd_SRCS
     src/logging.cxx
     src/main.cxx
 )
+IF(NOT NO_DBUS)
+    set(keyledsd_SRCS ${keyledsd_SRCS}
+        src/dbus/DeviceManagerAdaptor.cxx
+        src/dbus/ServiceAdaptor.cxx)
+ENDIF()
+
 set_source_files_properties(src/tools/accelerated_mmx.cxx PROPERTIES COMPILE_FLAGS -mmmx)
 set_source_files_properties(src/tools/accelerated_sse2.cxx PROPERTIES COMPILE_FLAGS -msse2)
 
 ##############################################################################
 # Dependencies
 
-find_package(Qt4 REQUIRED QtCore QtDBus)
+set(QT_MODULES QtCore)
+IF(NOT NO_DBUS)
+    set(QT_MODULES ${QT_MODULES} QtDBus)
+ENDIF()
+
+find_package(Qt4 REQUIRED ${QT_MODULES})
+set(keyledsd_DEPS ${keyledsd_DEPS} Qt4::QtCore)
 qt4_wrap_cpp(moc_sources
-    include/dbus/DeviceManagerAdaptor.h
-    include/dbus/ServiceAdaptor.h
     include/keyledsd/ContextWatcher.h
     include/keyledsd/Device.h
     include/keyledsd/DeviceManager.h
@@ -60,6 +70,15 @@ qt4_wrap_cpp(moc_sources
     include/tools/DeviceWatcher.h
 )
 set(keyledsd_SRCS ${keyledsd_SRCS} ${moc_sources})
+
+IF(NOT NO_DBUS)
+    set(keyledsd_DEPS ${keyledsd_DEPS} Qt4::QtDBus)
+    qt4_wrap_cpp(moc_sources
+        include/dbus/DeviceManagerAdaptor.h
+        include/dbus/ServiceAdaptor.h
+    )
+    set(keyledsd_SRCS ${keyledsd_SRCS} ${moc_sources})
+ENDIF()
 
 find_package(Threads REQUIRED)
 
@@ -86,7 +105,6 @@ find_package(X11)
 set(keyledsd_DEPS ${keyledsd_DEPS} ${X11_LIBRARIES} ${X11_Xinput_LIB})
 
 set(keyledsd_DEPS "${keyledsd_DEPS}"
-    Qt4::QtCore Qt4::QtDBus
     ${CMAKE_THREAD_LIBS_INIT} ${LIBUDEV} ${LIBRT} ${LIBYAML}
 )
 configure_file("include/config.h.in" "config.h")

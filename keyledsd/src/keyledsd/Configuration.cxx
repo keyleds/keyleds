@@ -531,6 +531,7 @@ public:
 /****************************************************************************/
 
 ConfigurationBuilder::ConfigurationBuilder()
+ : m_autoQuit(false), m_noDBus(false)
 {
     m_state.push(std::make_unique<InitialState>());
 }
