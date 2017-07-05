@@ -93,7 +93,8 @@ private:
     static std::string      getSerial(const device::Description &);
     static dev_list         findEventDevices(const device::Description &);
     static std::string      layoutName(const Device &);
-    layout_ptr              loadLayout(const Device &);
+    static layout_ptr       loadLayout(const Configuration &, const Device &);
+
     RenderLoop::renderer_list loadRenderers(const Context &);
     LoadedProfile &         getProfile(const Configuration::Profile &);
 

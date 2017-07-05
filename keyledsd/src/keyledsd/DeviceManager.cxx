@@ -56,7 +56,7 @@ DeviceManager::DeviceManager(const device::Description & description, Device && 
       m_serial(getSerial(description)),
       m_eventDevices(findEventDevices(description)),
       m_device(std::move(device)),
-      m_layout(loadLayout(m_device)),
+      m_layout(loadLayout(conf, m_device)),
       m_renderLoop(m_device, loadRenderers(context), 16)
 {
     m_renderLoop.setPaused(false);
@@ -123,11 +123,11 @@ std::string DeviceManager::layoutName(const Device & device)
     return fileNameBuf.str();
 }
 
-std::unique_ptr<Layout> DeviceManager::loadLayout(const Device & device)
+std::unique_ptr<Layout> DeviceManager::loadLayout(const Configuration & conf, const Device & device)
 {
     if (!device.hasLayout()) { return nullptr; }
 
-    auto paths = m_configuration.layoutPaths();
+    auto paths = conf.layoutPaths();
     paths.push_back(KEYLEDSD_DATA_PREFIX "/layouts");
     const auto & fileName = layoutName(device);
 
