@@ -28,6 +28,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace std {
     template <> struct default_delete<::Display> {
@@ -158,6 +159,32 @@ public:
                              : std::runtime_error(makeMessage(display, event)) {}
 private:
     static std::string      makeMessage(::Display *display, XErrorEvent *event);
+};
+
+/****************************************************************************/
+
+class ErrorCatcher
+{
+public:
+    typedef std::vector<Error> error_list;
+    typedef int (*handler_type)(::Display *, XErrorEvent *);
+public:
+    ErrorCatcher();
+    ErrorCatcher(const ErrorCatcher &) = delete;
+    ~ErrorCatcher();
+
+    const error_list & errors() const { return m_errors; }
+    operator bool() const { return !m_errors.empty(); }
+
+    void synchronize(Display &) const;
+private:
+    static int errorHandler(::Display *, XErrorEvent *);
+
+private:
+    static ErrorCatcher * s_current;
+    error_list      m_errors;
+    handler_type    m_oldHandler;
+    ErrorCatcher *  m_oldCatcher;
 };
 
 }

@@ -16,6 +16,9 @@
  */
 #include <QtCore>
 #include "keyledsd/ContextWatcher.h"
+#include "logging.h"
+
+LOGGING("context-watcher");
 
 using keyleds::XContextWatcher;
 const std::string activeWindowAtom = "_NET_ACTIVE_WINDOW";
@@ -79,10 +82,20 @@ void XContextWatcher::handleEvent(XEvent & event)
                 m_activeWindow = std::move(active);
             }
         }
+
         if (m_activeWindow != nullptr && (
                 event.xproperty.atom == m_display.atom("_NET_WM_NAME") ||
                 event.xproperty.atom == m_display.atom("WM_NAME"))) {
+
+            xlib::ErrorCatcher errors;
+
             setContext(m_activeWindow.get());
+
+            errors.synchronize(m_display);
+            if (errors) {
+                DEBUG("PropertNotify - _NET_WM_NAME changed had ", errors.errors().size(), " errors");
+                m_activeWindow = nullptr;
+            }
         }
         break;
     }
@@ -90,18 +103,25 @@ void XContextWatcher::handleEvent(XEvent & event)
 
 void XContextWatcher::onActiveWindowChanged(xlib::Window * window)
 {
+    xlib::ErrorCatcher errors;
+
     if (m_activeWindow != nullptr) {
         XSetWindowAttributes attributes;
         attributes.event_mask = NoEventMask;
         m_activeWindow->changeAttributes(CWEventMask, attributes);
     }
+
     if (window != nullptr) {
         XSetWindowAttributes attributes;
         attributes.event_mask = PropertyChangeMask;
         window->changeAttributes(CWEventMask, attributes);
     }
-
     setContext(window);
+
+    errors.synchronize(m_display);
+    if (errors) {
+        DEBUG("onActiveWindowChanged, ignoring ", errors.errors().size(), " errors");
+    }
 }
 
 void XContextWatcher::setContext(xlib::Window * window)

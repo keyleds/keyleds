@@ -1,3 +1,4 @@
+#include <cassert>
 #include <exception>
 #include <limits>
 #include <sstream>
@@ -7,12 +8,6 @@
 #include "config.h"
 
 const std::string activeWindowAtom = "_NET_ACTIVE_WINDOW";
-
-int errorHandler(Display * display, XErrorEvent * error)
-{
-    throw xlib::Error(display, error);
-}
-static const USED auto initialHandler = XSetErrorHandler(errorHandler);
 
 /****************************************************************************/
 
@@ -193,7 +188,38 @@ std::string xlib::Error::makeMessage(::Display *display, XErrorEvent *event)
         msg <<"error code " <<event->error_code;
     }
     msg <<" on display " <<DisplayString(display)
-        <<" while performing request " <<+event->request_code <<"." <<+event->minor_code;
+        <<" while performing request " <<int(event->request_code) <<"." <<int(event->minor_code);
 
     return msg.str();
 }
+
+/****************************************************************************/
+
+xlib::ErrorCatcher::ErrorCatcher()
+{
+    m_oldCatcher = s_current;
+    s_current = this;
+    m_oldHandler = XSetErrorHandler(errorHandler);
+}
+
+xlib::ErrorCatcher::~ErrorCatcher()
+{
+    if (XSetErrorHandler(m_oldHandler) != errorHandler || s_current != this) {
+        throw std::logic_error("ErrorCatcher must be destroyed in reverse order");
+    }
+    s_current = m_oldCatcher;
+}
+
+void xlib::ErrorCatcher::synchronize(xlib::Display & display) const
+{
+    XSync(display.handle(), False);
+}
+
+int xlib::ErrorCatcher::errorHandler(::Display * display, XErrorEvent * error)
+{
+    assert(s_current != nullptr);
+    s_current->m_errors.emplace_back(display, error);
+    return 0;
+}
+
+xlib::ErrorCatcher * xlib::ErrorCatcher::s_current = nullptr;
