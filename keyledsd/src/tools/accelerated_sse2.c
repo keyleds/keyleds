@@ -6,7 +6,7 @@
 void blend_sse2(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
 {
     __m128i * restrict dstv = (__m128i *)__builtin_assume_aligned(dst, 16);
-    const __m128i * restrict srcv = (__m128i *)__builtin_assume_aligned(src, 16);
+    const __m128i * restrict srcv = (const __m128i *)__builtin_assume_aligned(src, 16);
 
     const __m128i zero = _mm_setzero_si128();
     const __m128i one = _mm_set1_epi16(1);
@@ -14,8 +14,8 @@ void blend_sse2(uint8_t * restrict dst, const uint8_t * restrict src, unsigned l
 
     assert((uintptr_t)dst % 16 == 0);
     assert((uintptr_t)src % 16 == 0);
-    assert(length % 16 == 0);
-    length /= 16;
+    assert(length % 4 == 0);
+    length /= 4;
 
     do {
         __m128i packed_dst = _mm_load_si128(dstv);
