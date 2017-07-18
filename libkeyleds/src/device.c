@@ -163,6 +163,7 @@ bool keyleds_send(Keyleds * device, uint8_t target_id, uint8_t feature_idx,
         return false;
     }
     if ((size_t)nwritten != 1 + report_size) {
+        KEYLEDS_LOG(DEBUG, "Unexpected write size %ld on fd %d", nwritten, device->fd);
         keyleds_set_error(KEYLEDS_ERROR_IO_LENGTH);
         return false;
     }
@@ -172,7 +173,7 @@ bool keyleds_send(Keyleds * device, uint8_t target_id, uint8_t feature_idx,
 bool keyleds_receive(Keyleds * device, uint8_t target_id, uint8_t feature_idx,
                      uint8_t * message, size_t * size)
 {
-    int err, nread;
+    int err, nread, idx;
 
     assert(device != NULL);
     assert(message != NULL);
@@ -201,11 +202,6 @@ bool keyleds_receive(Keyleds * device, uint8_t target_id, uint8_t feature_idx,
             keyleds_set_error_errno();
             return false;
         }
-        if (nread < 1 + device->reports[0].size) {
-            keyleds_set_error(KEYLEDS_ERROR_IO_LENGTH);
-            return false;
-        }
-
 #ifndef NDEBUG
         if (g_keyleds_debug_level >= KEYLEDS_LOG_DEBUG) {
             char debug_buffer[3 * nread + 1];
@@ -213,6 +209,17 @@ bool keyleds_receive(Keyleds * device, uint8_t target_id, uint8_t feature_idx,
             KEYLEDS_LOG(DEBUG, "Recv [%s]", debug_buffer);
         }
 #endif
+        for (idx = 0; device->reports[idx].id != DEVICE_REPORT_INVALID; idx += 1)
+        {
+            if (device->reports[idx].id == message[0]) { break; }
+        }
+        if (device->reports[idx].id == DEVICE_REPORT_INVALID) { continue; }
+
+        if (nread != 1 + device->reports[idx].size) {
+            KEYLEDS_LOG(DEBUG, "Unexpected read size %d on fd %d", nread, device->fd);
+            keyleds_set_error(KEYLEDS_ERROR_IO_LENGTH);
+            return false;
+        }
 
     } while(!(
         message[1] == target_id && (                /* message is from this device */
