@@ -17,8 +17,6 @@
 #ifndef TOOLS_ACCELERATED_H_D3D3B426
 #define TOOLS_ACCELERATED_H_D3D3B426
 
-#include "config.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -40,7 +38,7 @@ extern "C" {
  * @param length The number of colors in the arrays. Must be a multiple of 4.
  * @note Arrays must not overlap.
  */
-void blend(uint8_t * restrict a, const uint8_t * restrict b, unsigned length);
+void blend(uint8_t * a, const uint8_t * b, unsigned length);
 
 #ifdef __cplusplus
 }

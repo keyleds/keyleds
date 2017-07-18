@@ -31,6 +31,7 @@ set(keyledsd_SRCS
     src/keyledsd/PluginManager.cxx
     src/keyledsd/RenderLoop.cxx
     src/keyledsd/Service.cxx
+    src/plugins/breathe.cxx
     src/plugins/fill.cxx
     src/tools/accelerated.c
     src/tools/accelerated_mmx.c

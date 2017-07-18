@@ -54,6 +54,10 @@ public:
 
     iterator                    begin() noexcept { return &m_colors[0]; }
     iterator                    end() noexcept { return &m_colors[m_nbColors]; }
+    std::size_t                 size() const noexcept { return m_nbColors; }
+    RGBAColor *                 data() noexcept { return m_colors; }
+    const RGBAColor *           data() const noexcept { return m_colors; }
+
     RGBAColor &                 get(std::size_t bidx, std::size_t kidx) noexcept
                                 { return *(m_blocks[bidx] + kidx); }
     RGBAColor &                 get(const key_descriptor & desc) noexcept
