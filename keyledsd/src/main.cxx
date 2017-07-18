@@ -3,6 +3,7 @@
 #include <csignal>
 #include <iostream>
 #include <locale.h>
+#include <keyleds.h>
 #include "config.h"
 #ifndef NO_DBUS
 #include "dbus/ServiceAdaptor.h"
@@ -31,6 +32,7 @@ int main(int argc, char * argv[])
     // Load configuration
     try {
         configuration = std::move(keyleds::Configuration::loadArguments(argc, argv));
+        g_keyleds_debug_level = configuration.logLevel();
     } catch (std::exception & error) {
         std::cerr <<"Could not load configuration: " <<error.what() <<std::endl;
         return 1;

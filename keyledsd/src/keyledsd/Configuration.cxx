@@ -614,6 +614,7 @@ Configuration Configuration::loadFile(const std::string & path)
     }
     builder.parse(file);
     return Configuration(
+        Logger::warning::value(),
         builder.m_autoQuit,
         builder.m_noDBus,
         std::move(builder.m_pluginPaths),
@@ -629,7 +630,9 @@ Configuration Configuration::loadFile(const std::string & path)
 static const struct option options[] = {
     {"config",    1, nullptr, 'c' },
     {"help",      0, nullptr, 'h' },
+    {"quiet",     0, nullptr, 'q' },
     {"single",    0, nullptr, 's' },
+    {"verbose",   0, nullptr, 'v' },
     {"no-dbus",   0, nullptr, 'D' },
     {nullptr, 0, nullptr, 0}
 };
@@ -641,14 +644,15 @@ Configuration Configuration::loadArguments(int & argc, char * argv[])
     std::ostringstream msgBuf;
 
     const char * configPath = nullptr;
+    Logger::level_t logLevel = Logger::warning::value();
     bool autoQuit = false;
     bool noDBus = false;
 
     ::opterr = 0;
 #ifdef _GNU_SOURCE
-    while ((opt = ::getopt_long(argc, argv, ":c:hsD", options, nullptr)) >= 0) {
+    while ((opt = ::getopt_long(argc, argv, ":c:hqsvD", options, nullptr)) >= 0) {
 #else
-    while ((opt = ::getopt(argc, argv, ":c:hsD")) >= 0) {
+    while ((opt = ::getopt(argc, argv, ":c:hqsvD")) >= 0) {
 #endif
         switch(opt) {
         case 'c':
@@ -660,8 +664,14 @@ Configuration Configuration::loadArguments(int & argc, char * argv[])
         case 'h':
             std::cout <<"Usage: " <<argv[0] <<" [-c path] [-s] [-D]" <<std::endl;
             ::exit(EXIT_SUCCESS);
+        case 'q':
+            logLevel = Logger::critical::value();
+            break;
         case 's':
             autoQuit = true;
+            break;
+        case 'v':
+            logLevel += 1;
             break;
         case 'D':
             noDBus = true;
@@ -676,6 +686,7 @@ Configuration Configuration::loadArguments(int & argc, char * argv[])
     }
 
     auto config = loadFile(configPath != nullptr ? configPath : KEYLEDSD_CONFIG_PATH);
+    config.m_logLevel = logLevel;
     if (autoQuit) { config.m_autoQuit = true; }
     if (noDBus) { config.m_noDBus = true; }
     return config;

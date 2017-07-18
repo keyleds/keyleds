@@ -21,6 +21,7 @@
 #include <regex>
 #include <string>
 #include <vector>
+#include "logging.h"
 
 namespace keyleds {
 
@@ -44,14 +45,16 @@ public:
     typedef std::map<std::string, key_list> group_map;
     typedef std::map<std::string, Profile> profile_map;
 private:
-                        Configuration(bool autoQuit,
+                        Configuration(Logger::level_t logLevel,
+                                      bool autoQuit,
                                       bool noDBus,
                                       path_list pluginPaths,
                                       path_list layoutPaths,
                                       device_map devices,
                                       group_map groups,
                                       profile_map profiles)
-                            : m_autoQuit(autoQuit),
+                            : m_logLevel(logLevel),
+                              m_autoQuit(autoQuit),
                               m_noDBus(noDBus),
                               m_pluginPaths(std::move(pluginPaths)),
                               m_layoutPaths(std::move(layoutPaths)),
@@ -62,6 +65,7 @@ private:
 public:
                         Configuration() = default;
 
+          Logger::level_t logLevel() const { return m_logLevel; }
           bool          autoQuit() const { return m_autoQuit; }
           void          setAutoQuit(bool v) { m_autoQuit = v; }
           bool          noDBus() const { return m_noDBus; }
@@ -82,6 +86,7 @@ public:
     static Configuration loadArguments(int & argc, char * argv[]);
 
 private:
+    Logger::level_t     m_logLevel;     ///< Maximum level of messsages to log
     bool                m_autoQuit;     ///< If set, the service will exit when last device is removed.
     bool                m_noDBus;       ///< If set, DBus adapters are not loaded on startup
 
