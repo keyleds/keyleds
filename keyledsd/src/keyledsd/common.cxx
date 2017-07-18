@@ -166,10 +166,12 @@ static const std::unordered_map<std::string, RGBColor> predefinedColors = {
 RGBColor RGBColor::parse(const std::string & str)
 {
     /* Attempt parsing as hex color */
-    char * endptr;
-    auto code = uint32_t(::strtoul(str.c_str(), &endptr, 16));
-    if (*endptr == '\0') {
-        return RGBColor(code >> 16, code >> 8, code >> 0);
+    if (str.size() == 6) {
+        char * endptr;
+        auto code = uint32_t(::strtoul(str.c_str(), &endptr, 16));
+        if (*endptr == '\0') {
+            return RGBColor(code >> 16, code >> 8, code >> 0);
+        }
     }
 
     /* Attempt using a predefined color */
@@ -197,12 +199,13 @@ void RGBColor::print(std::ostream & out) const
 
 RGBAColor RGBAColor::parse(const std::string & str)
 {
-    char * endptr;
-    auto code = uint32_t(::strtoul(str.c_str(), &endptr, 16));
-    if (*endptr == '\0') {
-        return RGBAColor(code >> 24, code >> 16, code >> 8, code >> 0);
+    if (str.size() == 8) {
+        char * endptr;
+        auto code = uint32_t(::strtoul(str.c_str(), &endptr, 16));
+        if (*endptr == '\0') {
+            return RGBAColor(code >> 24, code >> 16, code >> 8, code >> 0);
+        }
     }
-
     return RGBAColor(RGBColor::parse(str));
 }
 
