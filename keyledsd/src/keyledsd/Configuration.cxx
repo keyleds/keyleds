@@ -662,7 +662,7 @@ Configuration Configuration::loadArguments(int & argc, char * argv[])
             configPath = optarg;
             break;
         case 'h':
-            std::cout <<"Usage: " <<argv[0] <<" [-c path] [-s] [-D]" <<std::endl;
+            std::cout <<"Usage: " <<argv[0] <<" [-c path] [-h] [-q] [-s] [-v] [-D]" <<std::endl;
             ::exit(EXIT_SUCCESS);
         case 'q':
             logLevel = Logger::critical::value();

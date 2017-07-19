@@ -39,9 +39,9 @@ void AnimationLoop::run()
     struct timespec lastTick, nextTick;
 
     while (!m_abort.load(std::memory_order_relaxed)) {
-        DEBUG("AnimationLoop(", this, ") paused");
         {
             std::unique_lock<std::mutex> lock(m_mRunStatus);
+            if (m_paused) { DEBUG("AnimationLoop(", this, ") paused"); }
             m_cRunStatus.wait(lock, [this]{ return !m_paused || m_abort; });
         }
 
