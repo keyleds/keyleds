@@ -21,6 +21,10 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define LOGITECH_VENDOR_ID  ((uint16_t)0x046d)
 #define KEYLEDS_TARGET_DEFAULT ((uint8_t)0xff)
 
@@ -210,5 +214,9 @@ unsigned keyleds_string_id(const struct keyleds_indexed_string *,
  * The keycode/scancode translation only applies to keys from block 0x01 (keys block) */
 unsigned keyleds_translate_scancode(uint8_t scancode);
 uint8_t keyleds_translate_keycode(unsigned keycode);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

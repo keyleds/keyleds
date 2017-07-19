@@ -192,7 +192,7 @@ bool keyleds_receive(Keyleds * device, uint8_t target_id, uint8_t feature_idx,
             return false;
         }
         if (err == 0) {
-            KEYLEDS_LOG(WARNING, "Device timeout while reading fd %d", device->fd);
+            KEYLEDS_LOG(INFO, "Device timeout while reading fd %d", device->fd);
             keyleds_set_error(KEYLEDS_ERROR_TIMEDOUT);
             return false;
         }

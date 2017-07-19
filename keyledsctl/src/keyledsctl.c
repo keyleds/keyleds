@@ -630,7 +630,6 @@ bool parse_gamemode_options(int argc, char * argv[],
         for (idx = 0; idx < argc - optind; idx += 1) {
             unsigned keycode;
             uint8_t keyid;
-            fprintf(stderr, "test, %d, %d\n", optind, argc);
             if (!parse_keycode(argv[optind + idx], KEYLEDS_BLOCK_KEYS, &keycode)) {
                 fprintf(stderr, "%s: invalid keycode %s\n", argv[0], argv[optind + idx]);
                 goto err_gamemode_free_ids;
