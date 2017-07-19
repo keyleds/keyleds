@@ -93,7 +93,7 @@ unsigned keyleds_get_feature_count(struct keyleds_device * device, uint8_t targe
 uint16_t keyleds_get_feature_id(struct keyleds_device * device,
                                 uint8_t target_id, uint8_t feature_idx)
 {
-    unsigned idx;
+    size_t idx;
     uint16_t feature_id;
     uint8_t data[3];
 
@@ -131,7 +131,7 @@ uint16_t keyleds_get_feature_id(struct keyleds_device * device,
 uint8_t keyleds_get_feature_index(struct keyleds_device * device,
                                   uint8_t target_id, uint16_t feature_id)
 {
-    unsigned idx;
+    size_t idx;
     uint8_t feature_idx;
     uint8_t data[2];
 

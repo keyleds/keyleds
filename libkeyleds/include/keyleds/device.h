@@ -22,6 +22,7 @@ struct keyleds_device {
     int         fd;                             /* device file descriptor */
     uint8_t     app_id;                         /* our application identifier */
     uint8_t     ping_seq;                       /* using for resyncing after errors */
+    unsigned    timeout;                        /* read timeout in microseconds */
 
     struct keyleds_device_reports * reports;    /* list of device-supported hid reports */
     unsigned    max_report_size;                /* maximum number of bytes in a report */

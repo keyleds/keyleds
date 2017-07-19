@@ -38,6 +38,7 @@ typedef struct keyleds_device Keyleds;
 
 Keyleds * keyleds_open(const char * path, uint8_t app_id);
 void keyleds_close(Keyleds * device);
+void keyleds_set_timeout(Keyleds * device, unsigned us);
 int keyleds_device_fd(Keyleds * device);
 
 /****************************************************************************/

@@ -131,8 +131,8 @@ bool keyleds_get_leds(Keyleds * device, uint8_t target_id, keyleds_block_id_t bl
 bool keyleds_set_leds(Keyleds * device, uint8_t target_id, keyleds_block_id_t block_id,
                       const struct keyleds_key_color * keys, unsigned keys_nb)
 {
-    unsigned per_call = (device->max_report_size - 3 - 4) / 4;
-    unsigned offset, idx;
+    uint16_t per_call = (device->max_report_size - 3 - 4) / 4;
+    uint16_t offset, idx;
 
     assert(device != NULL);
     assert((unsigned)block_id <= UINT16_MAX);
@@ -144,7 +144,7 @@ bool keyleds_set_leds(Keyleds * device, uint8_t target_id, keyleds_block_id_t bl
     data[1] = (uint8_t)(block_id >> 0);
 
     for (offset = 0; offset < keys_nb; offset += per_call) {
-        unsigned batch_length = offset + per_call > keys_nb ? keys_nb - offset : per_call;
+        uint16_t batch_length = offset + per_call > keys_nb ? keys_nb - offset : per_call;
         data[2] = (uint8_t)(batch_length >> 8);
         data[3] = (uint8_t)(batch_length >> 0);
         for (idx = 0; idx < batch_length; idx += 1) {

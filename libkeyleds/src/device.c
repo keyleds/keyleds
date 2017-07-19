@@ -41,6 +41,7 @@ Keyleds * keyleds_open(const char * path, uint8_t app_id)
 
     dev->app_id = app_id;
     do { dev->ping_seq = rand(); } while (dev->ping_seq == 0);
+    dev->timeout = KEYLEDS_CALL_TIMEOUT_US;
 
     /* Open device */
     KEYLEDS_LOG(DEBUG, "Opening device %s", path);
@@ -107,6 +108,12 @@ void keyleds_close(Keyleds * device)
     free(device->reports);
     free(device->features);
     free(device);
+}
+
+void keyleds_set_timeout(Keyleds * device, unsigned us)
+{
+    assert(device != NULL);
+    device->timeout = us;
 }
 
 int keyleds_device_fd(Keyleds * device)
@@ -179,24 +186,24 @@ bool keyleds_receive(Keyleds * device, uint8_t target_id, uint8_t feature_idx,
     assert(message != NULL);
 
     do {
-#if KEYLEDS_CALL_TIMEOUT_US > 0
-        fd_set set;
-        struct timeval timeout;
+        if (device->timeout > 0) {
+            fd_set set;
+            struct timeval timeout;
 
-        FD_ZERO(&set);
-        FD_SET(device->fd, &set);
-        timeout.tv_sec = KEYLEDS_CALL_TIMEOUT_US / 1000000;
-        timeout.tv_usec = KEYLEDS_CALL_TIMEOUT_US % 1000000;
-        if ((err = select(device->fd + 1, &set, NULL, NULL, &timeout)) < 0) {
-            keyleds_set_error_errno();
-            return false;
+            FD_ZERO(&set);
+            FD_SET(device->fd, &set);
+            timeout.tv_sec = KEYLEDS_CALL_TIMEOUT_US / 1000000;
+            timeout.tv_usec = KEYLEDS_CALL_TIMEOUT_US % 1000000;
+            if ((err = select(device->fd + 1, &set, NULL, NULL, &timeout)) < 0) {
+                keyleds_set_error_errno();
+                return false;
+            }
+            if (err == 0) {
+                KEYLEDS_LOG(INFO, "Device timeout while reading fd %d", device->fd);
+                keyleds_set_error(KEYLEDS_ERROR_TIMEDOUT);
+                return false;
+            }
         }
-        if (err == 0) {
-            KEYLEDS_LOG(INFO, "Device timeout while reading fd %d", device->fd);
-            keyleds_set_error(KEYLEDS_ERROR_TIMEDOUT);
-            return false;
-        }
-#endif
 
         if ((nread = read(device->fd, message, device->max_report_size + 1)) < 0) {
             keyleds_set_error_errno();
