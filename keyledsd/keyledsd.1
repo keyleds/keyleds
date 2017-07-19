@@ -1,0 +1,55 @@
+.\" (C) Copyright 2017 Julien Hartmann <juli1.hartmann@gmail.com>,
+.\"
+.TH KEYLEDS 1 "July 19 2017"
+.SH NAME
+keyledsd \- Logitech keyboard per-key lighting service
+.SH SYNOPSIS
+.B keyledsd
+.RB [ \-c
+.IR path ]
+.RB [ \-hqsvD ]
+.SH DESCRIPTION
+.B keyledsd
+service sits in the background and responds to X display events by animating
+Logitech keyboard per-key lights.
+.SH OPTIONS
+All options have a long and short form. They are identical.
+.TP
+.BI \-c\  path
+.TP
+.BI \--config= path
+Use configuration file
+.I path
+instead of default.
+.TP
+.BR \-h , \--help
+Display usage help and exit immediately.
+.TP
+.BR \-q , \--quiet
+Quiet mode. Suppresses all messages excepts critical errors.
+.TP
+.BR \-s , \--single
+Single-shot mode. The service will quit after the last supported device is
+disconnected from the system.
+.TP
+.BR \-v , \--verbose
+Increase
+.B keyledsd
+verbosity. Specify it several times for more verbosity. Can be used after
+.B \--quiet
+to re-increase verbosity from zero.
+.TP
+.BR \-D , \--no-dbus
+Disable DBus support. The service will skip DBus entirely. If DBus support
+wasn't enabled at compile time, the option is accepted but does nothing.
+.PP
+.SH ENVIRONMENT
+.TP
+.B DISPLAY
+The X display to connect to and watch for window activation events.
+.SH FILES
+.TP
+.B /usr/share/keyledsd/layouts/*.xml
+Layout description files.
+.SH AUTHOR
+Julien Hartmann <juli1.hartmann@gmail.com>

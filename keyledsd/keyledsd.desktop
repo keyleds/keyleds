@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=keyledsd
+NoDisplay=true
+Comment=Manage Logitech per-key lighting keyboards
+Exec=sh -c "exec keyledsd -c \${HOME}/.config/keyledsd.conf"
+Terminal=false
+StartupNotify=false
+Keywords=logitech;keyboard;lighting;

@@ -2,13 +2,14 @@
 keyleds
 =======
 
-This implements a user-level driver library for
+This implements a user-level driver for
 Logitech keyboards. It is a personal development project built by
 capturing Logitech's software communications to the keyboard. Plus
 some experiments throwing bytes at it.
 
 * Tested on a G410 Atlas Spectrum keyboard.
-* If you test it with other keyboards, please let me know what works.
+* Other Logitech keyboard should work as well. If you test other
+  keyboards, please let me know what works so I can make a list.
 
 Why another project? Because the ones I found work from replaying
 captured USB frames, which is clumsy and prone to failing at
@@ -16,26 +17,45 @@ every firmware update. On the other hand, this project contains
 an actual implementation of Logitech protocol, which should make
 it much more robust and future-proof.
 
-
 Features
 --------
 
-The project is made of three parts: a library, a basic command-line
-tool and python3 bindings.
+The project is split into four components. Two for end users:
+
+* A background service. Watches keyboards and reacts to external events by
+  animating keys, like Logitech's software does on Windows.
+* A small command-line tool to test devices, query and set leds in scripts.
+
+And two for developers:
+* A static library implementing Logitech protocol.
+* Python3 bindings for that library.
+
+Service features
+~~~~~~~~~~~~~~~~
+
+The service is intended to be run in an X session as the user. It supports
+the following features:
+
+* Dynamic detection of keyboards as they are plugged in.
+* Reacts to X session events: active window switching, window title updates.
+* Plugin architecture for key effects (static plugins only for now).
+* Configurable filtering of: plugins can be enabled/disabled based
+  on keyboard serial, window state, ...
+* Exposes some of its configuration through DBus.
+
+Command-line tool and library features
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The following features are supported:
 
-* Device enumeration and basic information (keyboard type,
-  firmware version, …).
+* Device enumeration and basic information (keyboard type, firmware version, …).
 * Inspection of device capabilities and led configuration.
 * Individual key led control (set and get).
 * Automatic translation between led identifiers and keycodes.
 * Game-mode configuration
 * Report rate configuration
-* Library is written is pure C
-
-A cli tool makes those features easily usable from any script.
-Though at the moment, it only supports led control.
+* Library is written is pure C, with special care taken to avoid memory
+  allocations on critical code paths.
 
 Compiling
 ---------
@@ -43,8 +63,13 @@ Compiling
 Building keyleds requires the following dependencies to be installed:
 
 * cmake
+* Qt4 core development files
+* X11 development files
 * libc development files
-* libudev development files *(recommended)*
+* libudev development files
+* libxml2 development files
+* libyaml development files
+* Qt4 dbus development files *(optional, required for DBus support)*
 * python3 development files *(optional, used for python bindings)*
 * cython3 *(optional, used for python bindings)*
 
@@ -52,15 +77,14 @@ The following one-liner should get you up and running on debian systems:
 
 .. code-block:: bash
 
-    sudo apt-get install build-essential cmake linux-libc-dev libudev-dev python3-dev cython
+    sudo apt-get install build-essential cmake linux-libc-dev libqt4-dev libudev-dev libx11-dev libxml2-dev libyaml-dev python3-dev cython
 
 Build the project with the following command:
 
 .. code-block:: bash
 
-    cd build && cmake .. && make
+    cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && make
 
-This will place the ``keyledsctl`` utility in the build directory.
 You may then install it with a good old:
 
 .. code-block:: bash
@@ -79,7 +103,17 @@ This means you must either:
   On udev-based systems, you can copy ``logitech.rules`` into
   ``/etc/udev/rules.d/90-logitech-plugdev.rules`` to automatically grant
   access to members of the ``plugdev`` group. Beware that this makes
-  it possible for those users to spy keyboard presses.
+  it possible for those users to spy on some keyboard presses.
+
+Using the background service
+----------------------------
+
+Either start it manually or drop the provided desktop file in your
+``$HOME/.config/autostart`` directory so it is started automatically on login.
+
+It requires a configuration file. You may use `keyledsd.conf`_ as a starting
+point. Copy it as ``$HOME/.config/keyledsd.conf`` if using the desktop file.
+
 
 Using the cli tool
 ------------------
@@ -91,8 +125,7 @@ Using the cli tool
         $ keyledsctl list
         /dev/hidraw1 046d:c330 [111111111111]
 
-  The number in square brackets is the USB serial number of the device. It
-  is only be available if the project was built with ``libudev`` support.
+  The number in square brackets is the USB serial number of the device.
 
 * Querying device information:
 
