@@ -8,7 +8,7 @@ include(CheckCXXSourceCompiles)
 option(NO_DBUS "Do not compile DBus support" OFF)
 
 if(NOT KEYLEDSD_DATA_PREFIX)
-    set(KEYLEDSD_DATA_PREFIX ${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME})
+    set(KEYLEDSD_DATA_PREFIX ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME})
 endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -std=c++14 -fno-rtti -fstrict-enums")
@@ -50,8 +50,8 @@ IF(NOT NO_DBUS)
         src/dbus/ServiceAdaptor.cxx)
 ENDIF()
 
-set_source_files_properties(src/tools/accelerated_mmx.cxx PROPERTIES COMPILE_FLAGS -mmmx)
-set_source_files_properties(src/tools/accelerated_sse2.cxx PROPERTIES COMPILE_FLAGS -msse2)
+set_source_files_properties("src/tools/accelerated_mmx.c" PROPERTIES COMPILE_FLAGS "-mmmx")
+set_source_files_properties("src/tools/accelerated_sse2.c" PROPERTIES COMPILE_FLAGS "-msse2")
 
 ##############################################################################
 # Dependencies
@@ -113,11 +113,11 @@ configure_file("include/config.h.in" "config.h")
 ##############################################################################
 # Targets
 
-# CLI tool
+# Binary
 add_executable(${PROJECT_NAME} ${keyledsd_SRCS})
 target_link_libraries(${PROJECT_NAME} libkeyleds ${keyledsd_DEPS})
 
 # Installing stuff (stub)
-install(TARGETS ${PROJECT_NAME} DESTINATION bin)
-install(DIRECTORY layouts/ DESTINATION ${KEYLEDSD_DATA_PREFIX}
+install(TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(DIRECTORY layouts/ DESTINATION ${KEYLEDSD_DATA_PREFIX}/layouts
         FILES_MATCHING PATTERN "*.xml")

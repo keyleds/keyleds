@@ -1,0 +1,5 @@
+usr/bin
+usr/share/keyledsd/layouts
+logitech.rules  usr/share/keyledsd
+keyledsd/keyledsd.conf  usr/share/keyledsd
+keyledsd/keyledsd.desktop  usr/share/keyledsd

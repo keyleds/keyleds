@@ -2,8 +2,8 @@ Source: keyleds
 Section: utils
 Priority: optional
 Maintainer: Julien Hartmann <juli1.hartmann@gmail.com>
-Build-Depends: debhelper (>=9), libudev-dev, linux-libc-dev, python3-dev, cython3
-Standards-Version: 3.9.6
+Build-Depends: debhelper (>=9), linux-libc-dev, libqt4-dev, libudev-dev, libx11-dev, libxml2-dev, libyaml-dev, python3-dev, cython3
+Standards-Version: 3.9.7
 Homepage: https://github.com/spectras/keyleds
 X-Python3-Version: >= 3.2
 #Vcs-Git: https://github.com/spectras/keyleds.git
@@ -12,10 +12,25 @@ Package: keyleds
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: Logitech Keyboard per-key lighting control
+ Includes a background service and a command-line tool to handle Logitech
+ Gaming Keyboard lights.
  The following features are supported:
- - Device enumeration and basic information (keyboard type, firmware version, …).
- - Inspection of device capabilities and led configuration.
- - Individual key led control (set and get).
- - Automatic translation between led identifiers and keycodes.
- - Game-mode configuration
- - Report rate configuration
+  - Device enumeration and basic information (keyboard type, firmware
+    version, …).
+  - Inspection of device capabilities and led configuration.
+  - Individual key led control (set and get).
+  - Automatic translation between led identifiers and keycodes.
+  - Game-mode configuration
+  - Report rate configuration
+
+Package: keyleds-dev
+Architecture: any
+Depends: keyleds, ${shlibs:Depends}, ${misc:Depends}
+Description: Logitech Keyboard per-key lighting control
+ Includes a library implementing Logitech protocol and python3 bindings.
+ The following features are supported:
+  - Inspection of device capabilities and led configuration.
+  - Individual key led control (set and get).
+  - Automatic translation between led identifiers and keycodes.
+  - Game-mode configuration
+  - Report rate configuration

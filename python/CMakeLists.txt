@@ -46,3 +46,5 @@ add_library(keyleds MODULE ${keyleds_SRCS})
 set_target_properties(keyleds PROPERTIES PREFIX "")
 target_include_directories(keyleds PRIVATE ${keyleds_INCLUDES})
 target_link_libraries(keyleds libkeyleds ${keyleds_DEPS})
+
+install(TARGETS keyleds LIBRARY DESTINATION lib)

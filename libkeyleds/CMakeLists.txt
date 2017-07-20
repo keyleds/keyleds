@@ -59,3 +59,5 @@ target_include_directories(libkeyleds PUBLIC "include")
 set_target_properties(libkeyleds PROPERTIES POSITION_INDEPENDENT_CODE on)
 set_target_properties(libkeyleds PROPERTIES PREFIX "")
 
+install(TARGETS libkeyleds ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+install(FILES include/keyleds.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})

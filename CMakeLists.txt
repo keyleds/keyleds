@@ -4,6 +4,8 @@ project (keyleds C CXX)
 ##############################################################################
 # Settings
 
+include(GNUInstallDirs)
+
 option(WITHOUT_PYTHON "do not build python bindings" OFF)
 option(WITH_KEYLEDSD "build keyledsd daemon" ON)
 

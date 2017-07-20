@@ -39,4 +39,4 @@ add_executable(keyledsctl ${keyledsctl_SRCS})
 target_link_libraries(keyledsctl libkeyleds ${keyledsctl_DEPS})
 
 # Installing stuff (stub)
-install(TARGETS keyledsctl DESTINATION bin)
+install(TARGETS keyledsctl DESTINATION ${CMAKE_INSTALL_BINDIR})

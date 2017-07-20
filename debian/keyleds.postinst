@@ -13,7 +13,7 @@ db_stop
 
 # Apply configuration
 if [ "$INSTALL_UDEV" = "true" ]; then
-    cp -f /usr/share/keyleds/logitech.rules "$UDEV_RULES"
+    cp -f /usr/share/keyledsd/logitech.rules "$UDEV_RULES"
 else
     rm -f "$UDEV_RULES"
 fi
