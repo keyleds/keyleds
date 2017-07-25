@@ -20,7 +20,11 @@ All options have a long and short form. They are identical.
 .BI \--config= path
 Use configuration file
 .I path
-instead of default.
+instead of default. If
+.I path
+starts with a “/” or “.”, it is used as is. Otherwise it will be searched for in
+environment-defined
+.BR XDG_CONFIG_HOME \ and\  XDG_CONFIG_DIRS \ directories.
 .TP
 .BR \-h , \--help
 Display usage help and exit immediately.
@@ -51,5 +55,12 @@ The X display to connect to and watch for window activation events.
 .TP
 .B /usr/share/keyledsd/layouts/*.xml
 Layout description files.
+.TP
+.B /etc/keyleds.conf
+Configuration file. Can be overriden using either
+.B --config
+option or putting an alternate configuration file in one of the directories
+defined by
+.BR XDG_CONFIG_HOME \ or\  XDG_CONFIG_DIRS .
 .SH AUTHOR
 Julien Hartmann <juli1.hartmann@gmail.com>

@@ -4,6 +4,7 @@
 #include "keyledsd/DeviceManager.h"
 #include "keyledsd/Layout.h"
 #include "keyledsd/PluginManager.h"
+#include "tools/Paths.h"
 #include "config.h"
 #include "logging.h"
 
@@ -128,7 +129,9 @@ std::unique_ptr<Layout> DeviceManager::loadLayout(const Configuration & conf, co
     if (!device.hasLayout()) { return nullptr; }
 
     auto paths = conf.layoutPaths();
-    paths.push_back(KEYLEDSD_DATA_PREFIX "/layouts");
+    for (const auto & path : paths::getPaths(paths::XDG::Data, true)) {
+        paths.push_back(path + "/" KEYLEDSD_DATA_PREFIX "/layouts");
+    }
     const auto & fileName = layoutName(device);
 
     for (const auto & path : paths) {

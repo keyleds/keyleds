@@ -18,8 +18,10 @@
 #define CONFIG_H
 
 #cmakedefine NO_DBUS
-#define KEYLEDSD_CONFIG_PATH    "@CMAKE_INSTALL_SYSCONFDIR@/keyledsd.conf"
-#define KEYLEDSD_DATA_PREFIX    "@KEYLEDSD_DATA_PREFIX@"
+#define SYS_DATA_DIR            "@CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_DATAROOTDIR@"
+#define SYS_CONFIG_DIR          "/@CMAKE_INSTALL_SYSCONFDIR@"
+#define KEYLEDSD_CONFIG_FILE    "keyledsd.conf"
+#define KEYLEDSD_DATA_PREFIX    "@PROJECT_NAME@"
 
 /* Language features */
 

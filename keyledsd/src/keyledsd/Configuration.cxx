@@ -26,6 +26,7 @@
 #include <unistd.h>
 #include "keyledsd/Configuration.h"
 #include "keyledsd/Context.h"
+#include "tools/Paths.h"
 #include "tools/YAMLParser.h"
 #include "config.h"
 
@@ -607,11 +608,16 @@ ConfigurationBuilder::ParseError ConfigurationBuilder::makeError(const std::stri
 
 Configuration Configuration::loadFile(const std::string & path)
 {
-    auto builder = ConfigurationBuilder();
-    auto file = std::ifstream(path, std::ios::binary);
+    if (path.empty()) {
+        throw std::runtime_error("Empty configuration file path");
+    }
+
+    auto file = paths::open<std::ifstream>(paths::XDG::Config, path, std::ios::binary);
     if (!file) {
         throw std::system_error(errno, std::generic_category());
     }
+
+    auto builder = ConfigurationBuilder();
     builder.parse(file);
     return Configuration(
         Logger::warning::value(),
@@ -685,7 +691,7 @@ Configuration Configuration::loadArguments(int & argc, char * argv[])
         }
     }
 
-    auto config = loadFile(configPath != nullptr ? configPath : KEYLEDSD_CONFIG_PATH);
+    auto config = loadFile(configPath != nullptr ? configPath : KEYLEDSD_CONFIG_FILE);
     config.m_logLevel = logLevel;
     if (autoQuit) { config.m_autoQuit = true; }
     if (noDBus) { config.m_noDBus = true; }

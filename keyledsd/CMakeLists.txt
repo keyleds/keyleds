@@ -39,6 +39,7 @@ set(keyledsd_SRCS
     src/tools/accelerated_sse2.c
     src/tools/AnimationLoop.cxx
     src/tools/DeviceWatcher.cxx
+    src/tools/Paths.cxx
     src/tools/XWindow.cxx
     src/tools/YAMLParser.cxx
     src/logging.cxx
@@ -121,3 +122,4 @@ target_link_libraries(${PROJECT_NAME} libkeyleds ${keyledsd_DEPS})
 install(TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(DIRECTORY layouts/ DESTINATION ${KEYLEDSD_DATA_PREFIX}/layouts
         FILES_MATCHING PATTERN "*.xml")
+install(FILES keyledsd.conf.sample keyledsd.desktop DESTINATION ${KEYLEDSD_DATA_PREFIX})
