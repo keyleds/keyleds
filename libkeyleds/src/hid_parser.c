@@ -261,11 +261,8 @@ static bool build_main_item_table(const uint8_t * data, const unsigned data_size
 
     const uint8_t * current;
 
-    if ((state = malloc(16 * sizeof(struct hid_item))) == NULL) { return false; }
-    if ((main_items = malloc(16 * sizeof(struct hid_main_item))) == NULL) {
-        free(state);
-        return false;
-    }
+    if ((state = malloc(16 * sizeof(struct hid_item))) == NULL) { goto err_free_none; }
+    if ((main_items = malloc(16 * sizeof(struct hid_main_item))) == NULL) { goto err_free_state; }
 
     current = data;
     while (current < data + data_size) {
@@ -296,10 +293,12 @@ static bool build_main_item_table(const uint8_t * data, const unsigned data_size
         /* If item does not exist yet, we will add it at the end of table */
         if (idx >= state_nb) {
             if (state_nb >= state_capacity) {
-                state = realloc(
+                struct hid_item * tmp = realloc(
                     state,
                     2 * state_capacity * sizeof(state[0])
                 );
+                if (tmp == NULL) { goto err_free_items; }
+                state = tmp;
                 state_capacity *= 2;
             }
             state_nb += 1;
@@ -314,10 +313,12 @@ static bool build_main_item_table(const uint8_t * data, const unsigned data_size
         /* Handle main items */
         if (type == HID_TYPE_MAIN) {
             if (main_nb >= main_capacity) {
-                main_items = realloc(
+                struct hid_main_item * tmp = realloc(
                     main_items,
                     2 * main_capacity * sizeof(main_items[0])
                 );
+                if (tmp == NULL) { goto err_free_items; }
+                main_items = tmp;
                 main_capacity *= 2;
             }
 
@@ -335,6 +336,13 @@ static bool build_main_item_table(const uint8_t * data, const unsigned data_size
     *out_nb = main_nb;
     free(state);
     return true;
+
+err_free_items:
+    free(main_items);
+err_free_state:
+    free(state);
+err_free_none:
+    return false;
 }
 
 /****************************************************************************/
