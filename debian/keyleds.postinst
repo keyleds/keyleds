@@ -2,6 +2,8 @@
 
 UDEV_RULES=/etc/udev/rules.d/99-logitech-hidpp.rules
 
+ACTION=$1
+
 # Source debconf library.
 . /usr/share/debconf/confmodule
 
@@ -11,10 +13,14 @@ db_stop
 
 #DEBHELPER#
 
-# Apply configuration
-if [ "$INSTALL_UDEV" = "true" ]; then
-    cp -f /usr/share/keyledsd/logitech.rules "$UDEV_RULES"
-else
-    rm -f "$UDEV_RULES"
-fi
-
+case "$ACTION" in
+    configure)
+        if [ "$INSTALL_UDEV" = "true" ]; then
+            cp -f /usr/share/keyledsd/logitech.rules "$UDEV_RULES"
+        else
+            rm -f "$UDEV_RULES"
+        fi
+        ;;
+    abort-upgrade|abort-remove|abort-deconfigure)
+        ;;
+esac

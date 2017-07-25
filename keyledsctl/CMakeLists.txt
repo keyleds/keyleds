@@ -1,5 +1,5 @@
-cmake_minimum_required (VERSION 2.8)
-project(keyledsctl C)
+cmake_minimum_required (VERSION 3.0)
+project(keyledsctl VERSION 1.0 LANGUAGES C)
 
 ##############################################################################
 # Sources

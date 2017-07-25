@@ -1,5 +1,5 @@
-cmake_minimum_required (VERSION 2.8)
-project(libkeyleds C)
+cmake_minimum_required (VERSION 3.0)
+project(libkeyleds VERSION 1.0 LANGUAGES C)
 include(CheckCSourceCompiles)
 include(CheckIncludeFile)
 
@@ -54,10 +54,12 @@ configure_file("include/config.h.in" "config.h")
 # Targets
 
 # Main library
-add_library(libkeyleds STATIC ${libkeyleds_SRCS})
+add_library(libkeyleds SHARED ${libkeyleds_SRCS})
 target_include_directories(libkeyleds PUBLIC "include")
 set_target_properties(libkeyleds PROPERTIES POSITION_INDEPENDENT_CODE on)
 set_target_properties(libkeyleds PROPERTIES PREFIX "")
+set_target_properties(libkeyleds PROPERTIES VERSION ${PROJECT_VERSION})
+set_target_properties(libkeyleds PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
 
-install(TARGETS libkeyleds ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+install(TARGETS libkeyleds LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 install(FILES include/keyleds.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})

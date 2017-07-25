@@ -1,5 +1,5 @@
-cmake_minimum_required (VERSION 2.8)
-project (python-keyleds C)
+cmake_minimum_required (VERSION 3.0)
+project (python-keyleds VERSION 0.1 LANGUAGES C)
 
 ##############################################################################
 # Sources

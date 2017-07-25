@@ -1,12 +1,12 @@
-cmake_minimum_required (VERSION 2.8)
-project (keyleds C CXX)
+cmake_minimum_required (VERSION 3.0)
+project (keyleds LANGUAGES C CXX)
 
 ##############################################################################
 # Settings
 
 include(GNUInstallDirs)
 
-option(WITHOUT_PYTHON "do not build python bindings" OFF)
+option(WITH_PYTHON "build python bindings" OFF)
 option(WITH_KEYLEDSD "build keyledsd daemon" ON)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Werror -std=c99 -D_POSIX_C_SOURCE=200112L")
@@ -23,6 +23,6 @@ add_subdirectory(keyledsctl)
 IF (WITH_KEYLEDSD)
     add_subdirectory(keyledsd)
 ENDIF()
-IF (NOT WITHOUT_PYTHON)
+IF (WITH_PYTHON)
     add_subdirectory(python)
 ENDIF()

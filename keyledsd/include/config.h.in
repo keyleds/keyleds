@@ -33,7 +33,7 @@
 
 /* App-wide definitions */
 
-#define KEYLEDSD_VERSION_STR    "0.1dev"
+#define KEYLEDSD_VERSION_STR    "@PROJECT_VERSION@"
 #define KEYLEDSD_APP_ID (0x4)
 
 #endif
