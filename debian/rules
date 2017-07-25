@@ -5,3 +5,8 @@
 
 %:
 	dh $@ 
+
+override_dh_install:
+	dh_install
+	install -m 644 -D keyledsd/keyledsd.conf.sample debian/keyleds/etc/keyledsd.conf
+	ln -s /usr/share/keyledsd/keyledsd.desktop debian/keyleds/etc/xdg/autostart/
