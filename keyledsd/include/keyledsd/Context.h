@@ -17,10 +17,11 @@
 #ifndef KEYLEDSD_CONTEXT_H_2CFCE45E
 #define KEYLEDSD_CONTEXT_H_2CFCE45E
 
-#include <functional>
+#include <initializer_list>
+#include <iosfwd>
 #include <string>
 #include <unordered_map>
-#include <vector>
+#include <utility>
 
 namespace keyleds {
 

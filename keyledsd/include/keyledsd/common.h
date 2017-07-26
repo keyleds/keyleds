@@ -19,6 +19,7 @@
 
 #include <iosfwd>
 #include <limits>
+#include <string>
 
 namespace keyleds {
 

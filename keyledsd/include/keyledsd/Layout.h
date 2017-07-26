@@ -18,6 +18,7 @@
 #define KEYLEDSD_LAYOUT_H_FF3532D2
 
 #include <iosfwd>
+#include <stdexcept>
 #include <string>
 #include <vector>
 

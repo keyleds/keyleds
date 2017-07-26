@@ -14,9 +14,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <errno.h>
-#include <cstdlib>
-#include <iostream>
+#include <cerrno>
+#include <exception>
 #include <type_traits>
 #include "keyledsd/Device.h"
 #include "keyledsd/RenderLoop.h"

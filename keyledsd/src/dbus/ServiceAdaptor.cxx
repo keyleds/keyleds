@@ -16,9 +16,10 @@
  */
 #include <QtGlobal>
 #include <algorithm>
+#include <string>
+#include "keyledsd/Context.h"
 #include "dbus/DeviceManagerAdaptor.h"
 #include "dbus/ServiceAdaptor.h"
-#include "config.h"
 
 using dbus::ServiceAdaptor;
 Q_DECLARE_METATYPE(ServiceContextValues)

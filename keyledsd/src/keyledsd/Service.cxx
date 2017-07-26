@@ -15,13 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <QCoreApplication>
-#include <iostream>
 #include "keyledsd/Configuration.h"
 #include "keyledsd/ContextWatcher.h"
 #include "keyledsd/Device.h"
 #include "keyledsd/DeviceManager.h"
 #include "keyledsd/Service.h"
-#include "config.h"
 #include "keyleds.h"
 #include "logging.h"
 

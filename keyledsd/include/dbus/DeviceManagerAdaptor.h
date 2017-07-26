@@ -18,6 +18,7 @@
 #define KEYLEDSD_DEVICEMANAGERADAPTOR_H_A3B0E2B4
 
 #include <QtDBus>
+#include <QString>
 #include "keyledsd/DeviceManager.h"
 #include "keyledsd/Layout.h"
 

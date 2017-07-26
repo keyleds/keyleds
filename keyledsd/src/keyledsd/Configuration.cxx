@@ -16,12 +16,14 @@
  */
 #include <algorithm>
 #include <atomic>
+#include <cerrno>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <memory>
 #include <sstream>
 #include <stack>
+#include <stdexcept>
 #include <system_error>
 #include <unistd.h>
 #include "keyledsd/Configuration.h"

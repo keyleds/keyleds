@@ -14,9 +14,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <errno.h>
+#include <sys/time.h>
 #include <time.h>
+#include <functional>
 #include "tools/AnimationLoop.h"
-#include "config.h"
 #include "logging.h"
 
 LOGGING("anim-loop");

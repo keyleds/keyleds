@@ -15,15 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <cassert>
-#include <exception>
+#include <cstddef>
 #include <limits>
 #include <sstream>
+#include <stdexcept>
 #include <X11/Xatom.h>
 #include <X11/extensions/XInput2.h>
 #include "tools/XWindow.h"
-#include "config.h"
 
-const std::string activeWindowAtom = "_NET_ACTIVE_WINDOW";
+constexpr const char * activeWindowAtom = "_NET_ACTIVE_WINDOW";
 
 /****************************************************************************/
 
@@ -116,7 +116,7 @@ std::string xlib::Window::getProperty(Atom atom, Atom type) const
     // Wrap value in a unique_ptr in case something throws after that point
     auto valptr = std::unique_ptr<unsigned char, int(*)(void*)>(value, XFree);
 
-    size_t itemBytes;
+    std::size_t itemBytes;
     switch (actualFormat) {
         case 8: itemBytes = sizeof(char); break;
         case 16: itemBytes = sizeof(short); break;
@@ -181,7 +181,7 @@ std::string xlib::Device::getProperty(Atom atom, Atom type) const
     // Wrap value in a unique_ptr in case something throws after that point
     auto valptr = std::unique_ptr<unsigned char, int(*)(void*)>(value, XFree);
 
-    size_t itemBytes;
+    std::size_t itemBytes;
     switch (actualFormat) {
         case 8: itemBytes = sizeof(char); break;
         case 16: itemBytes = sizeof(short); break;

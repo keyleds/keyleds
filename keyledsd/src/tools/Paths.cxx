@@ -14,12 +14,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <cassert>
 #include <cstdlib>
 #include <fstream>
 #include <map>
 #include <regex>
 #include <sstream>
+#include <stdexcept>
 #include "tools/Paths.h"
 #include "config.h"
 
@@ -111,7 +111,7 @@ std::vector<std::string> paths::getPaths(XDG type, bool extra)
 
 
 std::filebuf paths::open_filebuf(XDG type, const std::string & path,
-                                 std::ios_base::openmode mode)
+                                 std::ios::openmode mode)
 {
     if (path.empty()) { throw std::runtime_error("empty path"); }
     auto buf = std::filebuf{};

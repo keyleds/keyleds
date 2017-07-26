@@ -17,8 +17,11 @@
 #ifndef KEYLEDSD_KEYBOARD_H_F57B19AC
 #define KEYLEDSD_KEYBOARD_H_F57B19AC
 
-#include <exception>
+#include <QObject>
+#include <cstdint>
 #include <memory>
+#include <stdexcept>
+#include <string>
 #include <vector>
 #include "keyledsd/common.h"
 #include "tools/DeviceWatcher.h"

@@ -26,7 +26,6 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-struct KeyledsdTarget;
 
 namespace keyleds {
 

@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <algorithm>
+#include <cstdint>
 #include <cstdlib>
 #include <iomanip>
 #include <unordered_map>
@@ -22,7 +23,6 @@
 #include <stdexcept>
 #include <string>
 #include "keyledsd/common.h"
-#include "config.h"
 
 using keyleds::RGBColor;
 using keyleds::RGBAColor;

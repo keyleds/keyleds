@@ -15,8 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <unistd.h>
-#include <iostream>
 #include <map>
+#include <sstream>
+#include <stdexcept>
 #include "logging.h"
 
 
@@ -88,8 +89,8 @@ void FilePolicy::write(Logger::level_t level, const std::string & name, const st
 
     const auto & data = buffer.str();
 
-    size_t todo = data.size();
-    size_t done = 0;
+    std::size_t todo = data.size();
+    std::size_t done = 0;
 
     while (todo > 0) {
         ssize_t written = ::write(m_fd, data.c_str() + done, todo);

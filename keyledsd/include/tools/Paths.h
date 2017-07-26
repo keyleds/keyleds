@@ -33,7 +33,7 @@ template <> struct stream_attributes<std::ofstream> {
     static constexpr std::ios::openmode default_mode = std::ios::out;
 };
 
-std::filebuf open_filebuf(XDG type, const std::string & path, std::ios_base::openmode);
+std::filebuf open_filebuf(XDG type, const std::string & path, std::ios::openmode);
 std::vector<std::string> getPaths(XDG, bool extra);
 
 template <typename T> T open(XDG type, const std::string & path, typename T::openmode mode)

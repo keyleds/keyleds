@@ -16,8 +16,8 @@
  */
 #include <libxml/parser.h>
 #include <libxml/tree.h>
-#include <stddef.h>
 #include <algorithm>
+#include <cstddef>
 #include <cstring>
 #include <istream>
 #include <sstream>

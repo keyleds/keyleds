@@ -24,8 +24,8 @@
 #define TOOLS_WINDOW_H_F1434518
 
 #include <X11/Xlib.h>
-#include <X11/extensions/XInput.h>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <vector>

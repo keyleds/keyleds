@@ -23,7 +23,6 @@
  */
 #include <yaml.h>
 #include <istream>
-#include <memory>
 #include <sstream>
 #include "tools/YAMLParser.h"
 
@@ -77,7 +76,7 @@ public:
 
 private:
     static int readHandler(void * stream_ptr, unsigned char * buffer,
-                           size_t size, size_t * size_read) noexcept
+                           std::size_t size, std::size_t * size_read) noexcept
     {
         auto & stream = *reinterpret_cast<std::istream*>(stream_ptr);
         if (!stream.eof()) {
@@ -150,15 +149,15 @@ void YAMLParser::parse(std::istream & stream)
 
 /****************************************************************************/
 
-std::string YAMLParser::ParseError::makeMessage(const std::string & what, size_t line, size_t col)
+std::string YAMLParser::ParseError::makeMessage(const std::string & what, line_t line, col_t col)
 {
     std::ostringstream error;
     error <<what <<" line " <<line + 1 <<" column " <<col + 1;
     return error.str();
 }
 
-std::string YAMLParser::ParseError::makeMessage(const std::string & what, size_t line, size_t col,
-                                                const std::string & context, size_t ctx_line)
+std::string YAMLParser::ParseError::makeMessage(const std::string & what, line_t line, col_t col,
+                                                const std::string & context, line_t ctx_line)
 {
     std::ostringstream error;
     error <<what

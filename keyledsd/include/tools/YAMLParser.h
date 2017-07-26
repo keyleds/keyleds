@@ -24,8 +24,8 @@
 #ifndef TOOLS_YAML_PARSER_H_A07026A5
 #define TOOLS_YAML_PARSER_H_A07026A5
 
-#include <exception>
 #include <iosfwd>
+#include <stdexcept>
 #include <string>
 
 /** Abstract YAML parser
@@ -37,18 +37,21 @@
 class YAMLParser
 {
 public:
+    typedef unsigned int line_t;
+    typedef unsigned int col_t;
+
     class ParseError : public std::runtime_error
     {
     public:
-                    ParseError(const std::string & what, size_t line, size_t col)
+                    ParseError(const std::string & what, line_t line, col_t col)
                         : std::runtime_error(makeMessage(what, line, col)) {}
-                    ParseError(const std::string & what, size_t line, size_t col,
-                               const std::string & context, size_t ctx_line)
+                    ParseError(const std::string & what, line_t line, col_t col,
+                               const std::string & context, line_t ctx_line)
                         : std::runtime_error(makeMessage(what, line, col, context, ctx_line)) {}
     private:
-        static std::string makeMessage(const std::string & what, size_t line, size_t col);
-        static std::string makeMessage(const std::string & what, size_t line, size_t col,
-                                       const std::string & context, size_t ctx_line);
+        static std::string makeMessage(const std::string & what, line_t line, col_t col);
+        static std::string makeMessage(const std::string & what, line_t line, col_t col,
+                                       const std::string & context, line_t ctx_line);
     };
 
 public:
@@ -71,8 +74,8 @@ protected:
     ParseError      makeError(const std::string & what) const
                     { return ParseError(what, m_line, m_column); }
 private:
-    size_t          m_line;
-    size_t          m_column;
+    line_t          m_line;
+    col_t           m_column;
 };
 
 #endif

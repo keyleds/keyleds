@@ -14,12 +14,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <memory>
+#include <vector>
 #include "keyledsd/common.h"
 #include "keyledsd/Configuration.h"
 #include "keyledsd/Device.h"
-#include "keyledsd/DeviceManager.h"
 #include "keyledsd/PluginManager.h"
+#include "keyledsd/RenderLoop.h"
 
 using keyleds::RGBAColor;
 
