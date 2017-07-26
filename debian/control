@@ -2,8 +2,8 @@ Source: keyleds
 Section: utils
 Priority: optional
 Maintainer: Julien Hartmann <juli1.hartmann@gmail.com>
-Build-Depends: debhelper (>=9), linux-libc-dev, libqt4-dev, libudev-dev, libx11-dev, libxml2-dev, libyaml-dev
-Standards-Version: 3.9.7
+Build-Depends: debhelper (>=9), po-debconf, linux-libc-dev, libqt4-dev, libudev-dev, libx11-dev, libxi-dev, libxml2-dev, libyaml-dev
+Standards-Version: 3.9.8
 Homepage: https://github.com/spectras/keyleds
 X-Python3-Version: >= 3.2
 #Vcs-Git: https://github.com/spectras/keyleds.git
@@ -25,8 +25,8 @@ Description: Logitech Keyboard per-key lighting control
 
 Package: keyleds-dev
 Architecture: any
-Depends: keyleds, ${shlibs:Depends}, ${misc:Depends}
-Description: Logitech Keyboard per-key lighting control
+Depends: keyleds, ${misc:Depends}
+Description: Logitech Keyboard per-key lighting control - headers
  Development headers for the library implementing Logitech protocol.
  The following features are supported:
   - Inspection of device capabilities and led configuration.

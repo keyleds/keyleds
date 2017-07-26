@@ -1,0 +1,6 @@
+# There is no upstream changelog
+keyleds binary: no-upstream-changelog
+
+# We package the shared library with the main program as it is really tiny,
+# and very unlikely one would be useful without the other.
+keyleds binary: package-name-doesnt-match-sonames

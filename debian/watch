@@ -1,0 +1,4 @@
+version=3
+opts="filenamemangle=s/.+\/v?(\d\S+)\.tar\.gz/keyleds-$1\.tar\.gz/, \
+      pgpsigurlmangle=s/archive\/(\d\S+)\.tar\.gz/releases\/download\/$1\/$1\.tar\.gz\.asc/" \
+  https://github.com/spectras/keyleds/releases .*/v?(\d\S+)\.tar\.gz

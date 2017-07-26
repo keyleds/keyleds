@@ -1,0 +1,44 @@
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the keyleds package.
+#
+# spectras <juli1.hartmann@gmail.com>, 2017.
+msgid ""
+msgstr ""
+"Project-Id-Version: keyleds\n"
+"Report-Msgid-Bugs-To: keyleds@packages.debian.org\n"
+"POT-Creation-Date: 2017-07-26 09:59+0000\n"
+"PO-Revision-Date: 2017-07-26 10:03+0000\n"
+"Last-Translator: spectras <juli1.hartmann@gmail.com>\n"
+"Language-Team: French <kde-i18n-doc@kde.org>\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Generator: Lokalize 2.0\n"
+
+#. Type: boolean
+#. Description
+#: ../keyleds.templates:1001
+msgid "Install udev rules to allow plugdev access?"
+msgstr ""
+"Autoriser les membres de « plugdev » à accéder aux périphériques Logitech ?"
+
+#. Type: boolean
+#. Description
+#: ../keyleds.templates:1001
+msgid ""
+"By default, Logitech devices are only usable by root. This means you will "
+"need to run keyledsctl as root. If you enable this option, new udev rules "
+"will be installed to make Logitech devices usable by all members of the "
+"\"plugdev\" group, avoiding the need to run keyledsctl as root."
+msgstr ""
+"Par défaut, les périphériques Logitech sont seulement utilisables en tant que "
+"root. Cela signifie que keyledsctl doit être exécuté en tant que root. En"
+" activant "
+"cette option, un jeu de règles udev sera installé pour autoriser tous les"
+" membres "
+"du group « plugdev » à manipuler les périphériques Logitech, sans avoir"
+" besoin "
+"de lancer keyledsctl en tant que root."
+
