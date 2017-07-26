@@ -80,8 +80,8 @@ START_LIST(block_id_names)
     DEFSTR(KEYLEDS_BLOCK_MODES, "modes")
 END_LIST
 
-#ifdef INPUT_EVENT_CODES_FOUND
-#include <linux/input-event-codes.h>
+#ifdef INPUT_CODES_FOUND
+#include <linux/input.h>
 
 START_LIST(keycode_names)
     DEFSTR(KEY_ESC, "ESC")

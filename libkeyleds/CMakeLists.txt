@@ -59,9 +59,9 @@ check_c_source_compiles("#include <string.h>\nint main() { char buf[1]; return s
                         POSIX_STRERROR_R_FOUND)
 
 # Optional automatic translation of key names to/from Linux input keycodes
-check_include_file(linux/input-event-codes.h INPUT_EVENT_CODES_FOUND)
-IF(NOT INPUT_EVENT_CODES_FOUND)
-    MESSAGE(WARNING "linux/input-event-codes.h not found, key names will not be available")
+check_include_file(linux/input.h INPUT_CODES_FOUND)
+IF(NOT INPUT_CODES_FOUND)
+    MESSAGE(WARNING "linux/input.h not found, key names will not be available")
 ENDIF()
 
 configure_file("include/config.h.in" "config.h")
