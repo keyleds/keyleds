@@ -220,10 +220,14 @@ xlib::ErrorCatcher::ErrorCatcher()
 
 xlib::ErrorCatcher::~ErrorCatcher()
 {
-    if (XSetErrorHandler(m_oldHandler) != errorHandler || s_current != this) {
-        throw std::logic_error("ErrorCatcher must be destroyed in reverse order");
-    }
+    auto prevHandler = XSetErrorHandler(m_oldHandler);
+#ifndef NDEBUG
+    auto prevCatcher = s_current;
+#endif
     s_current = m_oldCatcher;
+
+    assert(prevHandler == errorHandler);
+    assert(prevCatcher == this);
 }
 
 void xlib::ErrorCatcher::synchronize(xlib::Display & display) const
