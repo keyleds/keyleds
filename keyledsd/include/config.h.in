@@ -18,6 +18,9 @@
 #define CONFIG_H
 
 #cmakedefine NO_DBUS
+#cmakedefine KEYLEDSD_USE_MMX
+#cmakedefine KEYLEDSD_USE_SSE2
+
 #define SYS_DATA_DIR            "@CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_DATAROOTDIR@"
 #define SYS_CONFIG_DIR          "/@CMAKE_INSTALL_SYSCONFDIR@"
 #define KEYLEDSD_CONFIG_FILE    "keyledsd.conf"

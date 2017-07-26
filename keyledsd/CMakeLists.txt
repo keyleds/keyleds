@@ -29,6 +29,11 @@ endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -std=c++14 -fno-rtti -fstrict-enums")
 
+if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL x86_64)
+    set(KEYLEDSD_USE_MMX 1)
+    set(KEYLEDSD_USE_SSE2 1)
+endif()
+
 ##############################################################################
 # Sources
 
@@ -50,9 +55,7 @@ set(keyledsd_SRCS
     src/plugins/breathe.cxx
     src/plugins/fill.cxx
     src/tools/accelerated.c
-    src/tools/accelerated_mmx.c
     src/tools/accelerated_plain.c
-    src/tools/accelerated_sse2.c
     src/tools/AnimationLoop.cxx
     src/tools/DeviceWatcher.cxx
     src/tools/Paths.cxx
@@ -61,14 +64,21 @@ set(keyledsd_SRCS
     src/logging.cxx
     src/main.cxx
 )
-IF(NOT NO_DBUS)
+if(NOT NO_DBUS)
     set(keyledsd_SRCS ${keyledsd_SRCS}
         src/dbus/DeviceManagerAdaptor.cxx
         src/dbus/ServiceAdaptor.cxx)
-ENDIF()
-
-set_source_files_properties("src/tools/accelerated_mmx.c" PROPERTIES COMPILE_FLAGS "-mmmx")
-set_source_files_properties("src/tools/accelerated_sse2.c" PROPERTIES COMPILE_FLAGS "-msse2")
+endif()
+if(KEYLEDSD_USE_MMX)
+    set(keyledsd_SRCS ${keyledsd_SRCS} src/tools/accelerated_mmx.c)
+    set_source_files_properties("src/tools/accelerated_mmx.c"
+                                PROPERTIES COMPILE_FLAGS "-mmmx")
+endif()
+if(KEYLEDSD_USE_SSE2)
+    set(keyledsd_SRCS ${keyledsd_SRCS} src/tools/accelerated_sse2.c)
+    set_source_files_properties("src/tools/accelerated_sse2.c"
+                                PROPERTIES COMPILE_FLAGS "-msse2")
+endif()
 
 ##############################################################################
 # Dependencies
