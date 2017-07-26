@@ -19,6 +19,19 @@
 #include "tools/accelerated.h"
 #include "config.h"
 
+#if defined __clang__
+  #if __has_attribute(ifunc)
+    #define CPU_DETECT_IFUNC
+  #else
+    #define CPU_DETECT_CACHE
+  #endif
+#elif defined __GNUC__
+  #define CPU_DETECT_IFUNC
+#else
+  #error Runtime CPU detection no implemented for this compiler
+#endif
+
+
 void blend_plain(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length);
 void blend_mmx(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length);
 void blend_sse2(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length);
@@ -38,16 +51,14 @@ static void (*resolve_blend(void))(uint8_t * restrict dst, const uint8_t * restr
 }
 
 
-#if defined __GNUC__ && (!defined __clang__ || __has_attribute(ifunc))
+#if defined CPU_DETECT_IFUNC
 void blend(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
     __attribute__((ifunc("resolve_blend")));
-#elif defined __clang__
+#elif defined CPU_DETECT_CACHE
 static void (*resolved_blend)(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length);
 void blend(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
 {
     if (resolved_blend == NULL) { resolved_blend = resolve_blend(); }
     (*resolved_blend)(dst, src, length);
 }
-#else
-#error Runtime CPU detection no implemented for this compiler
 #endif

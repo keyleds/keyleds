@@ -100,7 +100,7 @@ std::vector<std::string> paths::getPaths(XDG type, bool extra)
             svalue = expandVars(std::string(spec.dirsDefault));
         }
 
-        auto buf = std::istringstream(svalue);
+        std::istringstream buf(svalue);
         std::string item;
         while (std::getline(buf, item, ':')) { paths.push_back(item); }
 

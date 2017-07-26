@@ -27,7 +27,7 @@ if(NOT KEYLEDSD_DATA_PREFIX)
     set(KEYLEDSD_DATA_PREFIX ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME})
 endif()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -std=c++14 -fno-rtti -fstrict-enums")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -std=c++14 -fno-rtti -fstrict-enums -fvisibility=hidden")
 
 if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL x86_64)
     set(KEYLEDSD_USE_MMX 1)

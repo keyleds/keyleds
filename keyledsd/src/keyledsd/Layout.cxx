@@ -54,11 +54,11 @@ static void hideErrorFunc(void *, xmlErrorPtr) {}
 
 static unsigned parseUInt(const xmlNode * node, const xmlChar * name, int base)
 {
-    xmlString valueStr(xmlGetProp(node, name), xmlFree);
+    xmlString valueStr(xmlGetProp(const_cast<xmlNode *>(node), name), xmlFree);
     if (valueStr == nullptr) {
         std::ostringstream errMsg;
         errMsg <<"Element '" <<node->name <<"' misses a '" <<name <<"' attribute";
-        throw Layout::ParseError(errMsg.str(), xmlGetLineNo(node));
+        throw Layout::ParseError(errMsg.str(), xmlGetLineNo(const_cast<xmlNode *>(node)));
     }
     char * strEnd;
     unsigned valueUInt = std::strtoul((char*)valueStr.get(), &strEnd, base);
@@ -66,7 +66,7 @@ static unsigned parseUInt(const xmlNode * node, const xmlChar * name, int base)
         std::ostringstream errMsg;
         errMsg <<"Value '" <<valueStr.get() <<"' in attribute '" <<name <<"' of '"
                <<node->name <<"' element cannot be parsed as an integer";
-        throw Layout::ParseError(errMsg.str(), xmlGetLineNo(node));
+        throw Layout::ParseError(errMsg.str(), xmlGetLineNo(const_cast<xmlNode *>(node)));
     }
     return valueUInt;
 }
@@ -101,7 +101,7 @@ static void parseKeyboard(const xmlNode * keyboard, Layout::key_list & keys)
         unsigned totalWidth = 0;
         for (const xmlNode * key = row->children; key != nullptr; key = key->next) {
             if (key->type != XML_ELEMENT_NODE || xmlStrcmp(key->name, KEY_TAG) != 0) { continue; }
-            xmlString keyWidthStr(xmlGetProp(key, KEY_ATTR_WIDTH), xmlFree);
+            xmlString keyWidthStr(xmlGetProp(const_cast<xmlNode *>(key), KEY_ATTR_WIDTH), xmlFree);
             if (keyWidthStr != nullptr) {
                 auto keyWidthFloat = ::strtof((char*)keyWidthStr.get(), &strEnd);
                 if (*strEnd != '\0') {
@@ -109,7 +109,7 @@ static void parseKeyboard(const xmlNode * keyboard, Layout::key_list & keys)
                     errMsg <<"Value '" <<keyWidthStr.get() <<"' in attribute '"
                            <<KEY_ATTR_WIDTH <<"' of '" <<KEY_TAG
                            <<"' element cannot be parsed as a float";
-                    throw Layout::ParseError(errMsg.str(), xmlGetLineNo(key));
+                    throw Layout::ParseError(errMsg.str(), xmlGetLineNo(const_cast<xmlNode *>(key)));
                 }
                 totalWidth += (unsigned int)(keyWidthFloat * 1000);
             } else {
@@ -120,9 +120,9 @@ static void parseKeyboard(const xmlNode * keyboard, Layout::key_list & keys)
         unsigned xOffset = 0;
         for (const xmlNode * key = row->children; key != nullptr; key = key->next) {
             if (key->type != XML_ELEMENT_NODE || xmlStrcmp(key->name, KEY_TAG) != 0) { continue; }
-            xmlString code(xmlGetProp(key, KEY_ATTR_CODE), xmlFree);
-            xmlString glyph(xmlGetProp(key, KEY_ATTR_GLYPH), xmlFree);
-            xmlString keyWidthStr(xmlGetProp(key, KEY_ATTR_WIDTH), xmlFree);
+            xmlString code(xmlGetProp(const_cast<xmlNode *>(key), KEY_ATTR_CODE), xmlFree);
+            xmlString glyph(xmlGetProp(const_cast<xmlNode *>(key), KEY_ATTR_GLYPH), xmlFree);
+            xmlString keyWidthStr(xmlGetProp(const_cast<xmlNode *>(key), KEY_ATTR_WIDTH), xmlFree);
 
             unsigned keyWidth;
             if (keyWidthStr != nullptr) {
@@ -196,7 +196,7 @@ Layout Layout::parse(std::istream & stream)
 
     // Search for keyboard nodes
     const xmlNode * const root = xmlDocGetRootElement(document.get());
-    auto name = xmlString(xmlGetProp(root, ROOT_ATTR_NAME), xmlFree);
+    auto name = xmlString(xmlGetProp(const_cast<xmlNode *>(root), ROOT_ATTR_NAME), xmlFree);
 
     key_list keys;
     for (const xmlNode * node = root->children; node != nullptr; node = node->next) {
