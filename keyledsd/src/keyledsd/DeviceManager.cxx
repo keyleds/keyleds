@@ -152,7 +152,7 @@ std::unique_ptr<Layout> DeviceManager::loadLayout(const Configuration & conf, co
 
     for (const auto & path : paths) {
         std::string fullName = path + '/' + fileName;
-        auto file = std::ifstream(fullName);
+        std::ifstream file(fullName);
         if (!file) { continue; }
         try {
             auto result = std::make_unique<Layout>(Layout::parse(file));

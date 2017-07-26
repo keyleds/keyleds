@@ -614,7 +614,8 @@ Configuration Configuration::loadFile(const std::string & path)
         throw std::runtime_error("Empty configuration file path");
     }
 
-    auto file = paths::open<std::ifstream>(paths::XDG::Config, path, std::ios::binary);
+    std::ifstream file;
+    paths::open(file, paths::XDG::Config, path, std::ios::binary);
     if (!file) {
         throw std::system_error(errno, std::generic_category());
     }

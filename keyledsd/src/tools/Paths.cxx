@@ -110,16 +110,15 @@ std::vector<std::string> paths::getPaths(XDG type, bool extra)
 }
 
 
-std::filebuf paths::open_filebuf(XDG type, const std::string & path,
-                                 std::ios::openmode mode)
+void paths::open_filebuf(std::filebuf & buf, XDG type, const std::string & path,
+                         std::ios::openmode mode)
 {
     if (path.empty()) { throw std::runtime_error("empty path"); }
-    auto buf = std::filebuf{};
 
     // Handle simple cases not using dynamic lookup
     if (path[0] == '/' || path[0] == '.') {
         buf.open(path, mode);
-        return buf;
+        return;
     }
 
     auto dirs = paths::getPaths(type, (mode & std::ios_base::out) == 0);
@@ -127,7 +126,6 @@ std::filebuf paths::open_filebuf(XDG type, const std::string & path,
     // Actually look for file
     for (const auto & dir : dirs) {
         auto fullPath = dir + "/" + path;
-        if (buf.open(fullPath, mode) != nullptr) { return buf; }
+        if (buf.open(fullPath, mode) != nullptr) { return; }
     }
-    return buf;
 }

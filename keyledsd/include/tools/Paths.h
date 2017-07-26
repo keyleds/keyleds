@@ -33,15 +33,13 @@ template <> struct stream_attributes<std::ofstream> {
     static constexpr std::ios::openmode default_mode = std::ios::out;
 };
 
-std::filebuf open_filebuf(XDG type, const std::string & path, std::ios::openmode);
+void open_filebuf(std::filebuf &, XDG type, const std::string & path, std::ios::openmode);
 std::vector<std::string> getPaths(XDG, bool extra);
 
-template <typename T> T open(XDG type, const std::string & path, typename T::openmode mode)
+template <typename T> void open(T & file, XDG type, const std::string & path, typename T::openmode mode)
 {
-    auto result = T{};
     mode |= stream_attributes<T>::default_mode;
-    *result.rdbuf() = open_filebuf(type, path, mode);
-    return result;
+    open_filebuf(*file.rdbuf(), type, path, mode);
 }
 
 }
