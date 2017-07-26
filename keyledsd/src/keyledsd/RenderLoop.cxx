@@ -83,7 +83,7 @@ RenderTarget RenderTarget::for_device(const Device & device)
     return RenderTarget(block_sizes);
 }
 
-template <> void std::swap<RenderTarget>(RenderTarget & lhs, RenderTarget & rhs)
+void keyleds::swap(RenderTarget & lhs, RenderTarget & rhs) noexcept
 {
     std::swap(lhs.m_colors, rhs.m_colors);
     std::swap(lhs.m_nbColors, rhs.m_nbColors);
@@ -147,7 +147,7 @@ bool RenderLoop::render(unsigned long nanosec)
 
     // Commit color changes
     if (hasChanges) { m_device.commitColors(); }
-    std::swap(m_state, m_buffer);
+    swap(m_state, m_buffer);
 
     return true;
 }

@@ -69,8 +69,10 @@ private:
     std::size_t                 m_nbColors;     ///< Number of items in m_colors
     std::vector<RGBAColor *>    m_blocks;       ///< Block pointers withing m_colors
 
-    friend void std::swap<RenderTarget>(RenderTarget &, RenderTarget &);
+    friend void swap(RenderTarget &, RenderTarget &) noexcept;
 };
+
+void swap(RenderTarget &, RenderTarget &) noexcept;
 
 /****************************************************************************/
 
@@ -124,10 +126,5 @@ public:
 /****************************************************************************/
 
 };
-
-namespace std {
-    // Efficient RenderTarget swapping
-    template<> void swap<keyleds::RenderTarget>(keyleds::RenderTarget & lhs, keyleds::RenderTarget & rhs);
-}
 
 #endif
