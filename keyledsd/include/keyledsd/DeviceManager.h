@@ -80,6 +80,7 @@ public:
     const Layout &          layout() const { return *m_layout; }
 
     Device::key_indices     resolveKeyName(const std::string &) const;
+    RenderTarget            getRenderTarget() const { return RenderLoop::renderTargetFor(m_device); }
 
           bool              paused() const { return m_renderLoop.paused(); }
 

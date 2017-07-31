@@ -49,7 +49,7 @@ public:
     typedef std::pair<std::size_t, std::size_t> key_descriptor;
 public:
                                 RenderTarget(const std::vector<std::size_t> & block_sizes);
-                                RenderTarget(RenderTarget &&);
+                                RenderTarget(RenderTarget &&) noexcept;
                                 ~RenderTarget();
 
     iterator                    begin() noexcept { return &m_colors[0]; }
@@ -62,8 +62,6 @@ public:
                                 { return *(m_blocks[bidx] + kidx); }
     RGBAColor &                 get(const key_descriptor & desc) noexcept
                                 { return *(m_blocks[desc.first] + desc.second); }
-
-    static RenderTarget         for_device(const Device &);
 private:
     RGBAColor *                 m_colors;       ///< Color buffer. RGBAColor is a POD type
     std::size_t                 m_nbColors;     ///< Number of items in m_colors
@@ -93,6 +91,8 @@ public:
 
     void            setRenderers(renderer_list renderers);
 
+    static RenderTarget renderTargetFor(const Device &);
+
 private:
     bool            render(unsigned long) override;
     void            run() override;
@@ -107,6 +107,8 @@ private:
     RenderTarget    m_state;                    ///< Current state of the device
     RenderTarget    m_buffer;                   ///< Buffer to render into, avoids re-creating it
                                                 ///  on every render
+    std::vector<Device::ColorDirective> m_directives;   ///< Buffer of directives, avoids new/delete on
+                                                        ///< every render
 };
 
 /****************************************************************************/

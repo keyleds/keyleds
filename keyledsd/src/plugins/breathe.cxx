@@ -34,7 +34,7 @@ public:
     BreatheRenderer(const keyleds::DeviceManager & manager,
                     const keyleds::Configuration::Plugin & conf,
                     const keyleds::IRendererPlugin::group_map & groups)
-     : m_buffer(RenderTarget::for_device(manager.device())),
+     : m_buffer(manager.getRenderTarget()),
        m_time(0), m_period(10000)
     {
         auto color = RGBAColor(0, 0, 0, 0);

@@ -31,7 +31,7 @@ using keyleds::RenderTarget;
 using keyleds::Renderer;
 using keyleds::RenderLoop;
 
-static size_t align(size_t value, size_t alignment)
+static std::size_t align(std::size_t value, std::size_t alignment)
 {
     return (value + alignment - 1) & ~(alignment - 1);
 }
@@ -43,6 +43,8 @@ RenderTarget::RenderTarget(const std::vector<std::size_t> & block_sizes)
 {
     m_blocks.reserve(block_sizes.size());
 
+    // Compute required number of colors. Insert padding in between blocks
+    // so all blocks are align_colors-aligned.
     std::size_t totalColors = 0;
     for (auto nbColors : block_sizes) {
         totalColors = align(totalColors + nbColors, align_colors);
@@ -60,27 +62,17 @@ RenderTarget::RenderTarget(const std::vector<std::size_t> & block_sizes)
     }
 }
 
-RenderTarget::RenderTarget(RenderTarget && other)
+RenderTarget::RenderTarget(RenderTarget && other) noexcept
+ : m_colors(nullptr)
 {
-    m_colors = other.m_colors;
+    std::swap(m_colors, other.m_colors);
     m_nbColors = other.m_nbColors;
     m_blocks = std::move(other.m_blocks);
-    other.m_colors = nullptr;
 }
 
 RenderTarget::~RenderTarget()
 {
     free(m_colors);
-}
-
-RenderTarget RenderTarget::for_device(const Device & device)
-{
-    std::vector<std::size_t> block_sizes;
-    block_sizes.reserve(device.blocks().size());
-    for (const auto & block : device.blocks()) {
-        block_sizes.push_back(block.keys().size());
-    }
-    return RenderTarget(block_sizes);
 }
 
 void keyleds::swap(RenderTarget & lhs, RenderTarget & rhs) noexcept
@@ -100,9 +92,14 @@ RenderLoop::RenderLoop(Device & device, renderer_list renderers, unsigned fps)
     : AnimationLoop(fps),
       m_device(device),
       m_renderers(std::move(renderers)),
-      m_state(RenderTarget::for_device(device)),
-      m_buffer(RenderTarget::for_device(device))
-{}
+      m_state(renderTargetFor(device)),
+      m_buffer(renderTargetFor(device))
+{
+    // Ensure no allocation happens in render()
+    std::size_t max = 0;
+    for (const auto & block : m_device.blocks()) { max = std::max(max, block.keys().size()); }
+    m_directives.reserve(max);
+}
 
 RenderLoop::~RenderLoop() {}
 
@@ -111,6 +108,16 @@ void RenderLoop::setRenderers(renderer_list renderers)
     std::lock_guard<std::mutex> lock(m_mRenderers);
     m_renderers = std::move(renderers);
     DEBUG("enabled ", m_renderers.size(), " renderers for loop ", this);
+}
+
+RenderTarget RenderLoop::renderTargetFor(const Device & device)
+{
+    std::vector<std::size_t> block_sizes;
+    block_sizes.reserve(device.blocks().size());
+    for (const auto & block : device.blocks()) {
+        block_sizes.push_back(block.keys().size());
+    }
+    return RenderTarget(block_sizes);
 }
 
 bool RenderLoop::render(unsigned long nanosec)
@@ -128,19 +135,18 @@ bool RenderLoop::render(unsigned long nanosec)
     const auto & blocks = m_device.blocks();
     for (size_t bidx = 0; bidx < blocks.size(); ++bidx) {
         const size_t nKeys = blocks[bidx].keys().size();
-        Device::ColorDirective directives[nKeys];
-        size_t nDirectives = 0;
+        m_directives.clear();
 
         for (size_t idx = 0; idx < nKeys; ++idx) {
             const auto & color = m_buffer.get(bidx, idx);
             if (color != m_state.get(bidx, idx)) {
-                directives[nDirectives++] = Device::ColorDirective{
+                m_directives.push_back({
                     blocks[bidx].keys()[idx], color.red, color.green, color.blue
-                };
+                });
             }
         }
-        if (nDirectives > 0) {
-            m_device.setColors(blocks[bidx], directives, nDirectives);
+        if (!m_directives.empty()) {
+            m_device.setColors(blocks[bidx], m_directives.data(), m_directives.size());
             hasChanges = true;
         }
     }
