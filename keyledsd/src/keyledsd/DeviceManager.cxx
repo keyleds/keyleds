@@ -86,13 +86,14 @@ DeviceManager::~DeviceManager()
 
 keyleds::Device::key_indices DeviceManager::resolveKeyName(const std::string & name) const
 {
-    if (m_layout == nullptr) {
-        return m_device.resolveKey(name);
+    if (m_layout != nullptr) {
+        for (const auto & key : m_layout->keys()) {
+            if (key.name == name) {
+                return m_device.resolveKey(key.block, key.code);
+            }
+        }
     }
-    auto kit = std::find_if(m_layout->keys().begin(), m_layout->keys().end(),
-                            [&name](const auto & key) { return key.name == name; });
-    if (kit == m_layout->keys().end()) { return Device::key_npos; }
-    return m_device.resolveKey(kit->block, kit->code);
+    return m_device.resolveKey(name);
 }
 
 void DeviceManager::setContext(const Context & context)

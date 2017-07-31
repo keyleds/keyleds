@@ -174,9 +174,10 @@ bool Device::hasLayout() const
 
 Device::key_indices Device::resolveKey(const std::string & name) const
 {
-    unsigned code = keyleds_string_id(keyleds_keycode_names, name.c_str());
-    if (code == KEYLEDS_STRING_INVALID) { return key_npos; }
-    return resolveKey(KEYLEDS_BLOCK_KEYS, code);
+    unsigned keyCode = keyleds_string_id(keyleds_keycode_names, name.c_str());
+    if (keyCode == KEYLEDS_STRING_INVALID) { return key_npos; }
+    auto keyId = keyleds_translate_keycode(keyCode);
+    return resolveKey(KEYLEDS_BLOCK_KEYS, keyId);
 }
 
 Device::key_indices Device::resolveKey(key_block_id_type blockId, key_id_type keyId) const

@@ -22,7 +22,6 @@
 #include <istream>
 #include <sstream>
 #include <memory>
-#include <keyleds.h>
 #include "keyledsd/Layout.h"
 
 using keyleds::Layout;
@@ -69,13 +68,6 @@ static unsigned parseUInt(const xmlNode * node, const xmlChar * name, int base)
         throw Layout::ParseError(errMsg.str(), xmlGetLineNo(const_cast<xmlNode *>(node)));
     }
     return valueUInt;
-}
-
-static const char * resolveCode(unsigned code)
-{
-    auto keyCode = keyleds_translate_scancode(code);
-    const char * name = keyleds_lookup_string(keyleds_keycode_names, keyCode);
-    return name;
 }
 
 /****************************************************************************/
@@ -135,10 +127,8 @@ static void parseKeyboard(const xmlNode * keyboard, Layout::key_list & keys)
 
             if (code != nullptr) {
                 auto codeVal = Layout::Key::code_type(parseUInt(key, KEY_ATTR_CODE, 0));
-                const char * const codeName = glyph != nullptr
-                                            ? (const char*)glyph.get()
-                                            : resolveCode(codeVal);
-                auto codeNameStr = codeName != nullptr ? std::string(codeName) : std::string();
+                auto codeNameStr = glyph != nullptr ? std::string(reinterpret_cast<char *>(glyph.get()))
+                                                    : std::string();
                 std::transform(codeNameStr.begin(), codeNameStr.end(), codeNameStr.begin(), ::toupper);
 
                 keys.emplace_back(
