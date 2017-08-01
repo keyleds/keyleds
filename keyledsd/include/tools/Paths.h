@@ -40,6 +40,7 @@ template <typename T> void open(T & file, XDG type, const std::string & path, ty
 {
     mode |= stream_attributes<T>::default_mode;
     open_filebuf(*file.rdbuf(), type, path, mode);
+    if (!file.rdbuf()->is_open()) { file.setstate(std::ios::failbit); }
 }
 
 }

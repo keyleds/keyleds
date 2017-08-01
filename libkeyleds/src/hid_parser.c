@@ -276,7 +276,7 @@ static bool build_main_item_table(const uint8_t * data, const unsigned data_size
 
         /* Check for overflow bad usb descriptor */
         if (current + size >= data + data_size) {
-            KEYLEDS_LOG(WARNING, "REPORT descriptor item at offset 0x%lx overflows",
+            KEYLEDS_LOG(WARNING, "REPORT descriptor item at offset 0x%zx overflows",
                         (current - data) / sizeof(*current));
             break;
         }

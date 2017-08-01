@@ -29,7 +29,7 @@ endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -std=c++14 -fno-rtti -fstrict-enums -fvisibility=hidden")
 
-if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL x86_64)
+if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL x86_64 OR ${CMAKE_SYSTEM_PROCESSOR} STREQUAL i686)
     set(KEYLEDSD_USE_MMX 1)
     set(KEYLEDSD_USE_SSE2 1)
 endif()
