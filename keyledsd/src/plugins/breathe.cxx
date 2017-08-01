@@ -23,7 +23,6 @@
 #include "keyledsd/KeyDatabase.h"
 #include "keyledsd/PluginManager.h"
 #include "keyledsd/RenderLoop.h"
-#include "tools/accelerated.h"
 
 using keyleds::KeyDatabase;
 using keyleds::RGBAColor;
@@ -76,8 +75,7 @@ public:
         } else {
             for (const auto & key : m_keys) { m_buffer.get(key->index).alpha = alpha; }
         }
-        blend(reinterpret_cast<uint8_t*>(target.data()),
-              reinterpret_cast<uint8_t*>(m_buffer.data()), m_buffer.size());
+        keyleds::blend(target, m_buffer);
     }
 
 private:

@@ -71,6 +71,7 @@ private:
 };
 
 void swap(RenderTarget &, RenderTarget &) noexcept;
+void blend(RenderTarget &, const RenderTarget &);
 
 /****************************************************************************/
 

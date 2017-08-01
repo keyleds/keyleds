@@ -14,11 +14,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <cassert>
 #include <cerrno>
 #include <exception>
 #include <type_traits>
 #include "keyledsd/Device.h"
 #include "keyledsd/RenderLoop.h"
+#include "tools/accelerated.h"
 #include "keyleds.h"
 #include "logging.h"
 
@@ -80,6 +82,13 @@ void keyleds::swap(RenderTarget & lhs, RenderTarget & rhs) noexcept
     std::swap(lhs.m_colors, rhs.m_colors);
     std::swap(lhs.m_nbColors, rhs.m_nbColors);
     std::swap(lhs.m_blocks, rhs.m_blocks);
+}
+
+void keyleds::blend(RenderTarget & lhs, const RenderTarget & rhs)
+{
+    assert(lhs.size() == rhs.size());
+    ::blend(reinterpret_cast<uint8_t*>(lhs.data()),
+            reinterpret_cast<const uint8_t*>(rhs.data()), rhs.size());
 }
 
 /****************************************************************************/
