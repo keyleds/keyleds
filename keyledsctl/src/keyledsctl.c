@@ -409,6 +409,7 @@ int main_get_leds(int argc, char * argv[])
         if (keys[idx].id == 0) { continue; }
         if (options.block_id == KEYLEDS_BLOCK_KEYS) {
             const unsigned keycode = keyleds_translate_scancode(keys[idx].id);
+            if (keycode == 0) { continue; }
             const char * name = keyleds_lookup_string(keyleds_keycode_names, keycode);
             if (name == NULL) {
                 printf("x%02x", keycode);
