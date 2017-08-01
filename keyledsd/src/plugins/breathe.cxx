@@ -14,16 +14,18 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include "keyledsd/common.h"
 #include "keyledsd/Configuration.h"
-#include "keyledsd/Device.h"
 #include "keyledsd/DeviceManager.h"
+#include "keyledsd/KeyDatabase.h"
 #include "keyledsd/PluginManager.h"
 #include "keyledsd/RenderLoop.h"
 #include "tools/accelerated.h"
 
+using keyleds::KeyDatabase;
 using keyleds::RGBAColor;
 using keyleds::RenderTarget;
 static constexpr float pi = 3.14159265358979f;
@@ -45,7 +47,7 @@ public:
         m_alpha = color.alpha;
         color.alpha = 0;
 
-        for (auto & item : m_buffer) { item = color; }
+        std::fill(m_buffer.begin(), m_buffer.end(), color);
 
         auto kit = conf.items().find("group");
         if (kit != conf.items().end()) {
@@ -72,7 +74,7 @@ public:
         if (m_keys.empty()) {
             for (auto & key : m_buffer) { key.alpha = alpha; }
         } else {
-            for (const auto & key : m_keys) { m_buffer.get(key).alpha = alpha; }
+            for (const auto & key : m_keys) { m_buffer.get(key->index).alpha = alpha; }
         }
         blend(reinterpret_cast<uint8_t*>(target.data()),
               reinterpret_cast<uint8_t*>(m_buffer.data()), m_buffer.size());
@@ -80,7 +82,7 @@ public:
 
 private:
     RenderTarget m_buffer;
-    std::vector<keyleds::Device::key_indices> m_keys;
+    std::vector<const KeyDatabase::Key *> m_keys;
     uint8_t             m_alpha;
 
     unsigned            m_time;

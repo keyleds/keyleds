@@ -60,9 +60,6 @@ public:
     typedef std::vector<KeyBlock> block_list;
     typedef std::vector<key_id_type> key_list;
 
-    typedef std::pair<block_list::size_type, key_list::size_type> key_indices;
-    static constexpr key_indices key_npos = { -1, -1 };
-
     // Exceptions
     class error : public std::runtime_error
     {
@@ -92,8 +89,7 @@ public:
           int           layout() const { return m_layout; }
     const block_list &  blocks() const { return m_blocks; }
 
-    key_indices         resolveKey(const std::string &) const;
-    key_indices         resolveKey(key_block_id_type, key_id_type) const;
+    std::string         resolveKey(key_block_id_type, key_id_type) const;
 
     // Manipulate
     void                setTimeout(unsigned us);
@@ -131,7 +127,6 @@ class Device::KeyBlock final
 {
 public:
     typedef std::vector<key_list::size_type> index_list;
-    static constexpr key_list::size_type key_npos = std::numeric_limits<key_list::size_type>::max();
 public:
                         KeyBlock(key_block_id_type id, key_list && keys, RGBColor maxValues);
 
@@ -140,13 +135,10 @@ public:
     const key_list &    keys() const { return m_keys; }
     const RGBColor &    maxValues() const { return m_maxValues; }
 
-    key_list::size_type find(key_id_type id) const { return m_keysInverse[id]; }
-
 private:
     key_block_id_type   m_id;           ///< Block identifier, eg: 0 for normal keys, 64 for game/light keys, ...
     std::string         m_name;         ///< USer-readable block name
     key_list            m_keys;         ///< List of key identifiers in block
-    index_list          m_keysInverse;  ///< Reverse list of keys in blocks (key id N is at m_keys' index I)
     RGBColor            m_maxValues;    ///< Color values that represent maximum light power for the block
 };
 

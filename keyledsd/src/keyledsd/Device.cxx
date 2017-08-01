@@ -41,8 +41,6 @@ namespace std {
 
 /****************************************************************************/
 
-constexpr Device::key_indices Device::key_npos;
-
 Device::Device(const std::string & path)
     : m_device(openDevice(path)),
       m_type(getType(m_device.get())),
@@ -172,24 +170,13 @@ bool Device::hasLayout() const
     return m_layout != KEYLEDS_KEYBOARD_LAYOUT_INVALID;
 }
 
-Device::key_indices Device::resolveKey(const std::string & name) const
+std::string Device::resolveKey(key_block_id_type blockId, key_id_type keyId) const
 {
-    unsigned keyCode = keyleds_string_id(keyleds_keycode_names, name.c_str());
-    if (keyCode == KEYLEDS_STRING_INVALID) { return key_npos; }
-    auto keyId = keyleds_translate_keycode(keyCode);
-    return resolveKey(KEYLEDS_BLOCK_KEYS, keyId);
-}
-
-Device::key_indices Device::resolveKey(key_block_id_type blockId, key_id_type keyId) const
-{
-    auto bit = std::find_if(m_blocks.begin(), m_blocks.end(),
-                            [blockId](const auto & block) { return block.id() == blockId; });
-    if (bit == m_blocks.end()) { return key_npos; }
-
-    auto kidx = bit->find(keyId);
-    if (kidx == KeyBlock::key_npos) { return key_npos; }
-
-    return { std::distance(m_blocks.begin(), bit), kidx };
+    if (blockId != KEYLEDS_BLOCK_KEYS) { return {}; }
+    auto keyCode = keyleds_translate_scancode(keyId);
+    auto name = keyleds_lookup_string(keyleds_keycode_names, keyCode);
+    if (name == nullptr) { return {}; }
+    return name;
 }
 
 /****************************************************************************/
@@ -247,19 +234,12 @@ void Device::commitColors()
 
 /****************************************************************************/
 
-constexpr Device::key_list::size_type Device::KeyBlock::key_npos;
-
 Device::KeyBlock::KeyBlock(key_block_id_type id, key_list && keys, RGBColor maxValues)
     : m_id(id),
       m_name(keyleds_lookup_string(keyleds_block_id_names, id)),
       m_keys(keys),
-      m_keysInverse(256, key_npos),
       m_maxValues(maxValues)
-{
-    for (key_list::size_type idx = 0; idx < m_keys.size(); ++idx) {
-        m_keysInverse[m_keys[idx]] = idx;
-    }
-}
+{}
 
 /****************************************************************************/
 

@@ -20,7 +20,6 @@
 #include <QtDBus>
 #include <QString>
 #include "keyledsd/DeviceManager.h"
-#include "keyledsd/Layout.h"
 
 namespace dbus {
 
@@ -38,7 +37,6 @@ class DeviceManagerAdaptor: public QDBusAbstractAdaptor
     Q_PROPERTY(QString name READ name)
     Q_PROPERTY(QString model READ model)
     Q_PROPERTY(QString firmware READ firmware)
-    Q_PROPERTY(QString layoutName READ layoutName)
     Q_PROPERTY(bool paused READ paused WRITE setPaused)
 public:
                 DeviceManagerAdaptor(keyleds::DeviceManager *parent);
@@ -60,8 +58,6 @@ public:
     QString     name() const { return parent()->device().name().c_str(); }
     QString     model() const { return parent()->device().model().c_str(); }
     QString     firmware() const { return parent()->device().firmware().c_str(); }
-    QString     layoutName() const { return parent()->hasLayout() ?
-                                            parent()->layout().name().c_str() : ""; }
     bool        paused() const { return parent()->paused(); }
     void        setPaused(bool val) const { parent()->setPaused(val); }
 };

@@ -48,7 +48,8 @@ set(keyledsd_SRCS
     src/keyledsd/ContextWatcher.cxx
     src/keyledsd/Device.cxx
     src/keyledsd/DeviceManager.cxx
-    src/keyledsd/Layout.cxx
+    src/keyledsd/KeyDatabase.cxx
+    src/keyledsd/LayoutDescription.cxx
     src/keyledsd/PluginManager.cxx
     src/keyledsd/RenderLoop.cxx
     src/keyledsd/Service.cxx

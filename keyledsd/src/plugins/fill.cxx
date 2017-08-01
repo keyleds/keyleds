@@ -17,15 +17,16 @@
 #include <vector>
 #include "keyledsd/common.h"
 #include "keyledsd/Configuration.h"
-#include "keyledsd/Device.h"
+#include "keyledsd/KeyDatabase.h"
 #include "keyledsd/PluginManager.h"
 #include "keyledsd/RenderLoop.h"
 
+using keyleds::KeyDatabase;
 using keyleds::RGBAColor;
 
 class Rule final
 {
-    typedef std::vector<keyleds::Device::key_indices> key_list;
+    typedef std::vector<const KeyDatabase::Key *> key_list;
 public:
                         Rule(key_list keys, keyleds::RGBAColor color)
                          : m_keys(keys), m_color(color) {}
@@ -67,7 +68,7 @@ public:
         }
         for (const auto & rule : m_rules) {
             for (const auto & key : rule.keys()) {
-                target.get(key) = rule.color();
+                target.get(key->index) = rule.color();
             }
         }
     }

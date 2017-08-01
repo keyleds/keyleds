@@ -23,6 +23,7 @@
 #include <unordered_map>
 #include "keyledsd/Configuration.h"
 #include "keyledsd/Device.h"
+#include "keyledsd/KeyDatabase.h"
 #include "config.h"
 
 namespace keyleds {
@@ -40,7 +41,7 @@ class Renderer;
 class IRendererPlugin
 {
 public:
-    typedef std::map<std::string, std::vector<Device::key_indices>> group_map;
+    typedef std::map<std::string, std::vector<const KeyDatabase::Key*>> group_map;
 public:
     virtual                 ~IRendererPlugin();
 

@@ -18,7 +18,7 @@
 #include <iomanip>
 #include <sstream>
 #include "keyledsd/DeviceManager.h"
-#include "keyledsd/Layout.h"
+#include "keyledsd/LayoutDescription.h"
 #include "keyledsd/PluginManager.h"
 #include "tools/Paths.h"
 #include "config.h"
@@ -29,7 +29,8 @@ LOGGING("dev-manager");
 using keyleds::Configuration;
 using keyleds::Context;
 using keyleds::DeviceManager;
-using keyleds::Layout;
+using keyleds::LayoutDescription;
+using keyleds::KeyDatabase;
 using keyleds::RenderLoop;
 
 /****************************************************************************/
@@ -73,7 +74,7 @@ DeviceManager::DeviceManager(const device::Description & description, Device && 
       m_serial(getSerial(description)),
       m_eventDevices(findEventDevices(description)),
       m_device(std::move(device)),
-      m_layout(loadLayout(conf, m_device)),
+      m_keyDB(buildKeyDB(conf, m_device)),
       m_renderLoop(m_device, loadRenderers(context), 16)
 {
     m_renderLoop.setPaused(false);
@@ -82,18 +83,6 @@ DeviceManager::DeviceManager(const device::Description & description, Device && 
 DeviceManager::~DeviceManager()
 {
     m_renderLoop.stop();
-}
-
-keyleds::Device::key_indices DeviceManager::resolveKeyName(const std::string & name) const
-{
-    if (m_layout != nullptr) {
-        for (const auto & key : m_layout->keys()) {
-            if (key.name == name) {
-                return m_device.resolveKey(key.block, key.code);
-            }
-        }
-    }
-    return m_device.resolveKey(name);
 }
 
 void DeviceManager::setContext(const Context & context)
@@ -141,9 +130,9 @@ std::string DeviceManager::layoutName(const Device & device)
     return fileNameBuf.str();
 }
 
-std::unique_ptr<Layout> DeviceManager::loadLayout(const Configuration & conf, const Device & device)
+LayoutDescription DeviceManager::loadLayoutDescription(const Configuration & conf, const Device & device)
 {
-    if (!device.hasLayout()) { return nullptr; }
+    if (!device.hasLayout()) { return LayoutDescription(std::string(), {}); }
 
     auto paths = conf.layoutPaths();
     for (const auto & path : paths::getPaths(paths::XDG::Data, true)) {
@@ -156,16 +145,57 @@ std::unique_ptr<Layout> DeviceManager::loadLayout(const Configuration & conf, co
         std::ifstream file(fullName);
         if (!file) { continue; }
         try {
-            auto result = std::make_unique<Layout>(Layout::parse(file));
+            auto result = LayoutDescription::parse(file);
             INFO("loaded layout ", fullName);
             return result;
-        } catch (Layout::ParseError & error) {
+        } catch (LayoutDescription::ParseError & error) {
             ERROR("layout ", fullName, " line ", error.line(), ": ", error.what());
         } catch (std::exception & error) {
             ERROR("layout ", fullName, ": ", error.what());
         }
     }
-    throw std::runtime_error("layout " + fileName + " not found");
+    return LayoutDescription(std::string(), {});
+}
+
+KeyDatabase DeviceManager::buildKeyDB(const Configuration & conf, const Device & device)
+{
+    auto layout = loadLayoutDescription(conf, device);
+
+    KeyDatabase::key_map db;
+    for (Device::block_list::size_type bidx = 0; bidx < device.blocks().size(); ++bidx) {
+        const auto & block = device.blocks()[bidx];
+        const auto blockId = block.id();
+
+        for (Device::key_list::size_type kidx = 0; kidx < block.keys().size(); ++kidx) {
+            const auto keyId = block.keys()[kidx];
+            std::string name;
+            auto position = KeyDatabase::Key::Rect{0, 0, 0, 0};
+
+            for (const auto & key : layout.keys()) {
+                if (key.block == blockId && key.code == keyId) {
+                    name = key.name;
+                    position = {key.position.x0, key.position.y0,
+                                key.position.x1, key.position.y1};
+                    break;
+                }
+            }
+            if (name.empty()) {
+                name = device.resolveKey(blockId, keyId);
+            }
+
+            db.emplace(
+                name,
+                KeyDatabase::Key{
+                    { bidx, kidx },
+                    block.id(),
+                    block.keys()[kidx],
+                    name,
+                    position
+                }
+            );
+        }
+    }
+    return db;
 }
 
 keyleds::RenderLoop::renderer_list DeviceManager::loadRenderers(const Context & context)
@@ -195,9 +225,9 @@ DeviceManager::LoadedProfile & DeviceManager::getProfile(const Configuration::Pr
     for (const auto & group : conf.groups()) {
         auto keys = decltype(groups)::mapped_type();
         for (const auto & name : group.second) {
-            auto indices = resolveKeyName(name);
-            if (indices != Device::key_npos) {
-                keys.push_back(indices);
+            auto it = m_keyDB.find(name);
+            if (it != m_keyDB.end()) {
+                keys.push_back(&it->second);
             } else {
                 WARNING("unknown key ", name, " for device ", m_serial, " in profile ", conf.name());
             }
@@ -208,9 +238,9 @@ DeviceManager::LoadedProfile & DeviceManager::getProfile(const Configuration::Pr
         if (groups.find(group.first) != groups.end()) { continue; }
         auto keys = decltype(groups)::mapped_type();
         for (const auto & name : group.second) {
-            auto indices = resolveKeyName(name);
-            if (indices != Device::key_npos) {
-                keys.push_back(indices);
+            auto it = m_keyDB.find(name);
+            if (it != m_keyDB.end()) {
+                keys.push_back(&it->second);
             } else {
                 DEBUG("ignoring global key ", name, ": not found on device ", m_serial);
             }

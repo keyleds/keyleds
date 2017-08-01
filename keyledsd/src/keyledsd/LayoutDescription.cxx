@@ -22,9 +22,9 @@
 #include <istream>
 #include <sstream>
 #include <memory>
-#include "keyledsd/Layout.h"
+#include "keyledsd/LayoutDescription.h"
 
-using keyleds::Layout;
+using keyleds::LayoutDescription;
 
 /****************************************************************************/
 
@@ -57,7 +57,7 @@ static unsigned parseUInt(const xmlNode * node, const xmlChar * name, int base)
     if (valueStr == nullptr) {
         std::ostringstream errMsg;
         errMsg <<"Element '" <<node->name <<"' misses a '" <<name <<"' attribute";
-        throw Layout::ParseError(errMsg.str(), xmlGetLineNo(const_cast<xmlNode *>(node)));
+        throw LayoutDescription::ParseError(errMsg.str(), xmlGetLineNo(const_cast<xmlNode *>(node)));
     }
     char * strEnd;
     unsigned valueUInt = std::strtoul((char*)valueStr.get(), &strEnd, base);
@@ -65,21 +65,21 @@ static unsigned parseUInt(const xmlNode * node, const xmlChar * name, int base)
         std::ostringstream errMsg;
         errMsg <<"Value '" <<valueStr.get() <<"' in attribute '" <<name <<"' of '"
                <<node->name <<"' element cannot be parsed as an integer";
-        throw Layout::ParseError(errMsg.str(), xmlGetLineNo(const_cast<xmlNode *>(node)));
+        throw LayoutDescription::ParseError(errMsg.str(), xmlGetLineNo(const_cast<xmlNode *>(node)));
     }
     return valueUInt;
 }
 
 /****************************************************************************/
 
-static void parseKeyboard(const xmlNode * keyboard, Layout::key_list & keys)
+static void parseKeyboard(const xmlNode * keyboard, LayoutDescription::key_list & keys)
 {
     char * strEnd;
     unsigned kbX = parseUInt(keyboard, KEYBOARD_ATTR_X, 10);
     unsigned kbY = parseUInt(keyboard, KEYBOARD_ATTR_Y, 10);
     unsigned kbWidth = parseUInt(keyboard, KEYBOARD_ATTR_WIDTH, 10);
     unsigned kbHeight = parseUInt(keyboard, KEYBOARD_ATTR_HEIGHT, 10);
-    Layout::Key::block_type kbZone = parseUInt(keyboard, KEYBOARD_ATTR_ZONE, 0);
+    LayoutDescription::Key::block_type kbZone = parseUInt(keyboard, KEYBOARD_ATTR_ZONE, 0);
 
     unsigned nbRows = 0;
     for (const xmlNode * row = keyboard->children; row != nullptr; row = row->next) {
@@ -101,7 +101,7 @@ static void parseKeyboard(const xmlNode * keyboard, Layout::key_list & keys)
                     errMsg <<"Value '" <<keyWidthStr.get() <<"' in attribute '"
                            <<KEY_ATTR_WIDTH <<"' of '" <<KEY_TAG
                            <<"' element cannot be parsed as a float";
-                    throw Layout::ParseError(errMsg.str(), xmlGetLineNo(const_cast<xmlNode *>(key)));
+                    throw LayoutDescription::ParseError(errMsg.str(), xmlGetLineNo(const_cast<xmlNode *>(key)));
                 }
                 totalWidth += (unsigned int)(keyWidthFloat * 1000);
             } else {
@@ -126,7 +126,7 @@ static void parseKeyboard(const xmlNode * keyboard, Layout::key_list & keys)
             }
 
             if (code != nullptr) {
-                auto codeVal = Layout::Key::code_type(parseUInt(key, KEY_ATTR_CODE, 0));
+                auto codeVal = LayoutDescription::Key::code_type(parseUInt(key, KEY_ATTR_CODE, 0));
                 auto codeNameStr = glyph != nullptr ? std::string(reinterpret_cast<char *>(glyph.get()))
                                                     : std::string();
                 std::transform(codeNameStr.begin(), codeNameStr.end(), codeNameStr.begin(), ::toupper);
@@ -134,7 +134,7 @@ static void parseKeyboard(const xmlNode * keyboard, Layout::key_list & keys)
                 keys.emplace_back(
                     kbZone,
                     codeVal,
-                    Layout::Rect {
+                    LayoutDescription::Rect {
                         kbX + xOffset,
                         kbY + rowIdx * (kbHeight / nbRows),
                         kbX + xOffset + keyWidth - 1,
@@ -151,14 +151,13 @@ static void parseKeyboard(const xmlNode * keyboard, Layout::key_list & keys)
 
 /****************************************************************************/
 
-Layout::Layout(std::string name, key_list keys)
+LayoutDescription::LayoutDescription(std::string name, key_list keys)
  : m_name(name),
-   m_keys(std::move(keys)),
-   m_bounds(computeBounds(m_keys))
+   m_keys(std::move(keys))
 {
 }
 
-Layout Layout::parse(std::istream & stream)
+LayoutDescription LayoutDescription::parse(std::istream & stream)
 {
     // Parser context
     xmlParserCtxt_ptr context(xmlNewParserCtxt(), xmlFreeParserCtxt);
@@ -178,10 +177,10 @@ Layout Layout::parse(std::istream & stream)
     );
     if (document == nullptr) {
         auto error = xmlCtxtGetLastError(context.get());
-        if (error == nullptr) { throw Layout::ParseError("empty file", 1); }
+        if (error == nullptr) { throw ParseError("empty file", 1); }
         std::string errMsg(error->message);
         errMsg.erase(errMsg.find_last_not_of(" \r\n") + 1);
-        throw Layout::ParseError(errMsg, error->line);
+        throw ParseError(errMsg, error->line);
     }
 
     // Search for keyboard nodes
@@ -196,20 +195,8 @@ Layout Layout::parse(std::istream & stream)
     }
 
     // Finalize
-    return Layout(
+    return LayoutDescription(
         std::string(reinterpret_cast<std::string::const_pointer>(name.get())),
         std::move(keys)
     );
-}
-
-Layout::Rect Layout::computeBounds(const key_list & keys)
-{
-    auto bounds = keys.front().position;
-    for (const auto & key : keys) {
-        if (key.position.x0 < bounds.x0) { bounds.x0 = key.position.x0; }
-        if (key.position.y0 < bounds.y0) { bounds.y0 = key.position.y0; }
-        if (key.position.x1 > bounds.x1) { bounds.x1 = key.position.x1; }
-        if (key.position.y1 > bounds.y1) { bounds.y1 = key.position.y1; }
-    }
-    return bounds;
 }

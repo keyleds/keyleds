@@ -20,6 +20,7 @@
 #include <QObject>
 #include "keyledsd/Configuration.h"
 #include "keyledsd/Device.h"
+#include "keyledsd/KeyDatabase.h"
 #include "keyledsd/RenderLoop.h"
 #include "tools/DeviceWatcher.h"
 #include <memory>
@@ -30,7 +31,7 @@
 namespace keyleds {
 
 class Context;
-class Layout;
+class LayoutDescription;
 
 /** Main device manager
  *
@@ -63,7 +64,6 @@ private:
     typedef std::unordered_map<Configuration::Profile::id_type, LoadedProfile> profile_map;
 
 public:
-    typedef std::unique_ptr<Layout> layout_ptr;
     typedef std::vector<std::string> dev_list;
 public:
                             DeviceManager(const device::Description &,
@@ -73,13 +73,10 @@ public:
                                           QObject *parent = 0);
     virtual                 ~DeviceManager();
 
-    const std::string &     serial() const { return m_serial; }
+    const std::string &     serial() const noexcept { return m_serial; }
     const dev_list &        eventDevices() const { return m_eventDevices; }
     const Device &          device() const { return m_device; }
-          bool              hasLayout() const { return m_layout != nullptr; }
-    const Layout &          layout() const { return *m_layout; }
 
-    Device::key_indices     resolveKeyName(const std::string &) const;
     RenderTarget            getRenderTarget() const { return RenderLoop::renderTargetFor(m_device); }
 
           bool              paused() const { return m_renderLoop.paused(); }
@@ -93,7 +90,8 @@ private:
     static std::string      getSerial(const device::Description &);
     static dev_list         findEventDevices(const device::Description &);
     static std::string      layoutName(const Device &);
-    static layout_ptr       loadLayout(const Configuration &, const Device &);
+    static LayoutDescription loadLayoutDescription(const Configuration &, const Device &);
+    static KeyDatabase      buildKeyDB(const Configuration &, const Device &);
 
     RenderLoop::renderer_list loadRenderers(const Context &);
     LoadedProfile &         getProfile(const Configuration::Profile &);
@@ -105,7 +103,7 @@ private:
     dev_list                m_eventDevices;     ///< List of event device paths that the
                                                 ///  physical device can communicate on.
     Device                  m_device;           ///< The device handled by this manager
-    layout_ptr              m_layout;           ///< Loaded layout of the device, or nullptr if none
+    KeyDatabase             m_keyDB;            ///< Fully loaded key descriptions
 
     profile_map             m_profiles;         ///< Map of profile id to loaded profile instance
     RenderLoop              m_renderLoop;       ///< The RenderLoop in charge of the device
