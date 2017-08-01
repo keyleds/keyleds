@@ -55,6 +55,7 @@ set(keyledsd_SRCS
     src/keyledsd/Service.cxx
     src/plugins/breathe.cxx
     src/plugins/fill.cxx
+    src/plugins/wave.cxx
     src/tools/accelerated.c
     src/tools/accelerated_plain.c
     src/tools/AnimationLoop.cxx

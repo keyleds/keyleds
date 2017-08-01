@@ -57,6 +57,8 @@ public:
     std::size_t                 size() const noexcept { return m_nbColors; }
     RGBAColor *                 data() noexcept { return m_colors; }
     const RGBAColor *           data() const noexcept { return m_colors; }
+    RGBAColor &                 operator[](std::size_t idx) noexcept { return m_colors[idx]; }
+    const RGBAColor &           operator[](std::size_t idx) const noexcept { return m_colors[idx]; }
 
     RGBAColor &                 get(std::size_t bidx, std::size_t kidx) noexcept
                                 { return *(m_blocks[bidx] + kidx); }

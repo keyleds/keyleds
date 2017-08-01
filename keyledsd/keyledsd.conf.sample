@@ -43,6 +43,20 @@ profiles:
         plugins:
             - plugin: fill
               color: logitech
+    empty:                      # When no window is active or screen is locked
+        lookup:
+            class: ^$           # empty class
+        plugins:
+            - plugin: wave
+              period: 5000      # cycle duratio in ms
+              length: 2000      # wavelength (1000 is keyboard size)
+              direction: 240    # 0 for upwards, 90 rightwards, 180 downwards, ...
+              color0: red
+              color1: magenta
+              color2: blue
+              color3: cyan
+              color4: green
+              color5: yellow
     video:
         lookup:
             class: mpv

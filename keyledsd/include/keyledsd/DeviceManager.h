@@ -76,6 +76,7 @@ public:
     const std::string &     serial() const noexcept { return m_serial; }
     const dev_list &        eventDevices() const { return m_eventDevices; }
     const Device &          device() const { return m_device; }
+    const KeyDatabase &     keyDB() const { return m_keyDB; }
 
     RenderTarget            getRenderTarget() const { return RenderLoop::renderTargetFor(m_device); }
 
