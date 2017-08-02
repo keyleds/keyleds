@@ -66,7 +66,7 @@ void AnimationLoop::run()
         if (m_abort) { break; }
         DEBUG("AnimationLoop(", this, ") resumed");
 
-        clock_gettime(CLOCK_REALTIME, &nextTick);
+        clock_gettime(CLOCK_MONOTONIC, &nextTick);
         if (!render(0)) { return; }
 
         while (!m_paused.load(std::memory_order_relaxed) && !m_abort.load(std::memory_order_relaxed)) {
@@ -78,7 +78,7 @@ void AnimationLoop::run()
 
             /* Wait until next tick, an error or told to pause/terminate */
             do {
-                err = clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &nextTick, nullptr);
+                err = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &nextTick, nullptr);
             } while (err == EINTR &&
                      !m_paused.load(std::memory_order_relaxed) &&
                      !m_abort.load(std::memory_order_relaxed));
