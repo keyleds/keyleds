@@ -2,84 +2,94 @@
 keyleds
 =======
 
-This implements a user-level driver for
-Logitech keyboards. It is a personal development project built by
-capturing Logitech's software communications to the keyboard. Plus
-some experiments throwing bytes at it.
+Userspace service for Logitech keyboards.
 
-* Tested on a G410 Atlas Spectrum keyboard.
-* Other Logitech keyboard should work as well. If you test other
-  keyboards, please let me know what works so I can make a list.
+This project supports all Logitech USB keyboards, though the service is
+obviously only useful with those featuring per-key light control.
 
-Why another project? Because the ones I found work from replaying
-captured USB frames, which is clumsy and prone to failing at
-every firmware update. On the other hand, this project contains
-an actual implementation of Logitech protocol, which should make
-it much more robust and future-proof.
+* G410 Atlas Spectrum is fully tested.
+* Other keyboards should work, though some plugins might need a layout
+  description file. Please open an `issue`_ and I will make one for you!
 
 Features
 --------
 
-The project is split into four components. Two for end users:
+The project is split into four components.
 
-* A background service. Watches keyboards and reacts to external events by
-  animating keys, like Logitech's software does on Windows.
-* A small command-line tool to test devices, query and set leds in scripts.
+The **session service** animates the keyboard in response to various events:
 
-And two for developers:
-* A static library implementing Logitech protocol.
-* Python3 bindings for that library.
+* Dynamic detection of Logitech keyboard as they are plugged in.
+* Flexible per-application light settings.
 
-Service features
-~~~~~~~~~~~~~~~~
+  - Can filter on window title for further refining.
 
-The service is intended to be run in an X session as the user. It supports
-the following features:
+* Multiple light settings can co-exist as layers with transparency support.
+* Versatile plugin architecture to add new effects. Comes with:
 
-* Dynamic detection of keyboards as they are plugged in.
-* Reacts to X session events: active window switching, window title updates.
-* Plugin architecture for key effects (static plugins only for now).
-* Configurable filtering of: plugins can be enabled/disabled based
-  on keyboard serial, window state, ...
-* Exposes some of its configuration through DBus.
+  - Fixed lights (including key groups)
+  - Breathing effect (transparency-based).
+  - Wave effect (wavelength, speed and direction fully configurable,
+    supports arbitrary color list with transparency).
 
-Command-line tool and library features
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* Support for per-keyboard settings.
 
-The following features are supported:
+The **command-line tool** is intended for power users to script their keyboard:
 
-* Device enumeration and basic information (keyboard type, firmware version, …).
-* Inspection of device capabilities and led configuration.
+* Device enumeration.
+* Full device information (type, firmware, capabilities, leds, layout, …)
 * Individual key led control (set and get).
-* Automatic translation between led identifiers and keycodes.
-* Game-mode configuration
-* Report rate configuration
-* Library is written is pure C, with special care taken to avoid memory
-  allocations on critical code paths.
+* Advanced Logitech keyboard settings (game-mode, report rate, …)
+
+Lastly, for developers, the project includes:
+
+* A **library** implementing Logitech keyboards protocol. Written in pure C,
+  with no allocations on critical codepaths for optimal performance.
+* **Python3 bindings** for the library.
+
+Installing - prepackaged
+------------------------
+
+Effort is undergoing to provide official packages for various distributions.
+
+It is now available from the `official PPA`_ for Ubuntu Xenial / Zesty:
+
+.. code-block:: bash
+
+    sudo add-apt-repository ppa:spectras/keyleds
+    sudo apt-get update
+    sudo apt-get install keyleds
+
+After the install is complete, you have to re-plug your keyboard so
+device permissions are applied.
+
+If your distribution is not listed, you need to install manually.
+
+Installing - manually
+---------------------
 
 Compiling
----------
+~~~~~~~~~
 
 Building keyleds requires the following dependencies to be installed:
 
-* cmake
-* Qt4 core development files
-* X11 development files
-* libc development files
-* libudev development files
-* libxml2 development files
-* libyaml development files
-* Qt4 dbus development files *(optional, required for DBus support)*
-* python3 development files *(optional, used for python bindings)*
-* cython3 *(optional, used for python bindings)*
+* ``cmake``
+* ``Qt4 core`` development files
+* ``X11`` development files, including ``XInput``.
+* ``libc`` development files
+* ``libudev`` development files
+* ``libxml2`` development files
+* ``libyaml`` development files
+* ``Qt4`` dbus development files *(optional, required for DBus support)*
+* ``python3`` development files *(optional, used for python bindings)*
+* ``cython3`` *(optional, used for python bindings)*
 
 The following one-liner should get you up and running on debian systems:
 
 .. code-block:: bash
 
-    sudo apt-get install build-essential cmake linux-libc-dev libqt4-dev libudev-dev libx11-dev libxml2-dev libyaml-dev python3-dev cython
+    sudo apt-get install build-essential cmake linux-libc-dev libqt4-dev libudev-dev libx11-dev libxi-dev libxml2-dev libyaml-dev
 
-Build the project with the following command:
+Then build the project with the following command:
 
 .. code-block:: bash
 
@@ -92,7 +102,7 @@ You may then install it with a good old:
     sudo make install
 
 Dealing with device permissions
--------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 By default, the keyboard device is not usable by any non-root user.
 This means you must either:
@@ -105,18 +115,36 @@ This means you must either:
   access to members of the ``plugdev`` group. Beware that this makes
   it possible for those users to spy on some keyboard presses.
 
-Using the background service
-----------------------------
+Using the service
+-----------------
 
-Either start it manually or drop the provided desktop file in your
-``$HOME/.config/autostart`` directory so it is started automatically on login.
+If you used automatic installation, the service will start automatically when
+you open an X session. You can enable this behavior with manual installation
+with the following command:
 
-It requires a configuration file. You may use `keyledsd.conf`_ as a starting
-point. Copy it as ``$HOME/.config/keyledsd.conf`` if using the desktop file.
+.. code-block:: bash
+
+    ln -s /usr/share/keyledsd/keyledsd.desktop $HOME/.config/autostart/
+
+The service reads its configuration file from those paths, taking whichever comes first:
+
+* `${HOME}/.config/keyledsd.conf`
+* Any path from `${XDG_CONFIG_DIRS}`
+* `/etc/keyledsd.conf`
+
+If you used automatic installation, `/etc/keyledsd.conf` is provided. You can
+either modify it, or copy it to your home folder to override the global one.
+
+The sample `keyledsd.conf`_ shows examples of all plugins and a few common ways
+to create plugin stacks for cool effects.
 
 
-Using the cli tool
-------------------
+Using the command-line tool
+---------------------------
+
+The command-line tool and the service are compatible: You may use the command line
+tool even when the service is in control of the keyboard. Note however that setting
+key lights is useless then as the service will restore them right away.
 
 * Listing connected, supported devices:
 
@@ -225,13 +253,14 @@ Using the cli tool
 Using the API
 -------------
 
-Simply include `keyleds.h`_, and link with ``libkeyleds.a``. Most functions
-are self-explanatory. Have a look at ``src/keyledsctl.c`` for examples.
-Open tickets if you need help. Code documentation should come with time.
+If using the automatic install, install the development package first.
+It should be called ``keyleds-dev``. Otherwise, manual mode installs
+development files by default.
 
-Some functions allocate structures but don't have a matching ``*_free_*``
-function. When you find some, please open an issue and use stdlib's ``free``
-in the meantime.
+In your project, simply include `keyleds.h`_, and link with ``-lkeyleds``.
+Most functions are self-explanatory. Have a look at
+``keyledsctl/src/keyledsctl.c`` for examples.
+Open tickets if you need help.
 
 Using python bindings
 ---------------------
@@ -279,6 +308,9 @@ Here is a sample of what works:
 All properties are read once at first access and cached. On the other hand,
 methods in the form ``get_*`` query the device at every invocation.
 
+.. _issue: https://github.com/spectras/keyleds/issues
+.. _official PPA: https://launchpad.net/~spectras/+archive/ubuntu/keyleds
+.. _keyledsd.conf: https://github.com/spectras/keyleds/blob/master/keyledsd/keyledsd.conf.sample
 .. _CSS color names: https://www.w3.org/wiki/CSS/Properties/color/keywords
-.. _key names: https://github.com/spectras/keyleds/blob/master/src/keyleds/strings.c#L86
-.. _keyleds.h: https://github.com/spectras/keyleds/blob/master/include/keyleds.h
+.. _key names: https://github.com/spectras/keyleds/blob/master/libkeyleds/src/strings.c#L86
+.. _keyleds.h: https://github.com/spectras/keyleds/blob/master/libkeyleds/include/keyleds.h

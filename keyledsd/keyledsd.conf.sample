@@ -1,5 +1,6 @@
 # Sample configuration
 # kate: syntax yaml;
+# vi: ft=yaml :
 
 # Set additional lookup paths for keyboard layout files
 # layouts: /home/spectras/projects/keyleds/keyledsd/layouts
