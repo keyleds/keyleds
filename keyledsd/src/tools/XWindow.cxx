@@ -220,14 +220,18 @@ xlib::ErrorCatcher::ErrorCatcher()
 
 xlib::ErrorCatcher::~ErrorCatcher()
 {
+#ifdef NDEBUG
+    XSetErrorHandler(m_oldHandler);
+    s_current = m_oldCatcher;
+#else
     auto prevHandler = XSetErrorHandler(m_oldHandler);
-#ifndef NDEBUG
     auto prevCatcher = s_current;
-#endif
+
     s_current = m_oldCatcher;
 
     assert(prevHandler == errorHandler);
     assert(prevCatcher == this);
+#endif
 }
 
 void xlib::ErrorCatcher::synchronize(xlib::Display & display) const
