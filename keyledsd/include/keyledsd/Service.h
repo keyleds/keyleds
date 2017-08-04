@@ -24,6 +24,7 @@
 #include "keyledsd/Context.h"
 #include "keyledsd/Device.h"
 #include "tools/DeviceWatcher.h"
+#include "tools/FileWatcher.h"
 
 namespace keyleds {
 
@@ -65,12 +66,16 @@ private slots:
     void                onDeviceRemoved(const device::Description &);
 
 private:
+    static void         onFileWatchEvent(void *, FileWatcher::event, uint32_t, std::string);
+
+private:
     Configuration &     m_configuration;    ///< Service configuration
     Context             m_context;          ///< Current context. Used when instanciating new managers
     bool                m_active;           ///< If clear, the service stops watching devices
     device_map          m_devices;          ///< Map of serial number to DeviceManager instances
 
     DeviceWatcher       m_deviceWatcher;    ///< Connection to libudev
+    FileWatcher         m_fileWatcher;      ///< Connection to inotify
 };
 
 };

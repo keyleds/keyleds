@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <QCoreApplication>
+#include <unistd.h>
 #include "keyledsd/Configuration.h"
 #include "keyledsd/ContextWatcher.h"
 #include "keyledsd/Device.h"
@@ -33,7 +34,7 @@ using keyleds::Service;
 Service::Service(Configuration & configuration, QObject * parent)
     : QObject(parent),
       m_configuration(configuration),
-      m_deviceWatcher(nullptr, this)
+      m_deviceWatcher(nullptr)
 {
     m_active = false;
     QObject::connect(&m_deviceWatcher, SIGNAL(deviceAdded(const device::Description &)),
@@ -77,6 +78,8 @@ void Service::onDeviceAdded(const device::Description & description)
         auto manager = std::make_unique<DeviceManager>(
             device::Description(description), std::move(device), m_configuration, m_context
         );
+        m_fileWatcher.subscribe(description.devNode(), FileWatcher::event::Attrib,
+                                onFileWatchEvent, manager.get());
         emit deviceManagerAdded(*manager);
 
         auto dit = m_configuration.devices().find(manager->serial());
@@ -105,10 +108,18 @@ void Service::onDeviceRemoved(const device::Description & description)
         m_devices.erase(it);
 
         INFO("removing device ", manager->serial());
+        m_fileWatcher.unsubscribe(onFileWatchEvent, manager.get());
         emit deviceManagerRemoved(*manager);
 
         if (m_devices.empty() && m_configuration.autoQuit()) {
             QCoreApplication::quit();
         }
     }
+}
+
+void Service::onFileWatchEvent(void * managerPtr, FileWatcher::event, uint32_t, std::string)
+{
+    auto manager = static_cast<DeviceManager *>(managerPtr);
+    int result = access(manager->device().path().c_str(), R_OK | W_OK);
+    manager->setPaused(result != 0);
 }

@@ -60,6 +60,7 @@ set(keyledsd_SRCS
     src/tools/accelerated_plain.c
     src/tools/AnimationLoop.cxx
     src/tools/DeviceWatcher.cxx
+    src/tools/FileWatcher.cxx
     src/tools/Paths.cxx
     src/tools/XWindow.cxx
     src/tools/YAMLParser.cxx
@@ -98,6 +99,7 @@ qt4_wrap_cpp(moc_sources
     include/keyledsd/DeviceManager.h
     include/keyledsd/Service.h
     include/tools/DeviceWatcher.h
+    include/tools/FileWatcher.h
 )
 set(keyledsd_SRCS ${keyledsd_SRCS} ${moc_sources})
 

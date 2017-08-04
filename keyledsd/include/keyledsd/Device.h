@@ -73,11 +73,13 @@ public:
     };
 
 public:
-                        Device(const std::string & path);
+                        Device(std::string path);
                         Device(const Device &) = delete;
                         Device(Device &&) = default;
     Device &            operator=(const Device &) = delete;
     Device &            operator=(Device &&) = default;
+
+    const std::string & path() const noexcept { return m_path; }
 
     // Query
     Type                type() const { return m_type; }
@@ -109,6 +111,7 @@ private:
     void                cacheVersion();
 
 private:
+    std::string         m_path;             ///< Device node path
     std::unique_ptr<struct keyleds_device> m_device;    ///< Underlying libkeyleds opaque handle
     Type                m_type;             ///< The kind of libkeyleds device
     std::string         m_name;             ///< User-friendly name of the device, eg "Logitech G410"

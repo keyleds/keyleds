@@ -41,8 +41,9 @@ namespace std {
 
 /****************************************************************************/
 
-Device::Device(const std::string & path)
-    : m_device(openDevice(path)),
+Device::Device(std::string path)
+    : m_path(std::move(path)),
+      m_device(openDevice(m_path)),
       m_type(getType(m_device.get())),
       m_name(getName(m_device.get())),
       m_layout(keyleds_keyboard_layout(m_device.get(), KEYLEDS_TARGET_DEFAULT)),
