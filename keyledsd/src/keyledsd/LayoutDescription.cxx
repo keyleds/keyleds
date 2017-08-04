@@ -152,7 +152,7 @@ static void parseKeyboard(const xmlNode * keyboard, LayoutDescription::key_list 
 /****************************************************************************/
 
 LayoutDescription::LayoutDescription(std::string name, key_list keys)
- : m_name(name),
+ : m_name(std::move(name)),
    m_keys(std::move(keys))
 {
 }

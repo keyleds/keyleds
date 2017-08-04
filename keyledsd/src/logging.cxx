@@ -23,7 +23,7 @@
 
 
 Logger::Logger(std::string name, Policy * policy)
- : m_name(name),
+ : m_name(std::move(name)),
    m_policy(policy)
 {
     if (m_policy != nullptr) { m_policy->open(m_name); }

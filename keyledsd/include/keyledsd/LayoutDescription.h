@@ -63,7 +63,7 @@ public:
     typedef unsigned int code_type;
 public:
                 Key(block_type block, code_type code, Rect position, std::string name)
-                    : block(block), code(code), position(position), name(name) {}
+                    : block(block), code(code), position(position), name(std::move(name)) {}
 public:
     block_type  block;          ///< Block identifier, eg: 0 for normal keys, 64 for game/light keys, ...
     code_type   code;           ///< Key identifier within block

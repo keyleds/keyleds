@@ -114,9 +114,9 @@ public:
     public:
         Lookup() = default;
         Lookup(std::string title, std::string className, std::string instanceName)
-         : m_titleFilter(title),
-           m_classNameFilter(className),
-           m_instanceNameFilter(instanceName),
+         : m_titleFilter(std::move(title)),
+           m_classNameFilter(std::move(className)),
+           m_instanceNameFilter(std::move(instanceName)),
            m_didCompileRE(false) {}
         const std::string & titleFilter() const { return m_titleFilter; }
         const std::string & classNameFilter() const { return m_classNameFilter; }
@@ -187,7 +187,7 @@ public:
     typedef std::map<std::string, std::string> conf_map;
 public:
                         Plugin(std::string name, conf_map items)
-                            : m_name(name), m_items(std::move(items)) {}
+                            : m_name(std::move(name)), m_items(std::move(items)) {}
     const std::string & name() const { return m_name; }
     const conf_map &    items() const { return m_items; }
 private:
