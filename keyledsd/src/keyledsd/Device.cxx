@@ -186,9 +186,17 @@ void Device::setTimeout(unsigned us)
     keyleds_set_timeout(m_device.get(), us);
 }
 
+void Device::flush()
+{
+    if (!keyleds_flush_fd(m_device.get())) {
+        throw Device::error(keyleds_get_error_str(), keyleds_get_errno());
+    }
+}
+
 bool Device::resync()
 {
-    return keyleds_ping(m_device.get(), KEYLEDS_TARGET_DEFAULT);
+    return keyleds_flush_fd(m_device.get()) &&
+           keyleds_ping(m_device.get(), KEYLEDS_TARGET_DEFAULT);
 }
 
 void Device::fillColor(const KeyBlock & block, RGBColor color)

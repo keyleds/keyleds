@@ -132,37 +132,44 @@ RenderTarget RenderLoop::renderTargetFor(const Device & device)
 bool RenderLoop::render(unsigned long nanosec)
 {
     // Run all renderers
+    bool hasRenderers;
     {
         std::lock_guard<std::mutex> lock(m_mRenderers);
+        hasRenderers = !m_renderers.empty();
         for (const auto & renderer : m_renderers) {
             renderer->render(nanosec, m_buffer);
         }
     }
 
-    // Compute diff
-    bool hasChanges = false;
-    const auto & blocks = m_device.blocks();
-    for (size_t bidx = 0; bidx < blocks.size(); ++bidx) {
-        const size_t nKeys = blocks[bidx].keys().size();
-        m_directives.clear();
+    if (hasRenderers) {
+        m_device.flush();   // Ensure another program using the device did not fill
+                            // The inbound report queue.
 
-        for (size_t idx = 0; idx < nKeys; ++idx) {
-            const auto & color = m_buffer.get(bidx, idx);
-            if (color != m_state.get(bidx, idx)) {
-                m_directives.push_back({
-                    blocks[bidx].keys()[idx], color.red, color.green, color.blue
-                });
+        // Compute diff
+        bool hasChanges = false;
+        const auto & blocks = m_device.blocks();
+        for (size_t bidx = 0; bidx < blocks.size(); ++bidx) {
+            const size_t nKeys = blocks[bidx].keys().size();
+            m_directives.clear();
+
+            for (size_t idx = 0; idx < nKeys; ++idx) {
+                const auto & color = m_buffer.get(bidx, idx);
+                if (color != m_state.get(bidx, idx)) {
+                    m_directives.push_back({
+                        blocks[bidx].keys()[idx], color.red, color.green, color.blue
+                    });
+                }
+            }
+            if (!m_directives.empty()) {
+                m_device.setColors(blocks[bidx], m_directives.data(), m_directives.size());
+                hasChanges = true;
             }
         }
-        if (!m_directives.empty()) {
-            m_device.setColors(blocks[bidx], m_directives.data(), m_directives.size());
-            hasChanges = true;
-        }
-    }
 
-    // Commit color changes
-    if (hasChanges) { m_device.commitColors(); }
-    swap(m_state, m_buffer);
+        // Commit color changes
+        if (hasChanges) { m_device.commitColors(); }
+        swap(m_state, m_buffer);
+    }
 
     return true;
 }

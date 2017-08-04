@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <assert.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -120,6 +121,24 @@ int keyleds_device_fd(Keyleds * device)
 {
     assert(device != NULL);
     return device->fd;
+}
+
+bool keyleds_flush_fd(Keyleds * device)
+{
+    assert(device != NULL);
+    uint8_t buffer[device->max_report_size + 1];
+    ssize_t nread;
+
+    fcntl(device->fd, F_SETFL, O_NONBLOCK);
+    while ((nread = read(device->fd, buffer, device->max_report_size + 1)) > 0) {
+        /* do nothing */
+    }
+    if (errno != EAGAIN) {
+        keyleds_set_error_errno();
+        return false;
+    }
+    fcntl(device->fd, F_SETFL, 0);
+    return true;
 }
 
 /****************************************************************************/

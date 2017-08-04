@@ -93,6 +93,7 @@ public:
 
     // Manipulate
     void                setTimeout(unsigned us);
+    void                flush();
     bool                resync();
     void                fillColor(const KeyBlock & block, RGBColor);
     void                setColors(const KeyBlock & block, const color_directive_list &);
