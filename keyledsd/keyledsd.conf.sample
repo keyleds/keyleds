@@ -112,3 +112,15 @@ profiles:
               functions-extra: black
               wipe: black
               modifiers: 006060
+    chromium:
+        lookup:
+            class: chromium-browser
+        plugins:
+            - plugin: fill
+              color: darkblue
+            - plugin: stars
+              number: 30
+              duration: 3000
+              color0: white
+              color1: yellow
+              color2: beige

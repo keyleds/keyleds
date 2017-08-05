@@ -78,7 +78,7 @@ public:
 
         // Get ready
         computePhases(manager);
-        std::fill(m_buffer.begin(), m_buffer.end(), RGBAColor{255, 0, 0, 0});
+        std::fill(m_buffer.begin(), m_buffer.end(), RGBAColor{0, 0, 0, 0});
     }
 
     void render(unsigned long ns, RenderTarget & target) override

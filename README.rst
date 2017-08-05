@@ -30,6 +30,7 @@ The **session service** animates the keyboard in response to various events:
   - Breathing effect (transparency-based).
   - Wave effect (wavelength, speed and direction fully configurable,
     supports arbitrary color list with transparency).
+  - Star effect (number, color list and light duration configurable).
 
 * Support for per-keyboard settings.
 

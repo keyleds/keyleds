@@ -41,6 +41,7 @@ public:
 
     typedef std::map<std::string, Key>  key_map;
     typedef key_map::const_iterator     iterator;
+    typedef key_map::size_type          size_type;
 public:
                     KeyDatabase(key_map keys);
                     KeyDatabase(const KeyDatabase &) = delete;
@@ -50,6 +51,7 @@ public:
     iterator        find(RenderTarget::key_descriptor) const;
     iterator        begin() const { return m_keys.cbegin(); }
     iterator        end() const { return m_keys.cend(); }
+    size_type       size() const noexcept { return m_keys.size(); }
 
     Key::Rect       bounds() const { return m_bounds; }
 
