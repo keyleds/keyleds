@@ -18,9 +18,9 @@
 #define KEYLEDSD_KEYLEDSSERVICE_884F711D
 
 #include <QObject>
+#include <map>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include "keyledsd/Context.h"
 #include "keyledsd/Device.h"
 #include "tools/DeviceWatcher.h"
@@ -40,7 +40,7 @@ class Service : public QObject
     Q_OBJECT
     Q_PROPERTY(bool active READ active WRITE setActive);
 public:
-    typedef std::unordered_map<std::string, std::unique_ptr<DeviceManager>> device_map;
+    typedef std::map<std::string, std::unique_ptr<DeviceManager>> device_map;
 public:
                         Service(Configuration & configuration, QObject *parent = 0);
                         Service(const Service &) = delete;

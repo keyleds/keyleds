@@ -24,16 +24,14 @@
 #define TOOLS_WINDOW_H_F1434518
 
 #include <X11/Xlib.h>
+#include <map>
 #include <memory>
 #include <stdexcept>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 namespace std {
-    template <> struct default_delete<::Display> {
-        void operator()(::Display *p) const { XCloseDisplay(p); }
-    };
+    template <> struct default_delete<::Display> { void operator()(::Display *p) const; };
 }
 
 namespace xlib {
@@ -51,8 +49,7 @@ class Window final
 public:
     typedef ::Window handle_type;
 public:
-                            Window(Display & display, handle_type window)
-                             : m_display(display), m_window(window), m_classLoaded(false) {}
+                            Window(Display & display, handle_type window);
 
     Display &               display() const { return m_display; }
     handle_type             handle() const { return m_window; }
@@ -91,8 +88,7 @@ public:
     typedef int             handle_type;
     enum { RawKeyPress, RawKeyRelease, RawButtonPress, RawButtonRelease } event_type;
 public:
-                            Device(Display & display, handle_type device)
-                             : m_display(display), m_device(device) {}
+                            Device(Display & display, handle_type device);
                             Device(const Device &) = delete;
                             Device(Device && other) = default;
 
@@ -120,7 +116,7 @@ class Display final
 {
 public:
     typedef ::Display *     handle_type;
-    typedef std::unordered_map<std::string, Atom> atom_map;
+    typedef std::map<std::string, Atom> atom_map;
 public:
                             Display(std::string name = std::string());
                             Display(const Display &) = delete;
@@ -132,6 +128,7 @@ public:
     const std::string &     name() const { return m_name; }
     handle_type             handle() const { return m_display.get(); }
     Window &                root() { return m_root; }
+    const Window &          root() const { return m_root; }
     Atom                    atom(const std::string & name) const;
 
     int                     connection() const;

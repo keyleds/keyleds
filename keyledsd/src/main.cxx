@@ -27,6 +27,7 @@
 #include "keyledsd/Configuration.h"
 #include "keyledsd/ContextWatcher.h"
 #include "keyledsd/Service.h"
+#include "config.h"
 #include "logging.h"
 
 LOGGING("main");
@@ -36,6 +37,7 @@ static void quit_handler(int) { QCoreApplication::quit(); }
 int main(int argc, char * argv[])
 {
     keyleds::Configuration configuration;
+    INFO("keyledsd v" KEYLEDSD_VERSION_STR " starting up");
 
     // Create event loop
     QCoreApplication app(argc, argv);

@@ -25,6 +25,8 @@
 
 constexpr const char * activeWindowAtom = "_NET_ACTIVE_WINDOW";
 
+void std::default_delete<::Display>::operator()(::Display *ptr) const { XCloseDisplay(ptr); }
+
 /****************************************************************************/
 
 xlib::Display::Display(std::string name)
@@ -74,6 +76,10 @@ std::unique_ptr<::Display> xlib::Display::openDisplay(const std::string & name)
 }
 
 /****************************************************************************/
+
+xlib::Window::Window(Display & display, handle_type window)
+ : m_display(display), m_window(window), m_classLoaded(false)
+{}
 
 void xlib::Window::changeAttributes(unsigned long mask, const XSetWindowAttributes & attrs)
 {
@@ -142,6 +148,10 @@ void xlib::Window::loadClass() const
 }
 
 /****************************************************************************/
+
+xlib::Device::Device(Display & display, handle_type device)
+ : m_display(display), m_device(device)
+{}
 
 xlib::Device xlib::Device::open(Display & display, const std::string & devNode)
 {

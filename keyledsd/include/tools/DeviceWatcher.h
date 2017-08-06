@@ -30,7 +30,6 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 class QSocketNotifier;
@@ -124,7 +123,7 @@ class DeviceWatcher : public QObject
 {
     Q_OBJECT
 private:
-    typedef std::unordered_map<std::string, Description> device_map;
+    typedef std::map<std::string, Description> device_map;
 public:
                         DeviceWatcher(struct udev * udev = nullptr, QObject *parent = nullptr);
                         ~DeviceWatcher() override;
@@ -166,16 +165,13 @@ class FilteredDeviceWatcher : public DeviceWatcher
 {
     Q_OBJECT
 public:
-            FilteredDeviceWatcher(struct udev * udev = nullptr, QObject *parent = nullptr)
-                : DeviceWatcher(udev, parent) {};
+            FilteredDeviceWatcher(struct udev * udev = nullptr, QObject *parent = nullptr);
 
-    void    setSubsystem(std::string val) { m_matchSubsystem = val; }
-    void    setDevType(std::string val) { m_matchDevType = val; }
-    void    addProperty(std::string key, std::string val)
-                { m_matchProperties[key] = val; }
-    void    addTag(std::string val) { m_matchTags.push_back(val); }
-    void    addAttribute(std::string key, std::string val)
-                { m_matchAttributes[key] = val; }
+    void    setSubsystem(std::string val);
+    void    setDevType(std::string val);
+    void    addProperty(const std::string & key, std::string val);
+    void    addTag(std::string val);
+    void    addAttribute(const std::string & key, std::string val);
 
 protected:
     void    setupEnumerator(struct udev_enumerate & enumerator) const override;

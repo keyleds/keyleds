@@ -18,7 +18,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <iomanip>
-#include <unordered_map>
+#include <map>
 #include <ostream>
 #include <stdexcept>
 #include <string>
@@ -27,7 +27,7 @@
 using keyleds::RGBColor;
 using keyleds::RGBAColor;
 
-static const std::unordered_map<std::string, RGBColor> predefinedColors = {
+static const std::map<std::string, RGBColor> predefinedColors = {
     { "aliceblue", { 0xF0, 0xF8, 0xFF } },
     { "antiquewhite", { 0xFA, 0xEB, 0xD7 } },
     { "aqua", { 0x00, 0xFF, 0xFF } },

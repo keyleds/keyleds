@@ -45,19 +45,11 @@ public:
         { return static_cast<keyleds::DeviceManager *>(QObject::parent()); }
 
 public:
-    QString     serial() const { return parent()->serial().c_str(); }
-    QStringList eventDevices() const {
-        QStringList result;
-        result.reserve(parent()->eventDevices().size());
-        std::transform(parent()->eventDevices().cbegin(),
-                       parent()->eventDevices().cend(),
-                       std::back_inserter(result),
-                       [](const auto & path){ return path.c_str(); });
-        return result;
-    }
-    QString     name() const { return parent()->device().name().c_str(); }
-    QString     model() const { return parent()->device().model().c_str(); }
-    QString     firmware() const { return parent()->device().firmware().c_str(); }
+    QString     serial() const;
+    QStringList eventDevices() const;
+    QString     name() const;
+    QString     model() const;
+    QString     firmware() const;
     bool        paused() const { return parent()->paused(); }
     void        setPaused(bool val) const { parent()->setPaused(val); }
 };

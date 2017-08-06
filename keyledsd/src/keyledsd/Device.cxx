@@ -200,7 +200,7 @@ bool Device::resync()
            keyleds_ping(m_device.get(), KEYLEDS_TARGET_DEFAULT);
 }
 
-void Device::fillColor(const KeyBlock & block, RGBColor color)
+void Device::fillColor(const KeyBlock & block, const RGBColor color)
 {
     if (!keyleds_set_led_block(m_device.get(), KEYLEDS_TARGET_DEFAULT, keyleds_block_id_t(block.id()),
                                color.red, color.green, color.blue)) {

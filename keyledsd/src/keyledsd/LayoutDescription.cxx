@@ -200,3 +200,9 @@ LayoutDescription LayoutDescription::parse(std::istream & stream)
         std::move(keys)
     );
 }
+
+/****************************************************************************/
+
+LayoutDescription::Key::Key(block_type block, code_type code, Rect position, std::string name)
+ : block(block), code(code), position(position), name(std::move(name))
+{}

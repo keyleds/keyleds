@@ -110,7 +110,8 @@ RenderLoop::RenderLoop(Device & device, renderer_list renderers, unsigned fps)
     m_directives.reserve(max);
 }
 
-RenderLoop::~RenderLoop() {}
+RenderLoop::~RenderLoop()
+{}
 
 void RenderLoop::setRenderers(renderer_list renderers)
 {

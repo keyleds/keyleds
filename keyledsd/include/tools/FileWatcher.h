@@ -48,12 +48,7 @@ public:
     typedef void (*Listener)(void * userData, event mask, uint32_t cookie, std::string path);
 
 private:
-    struct Watch final
-    {
-        Listener        callback;
-        void * const    userData;
-    };
-
+    struct Watch;
     typedef std::map<watch_id, Watch> listener_map;
 
 public:

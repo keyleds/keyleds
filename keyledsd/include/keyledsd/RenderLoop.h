@@ -22,11 +22,11 @@
 #include <utility>
 #include <vector>
 #include "keyledsd/common.h"
+#include "keyledsd/Device.h"
 #include "tools/AnimationLoop.h"
 
 namespace keyleds {
 
-class Device;
 class Renderer;
 
 /****************************************************************************/

@@ -23,6 +23,15 @@
 
 LOGGING("filewatcher");
 
+/****************************************************************************/
+
+struct FileWatcher::Watch final
+{
+    Listener        callback;
+    void * const    userData;
+};
+
+/****************************************************************************/
 
 FileWatcher::FileWatcher(QObject * parent)
  : QObject(parent),

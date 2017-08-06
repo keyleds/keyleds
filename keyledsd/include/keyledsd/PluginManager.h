@@ -20,7 +20,6 @@
 #include <map>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include "keyledsd/Configuration.h"
 #include "keyledsd/Device.h"
 #include "keyledsd/KeyDatabase.h"
@@ -43,7 +42,7 @@ class IRendererPlugin
 public:
     typedef std::map<std::string, std::vector<const KeyDatabase::Key*>> group_map;
 public:
-    virtual                 ~IRendererPlugin();
+    virtual                 ~IRendererPlugin() = 0;
 
     virtual const std::string & name() const noexcept = 0;
     virtual std::unique_ptr<Renderer> createRenderer(const DeviceManager &,
@@ -68,7 +67,7 @@ public:
 
     // Plugin management
 public:
-    typedef std::unordered_map<std::string, IRendererPlugin *> plugin_map;
+    typedef std::map<std::string, IRendererPlugin *> plugin_map;
 public:
 
     const plugin_map &      plugins() const { return m_plugins; }

@@ -25,7 +25,6 @@
 #include "tools/DeviceWatcher.h"
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 namespace keyleds {
@@ -54,14 +53,13 @@ private:
     public:
         typedef std::vector<std::unique_ptr<Renderer>> renderer_list;
     public:
-                            LoadedProfile(renderer_list && renderers)
-                             : m_renderers(std::forward<renderer_list>(renderers)) {}
+                            LoadedProfile(renderer_list && renderers);
                             LoadedProfile(LoadedProfile &&) = default;
         RenderLoop::renderer_list renderers() const;
     private:
         renderer_list   m_renderers;
     };
-    typedef std::unordered_map<Configuration::Profile::id_type, LoadedProfile> profile_map;
+    typedef std::map<Configuration::Profile::id_type, LoadedProfile> profile_map;
 
 public:
     typedef std::vector<std::string> dev_list;
@@ -71,7 +69,7 @@ public:
                                           const Configuration &,
                                           const Context &,
                                           QObject *parent = 0);
-    virtual                 ~DeviceManager();
+                            ~DeviceManager() override;
 
     const std::string &     serial() const noexcept { return m_serial; }
     const dev_list &        eventDevices() const { return m_eventDevices; }
@@ -100,7 +98,7 @@ private:
 private:
     const Configuration &   m_configuration;    ///< Reference to service configuration
 
-    std::string             m_serial;           ///< Device serial number
+    const std::string       m_serial;           ///< Device serial number
     dev_list                m_eventDevices;     ///< List of event device paths that the
                                                 ///  physical device can communicate on.
     Device                  m_device;           ///< The device handled by this manager

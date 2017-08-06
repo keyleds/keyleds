@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 cmake_minimum_required (VERSION 3.0)
-project(keyledsd VERSION 1.0 LANGUAGES CXX)
+project(keyledsd VERSION 0.3.2 LANGUAGES CXX)
 include(CheckCXXSourceCompiles)
 
 ##############################################################################

@@ -19,6 +19,14 @@
 
 using keyleds::Context;
 
+Context::Context(std::initializer_list<value_map::value_type> init)
+ : m_values(init)
+{}
+
+Context::Context(value_map values)
+ : m_values(std::move(values))
+{}
+
 const std::string & Context::operator[](const std::string & key) const
 {
     static const std::string empty;

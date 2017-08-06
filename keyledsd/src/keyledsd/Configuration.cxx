@@ -608,6 +608,24 @@ ConfigurationBuilder::ParseError ConfigurationBuilder::makeError(const std::stri
 
 /****************************************************************************/
 
+Configuration::Configuration(Logger::level_t logLevel,
+                             bool autoQuit,
+                             bool noDBus,
+                             path_list pluginPaths,
+                             path_list layoutPaths,
+                             device_map devices,
+                             group_map groups,
+                             profile_map profiles)
+ : m_logLevel(logLevel),
+   m_autoQuit(autoQuit),
+   m_noDBus(noDBus),
+   m_pluginPaths(std::move(pluginPaths)),
+   m_layoutPaths(std::move(layoutPaths)),
+   m_devices(std::move(devices)),
+   m_groups(std::move(groups)),
+   m_profiles(std::move(profiles))
+{}
+
 Configuration Configuration::loadFile(const std::string & path)
 {
     if (path.empty()) {
@@ -703,6 +721,21 @@ Configuration Configuration::loadArguments(int & argc, char * argv[])
 
 /****************************************************************************/
 
+Configuration::Profile::Profile(std::string name,
+                                bool isDefault,
+                                Lookup lookup,
+                                device_list devices,
+                                group_map groups,
+                                plugin_list plugins)
+ : m_id(makeId()),
+   m_name(name),
+   m_isDefault(isDefault),
+   m_lookup(std::move(lookup)),
+   m_devices(std::move(devices)),
+   m_groups(std::move(groups)),
+   m_plugins(std::move(plugins))
+{}
+
 Configuration::Profile::id_type Configuration::Profile::makeId()
 {
     static std::atomic<id_type> counter(1);
@@ -710,6 +743,14 @@ Configuration::Profile::id_type Configuration::Profile::makeId()
 }
 
 /****************************************************************************/
+
+Configuration::Profile::Lookup::Lookup(std::string title, std::string className,
+                                       std::string instanceName)
+ : m_titleFilter(std::move(title)),
+   m_classNameFilter(std::move(className)),
+   m_instanceNameFilter(std::move(instanceName)),
+   m_didCompileRE(false)
+{}
 
 bool Configuration::Profile::Lookup::match(const Context & context) const
 {
@@ -723,3 +764,9 @@ bool Configuration::Profile::Lookup::match(const Context & context) const
            (m_classNameFilter.empty() || std::regex_match(context["class"], m_classNameRE)) &&
            (m_instanceNameFilter.empty() || std::regex_match(context["instance"], m_instanceNameRE));
 }
+
+/****************************************************************************/
+
+Configuration::Plugin::Plugin(std::string name, conf_map items)
+ : m_name(std::move(name)), m_items(std::move(items))
+{}

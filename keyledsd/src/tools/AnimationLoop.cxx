@@ -32,6 +32,9 @@ AnimationLoop::AnimationLoop(unsigned fps)
 {
 }
 
+AnimationLoop::~AnimationLoop()
+{}
+
 void AnimationLoop::stop()
 {
     {

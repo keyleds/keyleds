@@ -35,7 +35,7 @@ class AnimationLoop
 {
 public:
                     AnimationLoop(unsigned fps);
-    virtual         ~AnimationLoop() {}
+    virtual         ~AnimationLoop();
 
     bool            paused() const { return m_paused; }
     int             error() const { return m_error; }

@@ -19,8 +19,8 @@
 
 #include <initializer_list>
 #include <iosfwd>
+#include <map>
 #include <string>
-#include <unordered_map>
 #include <utility>
 
 namespace keyleds {
@@ -39,13 +39,11 @@ static bool operator!=(const Context &, const Context &);
 class Context final
 {
 public:
-    typedef std::unordered_map<std::string, std::string> value_map;
+    typedef std::map<std::string, std::string> value_map;
 public:
-    Context() {}
-    Context(std::initializer_list<value_map::value_type> init)
-     : m_values(init) {}
-    explicit Context(value_map values)
-     : m_values(std::move(values)) {}
+    Context() = default;
+    Context(std::initializer_list<value_map::value_type> init);
+    explicit Context(value_map values);
 
     const std::string & operator[](const std::string & key) const;
 

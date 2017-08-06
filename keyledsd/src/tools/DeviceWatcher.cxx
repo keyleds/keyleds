@@ -260,6 +260,35 @@ bool DeviceWatcher::isVisible(const Description &) const { return true; }
 
 /****************************************************************************/
 
+FilteredDeviceWatcher::FilteredDeviceWatcher(struct udev * udev, QObject *parent)
+ : DeviceWatcher(udev, parent)
+{}
+
+void FilteredDeviceWatcher::setSubsystem(std::string val)
+{
+    m_matchSubsystem = std::move(val);
+}
+
+void FilteredDeviceWatcher::setDevType(std::string val)
+{
+    m_matchDevType = std::move(val);
+}
+
+void FilteredDeviceWatcher::addProperty(const std::string & key, std::string val)
+{
+    m_matchProperties[key] = std::move(val);
+}
+
+void FilteredDeviceWatcher::addTag(std::string val)
+{
+    m_matchTags.push_back(std::move(val));
+}
+
+void FilteredDeviceWatcher::addAttribute(const std::string & key, std::string val)
+{
+    m_matchAttributes[key] = std::move(val);
+}
+
 void FilteredDeviceWatcher::setupEnumerator(struct udev_enumerate & enumerator) const
 {
     if (!m_matchSubsystem.empty()) {

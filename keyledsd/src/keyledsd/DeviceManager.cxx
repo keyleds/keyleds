@@ -67,6 +67,12 @@ static std::vector<const Configuration::Profile *> profilesForContext(
 
 /****************************************************************************/
 
+DeviceManager::LoadedProfile::LoadedProfile(renderer_list && renderers)
+ : m_renderers(std::forward<renderer_list>(renderers))
+{}
+
+/****************************************************************************/
+
 DeviceManager::DeviceManager(const device::Description & description, Device && device,
                              const Configuration & conf, const Context & context, QObject *parent)
     : QObject(parent),

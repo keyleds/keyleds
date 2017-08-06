@@ -17,6 +17,8 @@
 #ifndef TOOLS_PATH_H_B703CD61
 #define TOOLS_PATH_H_B703CD61
 
+/****************************************************************************/
+
 #include <iosfwd>
 #include <string>
 #include <vector>
@@ -44,5 +46,7 @@ template <typename T> void open(T & file, XDG type, const std::string & path, ty
 }
 
 }
+
+/****************************************************************************/
 
 #endif

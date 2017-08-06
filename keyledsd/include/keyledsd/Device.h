@@ -97,7 +97,7 @@ public:
     void                setTimeout(unsigned us);
     void                flush();
     bool                resync();
-    void                fillColor(const KeyBlock & block, RGBColor);
+    void                fillColor(const KeyBlock & block, const RGBColor);
     void                setColors(const KeyBlock & block, const color_directive_list &);
     void                setColors(const KeyBlock & block, const ColorDirective[], size_t size);
     color_directive_list getColors(const KeyBlock & block);
@@ -111,7 +111,7 @@ private:
     void                cacheVersion();
 
 private:
-    std::string         m_path;             ///< Device node path
+    const std::string   m_path;             ///< Device node path
     std::unique_ptr<struct keyleds_device> m_device;    ///< Underlying libkeyleds opaque handle
     Type                m_type;             ///< The kind of libkeyleds device
     std::string         m_name;             ///< User-friendly name of the device, eg "Logitech G410"

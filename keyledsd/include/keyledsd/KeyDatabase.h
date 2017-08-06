@@ -44,8 +44,6 @@ public:
     typedef key_map::size_type          size_type;
 public:
                     KeyDatabase(key_map keys);
-                    KeyDatabase(const KeyDatabase &) = delete;
-                    KeyDatabase(KeyDatabase &&) = default;
 
     iterator        find(const std::string & name) const { return m_keys.find(name); }
     iterator        find(RenderTarget::key_descriptor) const;
@@ -59,8 +57,8 @@ private:
     static Key::Rect computeBounds(const key_map &);
 
 private:
-    key_map         m_keys;
-    Key::Rect       m_bounds;
+    const key_map   m_keys;
+    const Key::Rect m_bounds;
 };
 
 /****************************************************************************/

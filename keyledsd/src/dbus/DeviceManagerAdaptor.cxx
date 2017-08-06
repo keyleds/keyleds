@@ -23,3 +23,34 @@ DeviceManagerAdaptor::DeviceManagerAdaptor(keyleds::DeviceManager *parent)
 {
     setAutoRelaySignals(true);
 }
+
+QString DeviceManagerAdaptor::serial() const
+{
+    return parent()->serial().c_str();
+}
+
+QStringList DeviceManagerAdaptor::eventDevices() const
+{
+    QStringList result;
+    result.reserve(parent()->eventDevices().size());
+    std::transform(parent()->eventDevices().cbegin(),
+                    parent()->eventDevices().cend(),
+                    std::back_inserter(result),
+                    [](const auto & path){ return path.c_str(); });
+    return result;
+}
+
+QString DeviceManagerAdaptor::name() const
+{
+    return parent()->device().name().c_str();
+}
+
+QString DeviceManagerAdaptor::model() const
+{
+    return parent()->device().model().c_str();
+}
+
+QString DeviceManagerAdaptor::firmware() const
+{
+    return parent()->device().firmware().c_str();
+}

@@ -52,15 +52,7 @@ private:
                                       path_list layoutPaths,
                                       device_map devices,
                                       group_map groups,
-                                      profile_map profiles)
-                            : m_logLevel(logLevel),
-                              m_autoQuit(autoQuit),
-                              m_noDBus(noDBus),
-                              m_pluginPaths(std::move(pluginPaths)),
-                              m_layoutPaths(std::move(layoutPaths)),
-                              m_devices(std::move(devices)),
-                              m_groups(std::move(groups)),
-                              m_profiles(std::move(profiles)) {}
+                                      profile_map profiles);
 
 public:
                         Configuration() = default;
@@ -113,11 +105,7 @@ public:
     {
     public:
         Lookup() = default;
-        Lookup(std::string title, std::string className, std::string instanceName)
-         : m_titleFilter(std::move(title)),
-           m_classNameFilter(std::move(className)),
-           m_instanceNameFilter(std::move(instanceName)),
-           m_didCompileRE(false) {}
+        Lookup(std::string title, std::string className, std::string instanceName);
         const std::string & titleFilter() const { return m_titleFilter; }
         const std::string & classNameFilter() const { return m_classNameFilter; }
         const std::string & instanceNameFilter() const { return m_instanceNameFilter; }
@@ -144,14 +132,7 @@ public:
                                 Lookup lookup,
                                 device_list devices,
                                 group_map groups,
-                                plugin_list plugins)
-                         : m_id(makeId()),
-                           m_name(name),
-                           m_isDefault(isDefault),
-                           m_lookup(std::move(lookup)),
-                           m_devices(std::move(devices)),
-                           m_groups(std::move(groups)),
-                           m_plugins(std::move(plugins)) {}
+                                plugin_list plugins);
           id_type       id() const noexcept { return m_id; }
     const std::string & name() const { return m_name; }
           bool          isDefault() const { return m_isDefault; }
@@ -186,8 +167,7 @@ class Configuration::Plugin final
 public:
     typedef std::map<std::string, std::string> conf_map;
 public:
-                        Plugin(std::string name, conf_map items)
-                            : m_name(std::move(name)), m_items(std::move(items)) {}
+                        Plugin(std::string name, conf_map items);
     const std::string & name() const { return m_name; }
     const conf_map &    items() const { return m_items; }
 private:
