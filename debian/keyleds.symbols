@@ -9,6 +9,7 @@ libkeyleds.so.1 keyleds #MINVER#
  keyleds_device_fd@Base 0.2
  keyleds_device_types@Base 0.2
  keyleds_feature_names@Base 0.2
+ keyleds_flush_fd@Base 0.4
  keyleds_free_block_info@Base 0.2
  keyleds_free_device_version@Base 0.2
  keyleds_gamemode_clear@Base 0.2

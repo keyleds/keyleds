@@ -1,3 +1,36 @@
+keyleds (0.4-1) unstable; urgency=medium
+
+  * Updated upstream to v0.4.
+
+ -- Julien Hartmann <juli1.hartmann@gmail.com>  Mon, 07 Aug 2017 14:20:12 +0000
+
+keyleds (0.3.2-1) unstable; urgency=medium
+
+  * Updated udev rules to use user access instead of ubuntu-specific plugdev
+    group.
+
+ -- Julien Hartmann <juli1.hartmann@gmail.com>  Wed, 02 Aug 2017 14:04:57 +0000
+
+keyleds (0.3.1-1) unstable; urgency=medium
+
+  * Fixed build error on 32-bit architectures.
+  * Enabled MMX/SSE2 acceleration on i686
+
+ -- Julien Hartmann <juli1.hartmann@gmail.com>  Tue, 01 Aug 2017 23:00:43 +0000
+
+keyleds (0.3-2) unstable; urgency=medium
+
+  * Fixed build dependencies
+
+ -- Julien Hartmann <juli1.hartmann@gmail.com>  Tue, 01 Aug 2017 19:23:12 +0000
+
+keyleds (0.3-1) unstable; urgency=medium
+
+  * Refactored layout loading
+  * Added wave plugin.
+
+ -- Julien Hartmann <juli1.hartmann@gmail.com>  Tue, 01 Aug 2017 16:25:39 +0000
+
 keyleds (0.2-1) unstable; urgency=medium
 
   * Initial release with keyledsd (Closes: #868953)
