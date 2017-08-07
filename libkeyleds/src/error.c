@@ -29,6 +29,7 @@ static const char * const error_strings[] = {
     NULL,                                       /* device_error_string */
     "wrong I/O length",
     "invalid device (could not parse report descriptor)",
+    "invalid device (no hid++ support)",
     "invalid device (hid++ v1)",
     "feature not found on device",
     "synchronization with device failed",

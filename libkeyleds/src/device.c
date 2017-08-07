@@ -70,7 +70,7 @@ Keyleds * keyleds_open(const char * path, uint8_t app_id)
         goto error_close_fd;
     }
     if (dev->max_report_size == 0) {
-        keyleds_set_error(KEYLEDS_ERROR_HIDREPORT);
+        keyleds_set_error(KEYLEDS_ERROR_HIDNOPP);
         goto error_free_reports;
     }
 
