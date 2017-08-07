@@ -17,16 +17,57 @@
 #include "dbus/DeviceManagerAdaptor.h"
 
 using dbus::DeviceManagerAdaptor;
+Q_DECLARE_METATYPE(DBusDeviceKeyInfo)
+Q_DECLARE_METATYPE(DBusDeviceKeyInfoList)
+
+/****************************************************************************/
+
+QDBusArgument & operator<<(QDBusArgument & arg, const DBusDeviceKeyInfo & key)
+{
+    arg.beginStructure();
+        arg <<key.blockId <<key.keyId;
+        arg <<key.name;
+        arg.beginStructure();
+            arg <<key.position.x0 <<key.position.y0
+                <<key.position.x1 <<key.position.y1;
+        arg.endStructure();
+    arg.endStructure();
+    return arg;
+}
+
+const QDBusArgument & operator>>(const QDBusArgument & arg, DBusDeviceKeyInfo & key)
+{
+    arg.beginStructure();
+        arg >>key.blockId >>key.keyId;
+        arg >>key.name;
+        arg.beginStructure();
+            arg >>key.position.x0 >>key.position.y0
+                >>key.position.x1 >>key.position.y1;
+        arg.endStructure();
+    arg.endStructure();
+    return arg;
+}
+
+/****************************************************************************/
 
 DeviceManagerAdaptor::DeviceManagerAdaptor(keyleds::DeviceManager *parent)
     : QDBusAbstractAdaptor(parent)
 {
+    Q_ASSERT(parent != nullptr);
+    qDBusRegisterMetaType<DBusDeviceKeyInfo>();
+    qDBusRegisterMetaType<DBusDeviceKeyInfoList>();
+
     setAutoRelaySignals(true);
 }
 
 QString DeviceManagerAdaptor::serial() const
 {
     return parent()->serial().c_str();
+}
+
+QString DeviceManagerAdaptor::devNode() const
+{
+    return parent()->device().path().c_str();
 }
 
 QStringList DeviceManagerAdaptor::eventDevices() const
@@ -53,4 +94,21 @@ QString DeviceManagerAdaptor::model() const
 QString DeviceManagerAdaptor::firmware() const
 {
     return parent()->device().firmware().c_str();
+}
+
+DBusDeviceKeyInfoList DeviceManagerAdaptor::keys() const
+{
+    DBusDeviceKeyInfoList result;
+    result.reserve(parent()->keyDB().size());
+    std::transform(parent()->keyDB().begin(),
+                    parent()->keyDB().end(),
+                    std::back_inserter(result),
+                    [](const auto & item) { return DBusDeviceKeyInfo{
+                        item.second.blockId,
+                        item.second.keyId,
+                        item.second.name.c_str(),
+                        { item.second.position.x0, item.second.position.y0,
+                          item.second.position.x1, item.second.position.y1 }
+                    }; });
+    return result;
 }

@@ -18,8 +18,20 @@
 #define KEYLEDSD_DEVICEMANAGERADAPTOR_H_A3B0E2B4
 
 #include <QtDBus>
+#include <QList>
 #include <QString>
 #include "keyledsd/DeviceManager.h"
+
+struct DBusDeviceKeyInfo
+{
+    struct Rect { uint x0, y0, x1, y1; };
+
+    ushort      blockId;
+    uint8_t     keyId;
+    QString     name;
+    Rect        position;
+};
+typedef QList<DBusDeviceKeyInfo> DBusDeviceKeyInfoList;
 
 namespace dbus {
 
@@ -33,10 +45,12 @@ class DeviceManagerAdaptor: public QDBusAbstractAdaptor
     Q_OBJECT
     Q_CLASSINFO("D-Bus Interface", "org.etherdream.keyleds.DeviceManager")
     Q_PROPERTY(QString serial READ serial)
+    Q_PROPERTY(QString devNode READ devNode)
     Q_PROPERTY(QStringList eventDevices READ eventDevices)
     Q_PROPERTY(QString name READ name)
     Q_PROPERTY(QString model READ model)
     Q_PROPERTY(QString firmware READ firmware)
+    Q_PROPERTY(DBusDeviceKeyInfoList keys READ keys)
     Q_PROPERTY(bool paused READ paused WRITE setPaused)
 public:
                 DeviceManagerAdaptor(keyleds::DeviceManager *parent);
@@ -46,10 +60,12 @@ public:
 
 public:
     QString     serial() const;
+    QString     devNode() const;
     QStringList eventDevices() const;
     QString     name() const;
     QString     model() const;
     QString     firmware() const;
+    DBusDeviceKeyInfoList keys() const;
     bool        paused() const { return parent()->paused(); }
     void        setPaused(bool val) const { parent()->setPaused(val); }
 };

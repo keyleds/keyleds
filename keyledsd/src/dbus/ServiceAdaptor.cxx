@@ -18,6 +18,7 @@
 #include <algorithm>
 #include <string>
 #include "keyledsd/Context.h"
+#include "keyledsd/PluginManager.h"
 #include "dbus/DeviceManagerAdaptor.h"
 #include "dbus/ServiceAdaptor.h"
 
@@ -67,6 +68,21 @@ QList<QDBusObjectPath> ServiceAdaptor::devicePaths() const
                        return QDBusObjectPath(this->managerPath(*entry.second));
                    });
     return paths;
+}
+
+QStringList ServiceAdaptor::plugins() const
+{
+    const auto & manager = keyleds::RendererPluginManager::instance();
+
+    QStringList plugins;
+    plugins.reserve(manager.plugins().size());
+    std::transform(manager.plugins().cbegin(),
+                   manager.plugins().cend(),
+                   std::back_inserter(plugins),
+                   [](const auto & item) {
+                       return item.second->name().c_str();
+                   });
+    return plugins;
 }
 
 void ServiceAdaptor::onDeviceManagerAdded(keyleds::DeviceManager & manager)

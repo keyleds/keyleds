@@ -45,6 +45,7 @@ private:
     Q_PROPERTY(bool active READ active WRITE setActive)
     Q_PROPERTY(bool autoQuit READ autoQuit WRITE setAutoQuit)
     Q_PROPERTY(QList<QDBusObjectPath> devices READ devicePaths)
+    Q_PROPERTY(QStringList plugins READ plugins)
 public:
             ServiceAdaptor(keyleds::Service *parent);
 
@@ -59,6 +60,7 @@ public:
     bool    autoQuit() const { return parent()->configuration().autoQuit(); }
     void    setAutoQuit(bool value) { parent()->configuration().setAutoQuit(value); }
     QList<QDBusObjectPath> devicePaths() const;
+    QStringList plugins() const;
 
 private slots:
     void    onDeviceManagerAdded(keyleds::DeviceManager &);
