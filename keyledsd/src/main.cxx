@@ -14,12 +14,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <locale.h>
+#include <unistd.h>
 #include <QCoreApplication>
 #include <QTimer>
 #include <csignal>
 #include <iostream>
-#include <locale.h>
-#include <keyleds.h>
 #include "config.h"
 #ifndef NO_DBUS
 #include "dbus/ServiceAdaptor.h"
@@ -50,7 +50,9 @@ int main(int argc, char * argv[])
     // Load configuration
     try {
         configuration = std::move(keyleds::Configuration::loadArguments(argc, argv));
-        g_keyleds_debug_level = configuration.logLevel();
+        logging::Configuration::instance().setPolicy(
+            new logging::FilePolicy(STDERR_FILENO, configuration.logLevel())
+        );
     } catch (std::exception & error) {
         std::cerr <<"Could not load configuration: " <<error.what() <<std::endl;
         return 1;

@@ -20,64 +20,89 @@
 #include <stdexcept>
 #include "logging.h"
 
+using logging::Configuration;
+using logging::Policy;
+using logging::Logger;
 
+/****************************************************************************/
 
-Logger::Logger(std::string name, Policy * policy)
- : m_name(std::move(name)),
-   m_policy(policy)
+Configuration::Configuration()
+ : m_globalPolicy(&defaultPolicy())
+{}
+
+Configuration & Configuration::instance()
 {
-    if (m_policy != nullptr) { m_policy->open(m_name); }
+    static Configuration singleton;
+    return singleton;
 }
 
-Logger::~Logger()
+void Configuration::registerLogger(Logger * logger)
 {
-    if (m_policy != nullptr) { m_policy->close(); }
+    m_loggers[logger->name()] = logger;
 }
 
-void Logger::setPolicy(Policy * policy)
+void Configuration::unregisterLogger(Logger * logger)
 {
-    if (m_policy != nullptr) { m_policy->close(); }
-    m_policy = policy;
-    if (m_policy != nullptr) { m_policy->open(m_name); }
+    m_loggers.erase(logger->name());
 }
 
-Logger::Policy & Logger::defaultPolicy()
+void Configuration::setPolicy(Policy * policy)
 {
-    static FilePolicy policy = FilePolicy(STDERR_FILENO);
+    m_globalPolicy = (policy != nullptr ? policy : &defaultPolicy());
+}
+
+void Configuration::setPolicy(const std::string & name, Policy * policy)
+{
+    auto it = m_loggers.find(name);
+    if (it != m_loggers.end()) {
+        it->second->setPolicy(policy);
+    }
+}
+
+Policy & Configuration::defaultPolicy()
+{
+    static auto policy = logging::FilePolicy(STDERR_FILENO, info::value());
     return policy;
 }
 
 /****************************************************************************/
 
-Logger::Policy::~Policy() {}
+Policy::~Policy() {}
 
 /****************************************************************************/
 
-void StreamPolicy::write(Logger::level_t, const std::string & name, const std::string & msg)
+logging::StreamPolicy::StreamPolicy(std::ostream & stream, level_t minLevel)
+ : m_stream(stream), m_minLevel(minLevel)
+{}
+
+void logging::StreamPolicy::write(level_t level, const std::string & name, const std::string & msg)
 {
+    if (level > m_minLevel) { return; }
     m_stream <<name <<": " <<msg <<std::endl;
 }
 
 /****************************************************************************/
 
-static const std::map<Logger::level_t, std::string> levels = {
-    { Logger::critical::value(), "\033[1;31m<C>\033[;39m" },
-    { Logger::error::value(), "\033[1;31m<E>\033[;39m" },
-    { Logger::warning::value(), "\033[33m<W>\033[39m" },
-    { Logger::info::value(), "\033[1m<I>\033[m" },
-    { Logger::debug::value(), "\033[2m<D>\033[m" }
+static const std::map<logging::level_t, std::string> levels = {
+    { logging::critical::value(), "\033[1;31m<C>\033[;39m" },
+    { logging::error::value(), "\033[1;31m<E>\033[;39m" },
+    { logging::warning::value(), "\033[33m<W>\033[39m" },
+    { logging::info::value(), "\033[1m<I>\033[m" },
+    { logging::debug::value(), "\033[2m<D>\033[m" }
 };
 static const std::string nameEnter = "\033[1m";
 static const std::string nameExit = "\033[m";
 
-FilePolicy::FilePolicy(int fd)
+logging::FilePolicy::FilePolicy(int fd, level_t minLevel)
  : m_fd(fd),
-   m_tty(isatty(fd) == 1)
+   m_tty(isatty(fd) == 1),
+   m_minLevel(minLevel)
 {
 }
 
-void FilePolicy::write(Logger::level_t level, const std::string & name, const std::string & msg)
+void logging::FilePolicy::write(level_t level, const std::string & name, const std::string & msg)
 {
+    if (level > m_minLevel) { return; }
     std::ostringstream buffer;
     if (m_tty) {
         buffer <<levels.at(level)
@@ -94,12 +119,28 @@ void FilePolicy::write(Logger::level_t level, const std::string & name, const st
 
     while (todo > 0) {
         ssize_t written = ::write(m_fd, data.c_str() + done, todo);
-#ifdef NDEBUG
         if (written < 0) { break; }
-#else
-        if (written < 0) { throw std::runtime_error("failed to write log"); }
-#endif
         todo -= written;
         done += written;
     }
 }
+
+/****************************************************************************/
+
+Logger::Logger(std::string name, Policy * policy)
+ : m_name(std::move(name)),
+   m_policy(policy)
+{
+    Configuration::instance().registerLogger(this);
+}
+
+Logger::~Logger()
+{
+    Configuration::instance().unregisterLogger(this);
+}
+
+void Logger::setPolicy(Policy * policy)
+{
+    m_policy = policy;
+}
+

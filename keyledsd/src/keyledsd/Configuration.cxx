@@ -30,6 +30,7 @@
 #include "keyledsd/Context.h"
 #include "tools/Paths.h"
 #include "tools/YAMLParser.h"
+#include "logging.h"
 #include "config.h"
 
 using keyleds::Configuration;
@@ -608,7 +609,7 @@ ConfigurationBuilder::ParseError ConfigurationBuilder::makeError(const std::stri
 
 /****************************************************************************/
 
-Configuration::Configuration(Logger::level_t logLevel,
+Configuration::Configuration(unsigned logLevel,
                              bool autoQuit,
                              bool noDBus,
                              path_list pluginPaths,
@@ -641,7 +642,7 @@ Configuration Configuration::loadFile(const std::string & path)
     auto builder = ConfigurationBuilder();
     builder.parse(file);
     return Configuration(
-        Logger::warning::value(),
+        logging::warning::value(),
         builder.m_autoQuit,
         builder.m_noDBus,
         std::move(builder.m_pluginPaths),
@@ -671,7 +672,7 @@ Configuration Configuration::loadArguments(int & argc, char * argv[])
     std::ostringstream msgBuf;
 
     const char * configPath = nullptr;
-    Logger::level_t logLevel = Logger::warning::value();
+    unsigned logLevel = logging::warning::value();
     bool autoQuit = false;
     bool noDBus = false;
 
@@ -692,7 +693,7 @@ Configuration Configuration::loadArguments(int & argc, char * argv[])
             std::cout <<"Usage: " <<argv[0] <<" [-c path] [-h] [-q] [-s] [-v] [-D]" <<std::endl;
             ::exit(EXIT_SUCCESS);
         case 'q':
-            logLevel = Logger::critical::value();
+            logLevel = logging::critical::value();
             break;
         case 's':
             autoQuit = true;

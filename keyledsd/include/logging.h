@@ -18,37 +18,106 @@
 #define LOGGING_H_2BAC1A63
 
 #include <iosfwd>
+#include <map>
 #include <sstream>
 #include <string>
 
 /****************************************************************************/
 
-class Logger final
+namespace logging {
+
+class Policy;
+class Logger;
+
+typedef int level_t;
+template <level_t L> struct level {
+    static inline constexpr int value() { return L; }
+};
+
+typedef level<0> critical;
+typedef level<1> error;
+typedef level<2> warning;
+typedef level<3> info;
+typedef level<4> debug;
+
+/****************************************************************************/
+
+/****************************************************************************/
+
+class Configuration final
+{
+    Configuration();
+public:
+    Configuration(const Configuration &) = delete;
+    Configuration(Configuration &&) = delete;
+    static Configuration & instance();
+
+    void    registerLogger(Logger *);
+    void    unregisterLogger(Logger *);
+
+    void    setPolicy(Policy *);
+    void    setPolicy(const std::string & name, Policy *);
+
+    Policy & globalPolicy() const { return *m_globalPolicy; }
+
+private:
+    static Policy & defaultPolicy();
+private:
+    std::map<std::string, Logger *> m_loggers;
+    Policy * m_globalPolicy;
+};
+
+
+/*****************************************************************************
+* Policies
+*****************************************************************************/
+
+class Policy
 {
 public:
-    typedef int level_t;
-    template <level_t L> struct level {
-        static inline constexpr int value() { return L; }
-    };
-    typedef level<0> critical;
-    typedef level<1> error;
-    typedef level<2> warning;
-    typedef level<3> info;
-    typedef level<4> debug;
+    virtual         ~Policy();
+    virtual void    write(level_t, const std::string & name, const std::string & msg) = 0;
+};
 
-    class Policy
-    {
-    public:
-        virtual             ~Policy() = 0;
-        virtual void        open(const std::string &) {}
-        virtual void        close() {}
-        virtual void        write(level_t, const std::string & name, const std::string & msg) = 0;
-    };
+/****************************************************************************/
+
+/// Logger policy that writes into a given generic stream
+class StreamPolicy : public Policy
+{
+public:
+                        StreamPolicy(std::ostream & stream, level_t);
+    void                write(level_t, const std::string &, const std::string &) override;
+protected:
+    std::ostream &      m_stream;
+    level_t             m_minLevel;
+};
+
+/****************************************************************************/
+
+/// Logger policy that writes into a system file descriptor
+class FilePolicy : public Policy
+{
+public:
+                        FilePolicy(int fd, level_t);
+    void                write(level_t, const std::string &, const std::string &) override;
+protected:
+    int                 m_fd;
+    bool                m_tty;
+    level_t             m_minLevel;
+};
+
+/*****************************************************************************
+* Logger
+*****************************************************************************/
+
+class Logger final
+{
 public:
                         Logger(std::string name, Policy * policy = nullptr);
                         Logger(const Logger &) = delete;
                         ~Logger();
 
+    const std::string & name() const { return m_name; }
     void                setPolicy(Policy * policy);
 
     template<typename L, typename...Args> void print(Args...args);
@@ -60,8 +129,6 @@ private:
 private:
     const std::string   m_name;
     Policy *            m_policy;
-
-    static Policy &     defaultPolicy();
 };
 
 
@@ -70,13 +137,9 @@ template<typename L, typename...Args> void Logger::print(Args...args)
 {
     std::ostringstream buffer;
     print_bits(buffer, args...);
-    auto & policy = (m_policy != nullptr) ? *m_policy : defaultPolicy();
+    auto & policy = (m_policy != nullptr) ? *m_policy : Configuration::instance().globalPolicy();
     policy.write(L::value(), m_name, buffer.str());
 }
-
-#ifdef NDEBUG
-// template<typename...Args> void Logger::print<Logger::debug, Args...>(Args...args) {}
-#endif
 
 template<typename T, typename...Args> void Logger::print_bits(std::ostream & out, T val, Args...args)
 {
@@ -84,44 +147,20 @@ template<typename T, typename...Args> void Logger::print_bits(std::ostream & out
     print_bits(out, args...);
 }
 
-#define LOGGING(name) static Logger l_logger(name)
+#define LOGGING(name) static logging::Logger l_logger(name)
 
-#define CRITICAL    l_logger.print<Logger::critical>
-#define ERROR       l_logger.print<Logger::error>
-#define WARNING     l_logger.print<Logger::warning>
-#define INFO        l_logger.print<Logger::info>
+#define CRITICAL    l_logger.print<::logging::critical>
+#define ERROR       l_logger.print<::logging::error>
+#define WARNING     l_logger.print<::logging::warning>
+#define INFO        l_logger.print<::logging::info>
 #ifdef NDEBUG
 #define DEBUG(...)
 #else
-#define DEBUG       l_logger.print<Logger::debug>
+#define DEBUG       l_logger.print<::logging::debug>
 #endif
 
 /****************************************************************************/
 
-/// Logger policy that writes into a given generic stream
-class StreamPolicy : public Logger::Policy
-{
-public:
-                        StreamPolicy(std::ostream & stream)
-                         : m_stream(stream) {}
-    void                write(Logger::level_t, const std::string &, const std::string &) override;
-protected:
-    std::ostream &      m_stream;
-};
-
-/****************************************************************************/
-
-/// Logger policy that writes into a system file descriptor
-class FilePolicy : public Logger::Policy
-{
-public:
-                        FilePolicy(int fd);
-    void                write(Logger::level_t, const std::string &, const std::string &) override;
-protected:
-    int                 m_fd;
-    bool                m_tty;
-};
-
-/****************************************************************************/
+}
 
 #endif
