@@ -81,9 +81,9 @@ public:
         std::fill(m_buffer.begin(), m_buffer.end(), RGBAColor{0, 0, 0, 0});
     }
 
-    void render(unsigned long ns, RenderTarget & target) override
+    void render(unsigned long ms, RenderTarget & target) override
     {
-        m_time += ns / 1000000;
+        m_time += ms;
         if (m_time >= m_period) { m_time -= m_period; }
 
         int t = 1024 * m_time / m_period;

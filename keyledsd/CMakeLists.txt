@@ -120,11 +120,6 @@ IF(NOT LIBUDEV)
     MESSAGE(SEND_ERROR "libudev is required for keyledsd")
 ENDIF(NOT LIBUDEV)
 
-find_library(LIBRT rt)
-IF(NOT LIBRT)
-    MESSAGE(SEND_ERROR "librt is required for keyledsd")
-ENDIF(NOT LIBRT)
-
 find_library(LIBYAML yaml)
 IF(NOT LIBYAML)
     MESSAGE(SEND_ERROR "libyaml is required for keyledsd")
@@ -138,7 +133,7 @@ find_package(X11)
 set(keyledsd_DEPS ${keyledsd_DEPS} ${X11_LIBRARIES} ${X11_Xinput_LIB})
 
 set(keyledsd_DEPS "${keyledsd_DEPS}"
-    ${CMAKE_THREAD_LIBS_INIT} ${LIBUDEV} ${LIBRT} ${LIBYAML}
+    ${CMAKE_THREAD_LIBS_INIT} ${LIBUDEV} ${LIBYAML}
 )
 configure_file("include/config.h.in" "config.h")
 

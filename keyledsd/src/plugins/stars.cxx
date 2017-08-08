@@ -87,9 +87,8 @@ public:
         }
     }
 
-    void render(unsigned long ns, keyleds::RenderTarget & target) override
+    void render(unsigned long ms, keyleds::RenderTarget & target) override
     {
-        auto ms = ns / 1000000;
         for (auto & star : m_stars) {
             star.age += ms;
             if (star.age >= m_duration) { rebirth(star); }

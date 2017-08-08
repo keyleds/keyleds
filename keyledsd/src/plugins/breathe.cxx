@@ -61,9 +61,9 @@ public:
         }
     }
 
-    void render(unsigned long ns, RenderTarget & target) override
+    void render(unsigned long ms, RenderTarget & target) override
     {
-        m_time += ns / 1000000;
+        m_time += ms;
         if (m_time >= m_period) { m_time -= m_period; }
 
         float t = float(m_time) / float(m_period);

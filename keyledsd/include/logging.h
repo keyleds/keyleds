@@ -90,7 +90,11 @@ template<typename T, typename...Args> void Logger::print_bits(std::ostream & out
 #define ERROR       l_logger.print<Logger::error>
 #define WARNING     l_logger.print<Logger::warning>
 #define INFO        l_logger.print<Logger::info>
+#ifdef NDEBUG
+#define DEBUG(...)
+#else
 #define DEBUG       l_logger.print<Logger::debug>
+#endif
 
 /****************************************************************************/
 

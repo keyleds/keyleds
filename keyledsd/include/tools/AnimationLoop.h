@@ -22,8 +22,6 @@
 #include <mutex>
 #include <thread>
 
-struct timespec;
-
 /** Generic thread-based animation loop
  *
  * Starts a thread that invokes a virtual method at a predefined frequency.
@@ -46,7 +44,6 @@ public:
 protected:
     virtual void    run();
     virtual bool    render(unsigned long) = 0;
-    void            scheduleNextTick(struct timespec & next, const struct timespec & prev);
 
 private:
     static void     threadEntry(AnimationLoop &);
