@@ -36,54 +36,69 @@ AnimationLoop::~AnimationLoop()
 
 void AnimationLoop::stop()
 {
+#ifndef NDEBUG
+    auto now = std::chrono::steady_clock::now();
+#endif
     {
         std::lock_guard<std::mutex> lock(m_mRunStatus);
-        m_abort.store(true, std::memory_order_relaxed);
+        m_abort = true;
         m_cRunStatus.notify_one();
     }
 
     m_thread.join();
+#ifndef NDEBUG
+    DEBUG("stop request fulfilled in ",
+          std::chrono::duration_cast<std::chrono::microseconds>(
+              std::chrono::steady_clock::now() - now
+          ).count(), "us");
+#endif
 }
 
 void AnimationLoop::setPaused(bool paused)
 {
-    if (paused != m_paused.load(std::memory_order_relaxed)) {
+    if (paused != m_paused) {
         std::lock_guard<std::mutex> lock(m_mRunStatus);
-        m_paused.store(paused, std::memory_order_relaxed);
+        m_paused = paused;
         m_cRunStatus.notify_one();
     }
 }
 
+/* Some assumptions are made in this loop regarding runstatus:
+ * 1) m_abort is a one-time thing, it cannot return to false
+ *    once it has been set to true.
+ * 2) m_paused does not require precise timing. Its purpose
+ *    is only to halt the loop after current iteration.
+ */
 void AnimationLoop::run()
 {
     DEBUG("AnimationLoop(", this, ") started");
+    auto now = std::chrono::steady_clock::now();
     auto nextDraw = std::chrono::steady_clock::time_point();
-    auto period = std::chrono::milliseconds(m_period);
+    const auto period = std::chrono::milliseconds(m_period);
 
-    while (!m_abort.load(std::memory_order_relaxed)) {
-
-        if (!m_paused.load(std::memory_order_relaxed)) {
-            auto now = std::chrono::steady_clock::now();
-            if (now >= nextDraw) {
-                if (!render(m_period)) { break; }
-
-                nextDraw += period;
-                if (now >= nextDraw) {
-                    nextDraw = now + period;
-                }
+    std::unique_lock<std::mutex> lock(m_mRunStatus);
+    for (;;) {
+        while (m_paused || now < nextDraw) {
+            if (m_abort) {
+                DEBUG("AnimationLoop(", this, ") stopped");
+                return;
             }
+            if (m_paused) {
+                DEBUG("AnimationLoop(", this, ") paused");
+                m_cRunStatus.wait(lock);
+                DEBUG("AnimationLoop(", this, ") resumed");
+            } else {
+                m_cRunStatus.wait_until(lock, nextDraw);
+            }
+            now = std::chrono::steady_clock::now();
         }
 
-        std::unique_lock<std::mutex> lock(m_mRunStatus);
-        if (m_abort.load(std::memory_order_relaxed)) { break; }
+        lock.unlock();
+        if (!render(m_period)) { break; }
+        lock.lock();
 
-        if (m_paused.load(std::memory_order_relaxed)) {
-            DEBUG("AnimationLoop(", this, ") paused");
-            m_cRunStatus.wait(lock);
-            DEBUG("AnimationLoop(", this, ") resumed");
-        } else {
-            m_cRunStatus.wait_until(lock, nextDraw);
-        }
+        nextDraw += period;
+        if (nextDraw <= now) { nextDraw = now + period; }
     }
     DEBUG("AnimationLoop(", this, ") exiting");
 }

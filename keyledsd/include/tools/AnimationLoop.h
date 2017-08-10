@@ -17,7 +17,6 @@
 #ifndef TOOLS_ANIM_LOOP_H_A32C4648
 #define TOOLS_ANIM_LOOP_H_A32C4648
 
-#include <atomic>
 #include <condition_variable>
 #include <mutex>
 #include <thread>
@@ -53,8 +52,8 @@ private:
     std::condition_variable m_cRunStatus;   ///< Used to wait on m_paused and m_abort changes
 
     unsigned        m_period;               ///< Animation period in milliseconds
-    std::atomic<bool> m_paused;             ///< If set, the animation loop thread goes into sleep
-    std::atomic<bool> m_abort;              ///< If set, the animation loop thread exits
+    bool            m_paused;               ///< If set, the animation loop thread goes into sleep
+    bool            m_abort;                ///< If set, the animation loop thread exits
     int             m_error;                ///< Error code from animation loop thread, errno-style
 
     std::thread     m_thread;               ///< Actual thread instance
