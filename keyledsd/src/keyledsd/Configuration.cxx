@@ -750,17 +750,13 @@ Configuration::Profile::Lookup::Lookup(std::string title, std::string className,
  : m_titleFilter(std::move(title)),
    m_classNameFilter(std::move(className)),
    m_instanceNameFilter(std::move(instanceName)),
-   m_didCompileRE(false)
+   m_titleRE(m_titleFilter, std::regex::nosubs | std::regex::optimize),
+   m_classNameRE(m_classNameFilter, std::regex::nosubs | std::regex::optimize),
+   m_instanceNameRE(m_instanceNameFilter, std::regex::nosubs | std::regex::optimize)
 {}
 
 bool Configuration::Profile::Lookup::match(const Context & context) const
 {
-    if (!m_didCompileRE) {
-        m_titleRE.assign(m_titleFilter, std::regex::nosubs | std::regex::optimize);
-        m_classNameRE.assign(m_classNameFilter, std::regex::nosubs | std::regex::optimize);
-        m_instanceNameRE.assign(m_instanceNameFilter, std::regex::nosubs | std::regex::optimize);
-        m_didCompileRE = true;
-    }
     return (m_titleFilter.empty() || std::regex_match(context["title"], m_titleRE)) &&
            (m_classNameFilter.empty() || std::regex_match(context["class"], m_classNameRE)) &&
            (m_instanceNameFilter.empty() || std::regex_match(context["instance"], m_instanceNameRE));

@@ -112,13 +112,12 @@ public:
         bool                match(const Context &) const;
 
     private:
-        std::string         m_titleFilter;          ///< Regexp matched against context's "title" item
-        std::string         m_classNameFilter;      ///< Regexp matched against context's "class" item
-        std::string         m_instanceNameFilter;   ///< Regexp matched against context's "instance" item
-        mutable bool        m_didCompileRE;         ///< Set when regexps have been compiled into objects below
-        mutable std::regex  m_titleRE;              ///< Compiled version of m_titleFilter
-        mutable std::regex  m_classNameRE;          ///< Compiled version of m_classNameFilter
-        mutable std::regex  m_instanceNameRE;       ///< Compiled version of m_instanceNameFilter
+        std::string m_titleFilter;          ///< Regexp matched against context's "title" item
+        std::string m_classNameFilter;      ///< Regexp matched against context's "class" item
+        std::string m_instanceNameFilter;   ///< Regexp matched against context's "instance" item
+        std::regex  m_titleRE;              ///< Compiled version of m_titleFilter
+        std::regex  m_classNameRE;          ///< Compiled version of m_classNameFilter
+        std::regex  m_instanceNameRE;       ///< Compiled version of m_instanceNameFilter
     };
 
     typedef unsigned int id_type;
