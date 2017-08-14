@@ -46,12 +46,12 @@ void Configuration::unregisterLogger(Logger * logger)
     m_loggers.erase(logger->name());
 }
 
-void Configuration::setPolicy(Policy * policy)
+void Configuration::setPolicy(const Policy * policy)
 {
     m_globalPolicy = (policy != nullptr ? policy : &defaultPolicy());
 }
 
-void Configuration::setPolicy(const std::string & name, Policy * policy)
+void Configuration::setPolicy(const std::string & name, const Policy * policy)
 {
     auto it = m_loggers.find(name);
     if (it != m_loggers.end()) {
@@ -59,48 +59,45 @@ void Configuration::setPolicy(const std::string & name, Policy * policy)
     }
 }
 
-Policy & Configuration::defaultPolicy()
+const Policy & Configuration::defaultPolicy()
 {
-    static auto policy = logging::FilePolicy(STDERR_FILENO, info::value());
+    static const auto policy = logging::FilePolicy(STDERR_FILENO, info::value);
     return policy;
 }
 
 /****************************************************************************/
 
-Policy::~Policy() {}
-
-/****************************************************************************/
-
-logging::StreamPolicy::StreamPolicy(std::ostream & stream, level_t minLevel)
- : m_stream(stream), m_minLevel(minLevel)
-{}
-
-void logging::StreamPolicy::write(level_t level, const std::string & name, const std::string & msg)
-{
-    if (level > m_minLevel) { return; }
-    m_stream <<name <<": " <<msg <<std::endl;
-}
-
-/****************************************************************************/
-
 static const std::map<logging::level_t, std::string> levels = {
-    { logging::critical::value(), "\033[1;31m<C>\033[;39m" },
-    { logging::error::value(), "\033[1;31m<E>\033[;39m" },
-    { logging::warning::value(), "\033[33m<W>\033[39m" },
-    { logging::info::value(), "\033[1m<I>\033[m" },
-    { logging::debug::value(), "\033[2m<D>\033[m" }
+    { logging::critical::value, "\033[1;31m<C>\033[;39m" },
+    { logging::error::value, "\033[1;31m<E>\033[;39m" },
+    { logging::warning::value, "\033[33m<W>\033[39m" },
+    { logging::info::value, "\033[1m<I>\033[m" },
+    { logging::debug::value, "\033[2m<D>\033[m" }
 };
 static const std::string nameEnter = "\033[1m";
 static const std::string nameExit = "\033[m";
 
-logging::FilePolicy::FilePolicy(int fd, level_t minLevel)
+logging::FilePolicy::FilePolicy(int fd, level_t minLevel, bool ownsFd)
  : m_fd(fd),
+   m_ownsFd(ownsFd),
    m_tty(isatty(fd) == 1),
    m_minLevel(minLevel)
 {
 }
 
-void logging::FilePolicy::write(level_t level, const std::string & name, const std::string & msg)
+logging::FilePolicy::~FilePolicy()
+{
+    if (m_ownsFd) { close(m_fd); }
+}
+
+/** Write a log entry to a file descriptor
+ *
+ * This hopes to be atomic by combining the whole message in one write(2) system
+ * call. It is still possible that the write is partial though. In that case,
+ * it will be repeated and might lead to mixed log entries. Still, this avoids
+ * locking while logging.
+ */
+void logging::FilePolicy::write(level_t level, const std::string & name, const std::string & msg) const
 {
     if (level > m_minLevel) { return; }
     std::ostringstream buffer;
@@ -119,7 +116,7 @@ void logging::FilePolicy::write(level_t level, const std::string & name, const s
 
     while (todo > 0) {
         ssize_t written = ::write(m_fd, data.c_str() + done, todo);
-        if (written < 0) { break; }
+        if (written < 0) { break; } // Do not handle the error
         todo -= written;
         done += written;
     }
@@ -127,7 +124,7 @@ void logging::FilePolicy::write(level_t level, const std::string & name, const s
 
 /****************************************************************************/
 
-Logger::Logger(std::string name, Policy * policy)
+Logger::Logger(std::string name, const Policy * policy)
  : m_name(std::move(name)),
    m_policy(policy)
 {
@@ -139,8 +136,16 @@ Logger::~Logger()
     Configuration::instance().unregisterLogger(this);
 }
 
-void Logger::setPolicy(Policy * policy)
+void Logger::setPolicy(const Policy * policy)
 {
-    m_policy = policy;
+    m_policy.store(policy);
 }
 
+void Logger::print(level_t level, const std::string & msg)
+{
+    const auto * policy = m_policy.load();
+    if (policy == nullptr) {
+        policy = &Configuration::instance().globalPolicy();
+    }
+    policy->write(level, m_name, msg);
+}

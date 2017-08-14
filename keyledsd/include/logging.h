@@ -17,7 +17,7 @@
 #ifndef LOGGING_H_2BAC1A63
 #define LOGGING_H_2BAC1A63
 
-#include <iosfwd>
+#include <atomic>
 #include <map>
 #include <sstream>
 #include <string>
@@ -28,22 +28,16 @@ namespace logging {
 
 class Policy;
 class Logger;
-
 typedef int level_t;
-template <level_t L> struct level {
-    static inline constexpr int value() { return L; }
-};
-
-typedef level<0> critical;
-typedef level<1> error;
-typedef level<2> warning;
-typedef level<3> info;
-typedef level<4> debug;
 
 /****************************************************************************/
 
-/****************************************************************************/
-
+/** Logging configuration singleton
+ *
+ * Tracks all Logger instances and provides a way to set logging policy based
+ * on logger name. Not thread-safe, which means threads may not instantiate
+ * loggers or call setPolicy.
+ */
 class Configuration final
 {
     Configuration();
@@ -55,16 +49,16 @@ public:
     void    registerLogger(Logger *);
     void    unregisterLogger(Logger *);
 
-    void    setPolicy(Policy *);
-    void    setPolicy(const std::string & name, Policy *);
+    void    setPolicy(const Policy *);
+    void    setPolicy(const std::string & name, const Policy *);
 
-    Policy & globalPolicy() const { return *m_globalPolicy; }
+    const Policy & globalPolicy() const { return *m_globalPolicy; }
 
 private:
-    static Policy & defaultPolicy();
+    static const Policy & defaultPolicy();      ///< Used when setPolicy(nullptr) is invoked.
 private:
-    std::map<std::string, Logger *> m_loggers;
-    Policy * m_globalPolicy;
+    std::map<std::string, Logger *> m_loggers;  ///< Currently known logger instances.
+    std::atomic<const Policy *> m_globalPolicy; ///< Used by loggers with no policy. Never null.
 };
 
 
@@ -72,92 +66,120 @@ private:
 * Policies
 *****************************************************************************/
 
+/** Policy interface
+ *
+ * A policy is an object that can write log entries down in some way. They are
+ * not managed by the logging framework (they are passed as const pointers,
+ * and the framework never creates nor deletes them, except for the single
+ * Configuration::defaultPolicy. Policy instances must be thread-safe.
+ */
 class Policy
 {
 public:
-    virtual         ~Policy();
-    virtual void    write(level_t, const std::string & name, const std::string & msg) = 0;
+    virtual void    write(level_t, const std::string & name, const std::string & msg) const = 0;
 };
 
 /****************************************************************************/
 
-/// Logger policy that writes into a given generic stream
-class StreamPolicy : public Policy
-{
-public:
-                        StreamPolicy(std::ostream & stream, level_t);
-    void                write(level_t, const std::string &, const std::string &) override;
-protected:
-    std::ostream &      m_stream;
-    level_t             m_minLevel;
-};
-
-/****************************************************************************/
-
-/// Logger policy that writes into a system file descriptor
+/** Logger policy that writes into a system file descriptor
+ *
+ * Will also use ECMA-48 color codes if it detects the file descriptor is
+ * associated to an interactive terminal.
+ */
 class FilePolicy : public Policy
 {
 public:
-                        FilePolicy(int fd, level_t);
-    void                write(level_t, const std::string &, const std::string &) override;
+                    FilePolicy(int fd, level_t, bool ownsFd = false);
+    virtual         ~FilePolicy();
+    void            write(level_t, const std::string &, const std::string &) const override;
 protected:
-    int                 m_fd;
-    bool                m_tty;
-    level_t             m_minLevel;
+    const int       m_fd;           ///< File descriptor number
+    bool            m_ownsFd;       ///< Whether to close(2) m_fd on destruction
+    bool            m_tty;          ///< Whether m_fd is an interactive terminal
+    level_t         m_minLevel;     ///< Minimum log level to write
 };
 
 /*****************************************************************************
 * Logger
 *****************************************************************************/
 
+/** Main logging interface
+ *
+ * Tracks current module configuration and registers it to the global
+ * configuration holder. Typically, one static Logger instance is created using
+ * LOGGING macro at the top of each compilation unit.
+ */
 class Logger final
 {
 public:
-                        Logger(std::string name, Policy * policy = nullptr);
-                        Logger(const Logger &) = delete;
-                        ~Logger();
+                    Logger(std::string name, const Policy * policy = nullptr);
+                    ~Logger();
 
     const std::string & name() const { return m_name; }
-    void                setPolicy(Policy * policy);
+    void            setPolicy(const Policy * policy);
 
-    template<typename L, typename...Args> void print(Args...args);
-
-private:
-                                          void print_bits(std::ostream &) {}
-    template<typename T, typename...Args> void print_bits(std::ostream &, T, Args...);
+    void            print(level_t, const std::string & msg);
 
 private:
-    const std::string   m_name;
-    Policy *            m_policy;
+    const std::string   m_name;             ///< Module name (for prefixing log entries)
+    std::atomic<const Policy *> m_policy;   ///< Per-module policy. May be null.
 };
 
+/*****************************************************************************
+* Log levels and printing
+*****************************************************************************/
 
+/** Log severity description
+ *
+ * Describes log severity: associated value and printing method.
+ */
+template <level_t L> struct level {
+    static constexpr int value = L;
+    template <typename...Args> static void print(Logger & logger, Args && ...args);
+};
+template <level_t L> constexpr int level<L>::value;
 
-template<typename L, typename...Args> void Logger::print(Args...args)
+/// @private
+namespace detail {
+    template<typename T> static inline void print_bits(std::ostream & out, T && val)
+    {
+        out << val;
+    }
+
+    template<typename T, typename...Args> static inline void print_bits(std::ostream & out,
+                                                                        T && val, Args && ...args)
+    {
+        print_bits(out << val, std::forward<Args>(args)...);
+    }
+}
+
+template <level_t L> template <typename...Args> void level<L>::print(Logger & logger, Args && ...args)
 {
     std::ostringstream buffer;
-    print_bits(buffer, args...);
-    auto & policy = (m_policy != nullptr) ? *m_policy : Configuration::instance().globalPolicy();
-    policy.write(L::value(), m_name, buffer.str());
+    detail::print_bits(buffer, std::forward<Args>(args)...);
+    logger.print(value, buffer.str());
 }
 
-template<typename T, typename...Args> void Logger::print_bits(std::ostream & out, T val, Args...args)
-{
-    out <<val;
-    print_bits(out, args...);
-}
+typedef level<0> critical;
+typedef level<1> error;
+typedef level<2> warning;
+typedef level<3> info;
+typedef level<4> debug;
+
+#ifdef NDEBUG
+template <> template<typename...Args> void debug::print(Logger &, Args...) {}
+#endif
+
+/****************************************************************************/
+// Module interface
 
 #define LOGGING(name) static logging::Logger l_logger(name)
 
-#define CRITICAL    l_logger.print<::logging::critical>
-#define ERROR       l_logger.print<::logging::error>
-#define WARNING     l_logger.print<::logging::warning>
-#define INFO        l_logger.print<::logging::info>
-#ifdef NDEBUG
-#define DEBUG(...)
-#else
-#define DEBUG       l_logger.print<::logging::debug>
-#endif
+#define CRITICAL(...)    logging::critical::print(l_logger, __VA_ARGS__)
+#define ERROR(...)       logging::error::print(l_logger, __VA_ARGS__)
+#define WARNING(...)     logging::warning::print(l_logger, __VA_ARGS__)
+#define INFO(...)        logging::info::print(l_logger, __VA_ARGS__)
+#define DEBUG(...)       logging::debug::print(l_logger, __VA_ARGS__)
 
 /****************************************************************************/
 

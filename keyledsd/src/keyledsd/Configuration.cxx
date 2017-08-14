@@ -642,7 +642,7 @@ Configuration Configuration::loadFile(const std::string & path)
     auto builder = ConfigurationBuilder();
     builder.parse(file);
     return Configuration(
-        logging::warning::value(),
+        logging::warning::value,
         builder.m_autoQuit,
         builder.m_noDBus,
         std::move(builder.m_pluginPaths),
@@ -672,7 +672,7 @@ Configuration Configuration::loadArguments(int & argc, char * argv[])
     std::ostringstream msgBuf;
 
     const char * configPath = nullptr;
-    unsigned logLevel = logging::warning::value();
+    unsigned logLevel = logging::warning::value;
     bool autoQuit = false;
     bool noDBus = false;
 
@@ -693,7 +693,7 @@ Configuration Configuration::loadArguments(int & argc, char * argv[])
             std::cout <<"Usage: " <<argv[0] <<" [-c path] [-h] [-q] [-s] [-v] [-D]" <<std::endl;
             ::exit(EXIT_SUCCESS);
         case 'q':
-            logLevel = logging::critical::value();
+            logLevel = logging::critical::value;
             break;
         case 's':
             autoQuit = true;
