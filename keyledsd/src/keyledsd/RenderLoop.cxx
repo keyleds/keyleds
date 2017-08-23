@@ -16,7 +16,9 @@
  */
 #include <cassert>
 #include <cerrno>
+#include <chrono>
 #include <exception>
+#include <thread>
 #include <type_traits>
 #include "keyledsd/Device.h"
 #include "keyledsd/RenderLoop.h"
@@ -184,19 +186,32 @@ void RenderLoop::run()
         return;
     }
 
-    m_device.setTimeout(0); // disable timeout detection
-
     try {
         for (;;) {
             try {
                 AnimationLoop::run();
                 break;
             } catch (Device::error & error) {
-                if (!m_device.resync()) { throw; }
+                // Something went wrong, we will attempt to recover
+                if (error.code() == KEYLEDS_ERROR_ERRNO
+                    && error.oserror() != EIO && error.oserror() != EINTR) {
+                    throw;  // recovering from system errors is not an option
+                }
+
+                // Recover from error, giving some delay to the device
+                INFO("error on device: ", error.what(), " re-syncing device");
+                unsigned attempt;
+                for (attempt = 0; attempt < 5; ++attempt) {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(attempt * 100));
+                    if (m_device.resync()) { break; }
+                }
+
+                // If recovery failed, re-throw initial error
+                if (attempt >= 5) { throw; }
             }
         }
     } catch (Device::error & error) {
-        if (!((error.code() == KEYLEDS_ERROR_ERRNO && errno == ENODEV) ||
+        if (!((error.code() == KEYLEDS_ERROR_ERRNO && error.oserror() == ENODEV) ||
               error.code() == KEYLEDS_ERROR_TIMEDOUT)) {
             ERROR("device error: ", error.what());
         }

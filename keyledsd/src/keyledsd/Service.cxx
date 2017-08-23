@@ -94,7 +94,8 @@ void Service::onDeviceAdded(const device::Description & description)
 
     } catch (Device::error & error) {
         // Suppress hid version error, it just means it's not the kind of device we want
-        if (error.code() != KEYLEDS_ERROR_HIDVERSION) {
+        if (error.code() != KEYLEDS_ERROR_HIDNOPP &&
+            error.code() != KEYLEDS_ERROR_HIDVERSION) {
             ERROR("not opening device ", description.devNode(), ": ", error.what());
         }
     }

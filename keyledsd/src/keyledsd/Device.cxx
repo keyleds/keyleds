@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <QtCore>
+#include <cerrno>
 #include <cstdlib>
 #include <iomanip>
 #include <memory>
@@ -194,7 +195,7 @@ void Device::flush()
     }
 }
 
-bool Device::resync()
+bool Device::resync() noexcept
 {
     return keyleds_flush_fd(m_device.get()) &&
            keyleds_ping(m_device.get(), KEYLEDS_TARGET_DEFAULT);
@@ -249,6 +250,14 @@ Device::KeyBlock::KeyBlock(key_block_id_type id, key_list && keys, RGBColor maxV
       m_keys(keys),
       m_maxValues(maxValues)
 {}
+
+/****************************************************************************/
+
+Device::error::error(std::string what, keyleds_error_t code, int oserror)
+ : std::runtime_error(what), m_code(code), m_oserror(oserror)
+{
+    if (m_code == KEYLEDS_ERROR_ERRNO && m_oserror == 0) { m_oserror = errno; }
+}
 
 /****************************************************************************/
 

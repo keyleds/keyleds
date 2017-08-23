@@ -65,11 +65,12 @@ public:
     {
         typedef unsigned int keyleds_error_t;
     public:
-                        error(std::string what, keyleds_error_t code)
-                         : std::runtime_error(what), m_code(code) {}
+                        error(std::string what, keyleds_error_t code, int oserror=0);
         keyleds_error_t code() const { return m_code; }
+        int             oserror() const { return m_oserror; }
     private:
         keyleds_error_t m_code;
+        int             m_oserror;
     };
 
 public:
@@ -96,7 +97,7 @@ public:
     // Manipulate
     void                setTimeout(unsigned us);
     void                flush();
-    bool                resync();
+    bool                resync() noexcept;
     void                fillColor(const KeyBlock & block, const RGBColor);
     void                setColors(const KeyBlock & block, const color_directive_list &);
     void                setColors(const KeyBlock & block, const ColorDirective[], size_t size);
