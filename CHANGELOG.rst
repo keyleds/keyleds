@@ -3,10 +3,25 @@ Release Notes
 #############
 
 *****************************
-0.4 - current release
+0.4.1 - current release
 *****************************
 
-Released on August 7, 2017
+Released on August 29th, 2017
+
+Bugfixes:
+
+- Introduce a delay and multiple retry attempts to recover after an I/O
+  error. Helps with keyboard diconnection when system comes back from sleep.
+- Refactored the main animation loop to fix some race issues.
+- Centralized logging and connected it to command line switches, so ``-v``
+  and ``-q`` actually work.
+
+
+*****************************
+0.4
+*****************************
+
+Released on August 7th, 2017
 
 Features:
 

@@ -18,7 +18,7 @@ The project is split into four components.
 
 The **session service** animates the keyboard in response to various events:
 
-* Dynamic detection of Logitech keyboard as they are plugged in.
+* Dynamic detection of Logitech keyboards as they are plugged in.
 * Flexible per-application light settings.
 
   - Can filter on window title for further refining.
@@ -112,9 +112,9 @@ This means you must either:
   using the library.
 * Configure your system to make the device accessible to other users.
   On udev-based systems, you can copy ``logitech.rules`` into
-  ``/etc/udev/rules.d/90-logitech-plugdev.rules`` to automatically grant
-  access to members of the ``plugdev`` group. Beware that this makes
-  it possible for those users to spy on some keyboard presses.
+  ``/etc/udev/rules.d/70-logitech-hidpp.rules`` to automatically grant
+  access to connected users. Beware that this makes
+  it possible for those users to spy on some of other user's keyboard presses.
 
 Using the service
 -----------------

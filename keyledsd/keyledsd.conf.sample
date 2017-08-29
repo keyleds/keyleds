@@ -30,14 +30,19 @@ groups:
 #
 # Any number of profiles can be active at any time. A profile with no lookup
 # or default setting is always active. Lookups use regular expression. They
-# must match fully (as if they where automatically enclosed in ^$).
+# must match fully (as if they were automatically enclosed in ^$).
 #
 # Anytime a color is specified, it can be either:
 #   - a 6-digit RGB hexadecimal color, web-style. Eg: ffff00 is yellow.
 #   - an 8-digit RGBA hexadecimal color. Last two digits specify transparency,
 #     from 00 (transparent) to ff (opaque).
-#   - a color name, from CSS web color names.
+#   - a color name, from CSS web color names. Those are always fully opaque.
 #
+# Note that there is no buffer clear in between renders. So to avoid odd
+# flickering, every key should be written to by at least one plugin.
+# If that is an issue, simply start with the fill plugin, setting all keys
+# to opaque black or some other color.
+# 
 profiles:
     default:
         default: yes            # Disable this profile if any other matches
@@ -49,7 +54,7 @@ profiles:
             class: ^$           # empty class
         plugins:
             - plugin: wave
-              period: 5000      # cycle duratio in ms
+              period: 5000      # cycle duration in ms
               length: 2000      # wavelength (1000 is keyboard size)
               direction: 240    # 0 for upwards, 90 rightwards, 180 downwards, ...
               color0: red
@@ -65,23 +70,23 @@ profiles:
             - plugin: fill
               color: black
             - plugin: breathe
-              color: gray
-              period: 10000
-              group: special
+              color: gray           # breathing keys will go from that color to transparent
+              period: 10000         # breathe period in ms
+              group: special        # name of key group to play effect on
     kate:
         lookup:
             class: kate
         # Profile can be restricted to some devices like this:
         # devices: [foo]
         groups:
-            escape: [esc]
+            escape: [esc]           # it's possible to make profile-specific key groups
         plugins:
             - plugin: fill
-              color: 404060
-              escape: orange
-              arrows: green
-              functions: yellow
-              modifiers: darkblue
+              color: 404060         # color is applied to all keys, then
+              escape: orange        # fill plugin accepts key group names
+              arrows: green         # that will override some keys
+              functions: yellow     #
+              modifiers: darkblue   # if "color" is missing, it behaves as 00000000
     kate-modified:
         lookup:
             class: kate
@@ -112,15 +117,15 @@ profiles:
               functions-extra: black
               wipe: black
               modifiers: 006060
-    chromium:
+    chromium:                       # Okay that profile is ugly, it's just for demo
         lookup:
-            class: chromium-browser
+            class: "[Cc]hromium-browser"
         plugins:
-            - plugin: fill
+            - plugin: fill          # define a night sky background
               color: darkblue
-            - plugin: stars
-              number: 30
-              duration: 3000
-              color0: white
-              color1: yellow
-              color2: beige
+            - plugin: stars         # add some stars
+              number: 30            # how many stars are visible at once
+              duration: 3000        # how long a star remains visible (in ms)
+              color0: white         # colors to use for the stars. They are picked
+              color1: yellow        # randomly from that set. If not specified,
+              color2: beige         # you'll get all the rainbow.
