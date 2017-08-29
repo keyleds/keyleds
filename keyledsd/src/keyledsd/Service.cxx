@@ -66,7 +66,7 @@ void Service::setActive(bool active)
 void Service::setContext(const Context & context)
 {
     DEBUG("setContext ", context);
-    m_context = context;
+    m_context.merge(context);
     for (auto & deviceEntry : m_devices) { deviceEntry.second->setContext(m_context); }
 }
 

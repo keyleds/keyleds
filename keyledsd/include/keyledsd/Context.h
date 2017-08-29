@@ -45,6 +45,8 @@ public:
     Context(std::initializer_list<value_map::value_type> init);
     explicit Context(value_map values);
 
+    void merge(const Context &);
+
     const std::string & operator[](const std::string & key) const;
 
     value_map::const_iterator begin() const noexcept { return m_values.cbegin(); }

@@ -128,7 +128,12 @@ void XContextWatcher::setContext(xlib::Window * window)
 {
     Context context;
     if (window == nullptr) {
-        context = {};
+        context = {
+            { "id", std::string() },
+            { "title", std::string() },
+            { "class", std::string() },
+            { "instance", std::string() }
+        };
     } else {
         context = {
             { "id", std::to_string(window->handle()) },

@@ -27,6 +27,11 @@ Context::Context(value_map values)
  : m_values(std::move(values))
 {}
 
+void Context::merge(const Context & other)
+{
+    for (auto & item : other) { m_values[item.first] = item.second; }
+}
+
 const std::string & Context::operator[](const std::string & key) const
 {
     static const std::string empty;
