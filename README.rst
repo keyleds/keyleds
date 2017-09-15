@@ -61,7 +61,8 @@ It is now available from the `official PPA`_ for Ubuntu Xenial / Zesty:
     sudo apt-get install keyleds
 
 After the install is complete, you have to re-plug your keyboard so
-device permissions are applied.
+device permissions are applied. The service will start at your next login,
+or you may start it manually by typing ``keyledsd -v``.
 
 If your distribution is not listed, you need to install manually.
 

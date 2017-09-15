@@ -167,7 +167,7 @@ typedef level<3> info;
 typedef level<4> debug;
 
 #ifdef NDEBUG
-template <> template<typename...Args> void debug::print(Logger &, Args...) {}
+template <> template<typename...Args> void debug::print(Logger &, Args &&...) {}
 #endif
 
 /****************************************************************************/

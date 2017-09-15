@@ -3,7 +3,21 @@ Release Notes
 #############
 
 *****************************
-0.4.1 - current release
+0.4.2 - current release
+*****************************
+
+Released on September 15th, 2017
+
+Features:
+
+- Added layout descriptions for G810.
+
+Bugfixes:
+
+- Work around animation freeze when adjusting system time.
+
+*****************************
+0.4.1
 *****************************
 
 Released on August 29th, 2017
