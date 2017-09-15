@@ -73,7 +73,7 @@ void AnimationLoop::run()
 {
     DEBUG("AnimationLoop(", this, ") started");
     auto now = std::chrono::steady_clock::now();
-    auto nextDraw = std::chrono::steady_clock::time_point();
+    auto nextDraw = now;
     const auto period = std::chrono::milliseconds(m_period);
 
     std::unique_lock<std::mutex> lock(m_mRunStatus);
@@ -88,7 +88,13 @@ void AnimationLoop::run()
                 m_cRunStatus.wait(lock);
                 DEBUG("AnimationLoop(", this, ") resumed");
             } else {
-                m_cRunStatus.wait_until(lock, nextDraw);
+                // Work around libstdc++ bug:
+                //    https://gcc.gnu.org/bugzilla/show_bug.cgi?id=41861
+                // Actual intention here would be:
+                //     m_cRunStatus.wait_until(lock, nextDraw);
+                lock.unlock();
+                std::this_thread::sleep_for(nextDraw - std::chrono::steady_clock::now());
+                lock.lock();
             }
             now = std::chrono::steady_clock::now();
         }
