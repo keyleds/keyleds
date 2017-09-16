@@ -52,7 +52,8 @@ Installing - prepackaged
 
 Effort is undergoing to provide official packages for various distributions.
 
-It is now available from the `official PPA`_ for Ubuntu Xenial / Zesty:
+* For OpenSUSE and Fedora, follow instructions there: `official RPM build`_.
+* For Ubuntu Xenial / Zesty, install it from the `official PPA`_:
 
 .. code-block:: bash
 
@@ -311,6 +312,7 @@ All properties are read once at first access and cached. On the other hand,
 methods in the form ``get_*`` query the device at every invocation.
 
 .. _issue: https://github.com/spectras/keyleds/issues
+.. _official RPM build: https://software.opensuse.org/download.html?project=home%3Aspectras&package=keyleds
 .. _official PPA: https://launchpad.net/~spectras/+archive/ubuntu/keyleds
 .. _keyledsd.conf: https://github.com/spectras/keyleds/blob/master/keyledsd/keyledsd.conf.sample
 .. _CSS color names: https://www.w3.org/wiki/CSS/Properties/color/keywords
