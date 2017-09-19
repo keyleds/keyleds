@@ -93,6 +93,7 @@ typedef enum {
 
 bool keyleds_get_device_name(Keyleds * device, uint8_t target_id,
                              /*@out@*/ char ** out);    /* caller must free() on success */
+void keyleds_free_device_name(/*@only@*/ /*@out@*/ char *);
 bool keyleds_get_device_type(Keyleds * device, uint8_t target_id,
                              /*@out@*/ keyleds_device_type_t * out);
 bool keyleds_get_device_version(Keyleds * device, uint8_t target_id,
@@ -123,6 +124,7 @@ keyleds_keyboard_layout_t keyleds_keyboard_layout(Keyleds * device, uint8_t targ
 /* Reportrate feature */
 
 bool keyleds_get_reportrates(Keyleds * device, uint8_t target_id, /*@out@*/ unsigned ** out);
+void keyleds_free_reportrates(unsigned *);
 bool keyleds_get_reportrate(Keyleds * device, uint8_t target_id, /*@out@*/ unsigned * rate);
 bool keyleds_set_reportrate(Keyleds * device, uint8_t target_id, unsigned rate);
 

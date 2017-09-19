@@ -34,7 +34,7 @@ enum leds_feature_function {
 #define KEYS_PER_COMMAND    (16)
 
 
-bool keyleds_gamemode_max(Keyleds * device, uint8_t target_id, unsigned * nb)
+KEYLEDS_EXPORT bool keyleds_gamemode_max(Keyleds * device, uint8_t target_id, unsigned * nb)
 {
     uint8_t data[1];
 
@@ -68,17 +68,19 @@ static bool gamemode_send(Keyleds * device, uint8_t target_id,
     return true;
 }
 
-bool keyleds_gamemode_set(Keyleds * device, uint8_t target_id, const uint8_t * ids, unsigned ids_nb)
+KEYLEDS_EXPORT bool keyleds_gamemode_set(Keyleds * device, uint8_t target_id,
+                                         const uint8_t * ids, unsigned ids_nb)
 {
     return gamemode_send(device, target_id, ids, ids_nb, true);
 }
 
-bool keyleds_gamemode_clear(Keyleds * device, uint8_t target_id, const uint8_t * ids, unsigned ids_nb)
+KEYLEDS_EXPORT bool keyleds_gamemode_clear(Keyleds * device, uint8_t target_id,
+                                           const uint8_t * ids, unsigned ids_nb)
 {
     return gamemode_send(device, target_id, ids, ids_nb, false);
 }
 
-bool keyleds_gamemode_reset(Keyleds * device, uint8_t target_id)
+KEYLEDS_EXPORT bool keyleds_gamemode_reset(Keyleds * device, uint8_t target_id)
 {
     assert(device != NULL);
 

@@ -85,17 +85,18 @@ void FileWatcher::unsubscribe(Listener listener, void * data)
 
 void FileWatcher::onNotifyReady(int)
 {
-    struct {
-        struct inotify_event event;
-        char                 space[NAME_MAX + 1];
+    // We use a union to allocate the buffer on the stack
+    union {
+        struct inotify_event    event;
+        char                    reserve[sizeof(struct inotify_event) + NAME_MAX + 1];
     } buffer;
-    ssize_t nread;
 
+    ssize_t nread;
     while ((nread = read(m_fd, &buffer, sizeof(buffer))) >= 0) {
         auto it = m_listeners.find(buffer.event.wd);
         if (it == m_listeners.end()) { continue; }
         const auto & watch = it->second;
-        (*watch.callback)(watch.userData, static_cast<event>(buffer.event.mask),
+        (*watch.callback)(watch.userData, static_cast<enum event>(buffer.event.mask),
                           buffer.event.cookie, std::string(buffer.event.name, buffer.event.len));
     }
 

@@ -375,7 +375,7 @@ public:
     }
 
     void scalarEntry(ConfigurationBuilder & builder, const std::string & key,
-                     const std::string & value, const std::string &)
+                     const std::string & value, const std::string &) override
     {
         if (key == "default")   { m_isDefault = builder.parseScalar<bool>(value); }
         else throw builder.makeError("unknown setting");
@@ -484,7 +484,7 @@ public:
     }
 
     void scalarEntry(ConfigurationBuilder & builder, const std::string & key,
-                     const std::string & value, const std::string &)
+                     const std::string & value, const std::string &) override
     {
         if (key == "auto_quit")     { builder.m_autoQuit = builder.parseScalar<bool>(value); }
         else if (key == "dbus")     { builder.m_noDBus = !builder.parseScalar<bool>(value); }

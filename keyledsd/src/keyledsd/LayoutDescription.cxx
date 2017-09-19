@@ -44,7 +44,6 @@ static const xmlChar KEYBOARD_ATTR_HEIGHT[] = "height";
 static const xmlChar KEYBOARD_ATTR_ZONE[] = "zone";
 static const xmlChar KEY_ATTR_CODE[] = "code";
 static const xmlChar KEY_ATTR_GLYPH[] = "glyph";
-static const xmlChar KEY_ATTR_STYLE[] = "style";
 static const xmlChar KEY_ATTR_WIDTH[] = "width";
 
 /****************************************************************************/

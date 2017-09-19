@@ -89,7 +89,7 @@ std::string Device::getName(struct keyleds_device * device)
     if (!keyleds_get_device_name(device, KEYLEDS_TARGET_DEFAULT, &name)) {
         throw Device::error(keyleds_get_error_str(), keyleds_get_errno());
     }
-    auto name_p = std::unique_ptr<char, void(*)(void*)>(name, std::free);
+    auto name_p = std::unique_ptr<char, void(*)(char*)>(name, keyleds_free_device_name);
     return std::string(name);
 }
 

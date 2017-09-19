@@ -69,12 +69,12 @@ static const uint8_t keycode_to_scancode[] = {
     0x71, 0x72, 0x73, 0x00, 0x00, 0x00, 0x00, 0x00  /* 0xc0 */
 };
 
-unsigned keyleds_translate_scancode(uint8_t scancode)
+KEYLEDS_EXPORT unsigned keyleds_translate_scancode(uint8_t scancode)
 {
     return (unsigned)scancode_to_keycode[scancode];
 }
 
-uint8_t keyleds_translate_keycode(unsigned keycode)
+KEYLEDS_EXPORT uint8_t keyleds_translate_keycode(unsigned keycode)
 {
     if (keycode >= sizeof(keycode_to_scancode) / sizeof(keycode_to_scancode[0])) {
         return KEYLEDS_KEY_ID_INVALID;

@@ -56,7 +56,7 @@ static thread_local int keyleds_saved_errno = 0;
 static thread_local char keyleds_error_buffer[256];
 #endif
 
-const char * keyleds_get_error_str()
+KEYLEDS_EXPORT const char * keyleds_get_error_str()
 {
     if (keyleds_errno == KEYLEDS_ERROR_ERRNO) {
 #ifdef POSIX_STRERROR_R_FOUND
@@ -72,7 +72,7 @@ const char * keyleds_get_error_str()
     return error_strings[keyleds_errno];
 }
 
-keyleds_error_t keyleds_get_errno()
+KEYLEDS_EXPORT keyleds_error_t keyleds_get_errno()
 {
     if (keyleds_errno == KEYLEDS_ERROR_ERRNO) {
         errno = keyleds_saved_errno;

@@ -33,8 +33,8 @@ enum feature_feature_function {
     F_GET_FEATURE_ID = 1
 };
 
-bool keyleds_get_protocol(struct keyleds_device * device, uint8_t target_id,
-                          unsigned * version, keyleds_device_handler_t * handler)
+KEYLEDS_EXPORT bool keyleds_get_protocol(struct keyleds_device * device, uint8_t target_id,
+                                         unsigned * version, keyleds_device_handler_t * handler)
 {
     if (!keyleds_send(device, target_id, KEYLEDS_FEATURE_IDX_ROOT, F_PING, 0, NULL)) {
         return false;
@@ -60,7 +60,7 @@ bool keyleds_get_protocol(struct keyleds_device * device, uint8_t target_id,
 /* Re-synchronize exchanges: send a ping and discard all received
  * reports until we get the matching pong.
  */
-bool keyleds_ping(Keyleds * device, uint8_t target_id)
+KEYLEDS_EXPORT bool keyleds_ping(Keyleds * device, uint8_t target_id)
 {
     uint8_t payload = device->ping_seq;
     device->ping_seq = payload == UINT8_MAX ? (uint8_t)1 : payload + 1;
@@ -80,7 +80,7 @@ bool keyleds_ping(Keyleds * device, uint8_t target_id)
     return true;
 }
 
-unsigned keyleds_get_feature_count(struct keyleds_device * device, uint8_t target_id)
+KEYLEDS_EXPORT unsigned keyleds_get_feature_count(struct keyleds_device * device, uint8_t target_id)
 {
     uint8_t data[1];
     if (keyleds_call(device, data, sizeof(data),
@@ -90,8 +90,8 @@ unsigned keyleds_get_feature_count(struct keyleds_device * device, uint8_t targe
     return (unsigned)data[0];
 }
 
-uint16_t keyleds_get_feature_id(struct keyleds_device * device,
-                                uint8_t target_id, uint8_t feature_idx)
+KEYLEDS_EXPORT uint16_t keyleds_get_feature_id(struct keyleds_device * device,
+                                               uint8_t target_id, uint8_t feature_idx)
 {
     size_t idx;
     uint16_t feature_id;
@@ -128,8 +128,8 @@ uint16_t keyleds_get_feature_id(struct keyleds_device * device,
     return feature_id;
 }
 
-uint8_t keyleds_get_feature_index(struct keyleds_device * device,
-                                  uint8_t target_id, uint16_t feature_id)
+KEYLEDS_EXPORT uint8_t keyleds_get_feature_index(struct keyleds_device * device,
+                                                 uint8_t target_id, uint16_t feature_id)
 {
     size_t idx;
     uint8_t feature_idx;

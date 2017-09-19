@@ -34,7 +34,7 @@
 #include "keyleds/logging.h"
 
 
-Keyleds * keyleds_open(const char * path, uint8_t app_id)
+KEYLEDS_EXPORT Keyleds * keyleds_open(const char * path, uint8_t app_id)
 {
     Keyleds * dev = malloc(sizeof(Keyleds));
     struct hidraw_report_descriptor descriptor;
@@ -102,7 +102,7 @@ error_free_dev:
     return NULL;
 }
 
-void keyleds_close(Keyleds * device)
+KEYLEDS_EXPORT void keyleds_close(Keyleds * device)
 {
     assert(device != NULL);
     close(device->fd);
@@ -111,19 +111,19 @@ void keyleds_close(Keyleds * device)
     free(device);
 }
 
-void keyleds_set_timeout(Keyleds * device, unsigned us)
+KEYLEDS_EXPORT void keyleds_set_timeout(Keyleds * device, unsigned us)
 {
     assert(device != NULL);
     device->timeout = us;
 }
 
-int keyleds_device_fd(Keyleds * device)
+KEYLEDS_EXPORT int keyleds_device_fd(Keyleds * device)
 {
     assert(device != NULL);
     return device->fd;
 }
 
-bool keyleds_flush_fd(Keyleds * device)
+KEYLEDS_EXPORT bool keyleds_flush_fd(Keyleds * device)
 {
     assert(device != NULL);
     uint8_t buffer[device->max_report_size + 1];

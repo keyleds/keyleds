@@ -29,7 +29,7 @@ enum layout_feature_function {
     F_GET_LAYOUT = 0
 };
 
-keyleds_keyboard_layout_t keyleds_keyboard_layout(Keyleds * device, uint8_t target_id)
+KEYLEDS_EXPORT keyleds_keyboard_layout_t keyleds_keyboard_layout(Keyleds * device, uint8_t target_id)
 {
     uint8_t data[1];
 

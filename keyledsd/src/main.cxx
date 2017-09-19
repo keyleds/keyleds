@@ -49,7 +49,7 @@ int main(int argc, char * argv[])
 
     // Load configuration
     try {
-        configuration = std::move(keyleds::Configuration::loadArguments(argc, argv));
+        configuration = keyleds::Configuration::loadArguments(argc, argv);
         logging::Configuration::instance().setPolicy(
             new logging::FilePolicy(STDERR_FILENO, configuration.logLevel())
         );

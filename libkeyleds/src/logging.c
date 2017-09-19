@@ -20,6 +20,6 @@
 #include "keyleds.h"
 #include "keyleds/logging.h"
 
-FILE * g_keyleds_debug_stream = NULL;
-int g_keyleds_debug_level = KEYLEDS_LOG_WARNING;
-int g_keyleds_debug_hid = KEYLEDS_LOG_ERROR;
+KEYLEDS_EXPORT FILE * g_keyleds_debug_stream = NULL;
+KEYLEDS_EXPORT int g_keyleds_debug_level = KEYLEDS_LOG_WARNING;
+KEYLEDS_EXPORT int g_keyleds_debug_hid = KEYLEDS_LOG_ERROR;

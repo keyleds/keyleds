@@ -37,8 +37,8 @@ enum devinfo_feature_function {
 };
 
 
-bool keyleds_get_device_version(Keyleds * device, uint8_t target_id,
-                                struct keyleds_device_version ** out)
+KEYLEDS_EXPORT bool keyleds_get_device_version(Keyleds * device, uint8_t target_id,
+                                               struct keyleds_device_version ** out)
 {
     uint8_t data[16];   /* max of F_GET_DEVICE_INFO and F_GET_FIRMWARE_INFO */
     unsigned length, idx;
@@ -89,8 +89,12 @@ err_get_dev_info_free:
     return false;
 }
 
+KEYLEDS_EXPORT void keyleds_free_device_version(struct keyleds_device_version * version)
+{
+    free(version);
+}
 
-bool keyleds_get_device_name(Keyleds * device, uint8_t target_id, char ** out)
+KEYLEDS_EXPORT bool keyleds_get_device_name(Keyleds * device, uint8_t target_id, char ** out)
 {
     uint8_t data[1];
     unsigned length, done;
@@ -128,7 +132,14 @@ bool keyleds_get_device_name(Keyleds * device, uint8_t target_id, char ** out)
     return true;
 }
 
-bool keyleds_get_device_type(Keyleds * device, uint8_t target_id, keyleds_device_type_t * out)
+KEYLEDS_EXPORT void keyleds_free_device_name(char * name)
+{
+    free(name);
+}
+
+
+KEYLEDS_EXPORT bool keyleds_get_device_type(Keyleds * device, uint8_t target_id,
+                                            keyleds_device_type_t * out)
 {
     uint8_t data[1];
 
@@ -142,9 +153,4 @@ bool keyleds_get_device_type(Keyleds * device, uint8_t target_id, keyleds_device
 
     *out = (keyleds_device_type_t)data[0];
     return true;
-}
-
-void keyleds_free_device_version(struct keyleds_device_version * version)
-{
-    free(version);
 }

@@ -35,8 +35,8 @@ enum leds_feature_function {
 };
 
 
-bool keyleds_get_block_info(Keyleds * device, uint8_t target_id,
-                            struct keyleds_keyblocks_info ** out)
+KEYLEDS_EXPORT bool keyleds_get_block_info(Keyleds * device, uint8_t target_id,
+                                           struct keyleds_keyblocks_info ** out)
 {
     uint8_t data[5];    /* max of F_GET_KEYBLOCKS and F_GET_BLOCK_INFO */
     unsigned idx, info_idx, length;
@@ -84,13 +84,14 @@ bool keyleds_get_block_info(Keyleds * device, uint8_t target_id,
     return true;
 }
 
-void keyleds_free_block_info(struct keyleds_keyblocks_info * info)
+KEYLEDS_EXPORT void keyleds_free_block_info(struct keyleds_keyblocks_info * info)
 {
     free(info);
 }
 
-bool keyleds_get_leds(Keyleds * device, uint8_t target_id, keyleds_block_id_t block_id,
-                      struct keyleds_key_color * keys, uint16_t offset, unsigned keys_nb)
+KEYLEDS_EXPORT bool keyleds_get_leds(Keyleds * device, uint8_t target_id,
+                                     keyleds_block_id_t block_id,
+                                     struct keyleds_key_color * keys, uint16_t offset, unsigned keys_nb)
 {
     unsigned done = 0;
 
@@ -128,8 +129,9 @@ bool keyleds_get_leds(Keyleds * device, uint8_t target_id, keyleds_block_id_t bl
     return true;
 }
 
-bool keyleds_set_leds(Keyleds * device, uint8_t target_id, keyleds_block_id_t block_id,
-                      const struct keyleds_key_color * keys, unsigned keys_nb)
+KEYLEDS_EXPORT bool keyleds_set_leds(Keyleds * device, uint8_t target_id,
+                                     keyleds_block_id_t block_id,
+                                     const struct keyleds_key_color * keys, unsigned keys_nb)
 {
     uint16_t per_call = (device->max_report_size - 3 - 4) / 4;
     uint16_t offset, idx;
@@ -163,8 +165,9 @@ bool keyleds_set_leds(Keyleds * device, uint8_t target_id, keyleds_block_id_t bl
     return true;
 }
 
-bool keyleds_set_led_block(Keyleds * device, uint8_t target_id, keyleds_block_id_t block_id,
-                           uint8_t red, uint8_t green, uint8_t blue)
+KEYLEDS_EXPORT bool keyleds_set_led_block(Keyleds * device, uint8_t target_id,
+                                          keyleds_block_id_t block_id,
+                                          uint8_t red, uint8_t green, uint8_t blue)
 {
     assert(device != NULL);
     assert((unsigned)block_id <= UINT16_MAX);
@@ -172,7 +175,7 @@ bool keyleds_set_led_block(Keyleds * device, uint8_t target_id, keyleds_block_id
                         5, (uint8_t[]){block_id >> 8, block_id, red, green, blue}) >= 0;
 }
 
-bool keyleds_commit_leds(Keyleds * device, uint8_t target_id)
+KEYLEDS_EXPORT bool keyleds_commit_leds(Keyleds * device, uint8_t target_id)
 {
     assert(device != NULL);
     return keyleds_call(device, NULL, 0, target_id, KEYLEDS_FEATURE_LEDS, F_COMMIT,

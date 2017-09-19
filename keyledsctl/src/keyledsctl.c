@@ -242,7 +242,7 @@ int main_info(int argc, char * argv[])
         goto err_main_info_close;
     }
     (void)printf("Name:           %s\n", name);
-    free(name);
+    keyleds_free_device_name(name);
 
     /* Device type */
     if (!keyleds_get_device_type(device, KEYLEDS_TARGET_DEFAULT, &type)) {
@@ -306,7 +306,7 @@ int main_info(int argc, char * argv[])
                          report_rates[idx]);
         }
         (void)putchar('\n');
-        free(report_rates);
+        keyleds_free_reportrates(report_rates);
     }
 
     /* Leds feature */

@@ -19,8 +19,8 @@
 #include "config.h"
 #include "keyleds.h"
 
-const char * keyleds_lookup_string(const struct keyleds_indexed_string * strings,
-                                   unsigned id)
+KEYLEDS_EXPORT const char * keyleds_lookup_string(const struct keyleds_indexed_string * strings,
+                                                  unsigned id)
 {
     unsigned idx;
     for (idx = 0; strings[idx].str != NULL; idx += 1) {
@@ -29,8 +29,8 @@ const char * keyleds_lookup_string(const struct keyleds_indexed_string * strings
     return NULL;
 }
 
-unsigned keyleds_string_id(const struct keyleds_indexed_string * strings,
-                           const char * str)
+KEYLEDS_EXPORT unsigned keyleds_string_id(const struct keyleds_indexed_string * strings,
+                                          const char * str)
 {
     unsigned idx;
     for (idx = 0; strings[idx].str != NULL; idx += 1) {
@@ -43,7 +43,7 @@ unsigned keyleds_string_id(const struct keyleds_indexed_string * strings,
 #define DEFSTR(id, str)         { (id), (str) },
 #define END_LIST            { 0, NULL } };
 
-START_LIST(feature_names)
+KEYLEDS_EXPORT START_LIST(feature_names)
     DEFSTR(0x0000, "root")
     DEFSTR(0x0001, "feature")
     DEFSTR(0x0003, "version")
@@ -55,13 +55,13 @@ START_LIST(feature_names)
     DEFSTR(0x8080, "leds")
 END_LIST
 
-START_LIST(protocol_types)
+KEYLEDS_EXPORT START_LIST(protocol_types)
     DEFSTR(0, "application")
     DEFSTR(1, "bootloader")
     DEFSTR(2, "hardware")
 END_LIST
 
-START_LIST(device_types)
+KEYLEDS_EXPORT START_LIST(device_types)
     DEFSTR(KEYLEDS_DEVICE_TYPE_KEYBOARD, "keyboard")
     DEFSTR(KEYLEDS_DEVICE_TYPE_REMOTE, "remote")
     DEFSTR(KEYLEDS_DEVICE_TYPE_NUMPAD, "numpad")
@@ -72,7 +72,7 @@ START_LIST(device_types)
     DEFSTR(KEYLEDS_DEVICE_TYPE_RECEIVER, "receiver")
 END_LIST
 
-START_LIST(block_id_names)
+KEYLEDS_EXPORT START_LIST(block_id_names)
     DEFSTR(KEYLEDS_BLOCK_KEYS, "keys")
     DEFSTR(KEYLEDS_BLOCK_MULTIMEDIA, "media")
     DEFSTR(KEYLEDS_BLOCK_GKEYS, "gkeys")
@@ -83,7 +83,7 @@ END_LIST
 #ifdef INPUT_CODES_FOUND
 #include <linux/input.h>
 
-START_LIST(keycode_names)
+KEYLEDS_EXPORT START_LIST(keycode_names)
     DEFSTR(KEY_ESC, "ESC")
     DEFSTR(KEY_1, "1")
     DEFSTR(KEY_2, "2")
@@ -250,6 +250,6 @@ START_LIST(keycode_names)
 END_LIST
 
 #else
-START_LIST(keycode_names)
+KEYLEDS_EXPORT START_LIST(keycode_names)
 END_LIST
 #endif

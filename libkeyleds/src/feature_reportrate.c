@@ -31,7 +31,7 @@ enum reportrate_feature_function {
     F_SET_REPORT_RATE = 2
 };
 
-bool keyleds_get_reportrates(Keyleds * device, uint8_t target_id, unsigned ** out)
+KEYLEDS_EXPORT bool keyleds_get_reportrates(Keyleds * device, uint8_t target_id, unsigned ** out)
 {
     uint8_t data[1];
     unsigned length, idx, rate_idx;
@@ -66,7 +66,12 @@ bool keyleds_get_reportrates(Keyleds * device, uint8_t target_id, unsigned ** ou
     return true;
 }
 
-bool keyleds_get_reportrate(Keyleds * device, uint8_t target_id, unsigned * rate)
+KEYLEDS_EXPORT void keyleds_free_reportrates(unsigned * rates)
+{
+    free(rates);
+}
+
+KEYLEDS_EXPORT bool keyleds_get_reportrate(Keyleds * device, uint8_t target_id, unsigned * rate)
 {
     uint8_t data[1];
 
@@ -81,7 +86,7 @@ bool keyleds_get_reportrate(Keyleds * device, uint8_t target_id, unsigned * rate
     return true;
 }
 
-bool keyleds_set_reportrate(Keyleds * device, uint8_t target_id, unsigned rate)
+KEYLEDS_EXPORT bool keyleds_set_reportrate(Keyleds * device, uint8_t target_id, unsigned rate)
 {
     if (keyleds_call(device, NULL, 0,
                      target_id, KEYLEDS_FEATURE_REPORTRATE, F_SET_REPORT_RATE,
