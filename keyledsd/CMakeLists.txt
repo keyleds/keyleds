@@ -27,7 +27,7 @@ if(NOT KEYLEDSD_DATA_PREFIX)
     set(KEYLEDSD_DATA_PREFIX ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME})
 endif()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -std=c++14 -fno-rtti -fstrict-enums -fvisibility=hidden")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -std=c++14 -fPIC -fno-rtti -fstrict-enums -fvisibility=hidden")
 
 if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL x86_64 OR ${CMAKE_SYSTEM_PROCESSOR} STREQUAL i686)
     set(KEYLEDSD_USE_MMX 1)
@@ -87,14 +87,15 @@ endif()
 ##############################################################################
 # Dependencies
 
-set(QT_MODULES QtCore)
+set(QT_MODULES Core)
 IF(NOT NO_DBUS)
-    set(QT_MODULES ${QT_MODULES} QtDBus)
+    set(QT_MODULES ${QT_MODULES} DBus)
 ENDIF()
 
-find_package(Qt4 REQUIRED ${QT_MODULES})
-set(keyledsd_DEPS ${keyledsd_DEPS} Qt4::QtCore)
-qt4_wrap_cpp(moc_sources
+find_package(Qt5 COMPONENTS ${QT_MODULES} REQUIRED)
+include_directories(${Qt5Core_INCLUDE_DIRS})
+set(keyledsd_DEPS ${keyledsd_DEPS} Qt5Core)
+qt5_wrap_cpp(moc_sources
     include/keyledsd/ContextWatcher.h
     include/keyledsd/Device.h
     include/keyledsd/DeviceManager.h
@@ -105,8 +106,9 @@ qt4_wrap_cpp(moc_sources
 set(keyledsd_SRCS ${keyledsd_SRCS} ${moc_sources})
 
 IF(NOT NO_DBUS)
-    set(keyledsd_DEPS ${keyledsd_DEPS} Qt4::QtDBus)
-    qt4_wrap_cpp(moc_sources
+    include_directories(${Qt5DBus_INCLUDE_DIRS})
+    set(keyledsd_DEPS ${keyledsd_DEPS} Qt5DBus)
+    qt5_wrap_cpp(moc_sources
         include/dbus/DeviceManagerAdaptor.h
         include/dbus/ServiceAdaptor.h
     )
@@ -114,27 +116,28 @@ IF(NOT NO_DBUS)
 ENDIF()
 
 find_package(Threads REQUIRED)
+set(keyledsd_DEPS ${keyledsd_DEPS} ${CMAKE_THREAD_LIBS_INIT})
 
 find_library(LIBUDEV udev)
 IF(NOT LIBUDEV)
     MESSAGE(SEND_ERROR "libudev is required for keyledsd")
 ENDIF(NOT LIBUDEV)
+set(keyledsd_DEPS ${keyledsd_DEPS} ${LIBUDEV})
 
 find_library(LIBYAML yaml)
 IF(NOT LIBYAML)
     MESSAGE(SEND_ERROR "libyaml is required for keyledsd")
 ENDIF(NOT LIBYAML)
+set(keyledsd_DEPS ${keyledsd_DEPS} ${LIBYAML})
 
 find_package(LibXml2 REQUIRED)
 include_directories(${LIBXML2_INCLUDE_DIR})
 set(keyledsd_DEPS ${keyledsd_DEPS} ${LIBXML2_LIBRARIES})
 
 find_package(X11)
+include_directories(${X11_Xlib_INCLUDE_PATH} ${X11_Xinput_INCLUDE_PATH})
 set(keyledsd_DEPS ${keyledsd_DEPS} ${X11_LIBRARIES} ${X11_Xinput_LIB})
 
-set(keyledsd_DEPS "${keyledsd_DEPS}"
-    ${CMAKE_THREAD_LIBS_INIT} ${LIBUDEV} ${LIBYAML}
-)
 configure_file("include/config.h.in" "config.h")
 
 ##############################################################################

@@ -17,6 +17,8 @@
 cmake_minimum_required (VERSION 3.0)
 project(keyledsctl VERSION 1.0 LANGUAGES C)
 
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Werror -std=c99 -D_POSIX_C_SOURCE=200112L")
+
 ##############################################################################
 # Sources
 

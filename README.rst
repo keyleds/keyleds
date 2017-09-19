@@ -76,13 +76,12 @@ Compiling
 Building keyleds requires the following dependencies to be installed:
 
 * ``cmake``
-* ``Qt4 core`` development files
+* ``Qt5 core`` development files
 * ``X11`` development files, including ``XInput``.
 * ``libc`` development files
 * ``libudev`` development files
 * ``libxml2`` development files
 * ``libyaml`` development files
-* ``Qt4`` dbus development files *(optional, required for DBus support)*
 * ``python3`` development files *(optional, used for python bindings)*
 * ``cython3`` *(optional, used for python bindings)*
 
@@ -90,7 +89,7 @@ The following one-liner should get you up and running on debian systems:
 
 .. code-block:: bash
 
-    sudo apt-get install build-essential cmake linux-libc-dev libqt4-dev libudev-dev libx11-dev libxi-dev libxml2-dev libyaml-dev
+    sudo apt-get install build-essential cmake linux-libc-dev libudev-dev libx11-dev libxi-dev libxml2-dev libyaml-dev qtbase5-dev
 
 Then build the project with the following command:
 
