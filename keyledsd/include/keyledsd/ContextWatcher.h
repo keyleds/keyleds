@@ -37,9 +37,8 @@ class XContextWatcher : public QObject
 {
     Q_OBJECT
 public:
-                    XContextWatcher(QObject *parent = nullptr);
-                    XContextWatcher(std::string display, QObject *parent = nullptr);
-                    XContextWatcher(xlib::Display && display, QObject *parent = nullptr);
+                    XContextWatcher(xlib::Display & display, QObject *parent = nullptr);
+                    ~XContextWatcher() override;
 
     const Context & current() const noexcept { return m_context; }
 
@@ -49,16 +48,15 @@ signals:
     void            contextChanged(const keyleds::Context &);
 
 protected:
-    virtual void    setupDisplay(xlib::Display &);
-    virtual void    handleEvent(XEvent &);
+    virtual void    handleEvent(const XEvent &);
     virtual void    onActiveWindowChanged(xlib::Window *);
     void            setContext(xlib::Window *);
 
-private slots:
-    void            onDisplayEvent(int);
+private:
+    static void     displayEventCallback(const XEvent &, void*);
 
 protected:
-    xlib::Display                   m_display;          ///< X display connection
+    xlib::Display &                 m_display;          ///< X display connection
     std::unique_ptr<xlib::Window>   m_activeWindow;     ///< Currently active window, or nullptr if none
     Context                         m_context;          ///< Current context
 };

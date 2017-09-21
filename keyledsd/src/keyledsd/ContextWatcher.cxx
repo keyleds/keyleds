@@ -25,33 +25,12 @@ const std::string activeWindowAtom = "_NET_ACTIVE_WINDOW";
 
 /****************************************************************************/
 
-XContextWatcher::XContextWatcher(QObject *parent)
- : XContextWatcher(std::string(), parent) {}
-
-XContextWatcher::XContextWatcher(std::string display, QObject *parent)
+XContextWatcher::XContextWatcher(xlib::Display & display, QObject *parent)
  : QObject(parent),
    m_display(display)
 {
-    setupDisplay(m_display);
-    // this QObject takes automatic ownership of QSocketNotifier
-    auto notifier = new QSocketNotifier(m_display.connection(), QSocketNotifier::Read, this);
-    QObject::connect(notifier, SIGNAL(activated(int)),
-                     this, SLOT(onDisplayEvent(int)));
-}
+    m_display.registerHandler(PropertyNotify, displayEventCallback, this);
 
-XContextWatcher::XContextWatcher(xlib::Display && display, QObject *parent)
- : QObject(parent),
-   m_display(std::move(display))
-{
-    setupDisplay(m_display);
-    // this QObject takes automatic ownership of QSocketNotifier
-    auto notifier = new QSocketNotifier(m_display.connection(), QSocketNotifier::Read, this);
-    QObject::connect(notifier, SIGNAL(activated(int)),
-                     this, SLOT(onDisplayEvent(int)));
-}
-
-void XContextWatcher::setupDisplay(xlib::Display & display)
-{
     XSetWindowAttributes attributes;
     attributes.event_mask = PropertyChangeMask;
     display.root().changeAttributes(CWEventMask, attributes);
@@ -60,16 +39,13 @@ void XContextWatcher::setupDisplay(xlib::Display & display)
     onActiveWindowChanged(m_activeWindow.get());
 }
 
-void XContextWatcher::onDisplayEvent(int)
+XContextWatcher::~XContextWatcher()
 {
-    while (XPending(m_display.handle())) {
-        XEvent event;
-        XNextEvent(m_display.handle(), &event);
-        handleEvent(event);
-    }
+    onActiveWindowChanged(nullptr);
+    m_display.unregisterHandler(displayEventCallback);
 }
 
-void XContextWatcher::handleEvent(XEvent & event)
+void XContextWatcher::handleEvent(const XEvent & event)
 {
     switch (event.type) {
     case PropertyNotify:
@@ -147,4 +123,9 @@ void XContextWatcher::setContext(xlib::Window * window)
         m_context = std::move(context);
         emit contextChanged(m_context);
     }
+}
+
+void XContextWatcher::displayEventCallback(const XEvent & event, void * ptr)
+{
+    reinterpret_cast<XContextWatcher *>(ptr)->handleEvent(event);
 }

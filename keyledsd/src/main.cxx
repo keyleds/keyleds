@@ -16,8 +16,7 @@
  */
 #include <locale.h>
 #include <unistd.h>
-#include <QCoreApplication>
-#include <QTimer>
+#include <QtCore>
 #include <csignal>
 #include <iostream>
 #include "config.h"
@@ -27,6 +26,7 @@
 #include "keyledsd/Configuration.h"
 #include "keyledsd/ContextWatcher.h"
 #include "keyledsd/Service.h"
+#include "tools/XWindow.h"
 #include "config.h"
 #include "logging.h"
 
@@ -38,6 +38,15 @@ int main(int argc, char * argv[])
 {
     keyleds::Configuration configuration;
     INFO("keyledsd v" KEYLEDSD_VERSION_STR " starting up");
+
+    // Connect to X display
+    std::unique_ptr<xlib::Display> display;
+    try {
+        display = std::make_unique<xlib::Display>();
+        INFO("using display ", display->name(), " for events");
+    } catch (xlib::Error & error) {
+        ERROR("skipping display events: ", error.what());
+    }
 
     // Create event loop
     QCoreApplication app(argc, argv);
@@ -61,14 +70,14 @@ int main(int argc, char * argv[])
     // Setup application components
     auto service = new keyleds::Service(configuration, &app);
 
-    try {
-        auto contextWatcher = new keyleds::XContextWatcher(service);
+    if (display != nullptr) {
+        auto displayNotifier = new QSocketNotifier(display->connection(), QSocketNotifier::Read, service);
+        QObject::connect(displayNotifier, &QSocketNotifier::activated,
+                         [&display](int){ display->processEvents(); });
+        auto contextWatcher = new keyleds::XContextWatcher(*display, service);
         service->setContext(contextWatcher->current());
-        QObject::connect(contextWatcher, SIGNAL(contextChanged(const keyleds::Context &)),
-                         service, SLOT(setContext(const keyleds::Context &)));
-        INFO("using display ", contextWatcher->display().name(), " for events");
-    } catch (xlib::Error & error) {
-        ERROR("skipping display events: ", error.what());
+        QObject::connect(contextWatcher, &keyleds::XContextWatcher::contextChanged,
+                         service, &keyleds::Service::setContext);
     }
 
 #ifndef NO_DBUS

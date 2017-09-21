@@ -117,6 +117,14 @@ class Display final
 public:
     typedef ::Display *     handle_type;
     typedef std::map<std::string, Atom> atom_map;
+    typedef int             event_type;
+    typedef void            (*event_handler)(const XEvent &, void * data);
+private:
+    struct HandlerInfo {
+        event_type      event;
+        event_handler   handler;
+        void *          data;
+    };
 public:
                             Display(std::string name = std::string());
                             Display(const Display &) = delete;
@@ -132,6 +140,9 @@ public:
     Atom                    atom(const std::string & name) const;
 
     int                     connection() const;
+    void                    processEvents();
+    void                    registerHandler(event_type, event_handler, void * data = nullptr);
+    void                    unregisterHandler(event_handler);
 
     std::unique_ptr<Window> getActiveWindow();
 
@@ -143,6 +154,7 @@ private:
     std::string             m_name;
     Window                  m_root;
     mutable atom_map        m_atomCache;
+    std::vector<HandlerInfo> m_handlers;        ///< Callback list
 };
 
 /****************************************************************************/

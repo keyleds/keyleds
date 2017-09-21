@@ -14,6 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <limits>
@@ -73,6 +74,30 @@ std::unique_ptr<::Display> xlib::Display::openDisplay(const std::string & name)
                           : ("failed to open display " + name));
     }
     return std::unique_ptr<::Display>(display);
+}
+
+void xlib::Display::processEvents()
+{
+    while (XPending(m_display.get())) {
+        XEvent event;
+        XNextEvent(m_display.get(), &event);
+        for (const auto & item : m_handlers) {
+            if (item.event == event.type || item.event == 0) {
+                (*item.handler)(event, item.data);
+            }
+        }
+    }
+}
+
+void xlib::Display::registerHandler(event_type type, event_handler handler, void * data)
+{
+    m_handlers.push_back({type, handler, data});
+}
+
+void xlib::Display::unregisterHandler(event_handler handler)
+{
+    m_handlers.erase(std::remove_if(m_handlers.begin(), m_handlers.end(),
+                                    [handler](const auto & item){ return item.handler == handler; }));
 }
 
 /****************************************************************************/
