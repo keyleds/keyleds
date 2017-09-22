@@ -2,10 +2,9 @@ Source: keyleds
 Section: utils
 Priority: optional
 Maintainer: Julien Hartmann <juli1.hartmann@gmail.com>
-Build-Depends: debhelper (>=9), cmake, po-debconf, linux-libc-dev, libqt4-dev, libudev-dev, libx11-dev, libxi-dev, libxml2-dev, libyaml-dev
+Build-Depends: debhelper:native (>=9), cmake:native, qtbase5-dev-tools:native, linux-libc-dev, qtbase5-dev, libudev-dev, libx11-dev, libxi-dev, libxml2-dev, libyaml-dev
 Standards-Version: 3.9.8
 Homepage: https://github.com/spectras/keyleds
-X-Python3-Version: >= 3.2
 #Vcs-Git: https://github.com/spectras/keyleds.git
 
 Package: keyleds

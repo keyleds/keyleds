@@ -15,8 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 cmake_minimum_required (VERSION 3.0)
-project(keyledsd VERSION 0.4.1 LANGUAGES CXX)
-include(CheckCXXSourceCompiles)
+project(keyledsd VERSION 0.4.4 LANGUAGES CXX)
+include(CheckCSourceCompiles)
 
 ##############################################################################
 # Options
@@ -83,6 +83,20 @@ if(KEYLEDSD_USE_SSE2)
     set_source_files_properties("src/tools/accelerated_sse2.c"
                                 PROPERTIES COMPILE_FLAGS "-msse2")
 endif()
+
+##############################################################################
+# Feature detection
+
+check_c_source_compiles("int main() {
+  return __builtin_cpu_supports(\"sse2\");
+}" HAVE_BUILTIN_CPU_SUPPORTS)
+
+check_c_source_compiles("
+int foo_actual() { return 0; }
+static int (*resolve_foo(void))()  { return foo_actual; }
+int foo() __attribute__((ifunc(\"resolve_foo\")));
+int main() { return foo(); }
+" HAVE_IFUNC_ATTRIBUTE)
 
 ##############################################################################
 # Dependencies

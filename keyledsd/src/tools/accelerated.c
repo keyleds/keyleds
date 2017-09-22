@@ -19,46 +19,40 @@
 #include "tools/accelerated.h"
 #include "config.h"
 
-#if defined __clang__
-  #if __has_attribute(ifunc)
-    #define CPU_DETECT_IFUNC
-  #else
-    #define CPU_DETECT_CACHE
-  #endif
-#elif defined __GNUC__
-  #define CPU_DETECT_IFUNC
-#else
-  #error Runtime CPU detection no implemented for this compiler
-#endif
+/****************************************************************************/
+/* blend */
 
-
-void blend_plain(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length);
-void blend_mmx(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length);
 void blend_sse2(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length);
+void blend_mmx(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length);
+void blend_plain(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length);
 
+#ifdef HAVE_BUILTIN_CPU_SUPPORTS
 static void (*resolve_blend(void))(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
 {
-#if defined __GNUC__ && !defined __clang__
+#  if defined __GNUC__ && !defined __clang__
     __builtin_cpu_init();
-#endif
-#ifdef KEYLEDSD_USE_SSE2
+#  endif
+#  ifdef KEYLEDSD_USE_SSE2
     if (__builtin_cpu_supports("sse2")) { return blend_sse2; }
-#endif
-#ifdef KEYLEDSD_USE_MMX
+#  endif
+#  ifdef KEYLEDSD_USE_MMX
     if (__builtin_cpu_supports("mmx")) { return blend_mmx; }
-#endif
+#  endif
     return blend_plain;
 }
 
-
-#if defined CPU_DETECT_IFUNC
+#  ifdef HAVE_IFUNC_ATTRIBUTE
 void blend(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
     __attribute__((ifunc("resolve_blend")));
-#elif defined CPU_DETECT_CACHE
+#  else
 static void (*resolved_blend)(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length);
 void blend(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
 {
     if (resolved_blend == NULL) { resolved_blend = resolve_blend(); }
     (*resolved_blend)(dst, src, length);
 }
+#  endif
+#else
+void blend(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
+    { blend_plain(dst, src, length); }
 #endif
