@@ -54,8 +54,14 @@ Service::~Service()
 
 void Service::init()
 {
-    auto display = std::make_unique<xlib::Display>();
-    onDisplayAdded(display);
+    try {
+        auto display = std::make_unique<xlib::Display>();
+        onDisplayAdded(display);
+    } catch (xlib::Error & err) {
+        CRITICAL("X display initialization failed: ", err.what());
+        QCoreApplication::quit();
+        return;
+    }
     setActive(true);
 }
 
