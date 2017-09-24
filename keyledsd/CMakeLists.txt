@@ -55,6 +55,7 @@ set(keyledsd_SRCS
     src/keyledsd/RenderLoop.cxx
     src/keyledsd/Service.cxx
     src/plugins/breathe.cxx
+    src/plugins/feedback.cxx
     src/plugins/fill.cxx
     src/plugins/stars.cxx
     src/plugins/wave.cxx

@@ -108,6 +108,11 @@ effects:
               color: red
               period: 4000
               group: alert-keys
+    feedback:
+        plugins:
+            - plugin: feedback
+              color: red
+              duration: 1000
 
 # Profiles trigger effect activation when their lookup matches
 # Their name doesn't matter, but order does, as when several profiles match
@@ -120,6 +125,8 @@ effects:
 profiles:
     __default__:                    # Special name __default__ is active when no other profile matches
         effect: logitech-default    # Apply this effect
+    __overlay__:
+        effect: feedback
     empty:
         lookup: { class: ^$ }       # Empty class: when no window is active or screen is locked
         effect: rainbow
