@@ -29,12 +29,12 @@ using keyleds::RGBAColor;
 using keyleds::RenderTarget;
 static constexpr float pi = 3.14159265358979f;
 
-class BreatheRenderer final : public keyleds::Renderer
+class BreathePlugin final : public keyleds::EffectPlugin
 {
 public:
-    BreatheRenderer(const keyleds::DeviceManager & manager,
-                    const keyleds::Configuration::Plugin & conf,
-                    const keyleds::IRendererPlugin::group_map & groups)
+    BreathePlugin(const keyleds::DeviceManager & manager,
+                  const keyleds::Configuration::Plugin & conf,
+                  const keyleds::EffectPluginFactory::group_map & groups)
      : m_buffer(manager.getRenderTarget()),
        m_time(0), m_period(10000)
     {
@@ -87,4 +87,4 @@ private:
     unsigned            m_period;
 };
 
-REGISTER_RENDERER("breathe", BreatheRenderer)
+REGISTER_EFFECT_PLUGIN("breathe", BreathePlugin)

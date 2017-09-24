@@ -21,6 +21,7 @@
 #include <thread>
 #include <type_traits>
 #include "keyledsd/Device.h"
+#include "keyledsd/PluginManager.h"
 #include "keyledsd/RenderLoop.h"
 #include "tools/accelerated.h"
 #include "keyleds.h"
@@ -32,7 +33,6 @@ static_assert(sizeof(keyleds::RGBAColor) == 4, "RGBAColor must be tightly packed
 LOGGING("render-loop");
 
 using keyleds::RenderTarget;
-using keyleds::Renderer;
 using keyleds::RenderLoop;
 
 static std::size_t align(std::size_t value, std::size_t alignment)
@@ -95,14 +95,10 @@ void keyleds::blend(RenderTarget & lhs, const RenderTarget & rhs)
 
 /****************************************************************************/
 
-Renderer::~Renderer() {}
-
-/****************************************************************************/
-
-RenderLoop::RenderLoop(Device & device, renderer_list renderers, unsigned fps)
+RenderLoop::RenderLoop(Device & device, effect_plugin_list effects, unsigned fps)
     : AnimationLoop(fps),
       m_device(device),
-      m_renderers(std::move(renderers)),
+      m_effects(std::move(effects)),
       m_state(renderTargetFor(device)),
       m_buffer(renderTargetFor(device))
 {
@@ -115,11 +111,11 @@ RenderLoop::RenderLoop(Device & device, renderer_list renderers, unsigned fps)
 RenderLoop::~RenderLoop()
 {}
 
-void RenderLoop::setRenderers(renderer_list renderers)
+void RenderLoop::setEffects(effect_plugin_list effects)
 {
-    std::lock_guard<std::mutex> lock(m_mRenderers);
-    m_renderers = std::move(renderers);
-    DEBUG("enabled ", m_renderers.size(), " renderers for loop ", this);
+    std::lock_guard<std::mutex> lock(m_mEffects);
+    m_effects = std::move(effects);
+    DEBUG("enabled ", m_effects.size(), " effects for loop ", this);
 }
 
 RenderTarget RenderLoop::renderTargetFor(const Device & device)
@@ -135,16 +131,16 @@ RenderTarget RenderLoop::renderTargetFor(const Device & device)
 bool RenderLoop::render(unsigned long nanosec)
 {
     // Run all renderers
-    bool hasRenderers;
+    bool hasEffects;
     {
-        std::lock_guard<std::mutex> lock(m_mRenderers);
-        hasRenderers = !m_renderers.empty();
-        for (const auto & renderer : m_renderers) {
-            renderer->render(nanosec, m_buffer);
+        std::lock_guard<std::mutex> lock(m_mEffects);
+        hasEffects = !m_effects.empty();
+        for (const auto & effect : m_effects) {
+            effect->render(nanosec, m_buffer);
         }
     }
 
-    if (hasRenderers) {
+    if (hasEffects) {
         m_device.flush();   // Ensure another program using the device did not fill
                             // The inbound report queue.
 

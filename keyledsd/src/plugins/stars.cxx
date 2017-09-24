@@ -42,7 +42,7 @@ static unsigned fromConf(const keyleds::Configuration::Plugin & conf,
 
 /****************************************************************************/
 
-class StarsRenderer final : public keyleds::Renderer
+class StarsPlugin final : public keyleds::EffectPlugin
 {
     struct Star
     {
@@ -52,9 +52,9 @@ class StarsRenderer final : public keyleds::Renderer
     };
 
 public:
-    StarsRenderer(const keyleds::DeviceManager & manager,
-                  const keyleds::Configuration::Plugin & conf,
-                  const keyleds::IRendererPlugin::group_map & groups)
+    StarsPlugin(const keyleds::DeviceManager & manager,
+                const keyleds::Configuration::Plugin & conf,
+                const keyleds::EffectPluginFactory::group_map & groups)
      : m_buffer(manager.getRenderTarget()),
        m_duration(fromConf(conf, "duration", 1000)),
        m_stars(fromConf(conf, "number", 8))
@@ -136,4 +136,4 @@ private:
     std::vector<Star>       m_stars;
 };
 
-REGISTER_RENDERER("stars", StarsRenderer)
+REGISTER_EFFECT_PLUGIN("stars", StarsPlugin)

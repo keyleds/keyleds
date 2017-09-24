@@ -29,46 +29,67 @@ LOGGING("dev-manager");
 using keyleds::Configuration;
 using keyleds::Context;
 using keyleds::DeviceManager;
-using keyleds::LayoutDescription;
+using keyleds::EffectPluginManager;
 using keyleds::KeyDatabase;
+using keyleds::LayoutDescription;
 using keyleds::RenderLoop;
+
+static const char defaultProfileName[] = "__default__";
+static const char overlayProfileName[] = "__overlay__";
 
 /****************************************************************************/
 
-static std::vector<const Configuration::Profile *> profilesForContext(
+static std::vector<const Configuration::Effect *> effectsForContext(
     const Configuration & config, const std::string & serial, const Context & context)
 {
-    auto it = config.devices().find(serial);
-    const auto & devLabel = (it == config.devices().end()) ? serial : it->second;
+    auto dit = config.devices().find(serial);
+    const auto & devLabel = (dit == config.devices().end()) ? serial : dit->second;
 
-    auto result = std::vector<const Configuration::Profile *>();
-    bool hasNonDefault = false;
+    const Configuration::Profile * profile = nullptr;
+    const Configuration::Profile * defaultProfile = nullptr;
+    const Configuration::Profile * overlayProfile = nullptr;
 
     for (const auto & profileEntry : config.profiles()) {
-        const auto & profile = profileEntry.second;
-        const auto & devices = profile.devices();
-
-        if ((devices.empty() ||
-                std::find(devices.begin(), devices.end(), devLabel) != devices.end()) &&
-            (profile.isDefault() ||
-                profile.lookup().match(context))) {
-            result.push_back(&profile);
-            if (!profile.isDefault()) { hasNonDefault = true; }
+        const auto & devices = profileEntry.devices();
+        if (!devices.empty() && std::find(devices.begin(), devices.end(), devLabel) == devices.end())
+            continue;
+        if (profileEntry.name() == defaultProfileName) {
+            defaultProfile = &profileEntry;
+        } else if (profileEntry.name() == overlayProfileName) {
+            overlayProfile = &profileEntry;
+        } else if (profileEntry.lookup().match(context)) {
+            profile = &profileEntry;
         }
     }
+    if (profile == nullptr) { profile = defaultProfile; }
+    DEBUG("effectsForContext selected profile <", profile->name(), ">");
 
-    if (hasNonDefault) {
-        auto itend = std::remove_if(result.begin(), result.end(),
-                                    [](const auto & profile) { return profile->isDefault(); });
-        result.erase(itend, result.end());
+    auto result = std::vector<const Configuration::Effect *>();
+    for (const auto & name : profile->effects()) {
+        auto eit = config.effects().find(name);
+        if (eit == config.effects().end()) {
+            ERROR("profile <", profile->name(), "> references unknown effect <", name, ">");
+            continue;
+        }
+        result.push_back(&eit->second);
+    }
+    if (overlayProfile != nullptr) {
+        for (const auto & name : overlayProfile->effects()) {
+            auto eit = config.effects().find(name);
+            if (eit == config.effects().end()) {
+                ERROR("overlay profile references unknown effect <", name, ">");
+                continue;
+            }
+            result.push_back(&eit->second);
+        }
     }
     return result;
 }
 
 /****************************************************************************/
 
-DeviceManager::LoadedProfile::LoadedProfile(renderer_list && renderers)
- : m_renderers(std::forward<renderer_list>(renderers))
+DeviceManager::LoadedEffect::LoadedEffect(plugin_list && plugins)
+ : m_plugins(std::move(plugins))
 {}
 
 /****************************************************************************/
@@ -81,7 +102,7 @@ DeviceManager::DeviceManager(const device::Description & description, Device && 
       m_eventDevices(findEventDevices(description)),
       m_device(std::move(device)),
       m_keyDB(buildKeyDB(conf, m_device)),
-      m_renderLoop(m_device, loadRenderers(context), 16)
+      m_renderLoop(m_device, loadEffects(context), 16)
 {
     m_renderLoop.setPaused(false);
 }
@@ -93,7 +114,7 @@ DeviceManager::~DeviceManager()
 
 void DeviceManager::setContext(const Context & context)
 {
-    m_renderLoop.setRenderers(loadRenderers(context));
+    m_renderLoop.setEffects(loadEffects(context));
 }
 
 void DeviceManager::setPaused(bool val)
@@ -104,8 +125,8 @@ void DeviceManager::setPaused(bool val)
 void DeviceManager::reloadConfiguration()
 {
     DEBUG("Device(", this, ") clearing renderers cache");
-    m_renderLoop.setRenderers({});
-    m_profiles.clear();
+    m_renderLoop.setEffects({});
+    m_effects.clear();
 }
 
 std::string DeviceManager::getSerial(const device::Description & description)
@@ -204,30 +225,30 @@ KeyDatabase DeviceManager::buildKeyDB(const Configuration & conf, const Device &
     return db;
 }
 
-keyleds::RenderLoop::renderer_list DeviceManager::loadRenderers(const Context & context)
+keyleds::RenderLoop::effect_plugin_list DeviceManager::loadEffects(const Context & context)
 {
-    const auto & profiles = profilesForContext(m_configuration, m_serial, context);
+    const auto & effects = effectsForContext(m_configuration, m_serial, context);
 
-    RenderLoop::renderer_list renderers;
-    for (const auto & profile : profiles) {
-        const auto & loadedProfile = getProfile(*profile);
-        const auto & profileRenderers = loadedProfile.renderers();
-        std::copy(profileRenderers.begin(),
-                  profileRenderers.end(),
-                  std::back_inserter(renderers));
+    RenderLoop::effect_plugin_list plugins;
+    for (const auto & effect : effects) {
+        const auto & loadedEffect = getEffect(*effect);
+        const auto & effectPlugins = loadedEffect.plugins();
+        std::copy(effectPlugins.begin(),
+                  effectPlugins.end(),
+                  std::back_inserter(plugins));
     }
-    return renderers;
+    return plugins;
 }
 
-DeviceManager::LoadedProfile & DeviceManager::getProfile(const Configuration::Profile & conf)
+DeviceManager::LoadedEffect & DeviceManager::getEffect(const Configuration::Effect & conf)
 {
     {
-        auto it = m_profiles.find(conf.id());
-        if (it != m_profiles.end()) { return it->second; }
+        auto it = m_effects.find(conf.name());
+        if (it != m_effects.end()) { return it->second; }
     }
 
     // Load groups
-    keyleds::IRendererPlugin::group_map groups;
+    keyleds::EffectPluginFactory::group_map groups;
     for (const auto & group : conf.groups()) {
         auto keys = decltype(groups)::mapped_type();
         for (const auto & name : group.second) {
@@ -254,9 +275,9 @@ DeviceManager::LoadedProfile & DeviceManager::getProfile(const Configuration::Pr
         groups.emplace(group.first, std::move(keys));
     }
 
-    // Load renderers
-    auto & manager = RendererPluginManager::instance();
-    LoadedProfile::renderer_list renderers;
+    // Load effects
+    auto & manager = EffectPluginManager::instance();
+    LoadedEffect::plugin_list plugins;
     for (const auto & pluginConf : conf.plugins()) {
         auto plugin = manager.get(pluginConf.name());
         if (!plugin) {
@@ -264,19 +285,19 @@ DeviceManager::LoadedProfile & DeviceManager::getProfile(const Configuration::Pr
             continue;
         }
         DEBUG("loaded plugin ", pluginConf.name());
-        renderers.push_back(plugin->createRenderer(*this, pluginConf, groups));
+        plugins.push_back(plugin->createEffect(*this, pluginConf, groups));
     }
 
-    auto it = m_profiles.emplace(conf.id(), LoadedProfile(std::move(renderers))).first;
+    auto it = m_effects.emplace(conf.name(), LoadedEffect(std::move(plugins))).first;
     return it->second;
 }
 
-keyleds::RenderLoop::renderer_list DeviceManager::LoadedProfile::renderers() const
+keyleds::RenderLoop::effect_plugin_list DeviceManager::LoadedEffect::plugins() const
 {
-    keyleds::RenderLoop::renderer_list result;
-    result.reserve(m_renderers.size());
-    std::transform(m_renderers.begin(),
-                   m_renderers.end(),
+    keyleds::RenderLoop::effect_plugin_list result;
+    result.reserve(m_plugins.size());
+    std::transform(m_plugins.begin(),
+                   m_plugins.end(),
                    std::back_inserter(result),
                    [](auto & ptr) { return ptr.get(); });
     return result;

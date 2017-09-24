@@ -39,12 +39,12 @@ private:
 
 
 
-class FillRenderer final : public keyleds::Renderer
+class FillPlugin final : public keyleds::EffectPlugin
 {
 public:
-    FillRenderer(const keyleds::DeviceManager &,
-                 const keyleds::Configuration::Plugin & conf,
-                 const keyleds::IRendererPlugin::group_map & groups)
+    FillPlugin(const keyleds::DeviceManager &,
+               const keyleds::Configuration::Plugin & conf,
+               const keyleds::EffectPluginFactory::group_map & groups)
     {
         auto cit = conf.items().find("color");
         if (cit != conf.items().end()) {
@@ -78,4 +78,4 @@ private:
     std::vector<Rule>   m_rules;
 };
 
-REGISTER_RENDERER("fill", FillRenderer)
+REGISTER_EFFECT_PLUGIN("fill", FillPlugin)

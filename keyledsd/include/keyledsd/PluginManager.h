@@ -28,51 +28,63 @@
 namespace keyleds {
 
 class DeviceManager;
-class Renderer;
 
 /****************************************************************************/
-/** Renderer plugin interface
+/** Effect plugin interface
  *
- * Each plugin must expose this interface and register it with the plugin manager.
+ * This interface is instanciated once per device, through the EffectPluginFactory
+ */
+class EffectPlugin
+{
+public:
+    virtual         ~EffectPlugin();
+    virtual void    render(unsigned long nanosec, RenderTarget & target) = 0;
+    virtual void    handleKeyEvent(const KeyDatabase::Key &, bool press);
+};
+
+/****************************************************************************/
+/** Effect plugin factory interface
+ *
+ * Each effect plugin must expose this interface and register it with the plugin manager.
  * This interface is instanciated exactly once per plugin, and is used to create
  * renderer objects when profiles are loaded.
  */
-class IRendererPlugin
+class EffectPluginFactory
 {
 public:
     typedef std::map<std::string, std::vector<const KeyDatabase::Key*>> group_map;
 public:
-    virtual                 ~IRendererPlugin() = 0;
+    virtual                 ~EffectPluginFactory();
 
     virtual const std::string & name() const noexcept = 0;
-    virtual std::unique_ptr<Renderer> createRenderer(const DeviceManager &,
-                                                     const Configuration::Plugin &,
-                                                     const group_map &) = 0;
+    virtual std::unique_ptr<EffectPlugin> createEffect(const DeviceManager &,
+                                                       const Configuration::Plugin &,
+                                                       const group_map &) = 0;
 };
 
 /****************************************************************************/
-/** Renderer plugin manager
+/** Effect plugin manager
  *
  * Singleton manager that tracks renderer plugins
  */
-class RendererPluginManager final
+class EffectPluginManager final
 {
     // Singleton lifecycle
-                            RendererPluginManager() = default;
+                            EffectPluginManager() = default;
 public:
-                            RendererPluginManager(const RendererPluginManager &) = delete;
-                            RendererPluginManager(RendererPluginManager &&) = delete;
+                            EffectPluginManager(const EffectPluginManager &) = delete;
+                            EffectPluginManager(EffectPluginManager &&) = delete;
 
-    static RendererPluginManager & instance();
+    static EffectPluginManager & instance();
 
     // Plugin management
 public:
-    typedef std::map<std::string, IRendererPlugin *> plugin_map;
+    typedef std::map<std::string, EffectPluginFactory *> plugin_map;
 public:
 
     const plugin_map &      plugins() const { return m_plugins; }
-    void                    registerPlugin(std::string name, IRendererPlugin * plugin);
-    IRendererPlugin *       get(const std::string & name);
+    void                    registerPlugin(std::string name, EffectPluginFactory *);
+    EffectPluginFactory *   get(const std::string & name);
 
 private:
     plugin_map              m_plugins;
@@ -84,27 +96,27 @@ private:
  * Provides a default implementation for a plugin, allowing simple registration
  * of IRender-derived classes with the plugin manager.
  */
-template<class T> class RendererPlugin : public IRendererPlugin
+template<class T> class DefaultEffectPluginFactory final : public EffectPluginFactory
 {
 public:
-    RendererPlugin(std::string name) : m_name(name)
+    DefaultEffectPluginFactory(std::string name) : m_name(name)
     {
-        RendererPluginManager::instance().registerPlugin(m_name, this);
+        EffectPluginManager::instance().registerPlugin(m_name, this);
     }
 
     const std::string & name() const noexcept override { return m_name; }
-    std::unique_ptr<Renderer> createRenderer(const DeviceManager & manager,
-                                             const Configuration::Plugin & conf,
-                                             const group_map & groups) override
+    std::unique_ptr<EffectPlugin> createEffect(const DeviceManager & manager,
+                                               const Configuration::Plugin & conf,
+                                               const group_map & groups) override
     {
         return std::make_unique<T>(manager, conf, groups);
     }
 protected:
-    const std::string       m_name;
+    const std::string   m_name;
 };
 
-#define REGISTER_RENDERER(name, klass) \
-    static USED const keyleds::RendererPlugin<klass> maker_##klass(name);
+#define REGISTER_EFFECT_PLUGIN(name, klass) \
+    static USED const keyleds::DefaultEffectPluginFactory<klass> maker_##klass(name);
 
 /****************************************************************************/
 

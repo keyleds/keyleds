@@ -49,12 +49,12 @@ static unsigned fromConf(const keyleds::Configuration::Plugin & conf,
 
 /****************************************************************************/
 
-class WaveRenderer final : public keyleds::Renderer
+class WavePlugin final : public keyleds::EffectPlugin
 {
 public:
-    WaveRenderer(const keyleds::DeviceManager & manager,
-                 const keyleds::Configuration::Plugin & conf,
-                 const keyleds::IRendererPlugin::group_map & groups)
+    WavePlugin(const keyleds::DeviceManager & manager,
+               const keyleds::Configuration::Plugin & conf,
+               const keyleds::EffectPluginFactory::group_map & groups)
      : m_buffer(manager.getRenderTarget()),
        m_time(0),
        m_period(fromConf(conf, "period", 10000)),
@@ -204,4 +204,4 @@ private:
     unsigned            m_direction;
 };
 
-REGISTER_RENDERER("wave", WaveRenderer)
+REGISTER_EFFECT_PLUGIN("wave", WavePlugin)

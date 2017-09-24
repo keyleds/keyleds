@@ -16,26 +16,30 @@
  */
 #include "keyledsd/PluginManager.h"
 
-using keyleds::Renderer;
-using keyleds::IRendererPlugin;
-using keyleds::RendererPluginManager;
+using keyleds::KeyDatabase;
+using keyleds::EffectPlugin;
+using keyleds::EffectPluginFactory;
+using keyleds::EffectPluginManager;
 
-IRendererPlugin::~IRendererPlugin() {}
+EffectPlugin::~EffectPlugin() {}
+void EffectPlugin::handleKeyEvent(const KeyDatabase::Key &, bool) {}
 
-void RendererPluginManager::registerPlugin(std::string name, IRendererPlugin * plugin)
+EffectPluginFactory::~EffectPluginFactory() {}
+
+void EffectPluginManager::registerPlugin(std::string name, EffectPluginFactory * plugin)
 {
     m_plugins[name] = plugin;
 }
 
-IRendererPlugin * RendererPluginManager::get(const std::string & name)
+EffectPluginFactory * EffectPluginManager::get(const std::string & name)
 {
     auto it = m_plugins.find(name);
     if (it == m_plugins.end()) { return nullptr; }
     return it->second;
 }
 
-RendererPluginManager & RendererPluginManager::instance()
+EffectPluginManager & EffectPluginManager::instance()
 {
-    static RendererPluginManager singleton;
+    static EffectPluginManager singleton;
     return singleton;
 }

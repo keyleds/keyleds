@@ -21,16 +21,11 @@ groups:
     alpha: [a, b, c, d, e, f, g, h, i, j, k, l, m,
             n, o, p, q, r, s, t, u, v, w, x, y, z]
     modifiers: [lctrl, rctrl, lshift, rshift, lmeta, lalt, ralt, capslock, fn, compose]
-    arrows: &arrows [left, right, up, down]
+    arrows: [left, right, up, down]
 
-# Profiles trigger plugin activation when their lookup matches
-# Their name doesn't matter, but order does, as plugins are always rendered
-# in the order they appear here, so plugins that come after can overwrite
-# led states set buy those that came before.
-#
-# Any number of profiles can be active at any time. A profile with no lookup
-# or default setting is always active. Lookups use regular expression. They
-# must match fully (as if they were automatically enclosed in ^$).
+# Effects define a named set of plugins for use in profiles.
+# Effects are rendered in order, so effects down the list can see and/or
+# overwrite whatever was rendered by effects higher in the list.
 #
 # Anytime a color is specified, it can be either:
 #   - a 6-digit RGB hexadecimal color, web-style. Eg: ffff00 is yellow.
@@ -42,16 +37,13 @@ groups:
 # flickering, every key should be written to by at least one plugin.
 # If that is an issue, simply start with the fill plugin, setting all keys
 # to opaque black or some other color.
-# 
-profiles:
-    default:
-        default: yes            # Disable this profile if any other matches
+#
+effects:
+    logitech-default:
         plugins:
             - plugin: fill
               color: logitech
-    empty:                      # When no window is active or screen is locked
-        lookup:
-            class: ^$           # empty class
+    rainbow:
         plugins:
             - plugin: wave
               period: 5000      # cycle duration in ms
@@ -63,44 +55,7 @@ profiles:
               color3: cyan
               color4: green
               color5: yellow
-    video:
-        lookup:
-            class: mpv
-        plugins:
-            - plugin: fill
-              color: black
-            - plugin: breathe
-              color: gray           # breathing keys will go from that color to transparent
-              period: 10000         # breathe period in ms
-              group: special        # name of key group to play effect on
-    kate:
-        lookup:
-            class: kate
-        # Profile can be restricted to some devices like this:
-        # devices: [foo]
-        groups:
-            escape: [esc]           # it's possible to make profile-specific key groups
-        plugins:
-            - plugin: fill
-              color: 404060         # color is applied to all keys, then
-              escape: orange        # fill plugin accepts key group names
-              arrows: green         # that will override some keys
-              functions: yellow     #
-              modifiers: darkblue   # if "color" is missing, it behaves as 00000000
-    kate-modified:
-        lookup:
-            class: kate
-            title: ".* [*] — Kate"
-        groups:
-            file-modified: [esc, logo, game, light]
-        plugins:
-            - plugin: breathe
-              color: red
-              period: 4000
-              group: file-modified
-    konsole:
-        lookup:
-            class: konsole
+    green-breathe:
         groups:
             special: [enter, backspace, tab]
             wipe: [esc, insert, delete, home, end, pageup, pagedown]
@@ -109,17 +64,15 @@ profiles:
               color: 004000
               special: 002000
             - plugin: breathe
-              color: green
-              period: 5000
+              color: green          # breathing keys will go from that color to transparent
+              period: 5000          # breathe period in ms
             - plugin: fill
-              arrows: black
-              functions: black
+              arrows: black         # fill plugin accepts key group names
+              functions: black      # that will override some keys
               functions-extra: black
               wipe: black
               modifiers: 006060
-    chromium:                       # Okay that profile is ugly, it's just for demo
-        lookup:
-            class: "[Cc]hromium-browser"
+    nightsky:
         plugins:
             - plugin: fill          # define a night sky background
               color: darkblue
@@ -129,3 +82,59 @@ profiles:
               color0: white         # colors to use for the stars. They are picked
               color1: yellow        # randomly from that set. If not specified,
               color2: beige         # you'll get all the rainbow.
+    standby:
+        plugins:
+            - plugin: fill
+              color: black
+            - plugin: breathe
+              color: gray
+              period: 10000
+              group: special        # name of key group to play effect on
+    text-colors:
+        groups:
+            escape: [esc]           # it's possible to make effect-scope key groups
+        plugins:
+            - plugin: fill
+              color: 404060         # color is special: it's applied to all keys before
+              escape: orange        # key groups are filled
+              arrows: green
+              functions: yellow
+              modifiers: darkblue
+    alert:
+        groups:
+            alert-keys: [esc, logo, game, light]
+        plugins:
+            - plugin: breathe
+              color: red
+              period: 4000
+              group: alert-keys
+
+# Profiles trigger effect activation when their lookup matches
+# Their name doesn't matter, but order does, as when several profiles match
+# the last matching wins.
+#
+# Only one profile can be active at any time. A profile with no lookup
+# or default setting is always active. Lookups use regular expression. They
+# must match fully (as if they were automatically enclosed in ^$).
+#
+profiles:
+    __default__:                    # Special name __default__ is active when no other profile matches
+        effect: logitech-default    # Apply this effect
+    empty:
+        lookup: { class: ^$ }       # Empty class: when no window is active or screen is locked
+        effect: rainbow
+    video:
+        lookup: { class: mpv }
+        effect: standby
+    kate:
+        lookup: { class: kate }
+        effect: text-colors
+    kate-modified:
+        lookup: { class: kate, title: ".* [*] — Kate" }
+        effects: [ text-colors, alert ] # Apply those effects, in that order
+    konsole:
+        lookup: { class: konsole }
+        effect: green-breathe
+    chromium:                       # Okay that profile is ugly, it's just for demo
+        lookup: { class: "[Cc]hromium-browser" }
+        effect: nightsky

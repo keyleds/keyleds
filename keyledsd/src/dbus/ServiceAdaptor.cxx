@@ -72,7 +72,7 @@ QList<QDBusObjectPath> ServiceAdaptor::devicePaths() const
 
 QStringList ServiceAdaptor::plugins() const
 {
-    const auto & manager = keyleds::RendererPluginManager::instance();
+    const auto & manager = keyleds::EffectPluginManager::instance();
 
     QStringList plugins;
     plugins.reserve(manager.plugins().size());

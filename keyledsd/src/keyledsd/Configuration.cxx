@@ -82,7 +82,8 @@ public:
     Configuration::path_list    m_layoutPaths;
     Configuration::device_map   m_devices;
     Configuration::group_map    m_groups;
-    Configuration::profile_map  m_profiles;
+    Configuration::effect_map   m_effects;
+    Configuration::profile_list m_profiles;
 
 private:
     std::stack<state_ptr>               m_state;
@@ -297,7 +298,7 @@ public:
     void aliasEntry(ConfigurationBuilder & builder, const std::string & key,
                     const std::string & anchor) override
     {
-        m_value.emplace(std::make_pair(key, builder.getGroupAlias(anchor)));
+        m_value.emplace(key, builder.getGroupAlias(anchor));
     }
 
     value_type && result() { return std::move(m_value); }
@@ -312,7 +313,7 @@ private:
 class PluginListState final : public ConfigurationBuilder::BuildState
 {
 public:
-    typedef Configuration::Profile::plugin_list value_type;
+    typedef Configuration::Effect::plugin_list value_type;
 public:
     PluginListState(state_type type) : BuildState(type) {}
     void print(std::ostream & out) const override { out <<"plugins-list"; }
@@ -345,24 +346,104 @@ private:
     value_type      m_value;
 };
 
+/// Configuration builder state: within an effect
+class EffectState final: public MappingBuildState
+{
+    enum SubState : state_type { GroupList, PluginList };
+public:
+    EffectState(std::string name, state_type type = 0)
+      : MappingBuildState(type), m_name(name) {}
+    void print(std::ostream & out) const override { out <<"effect(" <<m_name <<')'; }
+
+    state_ptr sequenceEntry(ConfigurationBuilder & builder, const std::string & key,
+                            const std::string & anchor) override
+    {
+        if (key == "plugins") { return std::make_unique<PluginListState>(SubState::PluginList); }
+        return MappingBuildState::sequenceEntry(builder, key, anchor);
+    }
+
+    state_ptr mappingEntry(ConfigurationBuilder & builder, const std::string & key,
+                           const std::string & anchor) override
+    {
+        if (key == "groups") { return std::make_unique<GroupListState>(SubState::GroupList); }
+        return MappingBuildState::mappingEntry(builder, key, anchor);
+    }
+
+    void subStateEnd(ConfigurationBuilder & builder, BuildState & state) override
+    {
+        switch(state.type()) {
+            case SubState::GroupList: {
+                m_groups = state.as<GroupListState>().result();
+                break;
+            }
+            case SubState::PluginList: {
+                m_plugins = state.as<PluginListState>().result();
+                break;
+            }
+        }
+        MappingBuildState::subStateEnd(builder, state);
+    }
+
+    Configuration::Effect result()
+    {
+        return Configuration::Effect(
+            std::move(m_name),
+            std::move(m_groups),
+            std::move(m_plugins)
+        );
+    }
+
+private:
+    std::string                         m_name;
+    Configuration::Effect::group_map    m_groups;
+    Configuration::Effect::plugin_list  m_plugins;
+};
+
+/// Configuration builder state: within an effect list
+class EffectListState final: public MappingBuildState
+{
+public:
+    typedef std::map<std::string, Configuration::Effect> value_type;
+public:
+    EffectListState(state_type type) : MappingBuildState(type) {}
+    void print(std::ostream & out) const override { out <<"effect-map"; }
+
+    state_ptr mappingEntry(ConfigurationBuilder &, const std::string & key, const std::string &) override
+    {
+        return std::make_unique<EffectState>(key);
+    }
+
+    void subStateEnd(ConfigurationBuilder & builder, BuildState & state) override
+    {
+        m_value.emplace(currentKey(), state.as<EffectState>().result());
+        MappingBuildState::subStateEnd(builder, state);
+    }
+
+    value_type &&   result() { return std::move(m_value); }
+
+private:
+    value_type      m_value;
+};
 
 /// Configuration builder state: within a profile
 class ProfileState final: public MappingBuildState
 {
-    enum SubState : state_type { Lookup, DeviceList, GroupList, PluginList };
+    enum SubState : state_type { Lookup, DeviceList, EffectList };
 public:
     ProfileState(std::string name, state_type type = 0)
-      : MappingBuildState(type), m_name(name), m_isDefault(false) {}
+      : MappingBuildState(type), m_name(name) {}
     void print(std::ostream & out) const override { out <<"profile(" <<m_name <<')'; }
 
-    state_ptr sequenceEntry(ConfigurationBuilder & builder, const std::string & key, const std::string &) override
+    state_ptr sequenceEntry(ConfigurationBuilder & builder, const std::string & key,
+                            const std::string & anchor) override
     {
-        if (key == "plugins") { return std::make_unique<PluginListState>(SubState::PluginList); }
         if (key == "devices") { return std::make_unique<StringSequenceBuildState>(SubState::DeviceList); }
-        throw builder.makeError("unknown section");
+        if (key == "effects") { return std::make_unique<StringSequenceBuildState>(SubState::EffectList); }
+        return MappingBuildState::sequenceEntry(builder, key, anchor);
     }
 
-    state_ptr mappingEntry(ConfigurationBuilder & builder, const std::string & key, const std::string &) override
+    state_ptr mappingEntry(ConfigurationBuilder & builder, const std::string & key,
+                           const std::string & anchor) override
     {
         if (key == "lookup") {
             if (m_name == "default") {
@@ -370,15 +451,14 @@ public:
             }
             return std::make_unique<StringMappingBuildState>(SubState::Lookup);
         }
-        if (key == "groups") { return std::make_unique<GroupListState>(SubState::GroupList); }
-        throw builder.makeError("unknown section");
+        return MappingBuildState::mappingEntry(builder, key, anchor);
     }
 
     void scalarEntry(ConfigurationBuilder & builder, const std::string & key,
-                     const std::string & value, const std::string &) override
+                     const std::string & value, const std::string & anchor) override
     {
-        if (key == "default")   { m_isDefault = builder.parseScalar<bool>(value); }
-        else throw builder.makeError("unknown setting");
+        if (key == "effect")    { m_effects = { value }; return; }
+        MappingBuildState::scalarEntry(builder, key, value, anchor);
     }
 
     void subStateEnd(ConfigurationBuilder & builder, BuildState & state) override
@@ -397,12 +477,8 @@ public:
                 m_devices = state.as<StringSequenceBuildState>().result();
                 break;
             }
-            case SubState::GroupList: {
-                m_groups = state.as<GroupListState>().result();
-                break;
-            }
-            case SubState::PluginList: {
-                m_plugins = state.as<PluginListState>().result();
+            case SubState::EffectList: {
+                m_effects = state.as<StringSequenceBuildState>().result();
                 break;
             }
         }
@@ -413,29 +489,24 @@ public:
     {
         return Configuration::Profile(
             std::move(m_name),
-            m_isDefault,
             std::move(m_lookup),
             std::move(m_devices),
-            std::move(m_groups),
-            std::move(m_plugins)
+            std::move(m_effects)
         );
     }
 
 private:
     std::string                         m_name;
-    bool                                m_isDefault;
     Configuration::Profile::Lookup      m_lookup;
     Configuration::Profile::device_list m_devices;
-    Configuration::Profile::group_map   m_groups;
-    Configuration::Profile::plugin_list m_plugins;
+    Configuration::Profile::effect_list m_effects;
 };
-
 
 /// Configuration builder state: within a profile list
 class ProfileListState final : public MappingBuildState
 {
 public:
-    typedef std::map<std::string, Configuration::Profile> value_type;
+    typedef std::vector<Configuration::Profile> value_type;
 public:
     ProfileListState(state_type type) : MappingBuildState(type) {}
     void print(std::ostream & out) const override { out <<"profile-map"; }
@@ -447,7 +518,7 @@ public:
 
     void subStateEnd(ConfigurationBuilder & builder, BuildState & state) override
     {
-        m_value.emplace(std::make_pair(currentKey(), state.as<ProfileState>().result()));
+        m_value.emplace_back(state.as<ProfileState>().result());
         MappingBuildState::subStateEnd(builder, state);
     }
 
@@ -461,36 +532,37 @@ private:
 /// Configuration builder state: at document root
 class RootState final : public MappingBuildState
 {
-    enum SubState : state_type { Plugins, Layouts, Devices, Groups, Profiles };
+    enum SubState : state_type { Plugins, Layouts, Devices, Groups, Effects, Profiles };
 public:
     RootState() : MappingBuildState(0) {}
     void print(std::ostream & out) const override { out <<"root"; }
 
     state_ptr sequenceEntry(ConfigurationBuilder & builder, const std::string & key,
-                           const std::string &) override
+                           const std::string & anchor) override
     {
         if (key == "layouts") { return std::make_unique<StringSequenceBuildState>(SubState::Layouts); }
         if (key == "plugins") { return std::make_unique<StringSequenceBuildState>(SubState::Plugins); }
-        throw builder.makeError("unknown section");
+        return MappingBuildState::sequenceEntry(builder, key, anchor);
     }
 
     state_ptr mappingEntry(ConfigurationBuilder & builder, const std::string & key,
-                           const std::string &) override
+                           const std::string & anchor) override
     {
         if (key == "devices")   { return std::make_unique<StringMappingBuildState>(SubState::Devices); }
         if (key == "groups")    { return std::make_unique<GroupListState>(SubState::Groups); }
+        if (key == "effects")   { return std::make_unique<EffectListState>(SubState::Effects); }
         if (key == "profiles")  { return std::make_unique<ProfileListState>(SubState::Profiles); }
-        throw builder.makeError("unknown section");
+        return MappingBuildState::mappingEntry(builder, key, anchor);
     }
 
     void scalarEntry(ConfigurationBuilder & builder, const std::string & key,
-                     const std::string & value, const std::string &) override
+                     const std::string & value, const std::string & anchor) override
     {
         if (key == "auto_quit")     { builder.m_autoQuit = builder.parseScalar<bool>(value); }
         else if (key == "dbus")     { builder.m_noDBus = !builder.parseScalar<bool>(value); }
         else if (key == "plugins")  { builder.m_pluginPaths = { value }; }
         else if (key == "layouts")  { builder.m_layoutPaths = { value }; }
-        else throw builder.makeError("unknown setting");
+        else MappingBuildState::scalarEntry(builder, key, value, anchor);
     }
 
     void subStateEnd(ConfigurationBuilder & builder, BuildState & state) override
@@ -510,6 +582,9 @@ public:
         }
         case SubState::Groups:
             builder.m_groups = state.as<GroupListState>().result();
+            break;
+        case SubState::Effects:
+            builder.m_effects = state.as<EffectListState>().result();
             break;
         case SubState::Profiles:
             builder.m_profiles = state.as<ProfileListState>().result();
@@ -553,7 +628,7 @@ const std::string & ConfigurationBuilder::getScalarAlias(const std::string & anc
 }
 
 void ConfigurationBuilder::addGroupAlias(std::string anchor, const Configuration::key_list & value) {
-    m_groupAliases.emplace(std::make_pair(anchor, value));
+    m_groupAliases.emplace(anchor, value);
 }
 
 const Configuration::key_list & ConfigurationBuilder::getGroupAlias(std::string anchor) {
@@ -616,7 +691,8 @@ Configuration::Configuration(unsigned logLevel,
                              path_list layoutPaths,
                              device_map devices,
                              group_map groups,
-                             profile_map profiles)
+                             effect_map effects,
+                             profile_list profiles)
  : m_logLevel(logLevel),
    m_autoQuit(autoQuit),
    m_noDBus(noDBus),
@@ -624,6 +700,7 @@ Configuration::Configuration(unsigned logLevel,
    m_layoutPaths(std::move(layoutPaths)),
    m_devices(std::move(devices)),
    m_groups(std::move(groups)),
+   m_effects(std::move(effects)),
    m_profiles(std::move(profiles))
 {}
 
@@ -649,6 +726,7 @@ Configuration Configuration::loadFile(const std::string & path)
         std::move(builder.m_layoutPaths),
         std::move(builder.m_devices),
         std::move(builder.m_groups),
+        std::move(builder.m_effects),
         std::move(builder.m_profiles)
     );
 }
@@ -722,26 +800,25 @@ Configuration Configuration::loadArguments(int & argc, char * argv[])
 
 /****************************************************************************/
 
-Configuration::Profile::Profile(std::string name,
-                                bool isDefault,
-                                Lookup lookup,
-                                device_list devices,
-                                group_map groups,
-                                plugin_list plugins)
- : m_id(makeId()),
-   m_name(name),
-   m_isDefault(isDefault),
-   m_lookup(std::move(lookup)),
-   m_devices(std::move(devices)),
+Configuration::Effect::Effect(std::string name,
+                              group_map groups,
+                              plugin_list plugins)
+ : m_name(name),
    m_groups(std::move(groups)),
    m_plugins(std::move(plugins))
 {}
 
-Configuration::Profile::id_type Configuration::Profile::makeId()
-{
-    static std::atomic<id_type> counter(1);
-    return ++counter;
-}
+/****************************************************************************/
+
+Configuration::Profile::Profile(std::string name,
+                                Lookup lookup,
+                                device_list devices,
+                                effect_list effects)
+ : m_name(name),
+   m_lookup(std::move(lookup)),
+   m_devices(std::move(devices)),
+   m_effects(std::move(effects))
+{}
 
 /****************************************************************************/
 

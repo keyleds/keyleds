@@ -35,6 +35,7 @@ class Context;
 class Configuration final
 {
 public:
+    class Effect;
     class Plugin;
     class Profile;
     typedef std::vector<std::string> key_list;
@@ -42,7 +43,8 @@ public:
     typedef std::vector<std::string> path_list;
     typedef std::map<std::string, std::string> device_map;
     typedef std::map<std::string, key_list> group_map;
-    typedef std::map<std::string, Profile> profile_map;
+    typedef std::map<std::string, Effect> effect_map;
+    typedef std::vector<Profile> profile_list;
 private:
                         Configuration(unsigned logLevel,
                                       bool autoQuit,
@@ -51,7 +53,8 @@ private:
                                       path_list layoutPaths,
                                       device_map devices,
                                       group_map groups,
-                                      profile_map profiles);
+                                      effect_map effects,
+                                      profile_list profiles);
 
 public:
                         Configuration() = default;
@@ -61,16 +64,12 @@ public:
           void          setAutoQuit(bool v) { m_autoQuit = v; }
           bool          noDBus() const { return m_noDBus; }
 
-          path_list &   pluginPaths() { return m_pluginPaths; }
     const path_list &   pluginPaths() const { return m_pluginPaths; }
-          path_list &   layoutPaths() { return m_layoutPaths; }
     const path_list &   layoutPaths() const { return m_layoutPaths; }
-          device_map &  devices() { return m_devices; }
     const device_map &  devices() const { return m_devices; }
-          group_map &   groups() { return m_groups; }
     const group_map &   groups() const { return m_groups; }
-          profile_map & profiles() { return m_profiles; }
-    const profile_map & profiles() const { return m_profiles; }
+    const effect_map &  effects() const { return m_effects; }
+    const profile_list& profiles() const { return m_profiles; }
 
 public:
     static Configuration loadFile(const std::string & path);
@@ -85,7 +84,32 @@ private:
     path_list           m_layoutPaths;  ///< List of directories to search for layout files
     device_map          m_devices;      ///< Map of device serials to device names
     group_map           m_groups;       ///< Map of key group names to lists of key names
-    profile_map         m_profiles;     ///< Map of profile names to profile configurations
+    effect_map          m_effects;      ///< Map of effect names to effect configurations
+    profile_list        m_profiles;     ///< List of profile configurations
+};
+
+/****************************************************************************/
+
+/** Effect configuration
+ */
+class Configuration::Effect final
+{
+public:
+    typedef Configuration::group_map group_map;
+    typedef std::vector<Configuration::Plugin> plugin_list;
+public:
+                        Effect(std::string name,
+                               group_map groups,
+                               plugin_list plugins);
+
+    const std::string & name() const { return m_name; }
+    const group_map &   groups() const { return m_groups; }
+    const plugin_list & plugins() const { return m_plugins; }
+
+private:
+    std::string         m_name;         ///< User-readable name
+    group_map           m_groups;       ///< Map of key group names to lists of key names
+    plugin_list         m_plugins;      ///< List of plugin configurations for this effect
 };
 
 /****************************************************************************/
@@ -120,37 +144,24 @@ public:
         std::regex  m_instanceNameRE;       ///< Compiled version of m_instanceNameFilter
     };
 
-    typedef unsigned int id_type;
     typedef std::vector<std::string> device_list;
-    typedef Configuration::group_map group_map;
-    typedef std::vector<Configuration::Plugin> plugin_list;
+    typedef std::vector<std::string> effect_list;
 public:
                         Profile(std::string name,
-                                bool isDefault,
                                 Lookup lookup,
                                 device_list devices,
-                                group_map groups,
-                                plugin_list plugins);
-          id_type       id() const noexcept { return m_id; }
+                                effect_list effects);
+
     const std::string & name() const { return m_name; }
-          bool          isDefault() const { return m_isDefault; }
     const Lookup &      lookup() const { return m_lookup; }
     const device_list & devices() const { return m_devices; }
-    const group_map &   groups() const { return m_groups; }
-    const plugin_list & plugins() const { return m_plugins; }
+    const effect_list & effects() const { return m_effects; }
 
 private:
-    static id_type      makeId();
-
-private:
-    id_type             m_id;           ///< Unique throughout a service lifetime
     std::string         m_name;         ///< User-readable name
-    bool                m_isDefault;    ///< If set, m_lookup is ignored and this profile applies
-                                        ///  if and only if no non-default profile applies.
     Lookup              m_lookup;       ///< Matched against a context to determine whether to apply the profile
     device_list         m_devices;      ///< List of device names this profile is restricted to
-    group_map           m_groups;       ///< Map of profile-specific key group names to lists of key names
-    plugin_list         m_plugins;      ///< List of plugin configurations
+    effect_list         m_effects;      ///< List of effect names this profile activates
 };
 
 /****************************************************************************/

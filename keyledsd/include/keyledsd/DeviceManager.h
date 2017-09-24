@@ -43,23 +43,23 @@ class DeviceManager : public QObject
 {
     Q_OBJECT
 private:
-    /** A profile, fully loaded with plugins
+    /** An effect, fully loaded with plugins
      *
-     * Holds a list of loaded renderers to include while rendering device status
-     * and the matching profile configuration is enabled.
+     * Holds a list of loaded effect plugins to include while rendering device status
+     * and the matching effect is enabled.
      */
-    class LoadedProfile final
+    class LoadedEffect final
     {
     public:
-        typedef std::vector<std::unique_ptr<Renderer>> renderer_list;
+        typedef std::vector<std::unique_ptr<EffectPlugin>> plugin_list;
     public:
-                            LoadedProfile(renderer_list && renderers);
-                            LoadedProfile(LoadedProfile &&) = default;
-        RenderLoop::renderer_list renderers() const;
+                            LoadedEffect(plugin_list && plugins);
+                            LoadedEffect(LoadedEffect &&) = default;
+        RenderLoop::effect_plugin_list plugins() const;
     private:
-        renderer_list   m_renderers;
+        plugin_list m_plugins;
     };
-    typedef std::map<Configuration::Profile::id_type, LoadedProfile> profile_map;
+    typedef std::map<std::string, LoadedEffect> effect_map;
 
 public:
     typedef std::vector<std::string> dev_list;
@@ -92,8 +92,8 @@ private:
     static LayoutDescription loadLayoutDescription(const Configuration &, const Device &);
     static KeyDatabase      buildKeyDB(const Configuration &, const Device &);
 
-    RenderLoop::renderer_list loadRenderers(const Context &);
-    LoadedProfile &         getProfile(const Configuration::Profile &);
+    RenderLoop::effect_plugin_list loadEffects(const Context &);
+    LoadedEffect &          getEffect(const Configuration::Effect &);
 
 private:
     const Configuration &   m_configuration;    ///< Reference to service configuration
@@ -104,7 +104,7 @@ private:
     Device                  m_device;           ///< The device handled by this manager
     KeyDatabase             m_keyDB;            ///< Fully loaded key descriptions
 
-    profile_map             m_profiles;         ///< Map of profile id to loaded profile instance
+    effect_map              m_effects;          ///< Map of effect id to loaded effect instance
     RenderLoop              m_renderLoop;       ///< The RenderLoop in charge of the device
 };
 

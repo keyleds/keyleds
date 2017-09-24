@@ -27,7 +27,7 @@
 
 namespace keyleds {
 
-class Renderer;
+class EffectPlugin;
 
 /****************************************************************************/
 
@@ -87,12 +87,12 @@ void blend(RenderTarget &, const RenderTarget &);
 class RenderLoop final : public AnimationLoop
 {
 public:
-    typedef std::vector<Renderer *> renderer_list;
+    typedef std::vector<EffectPlugin *> effect_plugin_list;
 public:
-                    RenderLoop(Device & device, renderer_list renderers, unsigned fps);
+                    RenderLoop(Device &, effect_plugin_list, unsigned fps);
                     ~RenderLoop() override;
 
-    void            setRenderers(renderer_list renderers);
+    void            setEffects(effect_plugin_list);
 
     static RenderTarget renderTargetFor(const Device &);
 
@@ -103,29 +103,15 @@ private:
     void            getDeviceState(RenderTarget & state);
 
 private:
-    Device &        m_device;                   ///< The device to render to
-    renderer_list   m_renderers;                ///< Current list of renderers (not owned)
-    std::mutex      m_mRenderers;               ///< Controls access to m_renderers
+    Device &            m_device;               ///< The device to render to
+    effect_plugin_list  m_effects;              ///< Current list of effect plugins (unowned)
+    std::mutex          m_mEffects;             ///< Controls access to m_effects
 
-    RenderTarget    m_state;                    ///< Current state of the device
-    RenderTarget    m_buffer;                   ///< Buffer to render into, avoids re-creating it
+    RenderTarget        m_state;                ///< Current state of the device
+    RenderTarget        m_buffer;               ///< Buffer to render into, avoids re-creating it
                                                 ///  on every render
     std::vector<Device::ColorDirective> m_directives;   ///< Buffer of directives, avoids new/delete on
                                                         ///< every render
-};
-
-/****************************************************************************/
-
-/** Renderer interface
- *
- * An instance of a class supporting that interface is created for every link
- * in the rendering chain.
- */
-class Renderer
-{
-public:
-    virtual         ~Renderer();
-    virtual void    render(unsigned long nanosec, RenderTarget & target) = 0;
 };
 
 /****************************************************************************/
