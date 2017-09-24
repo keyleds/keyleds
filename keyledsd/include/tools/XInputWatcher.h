@@ -29,7 +29,7 @@ namespace xlib {
  *
  * Watches device hierarchy changes and emits signals when keys are pressed.
  */
-class XInputWatcher : public QObject
+class XInputWatcher final : public QObject
 {
     Q_OBJECT
     typedef std::map<xlib::Device::handle_type, xlib::Device> device_map;

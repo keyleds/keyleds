@@ -33,10 +33,6 @@
 
 #define USED    __attribute__((used))
 
-#ifdef Q_MOC_RUN
-#define final       /* final */
-#endif
-
 /* App-wide definitions */
 
 #define KEYLEDSD_VERSION_STR    "@PROJECT_VERSION@"

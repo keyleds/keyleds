@@ -42,8 +42,8 @@ FileWatcher::FileWatcher(QObject * parent)
     }
     // this QObject takes automatic ownership of QSocketNotifier
     auto notifier = new QSocketNotifier(m_fd, QSocketNotifier::Read, this);
-    QObject::connect(notifier, SIGNAL(activated(int)),
-                     this, SLOT(onNotifyReady(int)));
+    QObject::connect(notifier, &QSocketNotifier::activated,
+                     this, &FileWatcher::onNotifyReady);
 }
 
 FileWatcher::~FileWatcher()

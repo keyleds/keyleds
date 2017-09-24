@@ -58,11 +58,12 @@ static std::vector<const Configuration::Effect *> effectsForContext(
         } else if (profileEntry.name() == overlayProfileName) {
             overlayProfile = &profileEntry;
         } else if (profileEntry.lookup().match(context)) {
+            DEBUG("profile matches: ", profileEntry.name());
             profile = &profileEntry;
         }
     }
     if (profile == nullptr) { profile = defaultProfile; }
-    DEBUG("effectsForContext selected profile <", profile->name(), ">");
+    VERBOSE("selected profile <", profile->name(), ">");
 
     auto result = std::vector<const Configuration::Effect *>();
     for (const auto & name : profile->effects()) {
@@ -126,13 +127,16 @@ void DeviceManager::handleKeyEvent(int keyCode, bool press)
             break;
         }
     }
-    if (key == nullptr) { return; }
+    if (key == nullptr) {
+        DEBUG("unknown key ", keyCode, " on device ", m_serial);
+        return;
+    }
 
     auto lock = m_renderLoop.lock();
     for (const auto & plugin : m_renderLoop.effects()) {
         plugin->handleKeyEvent(*key, press);
     }
-    DEBUG("handleKeyEvent(", m_serial, ", ", key->name, ", ", press, ")");
+    DEBUG("key ", key->name, " ", press ? "pressed" : "released", " on device ", m_serial);
 }
 
 void DeviceManager::setPaused(bool val)
@@ -142,7 +146,7 @@ void DeviceManager::setPaused(bool val)
 
 void DeviceManager::reloadConfiguration()
 {
-    DEBUG("Device(", this, ") clearing renderers cache");
+    DEBUG("Device(", this, ") clearing effects cache");
     m_renderLoop.setEffects({});
     m_effects.clear();
 }
@@ -270,7 +274,7 @@ DeviceManager::LoadedEffect & DeviceManager::getEffect(const Configuration::Effe
             if (it != m_keyDB.end()) {
                 keys.push_back(&it->second);
             } else {
-                WARNING("unknown key ", name, " for device ", m_serial, " in profile ", conf.name());
+                VERBOSE("unknown key ", name, " for device ", m_serial, " in profile ", conf.name());
             }
         }
         groups.emplace(group.first, std::move(keys));
@@ -283,7 +287,7 @@ DeviceManager::LoadedEffect & DeviceManager::getEffect(const Configuration::Effe
             if (it != m_keyDB.end()) {
                 keys.push_back(&it->second);
             } else {
-                DEBUG("ignoring global key ", name, ": not found on device ", m_serial);
+                VERBOSE("ignoring global key ", name, ": not found on device ", m_serial);
             }
         }
         groups.emplace(group.first, std::move(keys));
@@ -298,7 +302,7 @@ DeviceManager::LoadedEffect & DeviceManager::getEffect(const Configuration::Effe
             ERROR("plugin ", pluginConf.name(), " not found");
             continue;
         }
-        DEBUG("loaded plugin ", pluginConf.name());
+        VERBOSE("loaded plugin ", pluginConf.name());
         plugins.push_back(plugin->createEffect(*this, pluginConf, groups));
     }
 

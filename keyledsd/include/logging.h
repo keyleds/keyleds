@@ -164,7 +164,8 @@ typedef level<0> critical;
 typedef level<1> error;
 typedef level<2> warning;
 typedef level<3> info;
-typedef level<4> debug;
+typedef level<4> verbose;
+typedef level<5> debug;
 
 #ifdef NDEBUG
 template <> template<typename...Args> void debug::print(Logger &, Args &&...) {}
@@ -175,11 +176,12 @@ template <> template<typename...Args> void debug::print(Logger &, Args &&...) {}
 
 #define LOGGING(name) static logging::Logger l_logger(name)
 
-#define CRITICAL(...)    logging::critical::print(l_logger, __VA_ARGS__)
-#define ERROR(...)       logging::error::print(l_logger, __VA_ARGS__)
-#define WARNING(...)     logging::warning::print(l_logger, __VA_ARGS__)
-#define INFO(...)        logging::info::print(l_logger, __VA_ARGS__)
-#define DEBUG(...)       logging::debug::print(l_logger, __VA_ARGS__)
+#define CRITICAL(...)   logging::critical::print(l_logger, __VA_ARGS__)
+#define ERROR(...)      logging::error::print(l_logger, __VA_ARGS__)
+#define WARNING(...)    logging::warning::print(l_logger, __VA_ARGS__)
+#define INFO(...)       logging::info::print(l_logger, __VA_ARGS__)
+#define VERBOSE(...)    logging::verbose::print(l_logger, __VA_ARGS__)
+#define DEBUG(...)      logging::debug::print(l_logger, __VA_ARGS__)
 
 /****************************************************************************/
 

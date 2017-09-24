@@ -33,7 +33,7 @@ namespace keyleds {
  *
  * Every context update generates a contextChanged signal.
  */
-class XContextWatcher : public QObject
+class XContextWatcher final : public QObject
 {
     Q_OBJECT
 public:
@@ -47,15 +47,14 @@ public:
 signals:
     void            contextChanged(const keyleds::Context &);
 
-protected:
+private:
     virtual void    handleEvent(const XEvent &);
     virtual void    onActiveWindowChanged(xlib::Window *, bool silent = false);
     void            setContext(xlib::Window *);
 
-private:
     static void     displayEventCallback(const XEvent &, void*);
 
-protected:
+private:
     xlib::Display &                 m_display;          ///< X display connection
     std::unique_ptr<xlib::Window>   m_activeWindow;     ///< Currently active window, or nullptr if none
     Context                         m_context;          ///< Current context

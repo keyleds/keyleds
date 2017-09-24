@@ -39,7 +39,7 @@ namespace dbus {
  * This DBus adaptor is attached to a keyleds::DeviceManager instance at creation
  * time. It is typically created by a ServiceAdaptor.
  */
-class DeviceManagerAdaptor: public QDBusAbstractAdaptor
+class DeviceManagerAdaptor final : public QDBusAbstractAdaptor
 {
     Q_OBJECT
     Q_CLASSINFO("D-Bus Interface", "org.etherdream.keyleds.DeviceManager")

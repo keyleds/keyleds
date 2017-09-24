@@ -39,10 +39,10 @@ Service::Service(Configuration & configuration, QObject * parent)
       m_deviceWatcher(nullptr)
 {
     m_active = false;
-    QObject::connect(&m_deviceWatcher, SIGNAL(deviceAdded(const device::Description &)),
-                     this, SLOT(onDeviceAdded(const device::Description &)));
-    QObject::connect(&m_deviceWatcher, SIGNAL(deviceRemoved(const device::Description &)),
-                     this, SLOT(onDeviceRemoved(const device::Description &)));
+    QObject::connect(&m_deviceWatcher, &keyleds::DeviceWatcher::deviceAdded,
+                     this, &Service::onDeviceAdded);
+    QObject::connect(&m_deviceWatcher, &keyleds::DeviceWatcher::deviceRemoved,
+                     this, &Service::onDeviceRemoved);
     DEBUG("created");
 }
 
@@ -50,15 +50,12 @@ Service::~Service()
 {
     setActive(false);
     m_devices.clear();
-    DEBUG("destroyed");
 }
 
 void Service::init()
 {
     auto display = std::make_unique<xlib::Display>();
-    INFO("using display ", display->name(), " for events");
     onDisplayAdded(display);
-
     setActive(true);
 }
 
@@ -66,14 +63,14 @@ void Service::init()
 
 void Service::setActive(bool active)
 {
-    DEBUG("switching to ", active ? "active" : "inactive", " mode");
+    VERBOSE("switching to ", active ? "active" : "inactive", " mode");
     m_deviceWatcher.setActive(active);
     m_active = active;
 }
 
 void Service::setContext(const Context & context)
 {
-    DEBUG("setContext ", context);
+    VERBOSE("setContext ", context);
     m_context.merge(context);
     for (auto & deviceEntry : m_devices) { deviceEntry.second->setContext(m_context); }
 }
@@ -93,7 +90,7 @@ void Service::handleKeyEvent(const std::string & devNode, int key, bool press)
 
 void Service::onDeviceAdded(const device::Description & description)
 {
-    DEBUG("device added: ", description.devNode());
+    VERBOSE("device added: ", description.devNode());
     try {
         auto device = Device(description.devNode());
         auto manager = std::make_unique<DeviceManager>(
@@ -118,6 +115,8 @@ void Service::onDeviceAdded(const device::Description & description)
         if (error.code() != KEYLEDS_ERROR_HIDNOPP &&
             error.code() != KEYLEDS_ERROR_HIDVERSION) {
             ERROR("not opening device ", description.devNode(), ": ", error.what());
+        } else {
+            VERBOSE("not opening device ", description.devNode(), ": ", error.what());
         }
     }
 }
@@ -149,13 +148,16 @@ void Service::onDisplayAdded(std::unique_ptr<xlib::Display> & display)
     QObject::connect(displayManager.get(), &keyleds::DisplayManager::keyEventReceived,
                      this, &keyleds::Service::handleKeyEvent);
     displayManager->scanDevices();
+    INFO("connected to display ", displayManager->display().name());
     setContext(displayManager->currentContext());
+
     m_displays.push_back(std::move(displayManager));
 }
 
 void Service::onDisplayRemoved()
 {
     assert(m_displays.size() == 1);
+    INFO("disconnecting from display ", m_displays.front()->display().name());
     m_displays.clear();
 }
 

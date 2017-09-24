@@ -39,7 +39,7 @@ class LayoutDescription;
  * configuration at creation time, and coordinates feature detection,
  * layout management, and related objects' life cycle.
  */
-class DeviceManager : public QObject
+class DeviceManager final : public QObject
 {
     Q_OBJECT
 private:

@@ -23,7 +23,7 @@
 #include <sys/inotify.h>
 #include <map>
 
-class FileWatcher : public QObject
+class FileWatcher final : public QObject
 {
     Q_OBJECT
 public:
@@ -54,6 +54,7 @@ private:
 public:
                         FileWatcher(QObject *parent = nullptr);
                         ~FileWatcher() override;
+                        FileWatcher(const FileWatcher &) = delete;
 
     watch_id            subscribe(const std::string & path, event events, Listener, void * data);
     void                unsubscribe(watch_id);

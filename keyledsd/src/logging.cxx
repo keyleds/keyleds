@@ -72,6 +72,7 @@ static const std::map<logging::level_t, std::string> levels = {
     { logging::error::value, "\033[1;31m<E>\033[;39m" },
     { logging::warning::value, "\033[33m<W>\033[39m" },
     { logging::info::value, "\033[1m<I>\033[m" },
+    { logging::verbose::value, "\033[1m<I>\033[m" },
     { logging::debug::value, "\033[2m<D>\033[m" }
 };
 static const std::string nameEnter = "\033[1m";

@@ -35,7 +35,7 @@ class XContextWatcher;
  *
  * Centralizes all operations and information for a specific display.
  */
-class DisplayManager : public QObject
+class DisplayManager final : public QObject
 {
     Q_OBJECT
 public:

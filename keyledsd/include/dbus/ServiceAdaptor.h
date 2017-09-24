@@ -36,7 +36,7 @@ namespace dbus {
  * creation / removal by creating and destroying dbus::DeviceManagerAdaptor
  * instances.
  */
-class ServiceAdaptor: public QDBusAbstractAdaptor
+class ServiceAdaptor final : public QDBusAbstractAdaptor
 {
 private:
     Q_OBJECT

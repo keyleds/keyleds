@@ -217,8 +217,8 @@ void DeviceWatcher::setActive(bool active)
         int fd = udev_monitor_get_fd(m_monitor.get());
         m_udevNotifier.reset(new QSocketNotifier(fd, QSocketNotifier::Read));
 
-        QObject::connect(m_udevNotifier.get(), SIGNAL(activated(int)),
-                         this, SLOT(onMonitorReady(int)));
+        QObject::connect(m_udevNotifier.get(), &decltype(m_udevNotifier)::element_type::activated,
+                         this, &DeviceWatcher::onMonitorReady);
         scan();
 
     } else {

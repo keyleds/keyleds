@@ -33,10 +33,10 @@ ServiceAdaptor::ServiceAdaptor(keyleds::Service *parent)
     qDBusRegisterMetaType<ServiceContextValues>();
 
     setAutoRelaySignals(true);
-    QObject::connect(parent, SIGNAL(deviceManagerAdded(keyleds::DeviceManager &)),
-                     this, SLOT(onDeviceManagerAdded(keyleds::DeviceManager &)));
-    QObject::connect(parent, SIGNAL(deviceManagerRemoved(keyleds::DeviceManager &)),
-                     this, SLOT(onDeviceManagerRemoved(keyleds::DeviceManager &)));
+    QObject::connect(parent, &keyleds::Service::deviceManagerAdded,
+                     this, &ServiceAdaptor::onDeviceManagerAdded);
+    QObject::connect(parent, &keyleds::Service::deviceManagerRemoved,
+                     this, &ServiceAdaptor::onDeviceManagerRemoved);
 }
 
 ServiceContextValues ServiceAdaptor::context() const

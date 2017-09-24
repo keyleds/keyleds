@@ -90,6 +90,9 @@ void XInputWatcher::handleEvent(const XEvent & event)
     case XI_RawKeyRelease: {
         const auto & data = *reinterpret_cast<XIRawEvent *>(event.xcookie.data);
         auto it = m_devices.find(data.deviceid);
+        DEBUG("key ", data.detail - MIN_KEYCODE, " ",
+              event.xcookie.evtype == XI_RawKeyPress ? "pressed" : "released",
+              " on device ", data.deviceid);
         if (it != m_devices.end()) {
             emit keyEventReceived(it->second.devNode(), data.detail - MIN_KEYCODE,
                                   event.xcookie.evtype == XI_RawKeyPress);
@@ -111,9 +114,9 @@ void XInputWatcher::onInputEnabled(xlib::Device::handle_type id, int type)
 
     errors.synchronize(m_display);
     if (errors) {
-        DEBUG("onInputEnabled, ignoring ", errors.errors().size(), " errors");
+        ERROR("failed to set events on device ", id, ": ", errors.errors().size(), " errors");
     } else {
-        DEBUG("xinput keyboard ", id, " enabled for device ", device.devNode());
+        VERBOSE("xinput keyboard ", id, " enabled for device ", device.devNode());
         m_devices.emplace(id, std::move(device));
     }
 }
@@ -125,7 +128,7 @@ void XInputWatcher::onInputDisabled(xlib::Device::handle_type id, int)
 
     xlib::ErrorCatcher errors;
     m_devices.erase(it);
-    DEBUG("xinput keyboard ", id, " disabled");
+    VERBOSE("xinput keyboard ", id, " disabled");
 
     errors.synchronize(m_display);
     if (errors) {

@@ -38,7 +38,7 @@ class DisplayManager;
  *
  * Manages devices and their manager, and dispatches events.
  */
-class Service : public QObject
+class Service final : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(bool active READ active WRITE setActive);

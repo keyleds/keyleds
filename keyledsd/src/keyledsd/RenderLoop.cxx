@@ -200,7 +200,7 @@ void RenderLoop::run()
                 }
 
                 // Recover from error, giving some delay to the device
-                INFO("error on device: ", error.what(), " re-syncing device");
+                WARNING("error on device: ", error.what(), " re-syncing device");
                 unsigned attempt;
                 for (attempt = 0; attempt < 5; ++attempt) {
                     std::this_thread::sleep_for(std::chrono::milliseconds(attempt * 100));

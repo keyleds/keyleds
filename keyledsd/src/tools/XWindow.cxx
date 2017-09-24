@@ -24,7 +24,7 @@
 #include <X11/extensions/XInput2.h>
 #include "tools/XWindow.h"
 
-constexpr const char * activeWindowAtom = "_NET_ACTIVE_WINDOW";
+static const char activeWindowAtom[] = "_NET_ACTIVE_WINDOW";
 
 void std::default_delete<::Display>::operator()(::Display *ptr) const { XCloseDisplay(ptr); }
 
