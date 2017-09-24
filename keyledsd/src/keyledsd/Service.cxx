@@ -15,12 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <QCoreApplication>
+#include <cassert>
 #include <unistd.h>
 #include "keyledsd/Configuration.h"
-#include "keyledsd/ContextWatcher.h"
 #include "keyledsd/Device.h"
 #include "keyledsd/DeviceManager.h"
+#include "keyledsd/DisplayManager.h"
 #include "keyledsd/Service.h"
+#include "tools/XWindow.h"
 #include "keyleds.h"
 #include "logging.h"
 
@@ -53,8 +55,14 @@ Service::~Service()
 
 void Service::init()
 {
+    auto display = std::make_unique<xlib::Display>();
+    INFO("using display ", display->name(), " for events");
+    onDisplayAdded(display);
+
     setActive(true);
 }
+
+/****************************************************************************/
 
 void Service::setActive(bool active)
 {
@@ -117,6 +125,28 @@ void Service::onDeviceRemoved(const device::Description & description)
         }
     }
 }
+
+/****************************************************************************/
+
+void Service::onDisplayAdded(std::unique_ptr<xlib::Display> & display)
+{
+    auto displayManager = std::make_unique<DisplayManager>(std::move(display));
+    QObject::connect(displayManager.get(), &keyleds::DisplayManager::contextChanged,
+                     this, &keyleds::Service::setContext);
+    QObject::connect(displayManager.get(), &keyleds::DisplayManager::keyEventReceived,
+                     this, &keyleds::Service::handleKeyEvent);
+    displayManager->scanDevices();
+    setContext(displayManager->currentContext());
+    m_displays.push_back(std::move(displayManager));
+}
+
+void Service::onDisplayRemoved()
+{
+    assert(m_displays.size() == 1);
+    m_displays.clear();
+}
+
+/****************************************************************************/
 
 void Service::onFileWatchEvent(void * managerPtr, FileWatcher::event, uint32_t, std::string)
 {

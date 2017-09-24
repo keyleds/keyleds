@@ -24,9 +24,7 @@
 #include "dbus/ServiceAdaptor.h"
 #endif
 #include "keyledsd/Configuration.h"
-#include "keyledsd/ContextWatcher.h"
 #include "keyledsd/Service.h"
-#include "tools/XWindow.h"
 #include "config.h"
 #include "logging.h"
 
@@ -38,15 +36,6 @@ int main(int argc, char * argv[])
 {
     keyleds::Configuration configuration;
     INFO("keyledsd v" KEYLEDSD_VERSION_STR " starting up");
-
-    // Connect to X display
-    std::unique_ptr<xlib::Display> display;
-    try {
-        display = std::make_unique<xlib::Display>();
-        INFO("using display ", display->name(), " for events");
-    } catch (xlib::Error & error) {
-        ERROR("skipping display events: ", error.what());
-    }
 
     // Create event loop
     QCoreApplication app(argc, argv);
@@ -69,16 +58,7 @@ int main(int argc, char * argv[])
 
     // Setup application components
     auto service = new keyleds::Service(configuration, &app);
-
-    if (display != nullptr) {
-        auto displayNotifier = new QSocketNotifier(display->connection(), QSocketNotifier::Read, service);
-        QObject::connect(displayNotifier, &QSocketNotifier::activated,
-                         [&display](int){ display->processEvents(); });
-        auto contextWatcher = new keyleds::XContextWatcher(*display, service);
-        service->setContext(contextWatcher->current());
-        QObject::connect(contextWatcher, &keyleds::XContextWatcher::contextChanged,
-                         service, &keyleds::Service::setContext);
-    }
+    QTimer::singleShot(0, service, SLOT(init()));
 
 #ifndef NO_DBUS
     if (!configuration.noDBus()) {
@@ -97,7 +77,6 @@ int main(int argc, char * argv[])
     std::signal(SIGQUIT, quit_handler);
     std::signal(SIGTERM, quit_handler);
     std::signal(SIGHUP, SIG_IGN);
-    QTimer::singleShot(0, service, SLOT(init()));
 
     return app.exec();
 }

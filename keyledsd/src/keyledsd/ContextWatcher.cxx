@@ -31,6 +31,7 @@ XContextWatcher::XContextWatcher(xlib::Display & display, QObject *parent)
 {
     m_display.registerHandler(PropertyNotify, displayEventCallback, this);
 
+    // Setup active window watch
     XSetWindowAttributes attributes;
     attributes.event_mask = PropertyChangeMask;
     display.root().changeAttributes(CWEventMask, attributes);
@@ -41,7 +42,7 @@ XContextWatcher::XContextWatcher(xlib::Display & display, QObject *parent)
 
 XContextWatcher::~XContextWatcher()
 {
-    onActiveWindowChanged(nullptr);
+    onActiveWindowChanged(nullptr, true);
     m_display.unregisterHandler(displayEventCallback);
 }
 
@@ -77,7 +78,7 @@ void XContextWatcher::handleEvent(const XEvent & event)
     }
 }
 
-void XContextWatcher::onActiveWindowChanged(xlib::Window * window)
+void XContextWatcher::onActiveWindowChanged(xlib::Window * window, bool silent)
 {
     xlib::ErrorCatcher errors;
 
@@ -92,7 +93,8 @@ void XContextWatcher::onActiveWindowChanged(xlib::Window * window)
         attributes.event_mask = PropertyChangeMask;
         window->changeAttributes(CWEventMask, attributes);
     }
-    setContext(window);
+
+    if (!silent) { setContext(window); }
 
     errors.synchronize(m_display);
     if (errors) {

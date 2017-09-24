@@ -48,6 +48,7 @@ set(keyledsd_SRCS
     src/keyledsd/ContextWatcher.cxx
     src/keyledsd/Device.cxx
     src/keyledsd/DeviceManager.cxx
+    src/keyledsd/DisplayManager.cxx
     src/keyledsd/KeyDatabase.cxx
     src/keyledsd/LayoutDescription.cxx
     src/keyledsd/PluginManager.cxx
@@ -114,6 +115,7 @@ qt5_wrap_cpp(moc_sources
     include/keyledsd/ContextWatcher.h
     include/keyledsd/Device.h
     include/keyledsd/DeviceManager.h
+    include/keyledsd/DisplayManager.h
     include/keyledsd/Service.h
     include/tools/DeviceWatcher.h
     include/tools/FileWatcher.h

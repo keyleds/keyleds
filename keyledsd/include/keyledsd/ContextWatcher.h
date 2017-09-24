@@ -49,7 +49,7 @@ signals:
 
 protected:
     virtual void    handleEvent(const XEvent &);
-    virtual void    onActiveWindowChanged(xlib::Window *);
+    virtual void    onActiveWindowChanged(xlib::Window *, bool silent = false);
     void            setContext(xlib::Window *);
 
 private:

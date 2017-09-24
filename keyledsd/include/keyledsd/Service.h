@@ -26,10 +26,13 @@
 #include "tools/DeviceWatcher.h"
 #include "tools/FileWatcher.h"
 
+namespace xlib { class Display; }
+
 namespace keyleds {
 
 class Configuration;
 class DeviceManager;
+class DisplayManager;
 
 /** Main service
  *
@@ -41,6 +44,7 @@ class Service : public QObject
     Q_PROPERTY(bool active READ active WRITE setActive);
 public:
     typedef std::map<std::string, std::unique_ptr<DeviceManager>> device_map;
+    typedef std::vector<std::unique_ptr<DisplayManager>> display_list;
 public:
                         Service(Configuration & configuration, QObject *parent = 0);
                         Service(const Service &) = delete;
@@ -64,6 +68,8 @@ signals:
 private slots:
     void                onDeviceAdded(const device::Description &);
     void                onDeviceRemoved(const device::Description &);
+    void                onDisplayAdded(std::unique_ptr<xlib::Display> &);
+    void                onDisplayRemoved();
 
 private:
     static void         onFileWatchEvent(void *, FileWatcher::event, uint32_t, std::string);
@@ -73,6 +79,7 @@ private:
     Context             m_context;          ///< Current context. Used when instanciating new managers
     bool                m_active;           ///< If clear, the service stops watching devices
     device_map          m_devices;          ///< Map of serial number to DeviceManager instances
+    display_list        m_displays;         ///< Connections to X displays
 
     DeviceWatcher       m_deviceWatcher;    ///< Connection to libudev
     FileWatcher         m_fileWatcher;      ///< Connection to inotify
