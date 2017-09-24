@@ -93,6 +93,7 @@ public:
     const block_list &  blocks() const { return m_blocks; }
 
     std::string         resolveKey(key_block_id_type, key_id_type) const;
+    int                 decodeKeyId(key_block_id_type, key_id_type) const;
 
     // Manipulate
     void                setTimeout(unsigned us);

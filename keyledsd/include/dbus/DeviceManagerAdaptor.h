@@ -26,8 +26,7 @@ struct DBusDeviceKeyInfo
 {
     struct Rect { uint x0, y0, x1, y1; };
 
-    ushort      blockId;
-    uint8_t     keyId;
+    int         keyCode;
     QString     name;
     Rect        position;
 };

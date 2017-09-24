@@ -181,6 +181,12 @@ std::string Device::resolveKey(key_block_id_type blockId, key_id_type keyId) con
     return name;
 }
 
+int Device::decodeKeyId(key_block_id_type blockId, key_id_type keyId) const
+{
+    if (blockId != KEYLEDS_BLOCK_KEYS) { return 0; }
+    return keyleds_translate_scancode(keyId);
+}
+
 /****************************************************************************/
 
 void Device::setTimeout(unsigned us)

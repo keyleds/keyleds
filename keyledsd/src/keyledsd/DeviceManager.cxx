@@ -191,7 +191,6 @@ KeyDatabase DeviceManager::buildKeyDB(const Configuration & conf, const Device &
     KeyDatabase::key_map db;
     for (Device::block_list::size_type bidx = 0; bidx < device.blocks().size(); ++bidx) {
         const auto & block = device.blocks()[bidx];
-        const auto blockId = block.id();
 
         for (Device::key_list::size_type kidx = 0; kidx < block.keys().size(); ++kidx) {
             const auto keyId = block.keys()[kidx];
@@ -199,23 +198,20 @@ KeyDatabase DeviceManager::buildKeyDB(const Configuration & conf, const Device &
             auto position = KeyDatabase::Key::Rect{0, 0, 0, 0};
 
             for (const auto & key : layout.keys()) {
-                if (key.block == blockId && key.code == keyId) {
+                if (key.block == block.id() && key.code == keyId) {
                     name = key.name;
                     position = {key.position.x0, key.position.y0,
                                 key.position.x1, key.position.y1};
                     break;
                 }
             }
-            if (name.empty()) {
-                name = device.resolveKey(blockId, keyId);
-            }
+            if (name.empty()) { name = device.resolveKey(block.id(), keyId); }
 
             db.emplace(
                 name,
                 KeyDatabase::Key{
                     { bidx, kidx },
-                    block.id(),
-                    block.keys()[kidx],
+                    device.decodeKeyId(block.id(), keyId),
                     name,
                     position
                 }

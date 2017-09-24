@@ -32,11 +32,10 @@ public:
     public:
         struct Rect { unsigned x0, y0, x1, y1; };
     public:
-        RenderTarget::key_descriptor    index;
-        Device::key_block_id_type       blockId;
-        Device::key_id_type             keyId;
-        std::string                     name;
-        Rect                            position;
+        RenderTarget::key_descriptor    index;      ///< index in render targets
+        int                             keyCode;    ///< linux input event code
+        std::string                     name;       ///< user-readable name
+        Rect                            position;   ///< physical position on keyboard
     };
 
     typedef std::map<std::string, Key>  key_map;
