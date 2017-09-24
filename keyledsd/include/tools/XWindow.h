@@ -86,22 +86,25 @@ class Device final
 {
 public:
     typedef int             handle_type;
-    enum { RawKeyPress, RawKeyRelease, RawButtonPress, RawButtonRelease } event_type;
+    static constexpr handle_type invalid_device = 0;
 public:
                             Device(Display & display, handle_type device);
                             Device(const Device &) = delete;
-                            Device(Device && other) = default;
-
-    static Device open(Display &, const std::string & devNode);
+                            Device(Device &&);
+                            ~Device();
 
     Display &               display() const { return m_display; }
     handle_type             handle() const { return m_device; }
+    const std::string &     devNode() const { return m_devNode; }
+
+    void                    setEventMask(const std::vector<int> & events);
 
     std::string             getProperty(Atom atom, Atom type) const;
 
 private:
     Display &               m_display;          ///< Display the device belongs to
     handle_type             m_device;           ///< Device handle
+    std::string             m_devNode;          ///< Path to device node
 };
 
 /****************************************************************************/
@@ -128,17 +131,17 @@ private:
 public:
                             Display(std::string name = std::string());
                             Display(const Display &) = delete;
-                            Display(Display &&) = default;
     Display &               operator=(const Display &) = delete;
-    Display &               operator=(Display &&) = delete;
                             ~Display();
 
+    // Properties
     const std::string &     name() const { return m_name; }
     handle_type             handle() const { return m_display.get(); }
     Window &                root() { return m_root; }
     const Window &          root() const { return m_root; }
     Atom                    atom(const std::string & name) const;
 
+    // Event handling
     int                     connection() const;
     void                    processEvents();
     void                    registerHandler(event_type, event_handler, void * data = nullptr);

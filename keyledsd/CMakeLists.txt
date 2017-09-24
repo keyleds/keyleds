@@ -63,6 +63,7 @@ set(keyledsd_SRCS
     src/tools/DeviceWatcher.cxx
     src/tools/FileWatcher.cxx
     src/tools/Paths.cxx
+    src/tools/XInputWatcher.cxx
     src/tools/XWindow.cxx
     src/tools/YAMLParser.cxx
     src/logging.cxx
@@ -116,6 +117,7 @@ qt5_wrap_cpp(moc_sources
     include/keyledsd/Service.h
     include/tools/DeviceWatcher.h
     include/tools/FileWatcher.h
+    include/tools/XInputWatcher.h
 )
 set(keyledsd_SRCS ${keyledsd_SRCS} ${moc_sources})
 

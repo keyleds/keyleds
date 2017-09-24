@@ -81,11 +81,13 @@ void xlib::Display::processEvents()
     while (XPending(m_display.get())) {
         XEvent event;
         XNextEvent(m_display.get(), &event);
+        XGetEventData(m_display.get(), &event.xcookie);
         for (const auto & item : m_handlers) {
             if (item.event == event.type || item.event == 0) {
                 (*item.handler)(event, item.data);
             }
         }
+        XFreeEventData(m_display.get(), &event.xcookie);
     }
 }
 
@@ -174,28 +176,34 @@ void xlib::Window::loadClass() const
 
 /****************************************************************************/
 
+constexpr xlib::Device::handle_type xlib::Device::invalid_device;
+
 xlib::Device::Device(Display & display, handle_type device)
  : m_display(display), m_device(device)
-{}
-
-xlib::Device xlib::Device::open(Display & display, const std::string & devNode)
 {
-    int nbDevices;
-    auto devInfo = std::unique_ptr<XIDeviceInfo[], decltype(&XIFreeDeviceInfo)>(
-        XIQueryDevice(display.handle(), XIAllDevices, &nbDevices),
-        XIFreeDeviceInfo
-    );
-    if (devInfo == nullptr) { throw std::logic_error("XListInputDevices returned null"); }
+    m_devNode = getProperty(m_display.atom("Device Node"), XA_STRING);
+}
 
-    Atom deviceNodeAtom = display.atom("Device Node");
-    for (int devIdx = 0; devIdx < nbDevices; ++devIdx) {
-        auto device = xlib::Device(display, devInfo[devIdx].deviceid);
-        auto node = device.getProperty(deviceNodeAtom, XA_STRING);
-        if (node == devNode) {
-            return device;
-        }
+xlib::Device::Device(Device && other)
+ : m_display(other.m_display), m_device(invalid_device)
+{
+    std::swap(m_device, other.m_device);
+    std::swap(m_devNode, other.m_devNode);
+}
+
+xlib::Device::~Device()
+{
+    if (m_device != invalid_device) { setEventMask({}); }
+}
+
+void xlib::Device::setEventMask(const std::vector<int> & events)
+{
+    std::vector<unsigned char> mask(XIMaskLen(XI_LASTEVENT), 0);
+    XIEventMask eventMask = { m_device, (int)mask.size(), mask.data() };
+    for (auto event : events) {
+        XISetMask(mask.data(), event);
     }
-    throw xlib::Error("Input device " + devNode + " not found");
+    XISelectEvents(m_display.handle(), m_display.root().handle(), &eventMask, 1);
 }
 
 std::string xlib::Device::getProperty(Atom atom, Atom type) const
