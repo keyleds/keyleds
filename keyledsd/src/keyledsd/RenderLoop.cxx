@@ -118,6 +118,11 @@ void RenderLoop::setEffects(effect_plugin_list effects)
     DEBUG("enabled ", m_effects.size(), " effects for loop ", this);
 }
 
+std::unique_lock<std::mutex> RenderLoop::lock()
+{
+    return std::unique_lock<std::mutex>(m_mEffects);
+}
+
 RenderTarget RenderLoop::renderTargetFor(const Device & device)
 {
     std::vector<std::size_t> block_sizes;

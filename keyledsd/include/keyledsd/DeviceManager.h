@@ -82,6 +82,7 @@ public:
 
 public slots:
     void                    setContext(const Context &);
+    void                    handleKeyEvent(int, bool);
     void                    setPaused(bool);
     void                    reloadConfiguration();
 

@@ -94,6 +94,9 @@ public:
 
     void            setEffects(effect_plugin_list);
 
+    std::unique_lock<std::mutex>    lock();
+    const effect_plugin_list &      effects() const { return m_effects; }
+
     static RenderTarget renderTargetFor(const Device &);
 
 private:

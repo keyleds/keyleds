@@ -117,6 +117,24 @@ void DeviceManager::setContext(const Context & context)
     m_renderLoop.setEffects(loadEffects(context));
 }
 
+void DeviceManager::handleKeyEvent(int keyCode, bool press)
+{
+    const KeyDatabase::Key * key = nullptr;
+    for (auto & item : m_keyDB) {
+        if (item.second.keyCode == keyCode) {
+            key = &item.second;
+            break;
+        }
+    }
+    if (key == nullptr) { return; }
+
+    auto lock = m_renderLoop.lock();
+    for (const auto & plugin : m_renderLoop.effects()) {
+        plugin->handleKeyEvent(*key, press);
+    }
+    DEBUG("handleKeyEvent(", m_serial, ", ", key->name, ", ", press, ")");
+}
+
 void DeviceManager::setPaused(bool val)
 {
     m_renderLoop.setPaused(val);

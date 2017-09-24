@@ -78,6 +78,19 @@ void Service::setContext(const Context & context)
     for (auto & deviceEntry : m_devices) { deviceEntry.second->setContext(m_context); }
 }
 
+void Service::handleKeyEvent(const std::string & devNode, int key, bool press)
+{
+    for (auto & item : m_devices) {
+        const auto & evDevs = item.second->eventDevices();
+        if (std::find(evDevs.begin(), evDevs.end(), devNode) != evDevs.end()) {
+            item.second->handleKeyEvent(key, press);
+            break;
+        }
+    }
+}
+
+/****************************************************************************/
+
 void Service::onDeviceAdded(const device::Description & description)
 {
     DEBUG("device added: ", description.devNode());
