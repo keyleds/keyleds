@@ -110,9 +110,9 @@ effects:
               group: alert-keys
     feedback:
         plugins:
-            - plugin: feedback
-              color: red
-              duration: 1000
+            - plugin: feedback      # turn keys on when pressed
+              color: red            # color when just pressed
+              duration: 1000        # how long (in milliseconds) it takes to fade out
 
 # Profiles trigger effect activation when their lookup matches
 # Their name doesn't matter, but order does, as when several profiles match

@@ -3,7 +3,34 @@ Release Notes
 #############
 
 *****************************
-0.4.2 - current release
+0.5.0 - current release
+*****************************
+
+Released on September 24th, 2017
+
+Features:
+
+- Added keypress feedback plugin.
+- More generally, made keyboard events available to all plugins.
+
+Bugfixes:
+
+- Fixed compile errors on non-x86 platforms.
+
+*****************************
+0.4.3
+*****************************
+
+Released on September 19th, 2017
+
+Bugfixes:
+
+- Fixed errors when compiling with clang.
+- Dropped Qt4 in favor of Qt5 for the event loop.
+- HAL library no longer exposes internal symbols.
+
+*****************************
+0.4.2
 *****************************
 
 Released on September 15th, 2017

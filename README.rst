@@ -27,7 +27,7 @@ Features
   - **Wave** effect *(wavelength, speed and direction fully configurable,
     supports arbitrary color list with transparency)*.
   - **Stars** effect *(number, color list and light duration configurable)*.
-  - *Keypress feedback effect coming soon*.
+  - **Keypress feedback** effect *(as all plugins, can be composited)*.
 
 * Several plugins can be active at once, and composited with **alpha blending** to
   build complex effects.
