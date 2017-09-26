@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <QtCore>
+#include <QSocketNotifier>
 #include <cassert>
 #include "tools/XInputWatcher.h"
 #include "keyledsd/ContextWatcher.h"

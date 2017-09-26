@@ -17,15 +17,20 @@
 #ifndef KEYLEDSD_SERVICEADAPTOR_H_A616A05A
 #define KEYLEDSD_SERVICEADAPTOR_H_A616A05A
 
-#include <QtDBus>
+#include <QDBusAbstractAdaptor>
+#include <QDBusObjectPath>
 #include <QList>
 #include <QMap>
+#include <QObject>
 #include <QString>
-#include "keyledsd/Configuration.h"
-#include "keyledsd/Service.h"
 
 // must be in global namespace for QtDBus to find it
 typedef QMap<QString, QString> ServiceContextValues;
+
+namespace keyleds {
+    class DeviceManager;
+    class Service;
+}
 
 namespace dbus {
 
@@ -41,7 +46,7 @@ class ServiceAdaptor final : public QDBusAbstractAdaptor
 private:
     Q_OBJECT
     Q_CLASSINFO("D-Bus Interface", "org.etherdream.keyleds.Service")
-    Q_PROPERTY(ServiceContextValues context READ context WRITE setContext)
+    Q_PROPERTY(ServiceContextValues context READ context)
     Q_PROPERTY(bool active READ active WRITE setActive)
     Q_PROPERTY(bool autoQuit READ autoQuit WRITE setAutoQuit)
     Q_PROPERTY(QList<QDBusObjectPath> devices READ devicePaths)
@@ -49,16 +54,12 @@ private:
 public:
             ServiceAdaptor(keyleds::Service *parent);
 
-    inline keyleds::Service *parent() const
-        { return static_cast<keyleds::Service *>(QObject::parent()); }
-
 public:
     ServiceContextValues context() const;
-    void    setContext(const ServiceContextValues &);
-    bool    active() const { return parent()->active(); }
-    void    setActive(bool value) { parent()->setActive(value); }
-    bool    autoQuit() const { return parent()->configuration().autoQuit(); }
-    void    setAutoQuit(bool value) { parent()->configuration().setAutoQuit(value); }
+    bool    active() const;
+    void    setActive(bool value);
+    bool    autoQuit() const;
+    void    setAutoQuit(bool value);
     QList<QDBusObjectPath> devicePaths() const;
     QStringList plugins() const;
 
@@ -67,6 +68,7 @@ private slots:
     void    onDeviceManagerRemoved(keyleds::DeviceManager &);
 
 private:
+    keyleds::Service * parent() const;
     QString managerPath(const keyleds::DeviceManager &) const;
 };
 

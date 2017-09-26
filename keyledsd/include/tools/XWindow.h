@@ -24,6 +24,8 @@
 #define TOOLS_WINDOW_H_F1434518
 
 #include <X11/Xlib.h>
+// Work around Xlib.h defining a Bool macro, breaking moc-generated cpp
+#undef Bool
 #include <map>
 #include <memory>
 #include <stdexcept>

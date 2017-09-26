@@ -20,8 +20,6 @@
 #include <QObject>
 #include <string>
 #include "tools/XWindow.h"
-// Work around Xlib.h defining a Bool macro, breaking moc-generated cpp
-#undef Bool
 
 namespace xlib {
 

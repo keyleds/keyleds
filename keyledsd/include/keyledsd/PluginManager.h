@@ -20,8 +20,8 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <vector>
 #include "keyledsd/Configuration.h"
-#include "keyledsd/Device.h"
 #include "keyledsd/KeyDatabase.h"
 #include "config.h"
 

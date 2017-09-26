@@ -17,10 +17,12 @@
 #ifndef KEYLEDSD_DEVICEMANAGERADAPTOR_H_A3B0E2B4
 #define KEYLEDSD_DEVICEMANAGERADAPTOR_H_A3B0E2B4
 
-#include <QtDBus>
+#include <QDBusAbstractAdaptor>
 #include <QList>
+#include <QObject>
 #include <QString>
-#include "keyledsd/DeviceManager.h"
+
+namespace keyleds { class DeviceManager; }
 
 struct DBusDeviceKeyInfo
 {
@@ -54,9 +56,6 @@ class DeviceManagerAdaptor final : public QDBusAbstractAdaptor
 public:
                 DeviceManagerAdaptor(keyleds::DeviceManager *parent);
 
-    inline keyleds::DeviceManager *parent() const
-        { return static_cast<keyleds::DeviceManager *>(QObject::parent()); }
-
 public:
     QString     serial() const;
     QString     devNode() const;
@@ -65,8 +64,11 @@ public:
     QString     model() const;
     QString     firmware() const;
     DBusDeviceKeyInfoList keys() const;
-    bool        paused() const { return parent()->paused(); }
-    void        setPaused(bool val) const { parent()->setPaused(val); }
+    bool        paused() const;
+    void        setPaused(bool val);
+
+private:
+    keyleds::DeviceManager * parent() const;
 };
 
 };

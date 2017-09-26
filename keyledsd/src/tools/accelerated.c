@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <stdint.h>
-#include <stdlib.h>
 #include "tools/accelerated.h"
 #include "config.h"
 
@@ -48,7 +47,7 @@ void blend(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length
 static void (*resolved_blend)(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length);
 void blend(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
 {
-    if (resolved_blend == NULL) { resolved_blend = resolve_blend(); }
+    if (resolved_blend == 0) { resolved_blend = resolve_blend(); }
     (*resolved_blend)(dst, src, length);
 }
 #  endif

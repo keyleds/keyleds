@@ -17,11 +17,17 @@
 #ifndef KEYLEDSD_CONTEXTWATCHER_H_1CF5FE0A
 #define KEYLEDSD_CONTEXTWATCHER_H_1CF5FE0A
 
+#include <X11/Xlib.h>
+#undef CursorShape
+#undef Bool
 #include <QObject>
 #include <memory>
-#include <string>
 #include "keyledsd/Context.h"
-#include "tools/XWindow.h"
+
+namespace xlib {
+    class Display;
+    class Window;
+};
 
 namespace keyleds {
 

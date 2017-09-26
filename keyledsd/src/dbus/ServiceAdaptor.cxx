@@ -14,11 +14,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <QtGlobal>
+#include <QDBusConnection>
+#include <QDBusMetaType>
 #include <algorithm>
 #include <string>
+#include "keyledsd/Configuration.h"
 #include "keyledsd/Context.h"
+#include "keyledsd/DeviceManager.h"
 #include "keyledsd/PluginManager.h"
+#include "keyledsd/Service.h"
 #include "dbus/DeviceManagerAdaptor.h"
 #include "dbus/ServiceAdaptor.h"
 
@@ -39,6 +43,11 @@ ServiceAdaptor::ServiceAdaptor(keyleds::Service *parent)
                      this, &ServiceAdaptor::onDeviceManagerRemoved);
 }
 
+inline keyleds::Service * ServiceAdaptor::parent() const
+{
+    return static_cast<keyleds::Service *>(QObject::parent());
+}
+
 ServiceContextValues ServiceAdaptor::context() const
 {
     ServiceContextValues data;
@@ -48,14 +57,24 @@ ServiceContextValues ServiceAdaptor::context() const
     return data;
 }
 
-void ServiceAdaptor::setContext(const ServiceContextValues & data)
+bool ServiceAdaptor::active() const
 {
-    auto context = keyleds::Context::value_map();
-    for (auto it = data.constBegin(); it != data.constEnd(); ++it) {
-        context.emplace(std::make_pair(std::string(it.key().toUtf8()),
-                                       std::string(it.value().toUtf8())));
-    }
-    parent()->setContext(keyleds::Context(context));
+    return parent()->active();
+}
+
+void ServiceAdaptor::setActive(bool value)
+{
+    parent()->setActive(value);
+}
+
+bool ServiceAdaptor::autoQuit() const
+{
+    return parent()->configuration().autoQuit();
+}
+
+void ServiceAdaptor::setAutoQuit(bool value)
+{
+    parent()->configuration().setAutoQuit(value);
 }
 
 QList<QDBusObjectPath> ServiceAdaptor::devicePaths() const

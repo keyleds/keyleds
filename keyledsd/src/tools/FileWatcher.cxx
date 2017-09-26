@@ -14,8 +14,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <QSocketNotifier>
 #include <unistd.h>
+#include <QSocketNotifier>
 #include <cerrno>
 #include <system_error>
 #include "tools/FileWatcher.h"

@@ -16,8 +16,11 @@
  */
 #include <locale.h>
 #include <unistd.h>
-#include <QtCore>
+#include <QCoreApplication>
+#include <QDBusConnection>
+#include <QTimer>
 #include <csignal>
+#include <exception>
 #include <iostream>
 #include "config.h"
 #ifndef NO_DBUS
@@ -58,7 +61,7 @@ int main(int argc, char * argv[])
 
     // Setup application components
     auto service = new keyleds::Service(configuration, &app);
-    QTimer::singleShot(0, service, SLOT(init()));
+    QTimer::singleShot(0, service, &keyleds::Service::init);
 
 #ifndef NO_DBUS
     if (!configuration.noDBus()) {

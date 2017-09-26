@@ -21,6 +21,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <vector>
 #include "keyledsd/Context.h"
 #include "keyledsd/Device.h"
 #include "tools/DeviceWatcher.h"

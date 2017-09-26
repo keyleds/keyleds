@@ -17,7 +17,8 @@
 #ifndef KEYLEDSD_KEYDATABASE_H_E8A1B5AF
 #define KEYLEDSD_KEYDATABASE_H_E8A1B5AF
 
-#include "keyledsd/Device.h"
+#include <map>
+#include <string>
 #include "keyledsd/RenderLoop.h"
 
 namespace keyleds {

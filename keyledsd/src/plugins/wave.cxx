@@ -16,8 +16,7 @@
  */
 #include <cassert>
 #include <cmath>
-#include <cstdint>
-#include <iostream>
+#include <cstddef>
 #include <string>
 #include "keyledsd/common.h"
 #include "keyledsd/Configuration.h"

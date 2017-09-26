@@ -18,11 +18,10 @@
 #define KEYLEDSD_DISPLAYMANAGER_H_2ADCBC2A
 
 #include <QObject>
-#include "tools/XWindow.h"
-// Work around Xlib.h defining a Bool macro, breaking moc-generated cpp
-#undef Bool
+#include <memory>
 
 namespace xlib {
+    class Display;
     class XInputWatcher;
 }
 

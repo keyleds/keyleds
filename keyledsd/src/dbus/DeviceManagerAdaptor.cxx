@@ -14,7 +14,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <QDBusArgument>
+#include <QDBusMetaType>
 #include "dbus/DeviceManagerAdaptor.h"
+#include "keyledsd/DeviceManager.h"
 
 using dbus::DeviceManagerAdaptor;
 Q_DECLARE_METATYPE(DBusDeviceKeyInfo)
@@ -59,6 +62,12 @@ DeviceManagerAdaptor::DeviceManagerAdaptor(keyleds::DeviceManager *parent)
 
     setAutoRelaySignals(true);
 }
+
+inline keyleds::DeviceManager * DeviceManagerAdaptor::parent() const
+{
+    return static_cast<keyleds::DeviceManager *>(QObject::parent());
+}
+
 
 QString DeviceManagerAdaptor::serial() const
 {
@@ -110,4 +119,14 @@ DBusDeviceKeyInfoList DeviceManagerAdaptor::keys() const
                           item.second.position.x1, item.second.position.y1 }
                     }; });
     return result;
+}
+
+bool DeviceManagerAdaptor::paused() const
+{
+    return parent()->paused();
+}
+
+void DeviceManagerAdaptor::setPaused(bool val)
+{
+    parent()->setPaused(val);
 }

@@ -14,10 +14,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <QtCore>
+#include <X11/extensions/XInput2.h>
+#undef CursorShape
+#undef Bool
 #include <cassert>
 #include <vector>
-#include <X11/extensions/XInput2.h>
 #include "tools/XInputWatcher.h"
 #include "logging.h"
 

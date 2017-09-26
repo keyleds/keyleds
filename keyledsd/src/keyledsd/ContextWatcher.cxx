@@ -14,8 +14,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <QtCore>
+#include <X11/Xlib.h>
+#include <string>
 #include "keyledsd/ContextWatcher.h"
+#include "tools/XWindow.h"
 #include "logging.h"
 
 LOGGING("context-watcher");

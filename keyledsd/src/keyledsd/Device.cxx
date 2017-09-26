@@ -14,16 +14,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <QtCore>
 #include <cerrno>
 #include <cstdlib>
 #include <iomanip>
 #include <memory>
 #include <sstream>
 #include <string>
-#include "config.h"
 #include "keyleds.h"
 #include "keyledsd/Device.h"
+#include "config.h"
 
 using keyleds::Device;
 using keyleds::DeviceWatcher;
