@@ -104,6 +104,41 @@ QStringList ServiceAdaptor::plugins() const
     return plugins;
 }
 
+void ServiceAdaptor::setContextValues(ServiceContextValues data)
+{
+    auto context = keyleds::Context::value_map();
+    for (auto it = data.constBegin(); it != data.constEnd(); ++it) {
+        context.emplace(std::string(it.key().toUtf8()), std::string(it.value().toUtf8()));
+    }
+    parent()->setContext(keyleds::Context(context));
+}
+
+void ServiceAdaptor::setContextValue(QString key, QString val)
+{
+    parent()->setContext({{ std::string(key.toUtf8()), std::string(val.toUtf8()) }});
+}
+
+void ServiceAdaptor::sendGenericEvent(ServiceContextValues data)
+{
+    auto context = keyleds::Context::value_map();
+    for (auto it = data.constBegin(); it != data.constEnd(); ++it) {
+        context.emplace(std::string(it.key().toUtf8()), std::string(it.value().toUtf8()));
+    }
+    parent()->handleGenericEvent(keyleds::Context(context));
+}
+
+void ServiceAdaptor::sendKeyEvent(QString qSerial, int key)
+{
+    auto serial = std::string(qSerial.toUtf8());
+    for (auto & item : parent()->devices()) {
+        if (item.second->serial() == serial) {
+            item.second->handleKeyEvent(key, true);
+            item.second->handleKeyEvent(key, false);
+            break;
+        }
+    }
+}
+
 void ServiceAdaptor::onDeviceManagerAdded(keyleds::DeviceManager & manager)
 {
     auto connection = QDBusConnection::sessionBus();

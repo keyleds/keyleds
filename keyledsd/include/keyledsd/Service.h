@@ -61,6 +61,7 @@ public slots:
     void                init();
     void                setActive(bool val);
     void                setContext(const keyleds::Context &);
+    void                handleGenericEvent(const keyleds::Context &);
     void                handleKeyEvent(const std::string &, int, bool);
 
 signals:

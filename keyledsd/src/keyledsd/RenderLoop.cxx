@@ -95,10 +95,9 @@ void keyleds::blend(RenderTarget & lhs, const RenderTarget & rhs)
 
 /****************************************************************************/
 
-RenderLoop::RenderLoop(Device & device, effect_plugin_list effects, unsigned fps)
+RenderLoop::RenderLoop(Device & device, unsigned fps)
     : AnimationLoop(fps),
       m_device(device),
-      m_effects(std::move(effects)),
       m_state(renderTargetFor(device)),
       m_buffer(renderTargetFor(device))
 {
@@ -110,13 +109,6 @@ RenderLoop::RenderLoop(Device & device, effect_plugin_list effects, unsigned fps
 
 RenderLoop::~RenderLoop()
 {}
-
-void RenderLoop::setEffects(effect_plugin_list effects)
-{
-    std::lock_guard<std::mutex> lock(m_mEffects);
-    m_effects = std::move(effects);
-    DEBUG("enabled ", m_effects.size(), " effects for loop ", this);
-}
 
 std::unique_lock<std::mutex> RenderLoop::lock()
 {

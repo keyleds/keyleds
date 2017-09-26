@@ -14,14 +14,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "keyledsd/Context.h"
 #include "keyledsd/PluginManager.h"
 
-using keyleds::KeyDatabase;
 using keyleds::EffectPlugin;
 using keyleds::EffectPluginFactory;
 using keyleds::EffectPluginManager;
 
 EffectPlugin::~EffectPlugin() {}
+void EffectPlugin::handleContextChange(const Context &) {}
+void EffectPlugin::handleGenericEvent(const Context &) {}
 void EffectPlugin::handleKeyEvent(const KeyDatabase::Key &, bool) {}
 
 EffectPluginFactory::~EffectPluginFactory() {}

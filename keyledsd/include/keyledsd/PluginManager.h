@@ -27,6 +27,7 @@
 
 namespace keyleds {
 
+class Context;
 class DeviceManager;
 
 /****************************************************************************/
@@ -39,6 +40,8 @@ class EffectPlugin
 public:
     virtual         ~EffectPlugin();
     virtual void    render(unsigned long nanosec, RenderTarget & target) = 0;
+    virtual void    handleContextChange(const Context &);
+    virtual void    handleGenericEvent(const Context &);
     virtual void    handleKeyEvent(const KeyDatabase::Key &, bool press);
 };
 

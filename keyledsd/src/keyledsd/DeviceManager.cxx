@@ -103,8 +103,9 @@ DeviceManager::DeviceManager(const device::Description & description, Device && 
       m_eventDevices(findEventDevices(description)),
       m_device(std::move(device)),
       m_keyDB(buildKeyDB(conf, m_device)),
-      m_renderLoop(m_device, loadEffects(context), 16)
+      m_renderLoop(m_device, 16)
 {
+    setContext(context);
     m_renderLoop.setPaused(false);
 }
 
@@ -115,7 +116,18 @@ DeviceManager::~DeviceManager()
 
 void DeviceManager::setContext(const Context & context)
 {
-    m_renderLoop.setEffects(loadEffects(context));
+    auto effects = loadEffects(context);
+    DEBUG("enabling ", effects.size(), " effects for loop ", &m_renderLoop);
+
+    auto lock = m_renderLoop.lock();
+    for (auto * effect : effects) { effect->handleContextChange(context); }
+    m_renderLoop.effects() = std::move(effects);
+}
+
+void DeviceManager::handleGenericEvent(const Context & context)
+{
+    auto lock = m_renderLoop.lock();
+    for (auto * effect : m_renderLoop.effects()) { effect->handleGenericEvent(context); }
 }
 
 void DeviceManager::handleKeyEvent(int keyCode, bool press)
@@ -147,7 +159,8 @@ void DeviceManager::setPaused(bool val)
 void DeviceManager::reloadConfiguration()
 {
     DEBUG("Device(", this, ") clearing effects cache");
-    m_renderLoop.setEffects({});
+    auto lock = m_renderLoop.lock();
+    m_renderLoop.effects().clear();
     m_effects.clear();
 }
 

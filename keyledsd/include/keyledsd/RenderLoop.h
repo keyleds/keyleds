@@ -89,13 +89,11 @@ class RenderLoop final : public AnimationLoop
 public:
     typedef std::vector<EffectPlugin *> effect_plugin_list;
 public:
-                    RenderLoop(Device &, effect_plugin_list, unsigned fps);
+                    RenderLoop(Device &, unsigned fps);
                     ~RenderLoop() override;
 
-    void            setEffects(effect_plugin_list);
-
     std::unique_lock<std::mutex>    lock();
-    const effect_plugin_list &      effects() const { return m_effects; }
+    effect_plugin_list &            effects() { return m_effects; }
 
     static RenderTarget renderTargetFor(const Device &);
 

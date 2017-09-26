@@ -465,11 +465,8 @@ public:
     {
         switch(state.type()) {
             case SubState::Lookup: {
-                auto items = state.as<StringMappingBuildState>().result();
                 m_lookup = Configuration::Profile::Lookup(
-                    items["title"],
-                    items["class"],
-                    items["instance"]
+                    state.as<StringMappingBuildState>().result()
                 );
                 break;
             }
@@ -822,21 +819,31 @@ Configuration::Profile::Profile(std::string name,
 
 /****************************************************************************/
 
-Configuration::Profile::Lookup::Lookup(std::string title, std::string className,
-                                       std::string instanceName)
- : m_titleFilter(std::move(title)),
-   m_classNameFilter(std::move(className)),
-   m_instanceNameFilter(std::move(instanceName)),
-   m_titleRE(m_titleFilter, std::regex::nosubs | std::regex::optimize),
-   m_classNameRE(m_classNameFilter, std::regex::nosubs | std::regex::optimize),
-   m_instanceNameRE(m_instanceNameFilter, std::regex::nosubs | std::regex::optimize)
+Configuration::Profile::Lookup::Lookup(filter_map filters)
+ : m_filters(std::move(filters)),
+   m_regexps(buildRegexps(m_filters))
 {}
 
 bool Configuration::Profile::Lookup::match(const Context & context) const
 {
-    return (m_titleFilter.empty() || std::regex_match(context["title"], m_titleRE)) &&
-           (m_classNameFilter.empty() || std::regex_match(context["class"], m_classNameRE)) &&
-           (m_instanceNameFilter.empty() || std::regex_match(context["instance"], m_instanceNameRE));
+    assert(m_filters.size() == m_regexps.size());
+    auto rit = m_regexps.begin();
+    for (auto fit = m_filters.begin(); fit != m_filters.end(); ++fit, ++rit) {
+        if (!std::regex_match(context[fit->first], *rit)) { return false; }
+    }
+    return true;
+}
+
+Configuration::Profile::Lookup::regex_list
+Configuration::Profile::Lookup::buildRegexps(const filter_map & filters)
+{
+    regex_list result;
+    result.reserve(filters.size());
+    std::transform(filters.begin(), filters.end(), std::back_inserter(result),
+                   [](auto & entry) {
+                       return std::regex{entry.second, std::regex::nosubs | std::regex::optimize};
+                   });
+    return result;
 }
 
 /****************************************************************************/

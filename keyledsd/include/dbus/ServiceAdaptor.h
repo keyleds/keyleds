@@ -63,6 +63,12 @@ public:
     QList<QDBusObjectPath> devicePaths() const;
     QStringList plugins() const;
 
+public slots:
+    void    setContextValues(ServiceContextValues);
+    void    setContextValue(QString, QString);
+    void    sendGenericEvent(ServiceContextValues);
+    void    sendKeyEvent(QString serial, int key);
+
 private slots:
     void    onDeviceManagerAdded(keyleds::DeviceManager &);
     void    onDeviceManagerRemoved(keyleds::DeviceManager &);

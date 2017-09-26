@@ -126,22 +126,19 @@ public:
     /// Filters a context to determine whether a profile should be enabled
     class Lookup final
     {
+        typedef std::vector<std::regex>             regex_list;
     public:
-        Lookup() = default;
-        Lookup(std::string title, std::string className, std::string instanceName);
-        const std::string & titleFilter() const { return m_titleFilter; }
-        const std::string & classNameFilter() const { return m_classNameFilter; }
-        const std::string & instanceNameFilter() const { return m_instanceNameFilter; }
+        typedef std::map<std::string, std::string>  filter_map;
+    public:
+                            Lookup() = default;
+                            Lookup(filter_map filters);
 
         bool                match(const Context &) const;
-
     private:
-        std::string m_titleFilter;          ///< Regexp matched against context's "title" item
-        std::string m_classNameFilter;      ///< Regexp matched against context's "class" item
-        std::string m_instanceNameFilter;   ///< Regexp matched against context's "instance" item
-        std::regex  m_titleRE;              ///< Compiled version of m_titleFilter
-        std::regex  m_classNameRE;          ///< Compiled version of m_classNameFilter
-        std::regex  m_instanceNameRE;       ///< Compiled version of m_instanceNameFilter
+        static regex_list   buildRegexps(const filter_map &);
+    private:
+        filter_map  m_filters;
+        regex_list  m_regexps;
     };
 
     typedef std::vector<std::string> device_list;

@@ -22,10 +22,11 @@
 #include "keyledsd/Device.h"
 #include "keyledsd/KeyDatabase.h"
 #include "keyledsd/RenderLoop.h"
-#include "tools/DeviceWatcher.h"
 #include <memory>
 #include <string>
 #include <vector>
+
+namespace device { class Description; }
 
 namespace keyleds {
 
@@ -82,6 +83,7 @@ public:
 
 public slots:
     void                    setContext(const Context &);
+    void                    handleGenericEvent(const Context &);
     void                    handleKeyEvent(int, bool);
     void                    setPaused(bool);
     void                    reloadConfiguration();
@@ -100,10 +102,10 @@ private:
     const Configuration &   m_configuration;    ///< Reference to service configuration
 
     const std::string       m_serial;           ///< Device serial number
-    dev_list                m_eventDevices;     ///< List of event device paths that the
+    const dev_list          m_eventDevices;     ///< List of event device paths that the
                                                 ///  physical device can communicate on.
     Device                  m_device;           ///< The device handled by this manager
-    KeyDatabase             m_keyDB;            ///< Fully loaded key descriptions
+    const KeyDatabase       m_keyDB;            ///< Fully loaded key descriptions
 
     effect_map              m_effects;          ///< Map of effect id to loaded effect instance
     RenderLoop              m_renderLoop;       ///< The RenderLoop in charge of the device
