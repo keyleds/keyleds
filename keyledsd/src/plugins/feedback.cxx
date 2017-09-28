@@ -39,21 +39,16 @@ class FeedbackPlugin final : public keyleds::EffectPlugin
 public:
     FeedbackPlugin(const keyleds::DeviceManager & manager,
                    const keyleds::Configuration::Plugin & conf,
-                   const keyleds::EffectPluginFactory::group_map &)
+                   const keyleds::EffectPluginFactory::group_list &)
      : m_buffer(manager.getRenderTarget()),
        m_color(255, 255, 255, 255),
        m_duration(3000)
     {
-        auto cit = conf.items().find("color");
-        if (cit != conf.items().end()) {
-            m_color = RGBAColor::parse(cit->second);
-        }
+        const auto & colorStr = conf["color"];
+        if (!colorStr.empty()) { m_color = RGBAColor::parse(colorStr); }
 
-        auto dit = conf.items().find("duration");
-        if (dit != conf.items().end()) {
-            auto duration = std::stoul(dit->second);
-            if (duration > 0) { m_duration = duration; }
-        }
+        auto duration = std::stoul(conf["duration"]);
+        if (duration > 0) { m_duration = duration; }
 
         // Get ready
         std::fill(m_buffer.begin(), m_buffer.end(), RGBAColor{0, 0, 0, 0});
@@ -74,7 +69,7 @@ public:
         m_presses.erase(std::remove_if(m_presses.begin(), m_presses.end(),
                                        [this](const auto & keyPress){ return keyPress.age >= m_duration; }),
                         m_presses.end());
-        keyleds::blend(target, m_buffer);
+        blend(target, m_buffer);
     }
 
     void handleKeyEvent(const KeyDatabase::Key & key, bool) override

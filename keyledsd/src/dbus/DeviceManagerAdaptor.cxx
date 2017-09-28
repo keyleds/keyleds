@@ -68,6 +68,10 @@ inline keyleds::DeviceManager * DeviceManagerAdaptor::parent() const
     return static_cast<keyleds::DeviceManager *>(QObject::parent());
 }
 
+QString DeviceManagerAdaptor::sysPath() const
+{
+    return parent()->sysPath().c_str();
+}
 
 QString DeviceManagerAdaptor::serial() const
 {
@@ -112,11 +116,11 @@ DBusDeviceKeyInfoList DeviceManagerAdaptor::keys() const
     std::transform(parent()->keyDB().begin(),
                     parent()->keyDB().end(),
                     std::back_inserter(result),
-                    [](const auto & item) { return DBusDeviceKeyInfo{
-                        item.second.keyCode,
-                        item.second.name.c_str(),
-                        { item.second.position.x0, item.second.position.y0,
-                          item.second.position.x1, item.second.position.y1 }
+                    [](const auto & key) { return DBusDeviceKeyInfo{
+                        key.keyCode,
+                        key.name.c_str(),
+                        { key.position.x0, key.position.y0,
+                          key.position.x1, key.position.y1 }
                     }; });
     return result;
 }

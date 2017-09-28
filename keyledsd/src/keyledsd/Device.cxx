@@ -14,6 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <algorithm>
 #include <cerrno>
 #include <cstdlib>
 #include <iomanip>
@@ -22,7 +23,10 @@
 #include <string>
 #include "keyleds.h"
 #include "keyledsd/Device.h"
+#include "logging.h"
 #include "config.h"
+
+LOGGING("device");
 
 using keyleds::Device;
 using keyleds::DeviceWatcher;
@@ -58,7 +62,7 @@ std::unique_ptr<struct keyleds_device> Device::openDevice(const std::string & pa
         keyleds_open(path.c_str(), KEYLEDSD_APP_ID)
     );
     if (device == nullptr) {
-        throw Device::error(keyleds_get_error_str(), keyleds_get_errno());
+        throw error(keyleds_get_error_str(), keyleds_get_errno());
     }
     return device;
 }
@@ -67,7 +71,7 @@ Device::Type Device::getType(struct keyleds_device * device)
 {
     keyleds_device_type_t type;
     if (!keyleds_get_device_type(device, KEYLEDS_TARGET_DEFAULT, &type)) {
-        throw Device::error(keyleds_get_error_str(), keyleds_get_errno());
+        throw error(keyleds_get_error_str(), keyleds_get_errno());
     }
     switch(type) {
     case KEYLEDS_DEVICE_TYPE_KEYBOARD:  return Type::Keyboard;
@@ -86,9 +90,9 @@ std::string Device::getName(struct keyleds_device * device)
 {
     char * name;
     if (!keyleds_get_device_name(device, KEYLEDS_TARGET_DEFAULT, &name)) {
-        throw Device::error(keyleds_get_error_str(), keyleds_get_errno());
+        throw error(keyleds_get_error_str(), keyleds_get_errno());
     }
-    auto name_p = std::unique_ptr<char, void(*)(char*)>(name, keyleds_free_device_name);
+    auto name_p = std::unique_ptr<char[], void(*)(char*)>(name, keyleds_free_device_name);
     return std::string(name);
 }
 
@@ -96,7 +100,7 @@ void Device::cacheVersion()
 {
     struct keyleds_device_version * version;
     if (!keyleds_get_device_version(m_device.get(), KEYLEDS_TARGET_DEFAULT, &version)) {
-        throw Device::error(keyleds_get_error_str(), keyleds_get_errno());
+        throw error(keyleds_get_error_str(), keyleds_get_errno());
     }
     auto version_p = std::unique_ptr<struct keyleds_device_version>(version);
 
@@ -136,7 +140,7 @@ Device::block_list Device::getBlocks(struct keyleds_device * device)
 
     struct keyleds_keyblocks_info * info;
     if (!keyleds_get_block_info(device, KEYLEDS_TARGET_DEFAULT, &info)) {
-        throw Device::error(keyleds_get_error_str(), keyleds_get_errno());
+        throw error(keyleds_get_error_str(), keyleds_get_errno());
     }
     auto blockinfo_p = std::unique_ptr<struct keyleds_keyblocks_info>(info);
 
@@ -146,7 +150,7 @@ Device::block_list Device::getBlocks(struct keyleds_device * device)
         struct keyleds_key_color keys[block.nb_keys];
         if (!keyleds_get_leds(device, KEYLEDS_TARGET_DEFAULT, block.block_id,
                               keys, 0, block.nb_keys)) {
-            throw Device::error(keyleds_get_error_str(), keyleds_get_errno());
+            throw error(keyleds_get_error_str(), keyleds_get_errno());
         }
 
         key_list key_ids;
@@ -196,7 +200,7 @@ void Device::setTimeout(unsigned us)
 void Device::flush()
 {
     if (!keyleds_flush_fd(m_device.get())) {
-        throw Device::error(keyleds_get_error_str(), keyleds_get_errno());
+        throw error(keyleds_get_error_str(), keyleds_get_errno());
     }
 }
 
@@ -210,7 +214,7 @@ void Device::fillColor(const KeyBlock & block, const RGBColor color)
 {
     if (!keyleds_set_led_block(m_device.get(), KEYLEDS_TARGET_DEFAULT, keyleds_block_id_t(block.id()),
                                color.red, color.green, color.blue)) {
-        throw Device::error(keyleds_get_error_str(), keyleds_get_errno());
+        throw error(keyleds_get_error_str(), keyleds_get_errno());
     }
 }
 
@@ -218,7 +222,7 @@ void Device::setColors(const KeyBlock & block, const color_directive_list & colo
 {
     if (!keyleds_set_leds(m_device.get(), KEYLEDS_TARGET_DEFAULT, keyleds_block_id_t(block.id()),
                           colors.data(), colors.size())) {
-        throw Device::error(keyleds_get_error_str(), keyleds_get_errno());
+        throw error(keyleds_get_error_str(), keyleds_get_errno());
     }
 }
 
@@ -226,7 +230,7 @@ void Device::setColors(const KeyBlock & block, const ColorDirective colors[], si
 {
     if (!keyleds_set_leds(m_device.get(), KEYLEDS_TARGET_DEFAULT, keyleds_block_id_t(block.id()),
                           colors, size)) {
-        throw Device::error(keyleds_get_error_str(), keyleds_get_errno());
+        throw error(keyleds_get_error_str(), keyleds_get_errno());
     }
 }
 
@@ -235,7 +239,7 @@ Device::color_directive_list Device::getColors(const KeyBlock & block)
     color_directive_list result(block.keys().size());
     if (!keyleds_get_leds(m_device.get(), KEYLEDS_TARGET_DEFAULT, keyleds_block_id_t(block.id()),
                           result.data(), 0, result.size())) {
-        throw Device::error(keyleds_get_error_str(), keyleds_get_errno());
+        throw error(keyleds_get_error_str(), keyleds_get_errno());
     }
     return result;
 }
@@ -243,16 +247,16 @@ Device::color_directive_list Device::getColors(const KeyBlock & block)
 void Device::commitColors()
 {
     if (!keyleds_commit_leds(m_device.get(), KEYLEDS_TARGET_DEFAULT)) {
-        throw Device::error(keyleds_get_error_str(), keyleds_get_errno());
+        throw error(keyleds_get_error_str(), keyleds_get_errno());
     }
 }
 
 /****************************************************************************/
 
-Device::KeyBlock::KeyBlock(key_block_id_type id, key_list && keys, RGBColor maxValues)
+Device::KeyBlock::KeyBlock(key_block_id_type id, key_list keys, RGBColor maxValues)
     : m_id(id),
       m_name(keyleds_lookup_string(keyleds_block_id_names, id)),
-      m_keys(keys),
+      m_keys(std::move(keys)),
       m_maxValues(maxValues)
 {}
 
@@ -274,15 +278,29 @@ DeviceWatcher::DeviceWatcher(struct udev * udev, QObject *parent)
 
 bool DeviceWatcher::isVisible(const device::Description & dev) const
 {
+    // Filter interface protocol
     const auto & iface = dev.parentWithType("usb", "usb_interface");
-    if (std::stoul(iface.attributes().at("bInterfaceProtocol"), nullptr, 16) != 0) {
+    auto it = std::find_if(
+        iface.attributes().begin(), iface.attributes().end(),
+        [](const auto & attr) { return attr.first == "bInterfaceProtocol"; }
+    );
+    if (it == iface.attributes().end()) {
+        ERROR("Device ", iface.sysPath(), " has not interface protocol attribute");
         return false;
     }
+    if (std::stoul(it->second, nullptr, 16) != 0) { return false; }
 
+    // Filter device id
     const auto & usbdev = dev.parentWithType("usb", "usb_device");
-    if (std::stoul(usbdev.attributes().at("idVendor"), nullptr, 16) != LOGITECH_VENDOR_ID) {
+    it = std::find_if(
+        usbdev.attributes().begin(), usbdev.attributes().end(),
+        [](const auto & attr) { return attr.first == "idVendor"; }
+    );
+    if (it == usbdev.attributes().end()) {
+        ERROR("Device ", usbdev.sysPath(), " has not vendor id attribute");
         return false;
     }
+    if (std::stoul(it->second, nullptr, 16) != LOGITECH_VENDOR_ID) { return false; }
 
     return true;
 }

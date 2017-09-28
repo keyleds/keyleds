@@ -18,7 +18,6 @@
 #define KEYLEDSD_KEYLEDSSERVICE_884F711D
 
 #include <QObject>
-#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -44,8 +43,8 @@ class Service final : public QObject
     Q_OBJECT
     Q_PROPERTY(bool active READ active WRITE setActive);
 public:
-    typedef std::map<std::string, std::unique_ptr<DeviceManager>> device_map;
-    typedef std::vector<std::unique_ptr<DisplayManager>> display_list;
+    using device_list = std::vector<std::unique_ptr<DeviceManager>>;
+    using display_list = std::vector<std::unique_ptr<DisplayManager>>;
 public:
                         Service(Configuration & configuration, QObject *parent = 0);
                         Service(const Service &) = delete;
@@ -55,7 +54,7 @@ public:
     const Configuration & configuration() const { return m_configuration; }
     const Context &     context() const { return m_context; }
     bool                active() const { return m_active; }
-    const device_map &  devices() const { return m_devices; }
+    const device_list & devices() const { return m_devices; }
 
 public slots:
     void                init();
@@ -81,7 +80,7 @@ private:
     Configuration &     m_configuration;    ///< Service configuration
     Context             m_context;          ///< Current context. Used when instanciating new managers
     bool                m_active;           ///< If clear, the service stops watching devices
-    device_map          m_devices;          ///< Map of serial number to DeviceManager instances
+    device_list         m_devices;          ///< Map of serial number to DeviceManager instances
     display_list        m_displays;         ///< Connections to X displays
 
     DeviceWatcher       m_deviceWatcher;    ///< Connection to libudev

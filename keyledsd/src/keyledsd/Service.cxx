@@ -28,7 +28,6 @@
 
 LOGGING("service");
 
-using keyleds::Context;
 using keyleds::Service;
 
 /****************************************************************************/
@@ -39,9 +38,9 @@ Service::Service(Configuration & configuration, QObject * parent)
       m_deviceWatcher(nullptr)
 {
     m_active = false;
-    QObject::connect(&m_deviceWatcher, &keyleds::DeviceWatcher::deviceAdded,
+    QObject::connect(&m_deviceWatcher, &DeviceWatcher::deviceAdded,
                      this, &Service::onDeviceAdded);
-    QObject::connect(&m_deviceWatcher, &keyleds::DeviceWatcher::deviceRemoved,
+    QObject::connect(&m_deviceWatcher, &DeviceWatcher::deviceRemoved,
                      this, &Service::onDeviceRemoved);
     DEBUG("created");
 }
@@ -78,20 +77,20 @@ void Service::setContext(const Context & context)
 {
     VERBOSE("setContext ", context);
     m_context.merge(context);
-    for (auto & deviceEntry : m_devices) { deviceEntry.second->setContext(m_context); }
+    for (auto & device : m_devices) { device->setContext(m_context); }
 }
 
 void Service::handleGenericEvent(const Context & context)
 {
-    for (auto & item : m_devices) { item.second->handleGenericEvent(context); }
+    for (auto & device : m_devices) { device->handleGenericEvent(context); }
 }
 
 void Service::handleKeyEvent(const std::string & devNode, int key, bool press)
 {
-    for (auto & item : m_devices) {
-        const auto & evDevs = item.second->eventDevices();
+    for (auto & device : m_devices) {
+        const auto & evDevs = device->eventDevices();
         if (std::find(evDevs.begin(), evDevs.end(), devNode) != evDevs.end()) {
-            item.second->handleKeyEvent(key, press);
+            device->handleKeyEvent(key, press);
             break;
         }
     }
@@ -105,21 +104,20 @@ void Service::onDeviceAdded(const device::Description & description)
     try {
         auto device = Device(description.devNode());
         auto manager = std::make_unique<DeviceManager>(
-            device::Description(description), std::move(device), m_configuration, m_context
+            description, std::move(device), m_configuration, m_context
         );
         m_fileWatcher.subscribe(description.devNode(), FileWatcher::event::Attrib,
                                 onFileWatchEvent, manager.get());
         emit deviceManagerAdded(*manager);
 
-        auto dit = m_configuration.devices().find(manager->serial());
         INFO("opened device ", description.devNode(),
              ": serial ", manager->serial(),
-             " [", dit != m_configuration.devices().end() ? dit->second : std::string(), ']',
+             " [", manager->name(), ']',
              ", model ", manager->device().model(),
              " firmware ", manager->device().firmware(),
              ", <", manager->device().name(), ">");
 
-        m_devices[description.devPath()] = std::move(manager);
+        m_devices.emplace_back(std::move(manager));
 
     } catch (Device::error & error) {
         // Suppress hid version error, it just means it's not the kind of device we want
@@ -134,10 +132,14 @@ void Service::onDeviceAdded(const device::Description & description)
 
 void Service::onDeviceRemoved(const device::Description & description)
 {
-    auto it = m_devices.find(description.devPath());
+    auto it = std::find_if(m_devices.begin(), m_devices.end(),
+                           [&description](const auto & device) {
+                               return device->sysPath() == description.sysPath();
+                           });
     if (it != m_devices.end()) {
-        auto manager = std::move(it->second);
-        m_devices.erase(it);
+        auto manager = std::move(*it);
+        std::iter_swap(it, m_devices.end() - 1);
+        m_devices.pop_back();
 
         INFO("removing device ", manager->serial());
         m_fileWatcher.unsubscribe(onFileWatchEvent, manager.get());
@@ -154,15 +156,15 @@ void Service::onDeviceRemoved(const device::Description & description)
 void Service::onDisplayAdded(std::unique_ptr<xlib::Display> & display)
 {
     auto displayManager = std::make_unique<DisplayManager>(std::move(display));
-    QObject::connect(displayManager.get(), &keyleds::DisplayManager::contextChanged,
-                     this, &keyleds::Service::setContext);
-    QObject::connect(displayManager.get(), &keyleds::DisplayManager::keyEventReceived,
-                     this, &keyleds::Service::handleKeyEvent);
+    QObject::connect(displayManager.get(), &DisplayManager::contextChanged,
+                     this, &Service::setContext);
+    QObject::connect(displayManager.get(), &DisplayManager::keyEventReceived,
+                     this, &Service::handleKeyEvent);
     displayManager->scanDevices();
     INFO("connected to display ", displayManager->display().name());
     setContext(displayManager->currentContext());
 
-    m_displays.push_back(std::move(displayManager));
+    m_displays.emplace_back(std::move(displayManager));
 }
 
 void Service::onDisplayRemoved()

@@ -52,18 +52,22 @@ private:
     class LoadedEffect final
     {
     public:
-        typedef std::vector<std::unique_ptr<EffectPlugin>> plugin_list;
+        using plugin_list = std::vector<std::unique_ptr<EffectPlugin>>;
     public:
-                            LoadedEffect(plugin_list && plugins);
-                            LoadedEffect(LoadedEffect &&) = default;
+                            LoadedEffect(std::string name, plugin_list && plugins);
+                            LoadedEffect(LoadedEffect &&) noexcept = default;
+        LoadedEffect &      operator=(LoadedEffect &&) = default;
+
+        const std::string & name() const noexcept { return m_name; }
         RenderLoop::effect_plugin_list plugins() const;
     private:
+        std::string m_name;
         plugin_list m_plugins;
     };
-    typedef std::map<std::string, LoadedEffect> effect_map;
+    using effect_list = std::vector<LoadedEffect>;
 
 public:
-    typedef std::vector<std::string> dev_list;
+    using dev_list = std::vector<std::string>;
 public:
                             DeviceManager(const device::Description &,
                                           Device &&,
@@ -72,7 +76,9 @@ public:
                                           QObject *parent = 0);
                             ~DeviceManager() override;
 
+    const std::string &     sysPath() const noexcept { return m_sysPath; }
     const std::string &     serial() const noexcept { return m_serial; }
+    const std::string &     name() const noexcept { return m_name; }
     const dev_list &        eventDevices() const { return m_eventDevices; }
     const Device &          device() const { return m_device; }
     const KeyDatabase &     keyDB() const { return m_keyDB; }
@@ -90,6 +96,7 @@ public slots:
 
 private:
     static std::string      getSerial(const device::Description &);
+    static std::string      getName(const Configuration &, const std::string & serial);
     static dev_list         findEventDevices(const device::Description &);
     static std::string      layoutName(const Device &);
     static LayoutDescription loadLayoutDescription(const Configuration &, const Device &);
@@ -101,13 +108,15 @@ private:
 private:
     const Configuration &   m_configuration;    ///< Reference to service configuration
 
+    const std::string       m_sysPath;          ///< Device path on sys filesystem
     const std::string       m_serial;           ///< Device serial number
+    const std::string       m_name;             ///< User-given name
     const dev_list          m_eventDevices;     ///< List of event device paths that the
                                                 ///  physical device can communicate on.
     Device                  m_device;           ///< The device handled by this manager
     const KeyDatabase       m_keyDB;            ///< Fully loaded key descriptions
 
-    effect_map              m_effects;          ///< Map of effect id to loaded effect instance
+    effect_list             m_effects;          ///< Loaded effect instances
     RenderLoop              m_renderLoop;       ///< The RenderLoop in charge of the device
 };
 

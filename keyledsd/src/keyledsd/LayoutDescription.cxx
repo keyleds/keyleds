@@ -28,23 +28,21 @@ using keyleds::LayoutDescription;
 
 /****************************************************************************/
 
-typedef std::unique_ptr<xmlParserCtxt, void(*)(xmlParserCtxtPtr)> xmlParserCtxt_ptr;
-typedef std::unique_ptr<xmlDoc, void(*)(xmlDocPtr)> xmlDoc_ptr;
-typedef std::unique_ptr<xmlChar, void(*)(void *)> xmlString;
+using xmlString = std::unique_ptr<xmlChar, void(*)(void *)>;
 
-static const xmlChar KEYBOARD_TAG[] = "keyboard";
-static const xmlChar ROW_TAG[] = "row";
-static const xmlChar KEY_TAG[] = "key";
+static constexpr xmlChar KEYBOARD_TAG[] = "keyboard";
+static constexpr xmlChar ROW_TAG[] = "row";
+static constexpr xmlChar KEY_TAG[] = "key";
 
-static const xmlChar ROOT_ATTR_NAME[] = "layout";
-static const xmlChar KEYBOARD_ATTR_X[] = "x";
-static const xmlChar KEYBOARD_ATTR_Y[] = "y";
-static const xmlChar KEYBOARD_ATTR_WIDTH[] = "width";
-static const xmlChar KEYBOARD_ATTR_HEIGHT[] = "height";
-static const xmlChar KEYBOARD_ATTR_ZONE[] = "zone";
-static const xmlChar KEY_ATTR_CODE[] = "code";
-static const xmlChar KEY_ATTR_GLYPH[] = "glyph";
-static const xmlChar KEY_ATTR_WIDTH[] = "width";
+static constexpr xmlChar ROOT_ATTR_NAME[] = "layout";
+static constexpr xmlChar KEYBOARD_ATTR_X[] = "x";
+static constexpr xmlChar KEYBOARD_ATTR_Y[] = "y";
+static constexpr xmlChar KEYBOARD_ATTR_WIDTH[] = "width";
+static constexpr xmlChar KEYBOARD_ATTR_HEIGHT[] = "height";
+static constexpr xmlChar KEYBOARD_ATTR_ZONE[] = "zone";
+static constexpr xmlChar KEY_ATTR_CODE[] = "code";
+static constexpr xmlChar KEY_ATTR_GLYPH[] = "glyph";
+static constexpr xmlChar KEY_ATTR_WIDTH[] = "width";
 
 /****************************************************************************/
 
@@ -159,7 +157,9 @@ LayoutDescription::LayoutDescription(std::string name, key_list keys)
 LayoutDescription LayoutDescription::parse(std::istream & stream)
 {
     // Parser context
-    xmlParserCtxt_ptr context(xmlNewParserCtxt(), xmlFreeParserCtxt);
+    std::unique_ptr<xmlParserCtxt, void(*)(xmlParserCtxtPtr)> context(
+        xmlNewParserCtxt(), xmlFreeParserCtxt
+    );
     if (context == nullptr) {
         throw std::runtime_error("Failed to initialize libxml");
     }
@@ -169,7 +169,7 @@ LayoutDescription LayoutDescription::parse(std::istream & stream)
     std::ostringstream bufferStream;
     bufferStream << stream.rdbuf();
     std::string buffer = bufferStream.str();
-    xmlDoc_ptr document(
+    std::unique_ptr<xmlDoc, void(*)(xmlDocPtr)> document(
         xmlCtxtReadMemory(context.get(), buffer.data(), buffer.size(),
                           nullptr, nullptr, XML_PARSE_NOWARNING | XML_PARSE_NONET),
         xmlFreeDoc

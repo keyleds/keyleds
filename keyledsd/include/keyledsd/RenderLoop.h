@@ -45,8 +45,8 @@ class RenderTarget final
     static constexpr std::size_t   align_bytes = 32;
     static constexpr std::size_t   align_colors = align_bytes / sizeof(RGBAColor);
 public:
-    typedef RGBAColor *         iterator;
-    typedef std::pair<std::size_t, std::size_t> key_descriptor;
+    using iterator = RGBAColor *;
+    using key_descriptor = std::pair<std::size_t, std::size_t>;
 public:
                                 RenderTarget(const std::vector<std::size_t> & block_sizes);
                                 RenderTarget(RenderTarget &&) noexcept;
@@ -87,7 +87,7 @@ void blend(RenderTarget &, const RenderTarget &);
 class RenderLoop final : public AnimationLoop
 {
 public:
-    typedef std::vector<EffectPlugin *> effect_plugin_list;
+    using effect_plugin_list = std::vector<EffectPlugin *>;
 public:
                     RenderLoop(Device &, unsigned fps);
                     ~RenderLoop() override;

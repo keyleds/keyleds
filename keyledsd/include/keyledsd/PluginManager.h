@@ -17,7 +17,6 @@
 #ifndef KEYLEDSD_PLUGIN_MANAGER_H_72D24293
 #define KEYLEDSD_PLUGIN_MANAGER_H_72D24293
 
-#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -55,14 +54,14 @@ public:
 class EffectPluginFactory
 {
 public:
-    typedef std::map<std::string, std::vector<const KeyDatabase::Key*>> group_map;
+    using group_list = std::vector<KeyDatabase::KeyGroup>;
 public:
     virtual                 ~EffectPluginFactory();
 
     virtual const std::string & name() const noexcept = 0;
     virtual std::unique_ptr<EffectPlugin> createEffect(const DeviceManager &,
                                                        const Configuration::Plugin &,
-                                                       const group_map &) = 0;
+                                                       const group_list &) = 0;
 };
 
 /****************************************************************************/
@@ -82,15 +81,15 @@ public:
 
     // Plugin management
 public:
-    typedef std::map<std::string, EffectPluginFactory *> plugin_map;
+    using plugin_list = std::vector<EffectPluginFactory *>;
 public:
 
-    const plugin_map &      plugins() const { return m_plugins; }
-    void                    registerPlugin(std::string name, EffectPluginFactory *);
+    const plugin_list &     plugins() const { return m_plugins; }
+    void                    registerPlugin(EffectPluginFactory *);
     EffectPluginFactory *   get(const std::string & name);
 
 private:
-    plugin_map              m_plugins;
+    plugin_list             m_plugins;
 };
 
 /****************************************************************************/
@@ -104,13 +103,13 @@ template<class T> class DefaultEffectPluginFactory final : public EffectPluginFa
 public:
     DefaultEffectPluginFactory(std::string name) : m_name(name)
     {
-        EffectPluginManager::instance().registerPlugin(m_name, this);
+        EffectPluginManager::instance().registerPlugin(this);
     }
 
     const std::string & name() const noexcept override { return m_name; }
     std::unique_ptr<EffectPlugin> createEffect(const DeviceManager & manager,
                                                const Configuration::Plugin & conf,
-                                               const group_map & groups) override
+                                               const group_list & groups) override
     {
         return std::make_unique<T>(manager, conf, groups);
     }

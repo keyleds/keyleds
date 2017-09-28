@@ -19,6 +19,7 @@
 
 #include <QObject>
 #include <string>
+#include <vector>
 #include "tools/XWindow.h"
 
 namespace xlib {
@@ -30,12 +31,12 @@ namespace xlib {
 class XInputWatcher final : public QObject
 {
     Q_OBJECT
-    typedef std::map<xlib::Device::handle_type, xlib::Device> device_map;
+    using device_list = std::vector<Device>;
 public:
-                    XInputWatcher(xlib::Display & display, QObject *parent = nullptr);
+                    XInputWatcher(Display & display, QObject *parent = nullptr);
                     ~XInputWatcher() override;
 
-    const xlib::Display & display() const { return m_display; }
+    const Display & display() const { return m_display; }
 
 public slots:
     void            scan();
@@ -45,16 +46,16 @@ signals:
 
 protected:
     virtual void    handleEvent(const XEvent &);
-    virtual void    onInputEnabled(xlib::Device::handle_type, int);
-    virtual void    onInputDisabled(xlib::Device::handle_type, int);
+    virtual void    onInputEnabled(Device::handle_type, int);
+    virtual void    onInputDisabled(Device::handle_type, int);
 
 private:
     static void     displayEventCallback(const XEvent &, void*);
 
 protected:
-    xlib::Display & m_display;          ///< X display connection
+    Display &       m_display;          ///< X display connection
     int             m_XIopcode;         ///< XInput extension code
-    device_map      m_devices;          ///< List of enabled devices
+    device_list     m_devices;          ///< List of enabled devices
 };
 
 

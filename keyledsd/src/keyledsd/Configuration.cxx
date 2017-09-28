@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <cerrno>
 #include <cstdlib>
@@ -34,8 +35,9 @@
 #include "config.h"
 
 using keyleds::Configuration;
-static const std::vector<std::string> truthy = {"yes", "1", "true"};
-static const std::vector<std::string> falsy = {"no", "0", "false"};
+
+static constexpr std::array<const char *, 3> truthy = {{"yes", "1", "true"}};
+static constexpr std::array<const char *, 3> falsy = {{"no", "0", "false"}};
 
 /****************************************************************************/
 /****************************************************************************/
@@ -52,13 +54,13 @@ class ConfigurationBuilder final : public YAMLParser
 {
 public:
     class BuildState;
-    typedef std::unique_ptr<BuildState> state_ptr;
+    using state_ptr = std::unique_ptr<BuildState>;
 public:
     ConfigurationBuilder();
 
     void addScalarAlias(std::string anchor, std::string value);
     const std::string & getScalarAlias(const std::string & anchor);
-    void addGroupAlias(std::string anchor, const Configuration::key_list &);
+    void addGroupAlias(std::string anchor, Configuration::key_list);
     const Configuration::key_list & getGroupAlias(std::string anchor);
 
     void streamStart() override {}
@@ -82,13 +84,13 @@ public:
     Configuration::path_list    m_layoutPaths;
     Configuration::device_map   m_devices;
     Configuration::group_map    m_groups;
-    Configuration::effect_map   m_effects;
+    Configuration::effect_list  m_effects;
     Configuration::profile_list m_profiles;
 
 private:
-    std::stack<state_ptr>               m_state;
-    std::map<std::string, std::string>  m_scalarAliases;
-    std::map<std::string, Configuration::key_list> m_groupAliases;
+    std::stack<state_ptr, std::vector<state_ptr>>                m_state;
+    std::vector<std::pair<std::string, std::string>>             m_scalarAliases;
+    std::vector<std::pair<std::string, Configuration::key_list>> m_groupAliases;
 };
 
 template<> bool ConfigurationBuilder::parseScalar<bool>(const std::string & val)
@@ -109,8 +111,8 @@ template<> bool ConfigurationBuilder::parseScalar<bool>(const std::string & val)
 class ConfigurationBuilder::BuildState
 {
 public:
-    typedef std::unique_ptr<BuildState> state_ptr;
-    typedef unsigned int state_type;
+    using state_ptr = std::unique_ptr<BuildState>;
+    using state_type = unsigned int;
 
 public:
     BuildState(state_type type = 0) : m_type(type) {}
@@ -210,20 +212,20 @@ private:
 class StringSequenceBuildState final : public ConfigurationBuilder::BuildState
 {
 public:
-    typedef std::vector<std::string>    value_type;
+    using value_type = std::vector<std::string>;
 public:
     StringSequenceBuildState(state_type type = 0) : BuildState(type) {}
     void print(std::ostream & out) const override { out <<"string-sequence"; }
 
     void alias(ConfigurationBuilder & builder, const std::string & anchor) override
     {
-        m_value.push_back(builder.getScalarAlias(anchor));
+        m_value.emplace_back(builder.getScalarAlias(anchor));
     }
 
     void scalar(ConfigurationBuilder & builder, const std::string & value,
                 const std::string & anchor) override
     {
-        m_value.push_back(value);
+        m_value.emplace_back(value);
         builder.addScalarAlias(anchor, value);
     }
 
@@ -236,7 +238,7 @@ private:
 class StringMappingBuildState final : public MappingBuildState
 {
 public:
-    typedef std::map<std::string, std::string> value_type;
+    using value_type = std::vector<std::pair<std::string, std::string>>;
 public:
     StringMappingBuildState(state_type type = 0) : MappingBuildState(type) {}
     void print(std::ostream & out) const override { out <<"string-mapping"; }
@@ -244,13 +246,13 @@ public:
     void aliasEntry(ConfigurationBuilder & builder, const std::string & key,
                     const std::string & anchor) override
     {
-        m_value[key] = builder.getScalarAlias(anchor);
+        m_value.emplace_back(key, builder.getScalarAlias(anchor));
     }
 
     void scalarEntry(ConfigurationBuilder & builder, const std::string & key,
                      const std::string & value, const std::string & anchor) override
     {
-        m_value[key] = value;
+        m_value.emplace_back(key, value);
         if (!anchor.empty()) { builder.addScalarAlias(anchor, value); }
     }
 
@@ -269,7 +271,7 @@ private:
 class GroupListState final : public MappingBuildState
 {
 public:
-    typedef std::map<std::string, Configuration::key_list> value_type;
+    using value_type = Configuration::group_map;
 public:
     GroupListState(state_type type) : MappingBuildState(type) {}
     void print(std::ostream & out) const override { out <<"group-list"; }
@@ -288,9 +290,9 @@ public:
             std::transform(key.begin(), key.end(), key.begin(), ::toupper);
         }
 
-        auto it = m_value.emplace(currentKey(), std::move(keys)).first;
+        m_value.emplace_back(currentKey(), std::move(keys));
         if (!m_currentAnchor.empty()) {
-            builder.addGroupAlias(m_currentAnchor, it->second);
+            builder.addGroupAlias(m_currentAnchor, m_value.back().second);
         }
         MappingBuildState::subStateEnd(builder, state);
     }
@@ -298,7 +300,7 @@ public:
     void aliasEntry(ConfigurationBuilder & builder, const std::string & key,
                     const std::string & anchor) override
     {
-        m_value.emplace(key, builder.getGroupAlias(anchor));
+        m_value.emplace_back(key, builder.getGroupAlias(anchor));
     }
 
     value_type && result() { return std::move(m_value); }
@@ -313,7 +315,7 @@ private:
 class PluginListState final : public ConfigurationBuilder::BuildState
 {
 public:
-    typedef Configuration::Effect::plugin_list value_type;
+    using value_type = Configuration::Effect::plugin_list;
 public:
     PluginListState(state_type type) : BuildState(type) {}
     void print(std::ostream & out) const override { out <<"plugins-list"; }
@@ -326,7 +328,8 @@ public:
     void subStateEnd(ConfigurationBuilder & builder, BuildState & state) override
     {
         auto conf_map = state.as<StringMappingBuildState>().result();
-        auto it_name = conf_map.find("plugin");
+        auto it_name = std::find_if(conf_map.cbegin(), conf_map.cend(),
+                                    [](auto & item) { return item.first == "plugin"; });
         if (it_name == conf_map.end()) { throw builder.makeError("plugin configuration must have a name"); }
 
         auto name = it_name->second;
@@ -403,7 +406,7 @@ private:
 class EffectListState final: public MappingBuildState
 {
 public:
-    typedef std::map<std::string, Configuration::Effect> value_type;
+    using value_type = Configuration::effect_list;
 public:
     EffectListState(state_type type) : MappingBuildState(type) {}
     void print(std::ostream & out) const override { out <<"effect-map"; }
@@ -415,7 +418,7 @@ public:
 
     void subStateEnd(ConfigurationBuilder & builder, BuildState & state) override
     {
-        m_value.emplace(currentKey(), state.as<EffectState>().result());
+        m_value.emplace_back(state.as<EffectState>().result());
         MappingBuildState::subStateEnd(builder, state);
     }
 
@@ -503,7 +506,7 @@ private:
 class ProfileListState final : public MappingBuildState
 {
 public:
-    typedef std::vector<Configuration::Profile> value_type;
+    using value_type = std::vector<Configuration::Profile>;
 public:
     ProfileListState(state_type type) : MappingBuildState(type) {}
     void print(std::ostream & out) const override { out <<"profile-map"; }
@@ -571,12 +574,9 @@ public:
         case SubState::Layouts:
             builder.m_layoutPaths = state.as<StringSequenceBuildState>().result();
             break;
-        case SubState::Devices: {
-            for (const auto & item : state.as<StringMappingBuildState>().result()) {
-                builder.m_devices.emplace(item.second, item.first);
-            }
+        case SubState::Devices:
+            builder.m_devices = state.as<StringMappingBuildState>().result();
             break;
-        }
         case SubState::Groups:
             builder.m_groups = state.as<GroupListState>().result();
             break;
@@ -613,23 +613,25 @@ ConfigurationBuilder::ConfigurationBuilder()
 }
 
 void ConfigurationBuilder::addScalarAlias(std::string anchor, std::string value) {
-    m_scalarAliases[anchor] = value;
+    m_scalarAliases.emplace_back(std::move(anchor), std::move(value));
 }
 
 const std::string & ConfigurationBuilder::getScalarAlias(const std::string & anchor) {
-    auto it = m_scalarAliases.find(anchor);
+    auto it = std::find_if(m_scalarAliases.begin(), m_scalarAliases.end(),
+                           [anchor](const auto & alias) { return alias.first == anchor; });
     if (it == m_scalarAliases.end()) {
         throw makeError("unknown anchor or invalid anchor target");
     }
     return it->second;
 }
 
-void ConfigurationBuilder::addGroupAlias(std::string anchor, const Configuration::key_list & value) {
-    m_groupAliases.emplace(anchor, value);
+void ConfigurationBuilder::addGroupAlias(std::string anchor, Configuration::key_list value) {
+    m_groupAliases.emplace_back(std::move(anchor), std::move(value));
 }
 
 const Configuration::key_list & ConfigurationBuilder::getGroupAlias(std::string anchor) {
-    auto it = m_groupAliases.find(anchor);
+    auto it = std::find_if(m_groupAliases.begin(), m_groupAliases.end(),
+                           [anchor](const auto & alias) { return alias.first == anchor; });
     if (it == m_groupAliases.end()) {
         throw makeError("unknown anchor or anchor is not a key group");
     }
@@ -669,7 +671,7 @@ ConfigurationBuilder::ParseError ConfigurationBuilder::makeError(const std::stri
     auto state = std::vector<decltype(m_state)::value_type>();
     state.reserve(m_state.size());
     while (!m_state.empty()) {
-        state.push_back(std::move(m_state.top()));
+        state.emplace_back(std::move(m_state.top()));
         m_state.pop();
     }
     std::ostringstream msg;
@@ -688,7 +690,7 @@ Configuration::Configuration(unsigned logLevel,
                              path_list layoutPaths,
                              device_map devices,
                              group_map groups,
-                             effect_map effects,
+                             effect_list effects,
                              profile_list profiles)
  : m_logLevel(logLevel),
    m_autoQuit(autoQuit),
@@ -820,28 +822,31 @@ Configuration::Profile::Profile(std::string name,
 /****************************************************************************/
 
 Configuration::Profile::Lookup::Lookup(filter_map filters)
- : m_filters(std::move(filters)),
-   m_regexps(buildRegexps(m_filters))
+ : m_entries(buildRegexps(std::move(filters)))
 {}
 
 bool Configuration::Profile::Lookup::match(const Context & context) const
 {
-    assert(m_filters.size() == m_regexps.size());
-    auto rit = m_regexps.begin();
-    for (auto fit = m_filters.begin(); fit != m_filters.end(); ++fit, ++rit) {
-        if (!std::regex_match(context[fit->first], *rit)) { return false; }
-    }
-    return true;
+    return std::all_of(m_entries.cbegin(), m_entries.cend(),
+                       [&context](const auto & entry) {
+                           return std::regex_match(context[entry.key], entry.regex);
+                       });
 }
 
-Configuration::Profile::Lookup::regex_list
-Configuration::Profile::Lookup::buildRegexps(const filter_map & filters)
+Configuration::Profile::Lookup::entry_list
+Configuration::Profile::Lookup::buildRegexps(filter_map filters)
 {
-    regex_list result;
+    entry_list result;
     result.reserve(filters.size());
     std::transform(filters.begin(), filters.end(), std::back_inserter(result),
                    [](auto & entry) {
-                       return std::regex{entry.second, std::regex::nosubs | std::regex::optimize};
+                       auto regex = std::regex(entry.second,
+                                               std::regex::nosubs | std::regex::optimize);
+                       return Entry{
+                           std::move(entry.first),
+                           std::move(entry.second),
+                           std::move(regex)
+                       };
                    });
     return result;
 }
@@ -851,3 +856,11 @@ Configuration::Profile::Lookup::buildRegexps(const filter_map & filters)
 Configuration::Plugin::Plugin(std::string name, conf_map items)
  : m_name(std::move(name)), m_items(std::move(items))
 {}
+
+const std::string & Configuration::Plugin::operator[](const std::string & key) const
+{
+    static const std::string empty;
+    auto it = std::find_if(m_items.begin(), m_items.end(),
+                           [key](const auto & item) { return item.first == key; });
+    return it != m_items.end() ? it->second : empty;
+}

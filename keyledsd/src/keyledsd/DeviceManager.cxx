@@ -14,6 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <algorithm>
 #include <fstream>
 #include <iomanip>
 #include <sstream>
@@ -29,7 +30,6 @@ LOGGING("dev-manager");
 using keyleds::Configuration;
 using keyleds::Context;
 using keyleds::DeviceManager;
-using keyleds::EffectPluginManager;
 using keyleds::KeyDatabase;
 using keyleds::LayoutDescription;
 using keyleds::RenderLoop;
@@ -42,7 +42,8 @@ static const char overlayProfileName[] = "__overlay__";
 static std::vector<const Configuration::Effect *> effectsForContext(
     const Configuration & config, const std::string & serial, const Context & context)
 {
-    auto dit = config.devices().find(serial);
+    auto dit = std::find_if(config.devices().begin(), config.devices().end(),
+                            [&serial](auto & item) { return item.first == serial; });
     const auto & devLabel = (dit == config.devices().end()) ? serial : dit->second;
 
     const Configuration::Profile * profile = nullptr;
@@ -67,21 +68,23 @@ static std::vector<const Configuration::Effect *> effectsForContext(
 
     auto result = std::vector<const Configuration::Effect *>();
     for (const auto & name : profile->effects()) {
-        auto eit = config.effects().find(name);
+        auto eit = std::find_if(config.effects().begin(), config.effects().end(),
+                                [&name](auto & effect) { return effect.name() == name; });
         if (eit == config.effects().end()) {
             ERROR("profile <", profile->name(), "> references unknown effect <", name, ">");
             continue;
         }
-        result.push_back(&eit->second);
+        result.push_back(&*eit);
     }
     if (overlayProfile != nullptr) {
         for (const auto & name : overlayProfile->effects()) {
-            auto eit = config.effects().find(name);
+            auto eit = std::find_if(config.effects().begin(), config.effects().end(),
+                                    [&name](auto & effect) { return effect.name() == name; });
             if (eit == config.effects().end()) {
                 ERROR("overlay profile references unknown effect <", name, ">");
                 continue;
             }
-            result.push_back(&eit->second);
+            result.push_back(&*eit);
         }
     }
     return result;
@@ -89,8 +92,9 @@ static std::vector<const Configuration::Effect *> effectsForContext(
 
 /****************************************************************************/
 
-DeviceManager::LoadedEffect::LoadedEffect(plugin_list && plugins)
- : m_plugins(std::move(plugins))
+DeviceManager::LoadedEffect::LoadedEffect(std::string name, plugin_list && plugins)
+ : m_name(std::move(name)),
+   m_plugins(std::move(plugins))
 {}
 
 /****************************************************************************/
@@ -99,7 +103,9 @@ DeviceManager::DeviceManager(const device::Description & description, Device && 
                              const Configuration & conf, const Context & context, QObject *parent)
     : QObject(parent),
       m_configuration(conf),
+      m_sysPath(description.sysPath()),
       m_serial(getSerial(description)),
+      m_name(getName(conf, m_serial)),
       m_eventDevices(findEventDevices(description)),
       m_device(std::move(device)),
       m_keyDB(buildKeyDB(conf, m_device)),
@@ -132,23 +138,17 @@ void DeviceManager::handleGenericEvent(const Context & context)
 
 void DeviceManager::handleKeyEvent(int keyCode, bool press)
 {
-    const KeyDatabase::Key * key = nullptr;
-    for (auto & item : m_keyDB) {
-        if (item.second.keyCode == keyCode) {
-            key = &item.second;
-            break;
-        }
-    }
-    if (key == nullptr) {
+    auto it = m_keyDB.find(keyCode);
+    if (it == m_keyDB.end()) {
         DEBUG("unknown key ", keyCode, " on device ", m_serial);
         return;
     }
 
     auto lock = m_renderLoop.lock();
     for (const auto & plugin : m_renderLoop.effects()) {
-        plugin->handleKeyEvent(*key, press);
+        plugin->handleKeyEvent(*it, press);
     }
-    DEBUG("key ", key->name, " ", press ? "pressed" : "released", " on device ", m_serial);
+    DEBUG("key ", it->name, " ", press ? "pressed" : "released", " on device ", m_serial);
 }
 
 void DeviceManager::setPaused(bool val)
@@ -167,7 +167,21 @@ void DeviceManager::reloadConfiguration()
 std::string DeviceManager::getSerial(const device::Description & description)
 {
     const auto & usbDevDescription = description.parentWithType("usb", "usb_device");
-    return usbDevDescription.attributes().at("serial");
+    auto it = std::find_if(
+        usbDevDescription.attributes().begin(), usbDevDescription.attributes().end(),
+        [](const auto & attr) { return attr.first == "serial"; }
+    );
+    if (it == usbDevDescription.attributes().end()) {
+        throw std::runtime_error("Device " + description.sysPath() + " has no serial");
+    }
+    return it->second;
+}
+
+std::string DeviceManager::getName(const Configuration & config, const std::string & serial)
+{
+    auto dit = std::find_if(config.devices().begin(), config.devices().end(),
+                            [&serial](auto & item) { return item.second == serial; });
+    return dit != config.devices().end() ? dit->first : std::string();
 }
 
 DeviceManager::dev_list DeviceManager::findEventDevices(const device::Description & description)
@@ -178,7 +192,7 @@ DeviceManager::dev_list DeviceManager::findEventDevices(const device::Descriptio
     for (const auto & candidate : candidates) {
         const auto & devNode = candidate.devNode();
         if (!devNode.empty()) {
-            result.push_back(devNode);
+            result.emplace_back(devNode);
         }
     }
     return result;
@@ -198,7 +212,7 @@ LayoutDescription DeviceManager::loadLayoutDescription(const Configuration & con
 
     auto paths = conf.layoutPaths();
     for (const auto & path : paths::getPaths(paths::XDG::Data, true)) {
-        paths.push_back(path + "/" KEYLEDSD_DATA_PREFIX "/layouts");
+        paths.emplace_back(path + "/" KEYLEDSD_DATA_PREFIX "/layouts");
     }
     const auto & fileName = layoutName(device);
 
@@ -223,7 +237,7 @@ KeyDatabase DeviceManager::buildKeyDB(const Configuration & conf, const Device &
 {
     auto layout = loadLayoutDescription(conf, device);
 
-    KeyDatabase::key_map db;
+    KeyDatabase::key_list db;
     for (Device::block_list::size_type bidx = 0; bidx < device.blocks().size(); ++bidx) {
         const auto & block = device.blocks()[bidx];
 
@@ -242,15 +256,12 @@ KeyDatabase DeviceManager::buildKeyDB(const Configuration & conf, const Device &
             }
             if (name.empty()) { name = device.resolveKey(block.id(), keyId); }
 
-            db.emplace(
+            db.emplace_back(KeyDatabase::Key{
+                { bidx, kidx },
+                device.decodeKeyId(block.id(), keyId),
                 name,
-                KeyDatabase::Key{
-                    { bidx, kidx },
-                    device.decodeKeyId(block.id(), keyId),
-                    name,
-                    position
-                }
-            );
+                position
+            });
         }
     }
     return db;
@@ -273,38 +284,22 @@ keyleds::RenderLoop::effect_plugin_list DeviceManager::loadEffects(const Context
 
 DeviceManager::LoadedEffect & DeviceManager::getEffect(const Configuration::Effect & conf)
 {
-    {
-        auto it = m_effects.find(conf.name());
-        if (it != m_effects.end()) { return it->second; }
-    }
+    auto eit = std::lower_bound(
+        m_effects.begin(), m_effects.end(), conf.name(),
+        [](const auto & effect, const auto & name) { return effect.name() < name; }
+    );
+    if (eit != m_effects.end() && eit->name() == conf.name()) { return *eit; }
 
     // Load groups
-    keyleds::EffectPluginFactory::group_map groups;
-    for (const auto & group : conf.groups()) {
-        auto keys = decltype(groups)::mapped_type();
-        for (const auto & name : group.second) {
-            auto it = m_keyDB.find(name);
-            if (it != m_keyDB.end()) {
-                keys.push_back(&it->second);
-            } else {
-                VERBOSE("unknown key ", name, " for device ", m_serial, " in profile ", conf.name());
-            }
-        }
-        groups.emplace(group.first, std::move(keys));
-    }
-    for (const auto & group : m_configuration.groups()) {
-        if (groups.find(group.first) != groups.end()) { continue; }
-        auto keys = decltype(groups)::mapped_type();
-        for (const auto & name : group.second) {
-            auto it = m_keyDB.find(name);
-            if (it != m_keyDB.end()) {
-                keys.push_back(&it->second);
-            } else {
-                VERBOSE("ignoring global key ", name, ": not found on device ", m_serial);
-            }
-        }
-        groups.emplace(group.first, std::move(keys));
-    }
+    EffectPluginFactory::group_list groups;
+
+    auto group_from_conf = [this](const auto & conf) {
+        return m_keyDB.makeGroup(conf.first, conf.second.begin(), conf.second.end());
+    };
+    std::transform(conf.groups().begin(), conf.groups().end(),
+                   std::back_inserter(groups), group_from_conf);
+    std::transform(m_configuration.groups().begin(), m_configuration.groups().end(),
+                   std::back_inserter(groups), group_from_conf);
 
     // Load effects
     auto & manager = EffectPluginManager::instance();
@@ -316,16 +311,16 @@ DeviceManager::LoadedEffect & DeviceManager::getEffect(const Configuration::Effe
             continue;
         }
         VERBOSE("loaded plugin ", pluginConf.name());
-        plugins.push_back(plugin->createEffect(*this, pluginConf, groups));
+        plugins.emplace_back(plugin->createEffect(*this, pluginConf, groups));
     }
 
-    auto it = m_effects.emplace(conf.name(), LoadedEffect(std::move(plugins))).first;
-    return it->second;
+    eit = m_effects.emplace(eit, conf.name(), std::move(plugins));
+    return *eit;
 }
 
 keyleds::RenderLoop::effect_plugin_list DeviceManager::LoadedEffect::plugins() const
 {
-    keyleds::RenderLoop::effect_plugin_list result;
+    RenderLoop::effect_plugin_list result;
     result.reserve(m_plugins.size());
     std::transform(m_plugins.begin(),
                    m_plugins.end(),

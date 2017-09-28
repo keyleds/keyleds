@@ -16,6 +16,8 @@
  */
 #include <unistd.h>
 #include <QSocketNotifier>
+#include <algorithm>
+#include <cassert>
 #include <cerrno>
 #include <system_error>
 #include "tools/FileWatcher.h"
@@ -27,8 +29,9 @@ LOGGING("filewatcher");
 
 struct FileWatcher::Watch final
 {
-    Listener        callback;
-    void * const    userData;
+    watch_id    id;
+    Listener    callback;
+    void *      userData;
 };
 
 /****************************************************************************/
@@ -48,6 +51,7 @@ FileWatcher::FileWatcher(QObject * parent)
 
 FileWatcher::~FileWatcher()
 {
+    assert(m_listeners.empty());
     if (m_fd >= 0) { close(m_fd); }
 }
 
@@ -59,28 +63,37 @@ FileWatcher::watch_id FileWatcher::subscribe(const std::string & path, event eve
     if (wd < 0) {
         throw std::system_error(errno, std::generic_category());
     }
-    m_listeners.insert(std::make_pair(wd, Watch{listener, data}));
+    m_listeners.insert(
+        std::upper_bound(m_listeners.begin(), m_listeners.end(), wd,
+                         [](watch_id id, const auto & listener) { return id < listener.id; }),
+        {wd, listener, data}
+    );
     return wd;
 }
 
 void FileWatcher::unsubscribe(watch_id wd)
 {
-    if (m_listeners.erase(wd) == 0) {
-        throw std::logic_error("Unknown subscription");
+    auto it = std::find_if(m_listeners.begin(), m_listeners.end(),
+                           [wd](const auto & listener) { return listener.id == wd; });
+    if (it == m_listeners.end()) {
+        throw std::invalid_argument("Unknown subscription");
     }
     inotify_rm_watch(m_fd, wd);
+    m_listeners.erase(it);
 }
 
-void FileWatcher::unsubscribe(Listener listener, void * data)
+void FileWatcher::unsubscribe(Listener callback, void * data)
 {
-    for (auto it = m_listeners.begin(); it != m_listeners.end(); ++it) {
-        if (it->second.callback == listener && it->second.userData == data) {
-            inotify_rm_watch(m_fd, it->first);
-            m_listeners.erase(it);
-            return;
+    auto it = std::stable_partition(
+        m_listeners.begin(), m_listeners.end(),
+        [callback, data](const auto & listener) {
+            return !(listener.callback == callback && listener.userData == data);
         }
-    }
-    throw std::logic_error("Unknown subscription");
+    );
+
+    std::for_each(it, m_listeners.end(),
+                  [this](auto & listener) { inotify_rm_watch(m_fd, listener.id); });
+    m_listeners.erase(it, m_listeners.end());
 }
 
 void FileWatcher::onNotifyReady(int)
@@ -93,11 +106,16 @@ void FileWatcher::onNotifyReady(int)
 
     ssize_t nread;
     while ((nread = read(m_fd, &buffer, sizeof(buffer))) >= 0) {
-        auto it = m_listeners.find(buffer.event.wd);
+        auto it = std::lower_bound(
+            m_listeners.begin(), m_listeners.end(), buffer.event.wd,
+            [](const auto & listener, watch_id id) { return listener.id < id; }
+        );
         if (it == m_listeners.end()) { continue; }
-        const auto & watch = it->second;
-        (*watch.callback)(watch.userData, static_cast<enum event>(buffer.event.mask),
-                          buffer.event.cookie, std::string(buffer.event.name, buffer.event.len));
+        assert(it->id == buffer.event.wd);
+        (*it->callback)(it->userData,
+                        static_cast<enum event>(buffer.event.mask),
+                        buffer.event.cookie,
+                        std::string(buffer.event.name, buffer.event.len));
     }
 
     if (errno != EAGAIN) {

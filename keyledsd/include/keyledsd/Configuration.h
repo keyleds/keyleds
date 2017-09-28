@@ -17,9 +17,9 @@
 #ifndef KEYLEDSD_CONFIGURATION_H_603C2B68
 #define KEYLEDSD_CONFIGURATION_H_603C2B68
 
-#include <map>
 #include <regex>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace keyleds {
@@ -38,13 +38,14 @@ public:
     class Effect;
     class Plugin;
     class Profile;
-    typedef std::vector<std::string> key_list;
 
-    typedef std::vector<std::string> path_list;
-    typedef std::map<std::string, std::string> device_map;
-    typedef std::map<std::string, key_list> group_map;
-    typedef std::map<std::string, Effect> effect_map;
-    typedef std::vector<Profile> profile_list;
+    using key_list = std::vector<std::string>;
+
+    using path_list = std::vector<std::string>;
+    using device_map = std::vector<std::pair<std::string, std::string>>;
+    using group_map = std::vector<std::pair<std::string, key_list>>;
+    using effect_list = std::vector<Effect>;
+    using profile_list = std::vector<Profile>;
 private:
                         Configuration(unsigned logLevel,
                                       bool autoQuit,
@@ -53,7 +54,7 @@ private:
                                       path_list layoutPaths,
                                       device_map devices,
                                       group_map groups,
-                                      effect_map effects,
+                                      effect_list effects,
                                       profile_list profiles);
 
 public:
@@ -68,7 +69,7 @@ public:
     const path_list &   layoutPaths() const { return m_layoutPaths; }
     const device_map &  devices() const { return m_devices; }
     const group_map &   groups() const { return m_groups; }
-    const effect_map &  effects() const { return m_effects; }
+    const effect_list & effects() const { return m_effects; }
     const profile_list& profiles() const { return m_profiles; }
 
 public:
@@ -84,7 +85,7 @@ private:
     path_list           m_layoutPaths;  ///< List of directories to search for layout files
     device_map          m_devices;      ///< Map of device serials to device names
     group_map           m_groups;       ///< Map of key group names to lists of key names
-    effect_map          m_effects;      ///< Map of effect names to effect configurations
+    effect_list         m_effects;      ///< Map of effect names to effect configurations
     profile_list        m_profiles;     ///< List of profile configurations
 };
 
@@ -95,8 +96,8 @@ private:
 class Configuration::Effect final
 {
 public:
-    typedef Configuration::group_map group_map;
-    typedef std::vector<Configuration::Plugin> plugin_list;
+    using group_map = Configuration::group_map;
+    using plugin_list = std::vector<Plugin>;
 public:
                         Effect(std::string name,
                                group_map groups,
@@ -126,23 +127,27 @@ public:
     /// Filters a context to determine whether a profile should be enabled
     class Lookup final
     {
-        typedef std::vector<std::regex>             regex_list;
+        struct Entry {
+            std::string key;
+            std::string value;
+            std::regex  regex;
+        };
+        using entry_list = std::vector<Entry>;
     public:
-        typedef std::map<std::string, std::string>  filter_map;
+        using filter_map = std::vector<std::pair<std::string, std::string>>;
     public:
                             Lookup() = default;
                             Lookup(filter_map filters);
 
         bool                match(const Context &) const;
     private:
-        static regex_list   buildRegexps(const filter_map &);
+        static entry_list   buildRegexps(filter_map);
     private:
-        filter_map  m_filters;
-        regex_list  m_regexps;
+        entry_list  m_entries;
     };
 
-    typedef std::vector<std::string> device_list;
-    typedef std::vector<std::string> effect_list;
+    using device_list = std::vector<std::string>;
+    using effect_list = std::vector<std::string>;
 public:
                         Profile(std::string name,
                                 Lookup lookup,
@@ -171,11 +176,12 @@ private:
 class Configuration::Plugin final
 {
 public:
-    typedef std::map<std::string, std::string> conf_map;
+    using conf_map = std::vector<std::pair<std::string, std::string>>;
 public:
                         Plugin(std::string name, conf_map items);
     const std::string & name() const { return m_name; }
     const conf_map &    items() const { return m_items; }
+    const std::string & operator[](const std::string &) const;
 private:
     std::string         m_name;         ///< Plugin name as registered in plugin manager
     conf_map            m_items;        ///< Flat string map passed through to plugin

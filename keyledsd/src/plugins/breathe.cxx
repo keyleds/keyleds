@@ -14,6 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include "keyledsd/common.h"
@@ -23,7 +24,7 @@
 #include "keyledsd/PluginManager.h"
 #include "keyledsd/RenderLoop.h"
 
-using keyleds::KeyDatabase;
+using KeyGroup = keyleds::KeyDatabase::KeyGroup;
 using keyleds::RGBAColor;
 using keyleds::RenderTarget;
 static constexpr float pi = 3.14159265358979f;
@@ -33,31 +34,28 @@ class BreathePlugin final : public keyleds::EffectPlugin
 public:
     BreathePlugin(const keyleds::DeviceManager & manager,
                   const keyleds::Configuration::Plugin & conf,
-                  const keyleds::EffectPluginFactory::group_map & groups)
+                  const keyleds::EffectPluginFactory::group_list & groups)
      : m_buffer(manager.getRenderTarget()),
        m_time(0), m_period(10000)
     {
         auto color = RGBAColor(0, 0, 0, 0);
-        auto cit = conf.items().find("color");
-        if (cit != conf.items().end()) {
-            color = RGBAColor::parse(cit->second);
-        }
+        const auto & colorStr = conf["color"];
+        if (!colorStr.empty()) { color = RGBAColor::parse(colorStr); }
         m_alpha = color.alpha;
         color.alpha = 0;
 
+        const auto & groupStr = conf["group"];
+        if (!groupStr.empty()) {
+            auto git = std::find_if(
+                groups.begin(), groups.end(),
+                [groupStr](const auto & group) { return group.name() == groupStr; });
+            if (git != groups.end()) { m_keys = *git; }
+        }
+
+        auto period = std::stoul(conf["period"]);
+        if (period > 0) { m_period = period; }
+
         std::fill(m_buffer.begin(), m_buffer.end(), color);
-
-        auto kit = conf.items().find("group");
-        if (kit != conf.items().end()) {
-            auto git = groups.find(kit->second);
-            if (git != groups.end()) { m_keys = git->second; }
-        }
-
-        auto pit = conf.items().find("period");
-        if (pit != conf.items().end()) {
-            auto period = std::stoul(pit->second);
-            if (period > 0) { m_period = period; }
-        }
     }
 
     void render(unsigned long ms, RenderTarget & target) override
@@ -72,18 +70,18 @@ public:
         if (m_keys.empty()) {
             for (auto & key : m_buffer) { key.alpha = alpha; }
         } else {
-            for (const auto & key : m_keys) { m_buffer.get(key->index).alpha = alpha; }
+            for (const auto & key : m_keys) { m_buffer.get(key.index).alpha = alpha; }
         }
-        keyleds::blend(target, m_buffer);
+        blend(target, m_buffer);
     }
 
 private:
-    RenderTarget m_buffer;
-    std::vector<const KeyDatabase::Key *> m_keys;
-    uint8_t             m_alpha;
+    RenderTarget    m_buffer;
+    KeyGroup        m_keys;
+    uint8_t         m_alpha;
 
-    unsigned            m_time;
-    unsigned            m_period;
+    unsigned        m_time;
+    unsigned        m_period;
 };
 
 REGISTER_EFFECT_PLUGIN("breathe", BreathePlugin)

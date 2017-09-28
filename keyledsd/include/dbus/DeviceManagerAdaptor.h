@@ -32,7 +32,7 @@ struct DBusDeviceKeyInfo
     QString     name;
     Rect        position;
 };
-typedef QList<DBusDeviceKeyInfo> DBusDeviceKeyInfoList;
+using DBusDeviceKeyInfoList = QList<DBusDeviceKeyInfo>;
 
 namespace dbus {
 
@@ -45,6 +45,7 @@ class DeviceManagerAdaptor final : public QDBusAbstractAdaptor
 {
     Q_OBJECT
     Q_CLASSINFO("D-Bus Interface", "org.etherdream.keyleds.DeviceManager")
+    Q_PROPERTY(QString sysPath READ sysPath)
     Q_PROPERTY(QString serial READ serial)
     Q_PROPERTY(QString devNode READ devNode)
     Q_PROPERTY(QStringList eventDevices READ eventDevices)
@@ -57,6 +58,7 @@ public:
                 DeviceManagerAdaptor(keyleds::DeviceManager *parent);
 
 public:
+    QString     sysPath() const;
     QString     serial() const;
     QString     devNode() const;
     QStringList eventDevices() const;

@@ -14,6 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <algorithm>
 #include <ostream>
 #include "keyledsd/Context.h"
 
@@ -29,13 +30,33 @@ Context::Context(value_map values)
 
 void Context::merge(const Context & other)
 {
-    for (auto & item : other) { m_values[item.first] = item.second; }
+    for (auto & oitem : other) {
+        auto it = std::find_if(
+            m_values.begin(), m_values.end(),
+            [&oitem](const auto & item) { return item.first == oitem.first; }
+        );
+        if (it != m_values.end()) {
+            // Key exists
+            if (oitem.second.empty()) {
+                // Value is empty, destroy key
+                std::iter_swap(it, m_values.end() - 1);
+                m_values.pop_back();
+            } else {
+                // Update with new value
+                it->second = oitem.second;
+            }
+        } else if (!oitem.second.empty()) {
+            // Create key
+            m_values.emplace_back(oitem.first, oitem.second);
+        }
+    }
 }
 
 const std::string & Context::operator[](const std::string & key) const
 {
     static const std::string empty;
-    auto it = m_values.find(key);
+    auto it = std::find_if(m_values.begin(), m_values.end(),
+                           [&key](const auto & item) { return item.first == key; });
     if (it == m_values.end()) { return empty; }
     return it->second;
 }

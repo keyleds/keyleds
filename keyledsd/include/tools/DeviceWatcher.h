@@ -26,10 +26,10 @@
 /****************************************************************************/
 
 #include <QObject>
-#include <map>
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 class QSocketNotifier;
@@ -68,30 +68,31 @@ public:
 class Description final
 {
 public:
-    typedef std::map<std::string, std::string> property_map;
-    typedef std::vector<std::string>           tag_list;
-    typedef std::map<std::string, std::string> attribute_map;
+    using property_map = std::vector<std::pair<std::string, std::string>>;
+    using tag_list = std::vector<std::string>;
+    using attribute_map = std::vector<std::pair<std::string, std::string>>;
 public:
-                    Description(struct udev_device * device);
-    explicit        Description(const Description & other);
-                    Description(Description && other) = default;
+                        Description(struct udev_device * device);
+    explicit            Description(const Description & other);
+                        Description(Description &&) = default;
+    Description &       operator=(Description &&) = default;
 
-    Description     parent() const;
-    Description     parentWithType(const std::string & subsystem,
-                                   const std::string & devtype) const;
+    Description         parent() const;
+    Description         parentWithType(const std::string & subsystem,
+                                       const std::string & devtype) const;
     std::vector<Description> descendantsWithType(const std::string & subsystem) const;
 
-    std::string     devPath() const;
-    std::string     subsystem() const;
-    std::string     devType() const;
-    std::string     sysPath() const;
-    std::string     sysName() const;
-    std::string     sysNum() const;
-    std::string     devNode() const;
-    std::string     driver() const;
-    bool            isInitialized() const;
-    unsigned long long seqNum() const;
-    unsigned long long usecSinceInitialized() const;
+    std::string         devPath() const;
+    std::string         subsystem() const;
+    std::string         devType() const;
+    const std::string & sysPath() const { return m_sysPath; }
+    std::string         sysName() const;
+    std::string         sysNum() const;
+    std::string         devNode() const;
+    std::string         driver() const;
+    bool                isInitialized() const;
+    unsigned long long  seqNum() const;
+    unsigned long long  usecSinceInitialized() const;
 
     const property_map &    properties() const { return m_properties; };
     const tag_list &        tags() const { return m_tags; };
@@ -99,10 +100,15 @@ public:
 
 private:
     std::unique_ptr<struct udev_device> m_device;   ///< underlying libudev device instance
+    std::string     m_sysPath;                      ///< path to device description - unique
     property_map    m_properties;                   ///< key-value map of libudev properties
     tag_list        m_tags;                         ///< string list of libudev tags
     attribute_map   m_attributes;                   ///< key-value map of libudev attributes
 };
+
+inline bool operator==(const Description & a, const Description & b)
+    { return a.sysPath() == b.sysPath(); }
+inline bool operator!=(const Description & a, const Description & b) { return !(a == b); }
 
 /****************************************************************************/
 
@@ -123,7 +129,7 @@ class DeviceWatcher : public QObject
 {
     Q_OBJECT
 private:
-    typedef std::map<std::string, Description> device_map;
+    using device_list = std::vector<Description>;
 public:
                         DeviceWatcher(struct udev * udev = nullptr, QObject *parent = nullptr);
                         ~DeviceWatcher() override;
@@ -150,7 +156,7 @@ private:
     std::unique_ptr<struct udev>            m_udev;         ///< Connection to udev, or nullptr
     std::unique_ptr<struct udev_monitor>    m_monitor;      ///< Monitoring endpoint, or nullptr
     std::unique_ptr<QSocketNotifier>        m_udevNotifier; ///< Connection monitor for event loop
-    device_map                              m_known;        ///< Map of device syspath to description
+    device_list                             m_known;        ///< List of device descriptions
 };
 
 /****************************************************************************/

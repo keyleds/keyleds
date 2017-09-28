@@ -14,39 +14,67 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <algorithm>
 #include "keyledsd/KeyDatabase.h"
 
 using keyleds::KeyDatabase;
 
 /****************************************************************************/
 
-KeyDatabase::KeyDatabase(key_map keys)
+KeyDatabase::KeyDatabase(key_list keys)
  : m_keys(std::move(keys)),
    m_bounds(computeBounds(m_keys))
 {}
 
 KeyDatabase::iterator KeyDatabase::find(RenderTarget::key_descriptor index) const
 {
-    for (auto it = m_keys.begin(); it != m_keys.end(); ++it) {
-        if (it->second.index == index) { return it; }
-    }
-    return m_keys.end();
+    return std::find_if(m_keys.cbegin(), m_keys.cend(),
+                        [index](const auto & key) { return key.index == index; });
 }
 
-KeyDatabase::Key::Rect KeyDatabase::computeBounds(const key_map & keys)
+KeyDatabase::iterator KeyDatabase::find(int keyCode) const
+{
+    return std::find_if(m_keys.cbegin(), m_keys.cend(),
+                        [keyCode](const auto & key) { return key.keyCode == keyCode; });
+}
+
+KeyDatabase::iterator KeyDatabase::find(const std::string & name) const
+{
+    return std::find_if(m_keys.cbegin(), m_keys.cend(),
+                        [name](const auto & key) { return key.name == name; });
+}
+
+KeyDatabase::Key::Rect KeyDatabase::computeBounds(const key_list & keys)
 {
     auto result = Key::Rect{
-        keys.begin()->second.position.x0,
-        keys.begin()->second.position.y0,
-        keys.begin()->second.position.x1,
-        keys.begin()->second.position.y1
+        keys.front().position.x0,
+        keys.front().position.y0,
+        keys.front().position.x1,
+        keys.front().position.y1
     };
-    for (const auto & item : keys) {
-        const auto & pos = item.second.position;
-        if (pos.x0 < result.x0) { result.x0 = pos.x0; }
-        if (pos.y0 < result.y0) { result.y0 = pos.y0; }
-        if (pos.x1 > result.x1) { result.x1 = pos.x1; }
-        if (pos.y1 > result.y1) { result.y1 = pos.y1; }
+    for (const auto & key : keys) {
+        if (key.position.x0 < result.x0) { result.x0 = key.position.x0; }
+        if (key.position.y0 < result.y0) { result.y0 = key.position.y0; }
+        if (key.position.x1 > result.x1) { result.x1 = key.position.x1; }
+        if (key.position.y1 > result.y1) { result.y1 = key.position.y1; }
     }
     return result;
+}
+
+/****************************************************************************/
+
+KeyDatabase::KeyGroup::KeyGroup(std::string name, key_list keys)
+ : m_name(std::move(name)), m_keys(std::move(keys))
+{}
+
+void KeyDatabase::KeyGroup::swap(KeyGroup & other) noexcept
+{
+    using std::swap;
+    swap(m_name, other.m_name);
+    swap(m_keys, other.m_keys);
+}
+
+bool operator==(const KeyDatabase::KeyGroup & a, const KeyDatabase::KeyGroup & b)
+{
+    return a.size() == b.size() && std::equal(a.begin(), a.end(), b.begin());
 }

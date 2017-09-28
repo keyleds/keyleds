@@ -19,8 +19,9 @@
 
 #include <initializer_list>
 #include <iosfwd>
-#include <map>
 #include <string>
+#include <utility>
+#include <vector>
 
 namespace keyleds {
 
@@ -38,7 +39,7 @@ static bool operator!=(const Context &, const Context &);
 class Context final
 {
 public:
-    typedef std::map<std::string, std::string> value_map;
+    using value_map = std::vector<std::pair<std::string, std::string>>;
 public:
     Context() = default;
     Context(std::initializer_list<value_map::value_type> init);

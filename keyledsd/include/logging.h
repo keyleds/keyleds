@@ -18,9 +18,9 @@
 #define LOGGING_H_2BAC1A63
 
 #include <atomic>
-#include <map>
 #include <sstream>
 #include <string>
+#include <vector>
 
 /****************************************************************************/
 
@@ -28,7 +28,7 @@ namespace logging {
 
 class Policy;
 class Logger;
-typedef int level_t;
+using level_t = int;
 
 /****************************************************************************/
 
@@ -57,7 +57,7 @@ public:
 private:
     static const Policy & defaultPolicy();      ///< Used when setPolicy(nullptr) is invoked.
 private:
-    std::map<std::string, Logger *> m_loggers;  ///< Currently known logger instances.
+    std::vector<Logger *>       m_loggers;      ///< Currently known logger instances.
     std::atomic<const Policy *> m_globalPolicy; ///< Used by loggers with no policy. Never null.
 };
 
@@ -160,12 +160,13 @@ template <level_t L> template <typename...Args> void level<L>::print(Logger & lo
     logger.print(value, buffer.str());
 }
 
-typedef level<0> critical;
-typedef level<1> error;
-typedef level<2> warning;
-typedef level<3> info;
-typedef level<4> verbose;
-typedef level<5> debug;
+// Must start from 0 and have no gaps
+using critical = level<0>;
+using error = level<1>;
+using warning = level<2>;
+using info = level<3>;
+using verbose = level<4>;
+using debug = level<5>;
 
 #ifdef NDEBUG
 template <> template<typename...Args> void debug::print(Logger &, Args &&...) {}

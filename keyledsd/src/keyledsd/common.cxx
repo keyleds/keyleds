@@ -15,19 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <algorithm>
+#include <array>
 #include <cstdint>
 #include <cstdlib>
 #include <iomanip>
-#include <map>
 #include <ostream>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include "keyledsd/common.h"
 
 using keyleds::RGBColor;
 using keyleds::RGBAColor;
 
-static const std::map<std::string, RGBColor> predefinedColors = {
+//WARNING The following array must be sorted
+static constexpr std::array<std::pair<const char *, RGBColor>, 149> predefinedColors = {{
     { "aliceblue", { 0xF0, 0xF8, 0xFF } },
     { "antiquewhite", { 0xFA, 0xEB, 0xD7 } },
     { "aqua", { 0x00, 0xFF, 0xFF } },
@@ -53,8 +55,8 @@ static const std::map<std::string, RGBColor> predefinedColors = {
     { "darkcyan", { 0x00, 0x8B, 0x8B } },
     { "darkgoldenrod", { 0xB8, 0x86, 0x0B } },
     { "darkgray", { 0xA9, 0xA9, 0xA9 } },
-    { "darkgrey", { 0xA9, 0xA9, 0xA9 } },
     { "darkgreen", { 0x00, 0x64, 0x00 } },
+    { "darkgrey", { 0xA9, 0xA9, 0xA9 } },
     { "darkkhaki", { 0xBD, 0xB7, 0x6B } },
     { "darkmagenta", { 0x8B, 0x00, 0x8B } },
     { "darkolivegreen", { 0x55, 0x6B, 0x2F } },
@@ -82,9 +84,9 @@ static const std::map<std::string, RGBColor> predefinedColors = {
     { "gold", { 0xFF, 0xD7, 0x00 } },
     { "goldenrod", { 0xDA, 0xA5, 0x20 } },
     { "gray", { 0x80, 0x80, 0x80 } },
-    { "grey", { 0x80, 0x80, 0x80 } },
     { "green", { 0x00, 0x80, 0x00 } },
     { "greenyellow", { 0xAD, 0xFF, 0x2F } },
+    { "grey", { 0x80, 0x80, 0x80 } },
     { "honeydew", { 0xF0, 0xFF, 0xF0 } },
     { "hotpink", { 0xFF, 0x69, 0xB4 } },
     { "indianred", { 0xCD, 0x5C, 0x5C } },
@@ -100,8 +102,8 @@ static const std::map<std::string, RGBColor> predefinedColors = {
     { "lightcyan", { 0xE0, 0xFF, 0xFF } },
     { "lightgoldenrodyellow", { 0xFA, 0xFA, 0xD2 } },
     { "lightgray", { 0xD3, 0xD3, 0xD3 } },
-    { "lightgrey", { 0xD3, 0xD3, 0xD3 } },
     { "lightgreen", { 0x90, 0xEE, 0x90 } },
+    { "lightgrey", { 0xD3, 0xD3, 0xD3 } },
     { "lightpink", { 0xFF, 0xB6, 0xC1 } },
     { "lightsalmon", { 0xFF, 0xA0, 0x7A } },
     { "lightseagreen", { 0x20, 0xB2, 0xAA } },
@@ -177,7 +179,9 @@ static const std::map<std::string, RGBColor> predefinedColors = {
     { "whitesmoke", { 0xF5, 0xF5, 0xF5 } },
     { "yellow", { 0xFF, 0xFF, 0x00 } },
     { "yellowgreen", { 0x9A, 0xCD, 0x32 } }
-};
+}};
+static_assert(predefinedColors.back().second == RGBColor(0x9A, 0xCD, 0x32),
+              "Last predefined color is not the expected one - is length correct?");
 
 RGBColor RGBColor::parse(const std::string & str)
 {
@@ -195,8 +199,11 @@ RGBColor RGBColor::parse(const std::string & str)
     lower.reserve(str.size());
     std::transform(str.begin(), str.end(), std::back_inserter(lower), ::tolower);
 
-    const auto it = predefinedColors.find(lower);
-    if (it != predefinedColors.end()) {
+    const auto it = std::lower_bound(
+        predefinedColors.begin(), predefinedColors.end(),
+        lower, [](const auto & item, const auto & name) { return item.first < name; }
+    );
+    if (it != predefinedColors.end() && it->first == lower) {
         return it->second;
     }
 

@@ -69,7 +69,8 @@ RenderTarget::RenderTarget(const std::vector<std::size_t> & block_sizes)
 RenderTarget::RenderTarget(RenderTarget && other) noexcept
  : m_colors(nullptr)
 {
-    std::swap(m_colors, other.m_colors);
+    using std::swap;
+    swap(m_colors, other.m_colors);
     m_nbColors = other.m_nbColors;
     m_blocks = std::move(other.m_blocks);
 }
@@ -81,9 +82,10 @@ RenderTarget::~RenderTarget()
 
 void keyleds::swap(RenderTarget & lhs, RenderTarget & rhs) noexcept
 {
-    std::swap(lhs.m_colors, rhs.m_colors);
-    std::swap(lhs.m_nbColors, rhs.m_nbColors);
-    std::swap(lhs.m_blocks, rhs.m_blocks);
+    using std::swap;
+    swap(lhs.m_colors, rhs.m_colors);
+    swap(lhs.m_nbColors, rhs.m_nbColors);
+    swap(lhs.m_blocks, rhs.m_blocks);
 }
 
 void keyleds::blend(RenderTarget & lhs, const RenderTarget & rhs)
@@ -103,7 +105,9 @@ RenderLoop::RenderLoop(Device & device, unsigned fps)
 {
     // Ensure no allocation happens in render()
     std::size_t max = 0;
-    for (const auto & block : m_device.blocks()) { max = std::max(max, block.keys().size()); }
+    for (const auto & block : m_device.blocks()) {
+        max = std::max(max, block.keys().size());
+    }
     m_directives.reserve(max);
 }
 

@@ -50,20 +50,20 @@ class Device final
 public:
     // Transient types
     enum Type { Keyboard, Remote, NumPad, Mouse, TouchPad, TrackBall, Presenter, Receiver };
-    typedef struct keyleds_key_color ColorDirective;
-    typedef std::vector<ColorDirective> color_directive_list;
+    using ColorDirective = struct keyleds_key_color;
+    using color_directive_list = std::vector<ColorDirective>;
 
     // Data
     class KeyBlock;
-    typedef uint8_t key_block_id_type;
-    typedef uint8_t key_id_type;
-    typedef std::vector<KeyBlock> block_list;
-    typedef std::vector<key_id_type> key_list;
+    using key_block_id_type = uint8_t;
+    using key_id_type = uint8_t;
+    using block_list = std::vector<KeyBlock>;
+    using key_list = std::vector<key_id_type>;
 
     // Exceptions
     class error : public std::runtime_error
     {
-        typedef unsigned int keyleds_error_t;
+        using keyleds_error_t = unsigned int;
     public:
                         error(std::string what, keyleds_error_t code, int oserror=0);
         keyleds_error_t code() const { return m_code; }
@@ -132,9 +132,9 @@ private:
 class Device::KeyBlock final
 {
 public:
-    typedef std::vector<key_list::size_type> index_list;
+    using index_list = std::vector<key_list::size_type>;
 public:
-                        KeyBlock(key_block_id_type id, key_list && keys, RGBColor maxValues);
+                        KeyBlock(key_block_id_type id, key_list keys, RGBColor maxValues);
 
     key_block_id_type   id() const { return m_id; }
     const std::string & name() const { return m_name; }

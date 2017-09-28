@@ -14,6 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <algorithm>
 #include <random>
 #include <vector>
 #include "keyledsd/common.h"
@@ -23,22 +24,11 @@
 #include "keyledsd/PluginManager.h"
 #include "keyledsd/RenderLoop.h"
 
+using keyleds::DeviceManager;
 using keyleds::KeyDatabase;
+using KeyGroup = keyleds::KeyDatabase::KeyGroup;
 using keyleds::RenderTarget;
 using keyleds::RGBAColor;
-
-/****************************************************************************/
-
-static unsigned fromConf(const keyleds::Configuration::Plugin & conf,
-                         const std::string & key, unsigned def)
-{
-    auto it = conf.items().find(key);
-    if (it == conf.items().end()) { return def; }
-    std::size_t pos;
-    auto value = std::stoul(it->second, &pos, 10);
-    if (pos < it->second.size()) { return def; }
-    return value;
-}
 
 /****************************************************************************/
 
@@ -54,27 +44,31 @@ class StarsPlugin final : public keyleds::EffectPlugin
 public:
     StarsPlugin(const keyleds::DeviceManager & manager,
                 const keyleds::Configuration::Plugin & conf,
-                const keyleds::EffectPluginFactory::group_map & groups)
-     : m_buffer(manager.getRenderTarget()),
-       m_duration(fromConf(conf, "duration", 1000)),
-       m_stars(fromConf(conf, "number", 8))
+                const keyleds::EffectPluginFactory::group_list & groups)
+     : m_manager(manager),
+       m_buffer(manager.getRenderTarget()),
+       m_duration(1000)
     {
+        auto duration = std::stoul(conf["duration"]);
+        if (duration > 0) { m_duration = duration; }
+
+        auto number = std::stoul(conf["number"]);
+        m_stars.resize(number > 0 ? number : 8);
+
         // Load color list
-        auto cit = conf.items().begin();
-        for (unsigned idx = 0; (cit = conf.items().find("color" + std::to_string(idx))) != conf.items().end(); ++idx) {
-            m_colors.push_back(RGBAColor::parse(cit->second));
+        for (const auto & item : conf.items()) {
+            if (item.first.rfind("color", 0) == 0) {
+                m_colors.push_back(RGBAColor::parse(item.second));
+            }
         }
 
         // Load key list
-        auto kit = conf.items().find("group");
-        if (kit != conf.items().end()) {
-            auto git = groups.find(kit->second);
-            if (git != groups.end()) { m_keys = git->second; }
-        } else {
-            m_keys.reserve(manager.keyDB().size());
-            for (const auto & item : manager.keyDB()) {
-                m_keys.push_back(&item.second);
-            }
+        const auto & groupStr = conf["group"];
+        if (!groupStr.empty()) {
+            auto git = std::find_if(
+                groups.begin(), groups.end(),
+                [groupStr](const auto & group) { return group.name() == groupStr; });
+            if (git != groups.end()) { m_keys = *git; }
         }
 
         // Get ready
@@ -87,7 +81,7 @@ public:
         }
     }
 
-    void render(unsigned long ms, keyleds::RenderTarget & target) override
+    void render(unsigned long ms, RenderTarget & target) override
     {
         for (auto & star : m_stars) {
             star.age += ms;
@@ -100,17 +94,21 @@ public:
             );
         }
 
-        keyleds::blend(target, m_buffer);
+        blend(target, m_buffer);
     }
 
     void rebirth(Star & star)
     {
-        typedef std::uniform_int_distribution<> distribution;
+        using distribution = std::uniform_int_distribution<>;
 
         if (star.key != nullptr) {
             m_buffer.get(star.key->index) = RGBAColor{0, 0, 0, 0};
         }
-        star.key = m_keys[distribution(0, m_keys.size() - 1)(m_random)];
+        if (!m_keys.empty()) {
+            star.key = &m_keys[distribution(0, m_keys.size() - 1)(m_random)];
+        } else {
+            star.key = &m_manager.keyDB()[distribution(0, m_manager.keyDB().size() - 1)(m_random)];
+        }
         if (m_colors.empty()) {
             auto colordist = distribution(std::numeric_limits<RGBAColor::channel_type>::min(),
                                           std::numeric_limits<RGBAColor::channel_type>::max());
@@ -126,12 +124,13 @@ public:
 
 
 private:
+    const DeviceManager &   m_manager;
     RenderTarget            m_buffer;
     std::minstd_rand        m_random;
 
     unsigned                m_duration;
     std::vector<RGBAColor>  m_colors;
-    std::vector<const KeyDatabase::Key *> m_keys;
+    KeyGroup                m_keys;
 
     std::vector<Star>       m_stars;
 };

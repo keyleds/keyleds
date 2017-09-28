@@ -19,9 +19,9 @@
 
 /****************************************************************************/
 
-#include <QObject>
 #include <sys/inotify.h>
-#include <map>
+#include <QObject>
+#include <vector>
 
 class FileWatcher final : public QObject
 {
@@ -44,12 +44,12 @@ public:
         Unmounted = IN_UNMOUNT
     };
 
-    typedef int watch_id;
-    typedef void (*Listener)(void * userData, event mask, uint32_t cookie, std::string path);
+    using watch_id = int;
+    using Listener = void (*)(void *, event mask, uint32_t cookie, std::string path);
 
 private:
     struct Watch;
-    typedef std::map<watch_id, Watch> listener_map;
+    using listener_list = std::vector<Watch>;
 
 public:
                         FileWatcher(QObject *parent = nullptr);
@@ -65,7 +65,7 @@ private slots:
 
 private:
     int                 m_fd;
-    listener_map        m_listeners;
+    listener_list       m_listeners;
 };
 
 /****************************************************************************/

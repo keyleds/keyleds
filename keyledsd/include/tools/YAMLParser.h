@@ -37,8 +37,8 @@
 class YAMLParser
 {
 public:
-    typedef unsigned int line_t;
-    typedef unsigned int col_t;
+    using line_t = unsigned int;
+    using col_t = unsigned int;
 
     class ParseError : public std::runtime_error
     {

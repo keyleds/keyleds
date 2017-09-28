@@ -83,8 +83,8 @@ QList<QDBusObjectPath> ServiceAdaptor::devicePaths() const
     std::transform(parent()->devices().cbegin(),
                    parent()->devices().cend(),
                    std::back_inserter(paths),
-                   [this](const auto & entry){
-                       return QDBusObjectPath(this->managerPath(*entry.second));
+                   [this](const auto & device){
+                       return QDBusObjectPath(this->managerPath(*device));
                    });
     return paths;
 }
@@ -99,7 +99,7 @@ QStringList ServiceAdaptor::plugins() const
                    manager.plugins().cend(),
                    std::back_inserter(plugins),
                    [](const auto & item) {
-                       return item.second->name().c_str();
+                       return item->name().c_str();
                    });
     return plugins;
 }
@@ -108,7 +108,8 @@ void ServiceAdaptor::setContextValues(ServiceContextValues data)
 {
     auto context = keyleds::Context::value_map();
     for (auto it = data.constBegin(); it != data.constEnd(); ++it) {
-        context.emplace(std::string(it.key().toUtf8()), std::string(it.value().toUtf8()));
+        context.emplace_back(std::string(it.key().toUtf8()),
+                             std::string(it.value().toUtf8()));
     }
     parent()->setContext(keyleds::Context(context));
 }
@@ -122,7 +123,8 @@ void ServiceAdaptor::sendGenericEvent(ServiceContextValues data)
 {
     auto context = keyleds::Context::value_map();
     for (auto it = data.constBegin(); it != data.constEnd(); ++it) {
-        context.emplace(std::string(it.key().toUtf8()), std::string(it.value().toUtf8()));
+        context.emplace_back(std::string(it.key().toUtf8()),
+                             std::string(it.value().toUtf8()));
     }
     parent()->handleGenericEvent(keyleds::Context(context));
 }
@@ -130,10 +132,10 @@ void ServiceAdaptor::sendGenericEvent(ServiceContextValues data)
 void ServiceAdaptor::sendKeyEvent(QString qSerial, int key)
 {
     auto serial = std::string(qSerial.toUtf8());
-    for (auto & item : parent()->devices()) {
-        if (item.second->serial() == serial) {
-            item.second->handleKeyEvent(key, true);
-            item.second->handleKeyEvent(key, false);
+    for (auto & device : parent()->devices()) {
+        if (device->serial() == serial) {
+            device->handleKeyEvent(key, true);
+            device->handleKeyEvent(key, false);
             break;
         }
     }
@@ -143,7 +145,7 @@ void ServiceAdaptor::onDeviceManagerAdded(keyleds::DeviceManager & manager)
 {
     auto connection = QDBusConnection::sessionBus();
     auto path = managerPath(manager);
-    new dbus::DeviceManagerAdaptor(&manager);    // manager takes ownership
+    new DeviceManagerAdaptor(&manager);    // manager takes ownership
     if (!connection.registerObject(path, &manager)) {
         qCritical("DBus registration of device %s failed", qPrintable(path));
     }

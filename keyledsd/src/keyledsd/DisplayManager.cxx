@@ -22,7 +22,6 @@
 
 using xlib::XInputWatcher;
 using keyleds::DisplayManager;
-using keyleds::XContextWatcher;
 
 DisplayManager::DisplayManager(std::unique_ptr<xlib::Display> display, QObject *parent)
  : QObject(parent),

@@ -24,12 +24,12 @@
 #define TOOLS_WINDOW_H_F1434518
 
 #include <X11/Xlib.h>
-// Work around Xlib.h defining a Bool macro, breaking moc-generated cpp
+// Work around Xlib.h defining macros, breaking moc-generated cpp
 #undef Bool
-#include <map>
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace std {
@@ -39,6 +39,7 @@ namespace std {
 namespace xlib {
 
 class Display;
+using X11Display = ::Display;
 
 /****************************************************************************/
 
@@ -49,7 +50,7 @@ class Display;
 class Window final
 {
 public:
-    typedef ::Window handle_type;
+    using handle_type = ::Window;
 public:
                             Window(Display & display, handle_type window);
 
@@ -87,12 +88,13 @@ private:
 class Device final
 {
 public:
-    typedef int             handle_type;
+    using handle_type = int;
     static constexpr handle_type invalid_device = 0;
 public:
                             Device(Display & display, handle_type device);
                             Device(const Device &) = delete;
-                            Device(Device &&);
+                            Device(Device &&) noexcept;
+    Device &                operator=(Device &&);
                             ~Device();
 
     Display &               display() const { return m_display; }
@@ -120,10 +122,10 @@ private:
 class Display final
 {
 public:
-    typedef ::Display *     handle_type;
-    typedef std::map<std::string, Atom> atom_map;
-    typedef int             event_type;
-    typedef void            (*event_handler)(const XEvent &, void * data);
+    using handle_type = X11Display *;
+    using atom_map = std::vector<std::pair<std::string, Atom>>;
+    using event_type = int;
+    using event_handler = void (*)(const XEvent &, void * data);
 private:
     struct HandlerInfo {
         event_type      event;
@@ -152,13 +154,13 @@ public:
     std::unique_ptr<Window> getActiveWindow();
 
 private:
-    static std::unique_ptr<::Display> openDisplay(const std::string &);
+    static std::unique_ptr<X11Display> openDisplay(const std::string &);
 
 private:
-    std::unique_ptr<::Display> m_display;
+    std::unique_ptr<X11Display> m_display;
     std::string             m_name;
     Window                  m_root;
-    mutable atom_map        m_atomCache;
+    mutable atom_map        m_atomCache;        ///< key-sorted list of key-values
     std::vector<HandlerInfo> m_handlers;        ///< Callback list
 };
 
@@ -169,10 +171,10 @@ class Error : public std::runtime_error
 public:
                             Error(const std::string & msg)
                              : std::runtime_error(msg) {}
-                            Error(::Display *display, XErrorEvent *event)
+                            Error(X11Display *display, XErrorEvent *event)
                              : std::runtime_error(makeMessage(display, event)) {}
 private:
-    static std::string      makeMessage(::Display *display, XErrorEvent *event);
+    static std::string      makeMessage(X11Display *display, XErrorEvent *event);
 };
 
 /****************************************************************************/
@@ -180,8 +182,8 @@ private:
 class ErrorCatcher
 {
 public:
-    typedef std::vector<Error> error_list;
-    typedef int (*handler_type)(::Display *, XErrorEvent *);
+    using error_list = std::vector<Error>;
+    using handler_type = int (*)(X11Display *, XErrorEvent *);
 public:
     ErrorCatcher();
     ErrorCatcher(const ErrorCatcher &) = delete;
@@ -192,7 +194,7 @@ public:
 
     void synchronize(Display &) const;
 private:
-    static int errorHandler(::Display *, XErrorEvent *);
+    static int errorHandler(X11Display *, XErrorEvent *);
 
 private:
     static ErrorCatcher * s_current;

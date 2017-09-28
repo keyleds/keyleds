@@ -14,6 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <algorithm>
 #include "keyledsd/Context.h"
 #include "keyledsd/PluginManager.h"
 
@@ -28,16 +29,17 @@ void EffectPlugin::handleKeyEvent(const KeyDatabase::Key &, bool) {}
 
 EffectPluginFactory::~EffectPluginFactory() {}
 
-void EffectPluginManager::registerPlugin(std::string name, EffectPluginFactory * plugin)
+void EffectPluginManager::registerPlugin(EffectPluginFactory * plugin)
 {
-    m_plugins[name] = plugin;
+    m_plugins.push_back(plugin);
 }
 
 EffectPluginFactory * EffectPluginManager::get(const std::string & name)
 {
-    auto it = m_plugins.find(name);
+    auto it = std::find_if(m_plugins.begin(), m_plugins.end(),
+                           [&name](const auto & plugin) { return plugin->name() == name; });
     if (it == m_plugins.end()) { return nullptr; }
-    return it->second;
+    return *it;
 }
 
 EffectPluginManager & EffectPluginManager::instance()

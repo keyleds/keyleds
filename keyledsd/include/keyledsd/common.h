@@ -30,26 +30,26 @@ namespace keyleds {
  * Holds a single R8G8B8 value. Not intended to be tightly packed.
  */
 struct RGBColor final {
-    typedef unsigned char channel_type;
+    using channel_type = unsigned char;
 
     channel_type red;
     channel_type green;
     channel_type blue;
 
     RGBColor() = default;
-    RGBColor(channel_type r, channel_type g, channel_type b)
+    constexpr RGBColor(channel_type r, channel_type g, channel_type b)
      : red(r), green(g), blue(b) {}
 
     static RGBColor parse(const std::string &);
     void print(std::ostream &) const;
 };
 
-static inline bool operator==(const RGBColor & a, const RGBColor & b) {
+static inline constexpr bool operator==(const RGBColor & a, const RGBColor & b) {
     return (a.red == b.red &&
             a.green == b.green &&
             a.blue == b.blue);
 }
-static inline bool operator!=(const RGBColor & a, const RGBColor & b) { return !(a == b); }
+static inline constexpr bool operator!=(const RGBColor & a, const RGBColor & b) { return !(a == b); }
 
 static inline std::ostream & operator<<(std::ostream & out, const RGBColor & obj)
 {
@@ -65,7 +65,7 @@ static inline std::ostream & operator<<(std::ostream & out, const RGBColor & obj
  * to static_assert sizeof(RGBAColor) == 4 if using that fact.
  */
 struct RGBAColor final {
-    typedef unsigned char channel_type;
+    using channel_type = unsigned char;
 
     channel_type red;
     channel_type green;
@@ -82,12 +82,12 @@ struct RGBAColor final {
     void print(std::ostream &) const;
 };
 
-static inline bool operator==(const RGBAColor & a, const RGBAColor & b) {
+static inline constexpr bool operator==(const RGBAColor & a, const RGBAColor & b) {
     return (a.red == b.red &&
             a.green == b.green &&
             a.blue == b.blue);
 }
-static inline bool operator!=(const RGBAColor & a, const RGBAColor & b) { return !(a == b); }
+static inline constexpr bool operator!=(const RGBAColor & a, const RGBAColor & b) { return !(a == b); }
 
 static inline std::ostream & operator<<(std::ostream & out, const RGBAColor & obj)
 {

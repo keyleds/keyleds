@@ -28,23 +28,15 @@
 
 LOGGING("plugin-wave");
 
-using keyleds::KeyDatabase;
+using KeyGroup = keyleds::KeyDatabase::KeyGroup;
 using keyleds::RGBAColor;
 using keyleds::RenderTarget;
+
 static constexpr float pi = 3.14159265358979f;
+static constexpr int accuracy = 1024;
 
-/****************************************************************************/
-
-static unsigned fromConf(const keyleds::Configuration::Plugin & conf,
-                         const std::string & key, unsigned def)
-{
-    auto it = conf.items().find(key);
-    if (it == conf.items().end()) { return def; }
-    std::size_t pos;
-    auto value = std::stoul(it->second, &pos, 10);
-    if (pos < it->second.size()) { return def; }
-    return value;
-}
+static_assert(accuracy && ((accuracy & (accuracy - 1)) == 0),
+              "accuracy must be a power of two");
 
 /****************************************************************************/
 
@@ -53,26 +45,38 @@ class WavePlugin final : public keyleds::EffectPlugin
 public:
     WavePlugin(const keyleds::DeviceManager & manager,
                const keyleds::Configuration::Plugin & conf,
-               const keyleds::EffectPluginFactory::group_map & groups)
+               const keyleds::EffectPluginFactory::group_list & groups)
      : m_buffer(manager.getRenderTarget()),
        m_time(0),
-       m_period(fromConf(conf, "period", 10000)),
-       m_length(fromConf(conf, "length", 1000)),
-       m_direction(fromConf(conf, "direction", 0))
+       m_period(10000),
+       m_length(1000),
+       m_direction(0)
     {
+        auto period = std::stoul(conf["period"]);
+        if (period > 0) { m_period = period; }
+
+        auto length = std::stoul(conf["length"]);
+        if (length > 0) { m_length = length; }
+
+        auto direction = std::stoul(conf["direction"]);
+        if (direction > 0) { m_direction = direction; }
+
         // Load color list
         std::vector<RGBAColor> colors;
-        auto cit = conf.items().begin();
-        for (unsigned idx = 0; (cit = conf.items().find("color" + std::to_string(idx))) != conf.items().end(); ++idx) {
-            colors.push_back(RGBAColor::parse(cit->second));
+        for (const auto & item : conf.items()) {
+            if (item.first.rfind("color", 0) == 0) {
+                colors.push_back(RGBAColor::parse(item.second));
+            }
         }
         m_colors = generateColorTable(colors);
 
         // Load key list
-        auto kit = conf.items().find("group");
-        if (kit != conf.items().end()) {
-            auto git = groups.find(kit->second);
-            if (git != groups.end()) { m_keys = git->second; }
+        const auto & groupStr = conf["group"];
+        if (!groupStr.empty()) {
+            auto git = std::find_if(
+                groups.begin(), groups.end(),
+                [groupStr](const auto & group) { return group.name() == groupStr; });
+            if (git != groups.end()) { m_keys = *git; }
         }
 
         // Get ready
@@ -85,13 +89,13 @@ public:
         m_time += ms;
         if (m_time >= m_period) { m_time -= m_period; }
 
-        int t = 1024 * m_time / m_period;
+        int t = accuracy * m_time / m_period;
 
         if (m_keys.empty()) {
             assert(m_buffer.size() == m_phases.size());
             for (std::size_t idx = 0; idx < m_buffer.size(); ++idx) {
                 int tphi = t - m_phases[idx];
-                if (tphi < 0) { tphi += 1024; }
+                if (tphi < 0) { tphi += accuracy; }
 
                 m_buffer[idx] = m_colors[tphi];
             }
@@ -99,19 +103,20 @@ public:
             assert(m_keys.size() == m_phases.size());
             for (std::size_t idx = 0; idx < m_keys.size(); ++idx) {
                 int tphi = t - m_phases[idx];
-                if (tphi < 0) { tphi += 1024; }
+                if (tphi < 0) { tphi += accuracy; }
 
-                m_buffer.get(m_keys[idx]->index) = m_colors[tphi];
+                m_buffer.get(m_keys[idx].index) = m_colors[tphi];
             }
         }
-        keyleds::blend(target, m_buffer);
+        blend(target, m_buffer);
     }
 
 private:
     void computePhases(const keyleds::DeviceManager & manager)
     {
-        int waveX = int(1024.0f * 1000.0f / float(m_length) * std::sin(2.0f * pi / 360.0f * float(m_direction)));
-        int waveY = int(1024.0f * 1000.0f / float(m_length) * std::cos(2.0f * pi / 360.0f * float(m_direction)));
+        float frequency = float(accuracy) * 1000.0f / float(m_length);
+        int freqX = int(frequency * std::sin(2.0f * pi / 360.0f * float(m_direction)));
+        int freqY = int(frequency * std::cos(2.0f * pi / 360.0f * float(m_direction)));
         auto bounds = manager.keyDB().bounds();
 
         m_phases.clear();
@@ -130,16 +135,16 @@ private:
                         continue;
                     }
 
-                    int x = (it->second.position.x0 + it->second.position.x1) / 2;
-                    int y = (it->second.position.y0 + it->second.position.y1) / 2;
+                    int x = (it->position.x0 + it->position.x1) / 2;
+                    int y = (it->position.y0 + it->position.y1) / 2;
                     if (x == 0 && y == 0) {
                         m_phases.push_back(0);
                     } else {
                         // Reverse Y axis as keyboard layout uses top<down
-                        x = 1024 * (x - bounds.x0) / (bounds.x1 - bounds.x0);
-                        y = 1024 - 1024 * (y - bounds.x0) / (bounds.x1 - bounds.x0);
-                        auto val = (waveX * x + waveY * y) / 1024 % 1024;
-                        if (val < 0) { val += 1024; }
+                        x = accuracy * (x - bounds.x0) / (bounds.x1 - bounds.x0);
+                        y = accuracy - accuracy * (y - bounds.x0) / (bounds.x1 - bounds.x0);
+                        auto val = (freqX * x + freqY * y) / accuracy % accuracy;
+                        if (val < 0) { val += accuracy; }
                         m_phases.push_back(val);
                     }
                 }
@@ -150,16 +155,16 @@ private:
             }
         } else {
             for (auto key : m_keys) {
-                int x = (key->position.x0 + key->position.x1) / 2;
-                int y = (key->position.y0 + key->position.y1) / 2;
+                int x = (key.position.x0 + key.position.x1) / 2;
+                int y = (key.position.y0 + key.position.y1) / 2;
                 if (x == 0 && y == 0) {
                     m_phases.push_back(0);
                 } else {
                     // Reverse Y axis as keyboard layout uses top<down
-                    x = 1024 * (x - bounds.x0) / (bounds.x1 - bounds.x0);
-                    y = 1024 - 1024 * (y - bounds.x0) / (bounds.x1 - bounds.x0);
-                    auto val = (waveX * x + waveY * y) / 1024 % 1024;
-                    if (val < 0) { val += 1024; }
+                    x = accuracy * (x - bounds.x0) / (bounds.x1 - bounds.x0);
+                    y = accuracy - accuracy * (y - bounds.x0) / (bounds.x1 - bounds.x0);
+                    auto val = (freqX * x + freqY * y) / accuracy % accuracy;
+                    if (val < 0) { val += accuracy; }
                     m_phases.push_back(val);
                 }
             }
@@ -168,7 +173,7 @@ private:
 
     static std::vector<RGBAColor> generateColorTable(const std::vector<RGBAColor> & colors)
     {
-        std::vector<RGBAColor> table(1024);
+        std::vector<RGBAColor> table(accuracy);
 
         for (std::vector<RGBAColor>::size_type range = 0; range < colors.size(); ++range) {
             auto first = range * table.size() / colors.size();
@@ -192,7 +197,7 @@ private:
 
 private:
     RenderTarget            m_buffer;
-    std::vector<const KeyDatabase::Key *> m_keys;
+    KeyGroup                m_keys;
     std::vector<unsigned>   m_phases;   ///< one per key in m_keys or one per key in m_buffer.
                                         ///< From 0 (no phase shift) to 1000 (2*pi shift)
     std::vector<RGBAColor>  m_colors;

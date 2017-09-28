@@ -25,7 +25,7 @@
 #include <QString>
 
 // must be in global namespace for QtDBus to find it
-typedef QMap<QString, QString> ServiceContextValues;
+using ServiceContextValues = QMap<QString, QString>;
 
 namespace keyleds {
     class DeviceManager;

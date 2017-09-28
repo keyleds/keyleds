@@ -16,6 +16,7 @@
  */
 #include <libudev.h>
 #include <QSocketNotifier>
+#include <algorithm>
 #include <cassert>
 #include <stdexcept>
 #include <string>
@@ -37,7 +38,8 @@ void std::default_delete<struct udev_device>::operator()(struct udev_device *ptr
 /****************************************************************************/
 
 Description::Description(struct udev_device * device)
-    : m_device(udev_device_ref(device))
+    : m_device(udev_device_ref(device)),
+      m_sysPath(udev_device_get_syspath(m_device.get()))
 {
     struct udev_list_entry * first, * current;
     assert(device != nullptr);
@@ -46,12 +48,12 @@ Description::Description(struct udev_device * device)
     udev_list_entry_foreach(current, first) {
         std::string key(udev_list_entry_get_name(current));
         std::string val(udev_list_entry_get_value(current));
-        m_properties[key] = val;
+        m_properties.emplace_back(key, val);
     }
 
     first = udev_device_get_tags_list_entry(device);
     udev_list_entry_foreach(current, first) {
-        m_tags.push_back(udev_list_entry_get_name(current));
+        m_tags.emplace_back(udev_list_entry_get_name(current));
     }
     m_tags.shrink_to_fit();
 
@@ -60,13 +62,14 @@ Description::Description(struct udev_device * device)
         std::string key(udev_list_entry_get_name(current));
         const char * val = udev_device_get_sysattr_value(device, key.c_str());
         if (val != nullptr) {
-            m_attributes[key] = val;
+            m_attributes.emplace_back(key, val);
         }
     }
 }
 
 Description::Description(const Description & other)
-    : m_device(udev_device_ref(other.m_device.get()))
+    : m_device(udev_device_ref(other.m_device.get())),
+      m_sysPath(other.m_sysPath)
 {
     m_properties = other.m_properties;
     m_tags = other.m_tags;
@@ -131,7 +134,6 @@ static std::string safe(const char * s) { return s == nullptr ? std::string() : 
 std::string Description::devPath() const { return safe(udev_device_get_devpath(m_device.get())); }
 std::string Description::subsystem() const { return safe(udev_device_get_subsystem(m_device.get())); }
 std::string Description::devType() const { return safe(udev_device_get_devtype(m_device.get())); }
-std::string Description::sysPath() const { return safe(udev_device_get_syspath(m_device.get())); }
 std::string Description::sysName() const { return safe(udev_device_get_sysname(m_device.get())); }
 std::string Description::sysNum() const { return safe(udev_device_get_sysnum(m_device.get())); }
 std::string Description::devNode() const { return safe(udev_device_get_devnode(m_device.get())); }
@@ -170,16 +172,22 @@ void DeviceWatcher::scan()
         throw Error("udev device scan failed");
     }
 
-    device_map result;
+    device_list result;
 
     struct udev_list_entry * first, * current;
     first = udev_enumerate_get_list_entry(enumerator.get());
 
     udev_list_entry_foreach(current, first) {
         const char * syspath = udev_list_entry_get_name(current);
-        auto it = m_known.find(syspath);
+        auto it = std::find_if(
+            m_known.begin(), m_known.end(),
+            [syspath](const auto & desc) { return desc.sysPath() == syspath; }
+        );
         if (it != m_known.end()) {
-            result.emplace(std::make_pair(syspath, std::move(it->second)));
+            result.emplace_back(std::move(*it));
+            // Remove empty device description
+            std::iter_swap(it, m_known.end() - 1);
+            m_known.pop_back();
         } else {
             auto device = std::unique_ptr<struct udev_device>(
                 udev_device_new_from_syspath(m_udev.get(), syspath)
@@ -187,19 +195,16 @@ void DeviceWatcher::scan()
             if (device != nullptr) {
                 auto description = Description(device.get());
                 if (isVisible(description)) {
-                    result.emplace(std::make_pair(syspath, std::move(description)));
+                    result.emplace_back(std::move(description));
+                    emit deviceAdded(result.back());
                 }
             }
         }
     }
 
-    for (const auto & entry : m_known) {
-        if (result.find(entry.first) == result.end()) { emit deviceRemoved(entry.second); }
-    }
-    m_known.swap(result);
-    for (const auto & entry : m_known) {
-        if (result.find(entry.first) == result.end()) { emit deviceAdded(entry.second); }
-    }
+    // At that point, m_known only has devices that no longer exist
+    for (const auto & device : m_known) { emit deviceRemoved(device); }
+    m_known = std::move(result);
 }
 
 void DeviceWatcher::setActive(bool active)
@@ -236,20 +241,23 @@ void DeviceWatcher::onMonitorReady(int)
     }
 
     const char * syspath = udev_device_get_syspath(device.get());
+    auto kit = std::find_if(m_known.begin(), m_known.end(),
+                            [syspath](const auto & dev) { return dev.sysPath() == syspath; });
+
     auto action = std::string(udev_device_get_action(device.get()));
     if (action == "add") {
         auto description = Description(device.get());
         if (isVisible(description)) {
-            if (m_known.find(syspath) == m_known.end()) {
-                auto result = m_known.emplace(std::make_pair(syspath, std::move(description)));
-                emit deviceAdded(result.first->second);
+            if (kit == m_known.end()) {
+                emit deviceAdded(description);
+                m_known.emplace_back(std::move(description));
             }
         }
     } else if (action == "remove") {
-        auto it = m_known.find(syspath);
-        if (it != m_known.end()) {
-            emit deviceRemoved(it->second);
-            m_known.erase(it);
+        if (kit != m_known.end()) {
+            emit deviceRemoved(*kit);
+            std::iter_swap(kit, m_known.end() - 1);
+            m_known.pop_back();
         }
     }
 }
@@ -276,17 +284,17 @@ void FilteredDeviceWatcher::setDevType(std::string val)
 
 void FilteredDeviceWatcher::addProperty(const std::string & key, std::string val)
 {
-    m_matchProperties[key] = std::move(val);
+    m_matchProperties.emplace_back(key, std::move(val));
 }
 
 void FilteredDeviceWatcher::addTag(std::string val)
 {
-    m_matchTags.push_back(std::move(val));
+    m_matchTags.emplace_back(std::move(val));
 }
 
 void FilteredDeviceWatcher::addAttribute(const std::string & key, std::string val)
 {
-    m_matchAttributes[key] = std::move(val);
+    m_matchAttributes.emplace_back(key, std::move(val));
 }
 
 void FilteredDeviceWatcher::setupEnumerator(struct udev_enumerate & enumerator) const
@@ -327,11 +335,17 @@ bool FilteredDeviceWatcher::isVisible(const Description & dev) const
     }
 
     for (const auto & entry : m_matchAttributes) {
-        auto it = dev.attributes().find(entry.first);
+        auto it = std::find_if(
+            dev.attributes().begin(), dev.attributes().end(),
+            [entry](const auto & attr) { return attr.first == entry.first; }
+        );
         if (it == dev.attributes().end() || entry.second != it->second) { return false; }
     }
     for (const auto & entry : m_matchProperties) {
-        auto it = dev.properties().find(entry.first);
+        auto it = std::find_if(
+            dev.properties().begin(), dev.properties().end(),
+            [entry](const auto & attr) { return attr.first == entry.first; }
+        );
         if (it == dev.properties().end() || entry.second != it->second) { return false; }
     }
     return true;

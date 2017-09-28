@@ -15,7 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <unistd.h>
-#include <map>
+#include <algorithm>
+#include <array>
 #include <sstream>
 #include <stdexcept>
 #include "logging.h"
@@ -38,12 +39,13 @@ Configuration & Configuration::instance()
 
 void Configuration::registerLogger(Logger * logger)
 {
-    m_loggers[logger->name()] = logger;
+    m_loggers.push_back(logger);
 }
 
 void Configuration::unregisterLogger(Logger * logger)
 {
-    m_loggers.erase(logger->name());
+    m_loggers.erase(std::remove(m_loggers.begin(), m_loggers.end(), logger),
+                    m_loggers.end());
 }
 
 void Configuration::setPolicy(const Policy * policy)
@@ -53,9 +55,8 @@ void Configuration::setPolicy(const Policy * policy)
 
 void Configuration::setPolicy(const std::string & name, const Policy * policy)
 {
-    auto it = m_loggers.find(name);
-    if (it != m_loggers.end()) {
-        it->second->setPolicy(policy);
+    for (auto & logger : m_loggers) {
+        if (logger->name() == name) { logger->setPolicy(policy); }
     }
 }
 
@@ -67,14 +68,14 @@ const Policy & Configuration::defaultPolicy()
 
 /****************************************************************************/
 
-static const std::map<logging::level_t, std::string> levels = {
-    { logging::critical::value, "\033[1;31m<C>\033[;39m" },
-    { logging::error::value, "\033[1;31m<E>\033[;39m" },
-    { logging::warning::value, "\033[33m<W>\033[39m" },
-    { logging::info::value, "\033[1m<I>\033[m" },
-    { logging::verbose::value, "\033[1m<I>\033[m" },
-    { logging::debug::value, "\033[2m<D>\033[m" }
-};
+static constexpr std::array<const char *, 6> levels = {{
+    "\033[1;31m<C>\033[;39m",
+    "\033[1;31m<E>\033[;39m",
+    "\033[33m<W>\033[39m",
+    "\033[1m<I>\033[m",
+    "\033[1m<I>\033[m",
+    "\033[2m<D>\033[m"
+}};
 static const std::string nameEnter = "\033[1m";
 static const std::string nameExit = "\033[m";
 

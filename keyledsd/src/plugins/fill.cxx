@@ -14,26 +14,28 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <algorithm>
 #include <vector>
 #include "keyledsd/common.h"
 #include "keyledsd/Configuration.h"
+#include "keyledsd/Context.h"
 #include "keyledsd/KeyDatabase.h"
 #include "keyledsd/PluginManager.h"
 #include "keyledsd/RenderLoop.h"
 
-using keyleds::KeyDatabase;
+using KeyGroup = keyleds::KeyDatabase::KeyGroup;
 using keyleds::RGBAColor;
 
 class Rule final
 {
-    typedef std::vector<const KeyDatabase::Key *> key_list;
 public:
-                        Rule(key_list keys, keyleds::RGBAColor color)
-                         : m_keys(keys), m_color(color) {}
-    const key_list &    keys() const { return m_keys; }
+                        Rule(KeyGroup keys,
+                             keyleds::RGBAColor color)
+                         : m_keys(std::move(keys)), m_color(color) {}
+    const KeyGroup &    keys() const { return m_keys; }
     const RGBAColor &   color() const { return m_color; }
 private:
-    key_list            m_keys;
+    KeyGroup            m_keys;
     RGBAColor           m_color;
 };
 
@@ -44,20 +46,20 @@ class FillPlugin final : public keyleds::EffectPlugin
 public:
     FillPlugin(const keyleds::DeviceManager &,
                const keyleds::Configuration::Plugin & conf,
-               const keyleds::EffectPluginFactory::group_map & groups)
+               const keyleds::EffectPluginFactory::group_list & groups)
+     : m_fill(0, 0, 0, 0)
     {
-        auto cit = conf.items().find("color");
-        if (cit != conf.items().end()) {
-            m_fill = RGBAColor::parse(cit->second);
-        } else {
-            m_fill = RGBAColor(0, 0, 0, 0);
-        }
+        const auto & colorStr = conf["color"];
+        if (!colorStr.empty()) { m_fill = RGBAColor::parse(colorStr); }
 
         for (const auto & item : conf.items()) {
             if (item.first == "color") { continue; }
-            auto git = groups.find(item.first);
+            auto git = std::find_if(
+                groups.begin(), groups.end(),
+                [item](const auto & group) { return group.name() == item.first; }
+            );
             if (git == groups.end()) { continue; }
-            m_rules.emplace_back(git->second, RGBAColor::parse(item.second));
+            m_rules.emplace_back(*git, RGBAColor::parse(item.second));
         }
     }
 
@@ -68,8 +70,16 @@ public:
         }
         for (const auto & rule : m_rules) {
             for (const auto & key : rule.keys()) {
-                target.get(key->index) = rule.color();
+                target.get(key.index) = rule.color();
             }
+        }
+    }
+
+    void handleGenericEvent(const keyleds::Context & context) override
+    {
+        auto fill = context["fill"];
+        if (!fill.empty()) {
+            m_fill = RGBAColor::parse(fill);
         }
     }
 

@@ -24,21 +24,29 @@
 #include <X11/extensions/XInput2.h>
 #include "tools/XWindow.h"
 
-static const char activeWindowAtom[] = "_NET_ACTIVE_WINDOW";
+using xlib::Device;
+using xlib::ErrorCatcher;
+using xlib::X11Display;
 
-void std::default_delete<::Display>::operator()(::Display *ptr) const { XCloseDisplay(ptr); }
+static constexpr char activeWindowAtom[] = "_NET_ACTIVE_WINDOW";
+static constexpr char nameAtom[] = "_NET_WM_NAME";
+static constexpr char deviceNodeAtom[] = "Device Node";
+static constexpr char utf8Atom[] = "UTF8_STRING";
+
+void std::default_delete<X11Display>::operator()(X11Display *ptr) const { XCloseDisplay(ptr); }
 
 /****************************************************************************/
 
 xlib::Display::Display(std::string name)
-    : m_display(openDisplay(name)),
-      m_name(DisplayString(m_display.get())),
-      m_root(*this, DefaultRootWindow(m_display.get()))
+ : m_display(openDisplay(name)),
+   m_name(DisplayString(m_display.get())),
+   m_root(*this, DefaultRootWindow(m_display.get()))
 {
 }
 
 xlib::Display::~Display()
 {
+    assert(m_handlers.empty());
 }
 
 int xlib::Display::connection() const
@@ -48,12 +56,16 @@ int xlib::Display::connection() const
 
 Atom xlib::Display::atom(const std::string & name) const
 {
-    auto it = m_atomCache.find(name);
-    if (it != m_atomCache.cend()) {
+    const auto it = std::lower_bound(
+        m_atomCache.cbegin(), m_atomCache.cend(), name,
+        [](const auto & entry, const auto & name) { return entry.first < name; }
+    );
+    if (it != m_atomCache.cend() && it->first == name) {
         return it->second;
     }
+
     Atom atom = XInternAtom(m_display.get(), name.c_str(), True);
-    m_atomCache[name] = atom;
+    m_atomCache.emplace(it, name, atom);
     return atom;
 }
 
@@ -62,18 +74,17 @@ std::unique_ptr<xlib::Window> xlib::Display::getActiveWindow()
     std::string data = m_root.getProperty(atom(activeWindowAtom), XA_WINDOW);
     ::Window handle = *reinterpret_cast<const ::Window *>(data.data());
     if (handle == 0) { return nullptr; }
-    return std::make_unique<xlib::Window>(*this, handle);
+    return std::make_unique<Window>(*this, handle);
 }
 
-std::unique_ptr<::Display> xlib::Display::openDisplay(const std::string & name)
+std::unique_ptr<X11Display> xlib::Display::openDisplay(const std::string & name)
 {
     handle_type display = XOpenDisplay(name.empty() ? nullptr : name.c_str());
     if (display == nullptr) {
-        throw xlib::Error(name.empty()
-                          ? "failed to open default display"
-                          : ("failed to open display " + name));
+        throw Error(name.empty() ? "failed to open default display"
+                                 : ("failed to open display " + name));
     }
-    return std::unique_ptr<::Display>(display);
+    return std::unique_ptr<X11Display>(display);
 }
 
 void xlib::Display::processEvents()
@@ -117,8 +128,8 @@ void xlib::Window::changeAttributes(unsigned long mask, const XSetWindowAttribut
 std::string xlib::Window::name() const
 {
     std::string name = getProperty(
-        m_display.atom("_NET_WM_NAME"),
-        m_display.atom("UTF8_STRING")
+        m_display.atom(nameAtom),
+        m_display.atom(utf8Atom)
     );
     if (name.empty()) {
         name = getProperty(XA_WM_NAME, XA_STRING);
@@ -176,27 +187,36 @@ void xlib::Window::loadClass() const
 
 /****************************************************************************/
 
-constexpr xlib::Device::handle_type xlib::Device::invalid_device;
+constexpr Device::handle_type Device::invalid_device;
 
-xlib::Device::Device(Display & display, handle_type device)
+Device::Device(Display & display, handle_type device)
  : m_display(display), m_device(device)
 {
-    m_devNode = getProperty(m_display.atom("Device Node"), XA_STRING);
+    m_devNode = getProperty(m_display.atom(deviceNodeAtom), XA_STRING);
 }
 
-xlib::Device::Device(Device && other)
+Device::Device(Device && other) noexcept
  : m_display(other.m_display), m_device(invalid_device)
 {
     std::swap(m_device, other.m_device);
     std::swap(m_devNode, other.m_devNode);
 }
 
-xlib::Device::~Device()
+Device & Device::operator=(Device && other)
+{
+    assert(&m_display == &other.m_display);
+    if (m_device != invalid_device) { setEventMask({}); m_device = invalid_device; }
+    std::swap(m_device, other.m_device);
+    m_devNode = std::move(other.m_devNode);
+    return *this;
+}
+
+Device::~Device()
 {
     if (m_device != invalid_device) { setEventMask({}); }
 }
 
-void xlib::Device::setEventMask(const std::vector<int> & events)
+void Device::setEventMask(const std::vector<int> & events)
 {
     std::vector<unsigned char> mask(XIMaskLen(XI_LASTEVENT), 0);
     XIEventMask eventMask = { m_device, (int)mask.size(), mask.data() };
@@ -206,7 +226,7 @@ void xlib::Device::setEventMask(const std::vector<int> & events)
     XISelectEvents(m_display.handle(), m_display.root().handle(), &eventMask, 1);
 }
 
-std::string xlib::Device::getProperty(Atom atom, Atom type) const
+std::string Device::getProperty(Atom atom, Atom type) const
 {
     Atom actualType;
     int actualFormat;
@@ -229,14 +249,14 @@ std::string xlib::Device::getProperty(Atom atom, Atom type) const
         case 8: itemBytes = sizeof(char); break;
         case 16: itemBytes = sizeof(short); break;
         case 32: itemBytes = sizeof(long); break;
-        default: throw xlib::Error("invalid actualFormat returned by XGetDeviceProperty");
+        default: throw Error("invalid actualFormat returned by XGetDeviceProperty");
     }
     return std::string(reinterpret_cast<char *>(valptr.get()), nItems * itemBytes);
 }
 
 /****************************************************************************/
 
-std::string xlib::Error::makeMessage(::Display *display, XErrorEvent *event)
+std::string xlib::Error::makeMessage(X11Display *display, XErrorEvent *event)
 {
     std::ostringstream msg;
 
@@ -254,14 +274,14 @@ std::string xlib::Error::makeMessage(::Display *display, XErrorEvent *event)
 
 /****************************************************************************/
 
-xlib::ErrorCatcher::ErrorCatcher()
+ErrorCatcher::ErrorCatcher()
 {
     m_oldCatcher = s_current;
     s_current = this;
     m_oldHandler = XSetErrorHandler(errorHandler);
 }
 
-xlib::ErrorCatcher::~ErrorCatcher()
+ErrorCatcher::~ErrorCatcher()
 {
 #ifdef NDEBUG
     XSetErrorHandler(m_oldHandler);
@@ -277,16 +297,16 @@ xlib::ErrorCatcher::~ErrorCatcher()
 #endif
 }
 
-void xlib::ErrorCatcher::synchronize(xlib::Display & display) const
+void ErrorCatcher::synchronize(Display & display) const
 {
     XSync(display.handle(), False);
 }
 
-int xlib::ErrorCatcher::errorHandler(::Display * display, XErrorEvent * error)
+int ErrorCatcher::errorHandler(X11Display * display, XErrorEvent * error)
 {
     assert(s_current != nullptr);
     s_current->m_errors.emplace_back(display, error);
     return 0;
 }
 
-xlib::ErrorCatcher * xlib::ErrorCatcher::s_current = nullptr;
+ErrorCatcher * ErrorCatcher::s_current = nullptr;

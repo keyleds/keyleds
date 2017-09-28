@@ -37,7 +37,7 @@ public:
     struct Rect { unsigned x0, y0, x1, y1; };
     class Key;
     class ParseError;
-    typedef std::vector<Key> key_list;
+    using key_list = std::vector<Key>;
 public:
                         LayoutDescription(std::string name, key_list keys);
 
@@ -59,8 +59,8 @@ private:
  */
 class LayoutDescription::Key final {
 public:
-    typedef unsigned int block_type;
-    typedef unsigned int code_type;
+    using block_type = unsigned int;
+    using code_type = unsigned int;
 public:
                 Key(block_type block, code_type code, Rect position, std::string name);
 public:
