@@ -21,31 +21,61 @@
 
 #include <iosfwd>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 namespace paths {
 
+/// Represents a file use type, typically associated to one or more system-dependent
+/// locations.
 enum class XDG { Cache, Config, Data, Runtime };
 
-template <typename T> struct stream_attributes{};
-template <> struct stream_attributes<std::ifstream> {
-    static constexpr std::ios::openmode default_mode = std::ios::in;
-};
-template <> struct stream_attributes<std::ofstream> {
-    static constexpr std::ios::openmode default_mode = std::ios::out;
-};
-
+/// Attempts to open the specified file of given type in the passed filbuf
+/// If path is absolute or starths with a dot, it is used as is. Otherwise,
+/// system-dependent locations are searched depenting on file type and open mode.
+/// Errors leave filebuf in a bad state.
 void open_filebuf(std::filebuf &, XDG type, const std::string & path, std::ios::openmode);
-std::vector<std::string> getPaths(XDG, bool extra);
 
-template <typename T> void open(T & file, XDG type, const std::string & path, typename T::openmode mode)
+/// Returns the list of system-dependent locations that would be searched for
+/// files of the given type. Those may differ depending on open mode, thus the read flag.
+std::vector<std::string> getPaths(XDG type, bool read);
+
+
+namespace detail {
+    /// SFINAE-defined structure giving default openmode for a stream depending on its base type
+    template <typename T, typename Enable = void> struct stream_traits {
+        static constexpr bool is_file = false;
+        static constexpr std::ios::openmode default_mode = static_cast<std::ios::openmode>(0);
+    };
+
+    template <typename T>
+    struct stream_traits<T, typename std::enable_if<std::is_convertible<T *, std::fstream *>::value>::type> {
+        static constexpr bool is_file = true;
+        static constexpr typename T::openmode default_mode = std::ios::in | std::ios::out;
+    };
+    template <typename T>
+    struct stream_traits<T, typename std::enable_if<std::is_convertible<T *, std::ifstream *>::value>::type> {
+        static constexpr bool is_file = true;
+        static constexpr typename T::openmode default_mode = std::ios::in;
+    };
+    template <typename T>
+    struct stream_traits<T, typename std::enable_if<std::is_convertible<T *, std::ofstream *>::value>::type>
+    {
+        static constexpr bool is_file = true;
+        static constexpr typename T::openmode default_mode = std::ios::out;
+    };
+}
+
+template <typename T>
+void open(T & file, XDG type, const std::string & path, typename T::openmode mode)
 {
-    mode |= stream_attributes<T>::default_mode;
+    static_assert(detail::stream_traits<T>::is_file, "open must be passed a file stream");
+    mode |= detail::stream_traits<T>::default_mode;
     open_filebuf(*file.rdbuf(), type, path, mode);
     if (!file.rdbuf()->is_open()) { file.setstate(std::ios::failbit); }
 }
 
-}
+}   // namespace path
 
 /****************************************************************************/
 
