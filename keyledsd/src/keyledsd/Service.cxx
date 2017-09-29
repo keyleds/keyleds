@@ -48,6 +48,8 @@ Service::Service(Configuration & configuration, QObject * parent)
 Service::~Service()
 {
     setActive(false);
+    std::for_each(m_devices.begin(), m_devices.end(),
+                  [this](auto & manager) { m_fileWatcher.unsubscribe(onFileWatchEvent, manager.get()); });
     m_devices.clear();
 }
 
