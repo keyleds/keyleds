@@ -55,10 +55,11 @@ public:
     };
 
 public:
-    virtual         ~YAMLParser() {}
+    virtual         ~YAMLParser();
     virtual void    parse(std::istream & stream);
 
 protected:
+    // Those methods are called while parsing
     virtual void    streamStart() = 0;
     virtual void    streamEnd() = 0;
     virtual void    documentStart() = 0;
@@ -71,11 +72,12 @@ protected:
     virtual void    scalar(const std::string & value, const std::string & tag,
                            const std::string & anchor) = 0;
 
+    /// Builds a ParseError using internal state to set file position of the error
     ParseError      makeError(const std::string & what) const
                     { return ParseError(what, m_line, m_column); }
 private:
-    line_t          m_line;
-    col_t           m_column;
+    line_t          m_line;     ///< Line of token being parsed. Only in event methods.
+    col_t           m_column;   ///< Column of token being parsed. Only in event methods.
 };
 
 #endif

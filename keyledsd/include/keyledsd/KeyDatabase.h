@@ -51,6 +51,7 @@ public:
     using value_type = key_list::value_type;
     using reference = key_list::const_reference;
     using iterator = key_list::const_iterator;
+    using const_iterator = key_list::const_iterator;
     using difference_type = key_list::difference_type;
     using size_type = key_list::size_type;
 public:
@@ -58,24 +59,28 @@ public:
     explicit        KeyDatabase(const KeyDatabase &) = default;
                     KeyDatabase(KeyDatabase &&) = default;
 
-    iterator        find(RenderTarget::key_descriptor) const;
-    iterator        find(int keyCode) const;
-    iterator        find(const std::string & name) const;
-    iterator        begin() const { return m_keys.cbegin(); }
-    iterator        end() const { return m_keys.cend(); }
+    const_iterator  find(RenderTarget::key_descriptor) const;
+    const_iterator  find(int keyCode) const;
+    const_iterator  find(const std::string & name) const;
+
+    const_iterator  begin() const { return m_keys.cbegin(); }
+    const_iterator  end() const { return m_keys.cend(); }
     const Key &     operator[](int idx) const { return m_keys[idx]; }
     size_type       size() const noexcept { return m_keys.size(); }
 
     Key::Rect       bounds() const { return m_bounds; }
 
+    /// Builds a KeyGroup with given name; first and last define a sequence of
+    /// string defining key names for the group. Invalid names are ignored.
     template<typename It> KeyGroup makeGroup(std::string name, It first, It last) const;
 
 private:
+    /// Computes m_bounds, invoked once at initialization
     static Key::Rect computeBounds(const key_list &);
 
 private:
-    const key_list  m_keys;
-    const Key::Rect m_bounds;
+    const key_list  m_keys;     ///< Vector of all keys known for a device
+    const Key::Rect m_bounds;   ///< Bounds of m_keys' positions
 };
 
 /****************************************************************************/
@@ -84,7 +89,10 @@ private:
  *
  * Verbose interface as this is mostly used in plugins, so some convenience
  * is welcome. It behaves as a vector of const objects, actually referencing
- * into the KeyDatabase object.
+ * into a KeyDatabase object.
+ *
+ * Moving or destroying the KeyDatabase the KeyGroup's keys live in invalidates
+ * the KeyGroup.
  */
 class KeyDatabase::KeyGroup final
 {

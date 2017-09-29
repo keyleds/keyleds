@@ -61,11 +61,12 @@ public:
     void                unsubscribe(Listener, void * data);
 
 private slots:
+    /// Invoked whenever system notifications from udev become available
     void                onNotifyReady(int socket);
 
 private:
-    int                 m_fd;
-    listener_list       m_listeners;
+    int                 m_fd;           ///< file descriptor of inotify device
+    listener_list       m_listeners;    ///< list of registered watches
 };
 
 /****************************************************************************/

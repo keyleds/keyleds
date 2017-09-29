@@ -44,12 +44,16 @@ class Configuration final
 public:
     Configuration(const Configuration &) = delete;
     Configuration(Configuration &&) = delete;
-    static Configuration & instance();
+    static Configuration & instance();          ///< singleton instance
 
     void    registerLogger(Logger *);
     void    unregisterLogger(Logger *);
 
+    /// Define global logging policy. Pass nullptr for default;
     void    setPolicy(const Policy *);
+
+    /// Define local logging policy for module of given name. Pass nullptr to revert module
+    /// to using global policy.
     void    setPolicy(const std::string & name, const Policy *);
 
     const Policy & globalPolicy() const { return *m_globalPolicy; }

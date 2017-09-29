@@ -38,18 +38,29 @@ class EffectPlugin
 {
 public:
     virtual         ~EffectPlugin();
+
+    /// Modifies the target to reflect effect's display once the specified time has elapsed
     virtual void    render(unsigned long nanosec, RenderTarget & target) = 0;
+
+    /// Invoked whenever the context of the service has changed while the plugin is active.
+    /// Since plugins are loaded on context changes, this means this is always called
+    /// once before periodic calls to render start.
     virtual void    handleContextChange(const Context &);
+
+    /// Invoked whenever the Service is sent a generic event while the plugin is active.
+    /// Context holds whatever values the event includes, keyledsd does not use it.
     virtual void    handleGenericEvent(const Context &);
+
+    /// Invoked whenever the user presses or releases a key while the plugin is active.
     virtual void    handleKeyEvent(const KeyDatabase::Key &, bool press);
 };
 
 /****************************************************************************/
 /** Effect plugin factory interface
  *
- * Each effect plugin must expose this interface and register it with the plugin manager.
+ * Each effect plugin must register a factory it with the plugin manager.
  * This interface is instanciated exactly once per plugin, and is used to create
- * renderer objects when profiles are loaded.
+ * renderer objects when devices are initialized.
  */
 class EffectPluginFactory
 {
@@ -59,15 +70,19 @@ public:
     virtual                 ~EffectPluginFactory();
 
     virtual const std::string & name() const noexcept = 0;
+
+    /// Builds an effect plugin instance for a specific device.
+    /// Passed references are guaranteed to remain valid until after the
+    /// EffectPlugin is destroyed.
     virtual std::unique_ptr<EffectPlugin> createEffect(const DeviceManager &,
                                                        const Configuration::Plugin &,
-                                                       const group_list &) = 0;
+                                                       const group_list) = 0;
 };
 
 /****************************************************************************/
 /** Effect plugin manager
  *
- * Singleton manager that tracks renderer plugins
+ * Singleton manager that tracks effect plugin factories
  */
 class EffectPluginManager final
 {
@@ -95,8 +110,8 @@ private:
 /****************************************************************************/
 /** Renderer plugin template
  *
- * Provides a default implementation for a plugin, allowing simple registration
- * of IRender-derived classes with the plugin manager.
+ * Provides a default implementation for a plugin factory, allowing simple
+ * registration of simple EffectPlugin classes with the plugin manager.
  */
 template<class T> class DefaultEffectPluginFactory final : public EffectPluginFactory
 {
@@ -109,9 +124,9 @@ public:
     const std::string & name() const noexcept override { return m_name; }
     std::unique_ptr<EffectPlugin> createEffect(const DeviceManager & manager,
                                                const Configuration::Plugin & conf,
-                                               const group_list & groups) override
+                                               const group_list groups) override
     {
-        return std::make_unique<T>(manager, conf, groups);
+        return std::make_unique<T>(manager, conf, std::move(groups));
     }
 protected:
     const std::string   m_name;

@@ -185,7 +185,7 @@ static_assert(predefinedColors.back().second == RGBColor(0x9A, 0xCD, 0x32),
 
 RGBColor RGBColor::parse(const std::string & str)
 {
-    /* Attempt parsing as hex color */
+    // Attempt parsing as hex color
     if (str.size() == 6) {
         char * endptr;
         auto code = uint32_t(::strtoul(str.c_str(), &endptr, 16));
@@ -194,7 +194,7 @@ RGBColor RGBColor::parse(const std::string & str)
         }
     }
 
-    /* Attempt using a predefined color */
+    // Attempt using a predefined color
     std::string lower;
     lower.reserve(str.size());
     std::transform(str.begin(), str.end(), std::back_inserter(lower), ::tolower);

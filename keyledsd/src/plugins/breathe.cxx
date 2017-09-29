@@ -34,7 +34,7 @@ class BreathePlugin final : public keyleds::EffectPlugin
 public:
     BreathePlugin(const keyleds::DeviceManager & manager,
                   const keyleds::Configuration::Plugin & conf,
-                  const keyleds::EffectPluginFactory::group_list & groups)
+                  const keyleds::EffectPluginFactory::group_list groups)
      : m_buffer(manager.getRenderTarget()),
        m_time(0), m_period(10000)
     {
@@ -76,12 +76,12 @@ public:
     }
 
 private:
-    RenderTarget    m_buffer;
-    KeyGroup        m_keys;
-    uint8_t         m_alpha;
+    RenderTarget    m_buffer;       ///< this plugin's rendered state
+    KeyGroup        m_keys;         ///< what keys the effect applies to. Empty for whole keyboard.
+    uint8_t         m_alpha;        ///< peak alpha value through the breathing cycle
 
-    unsigned        m_time;
-    unsigned        m_period;
+    unsigned        m_time;         ///< time in milliseconds since beginning of current cycle
+    unsigned        m_period;       ///< total duration of a cycle in milliseconds
 };
 
 REGISTER_EFFECT_PLUGIN("breathe", BreathePlugin)

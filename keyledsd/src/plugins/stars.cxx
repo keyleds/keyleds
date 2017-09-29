@@ -44,7 +44,7 @@ class StarsPlugin final : public keyleds::EffectPlugin
 public:
     StarsPlugin(const keyleds::DeviceManager & manager,
                 const keyleds::Configuration::Plugin & conf,
-                const keyleds::EffectPluginFactory::group_list & groups)
+                const keyleds::EffectPluginFactory::group_list groups)
      : m_manager(manager),
        m_buffer(manager.getRenderTarget()),
        m_duration(1000)
@@ -125,14 +125,14 @@ public:
 
 private:
     const DeviceManager &   m_manager;
-    RenderTarget            m_buffer;
-    std::minstd_rand        m_random;
+    RenderTarget            m_buffer;       ///< this plugin's rendered state
+    std::minstd_rand        m_random;       ///< picks stars when they are reborn
 
-    unsigned                m_duration;
-    std::vector<RGBAColor>  m_colors;
-    KeyGroup                m_keys;
+    unsigned                m_duration;     ///< how long stars stay alive, in milliseconds
+    std::vector<RGBAColor>  m_colors;       ///< list of colors to choose from
+    KeyGroup                m_keys;         ///< what keys the effect applies to. Empty for whole keyboard.
 
-    std::vector<Star>       m_stars;
+    std::vector<Star>       m_stars;        ///< all the star objects
 };
 
 REGISTER_EFFECT_PLUGIN("stars", StarsPlugin)

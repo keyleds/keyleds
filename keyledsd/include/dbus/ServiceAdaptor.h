@@ -43,7 +43,6 @@ namespace dbus {
  */
 class ServiceAdaptor final : public QDBusAbstractAdaptor
 {
-private:
     Q_OBJECT
     Q_CLASSINFO("D-Bus Interface", "org.etherdream.keyleds.Service")
     Q_PROPERTY(ServiceContextValues context READ context)
@@ -54,7 +53,7 @@ private:
 public:
             ServiceAdaptor(keyleds::Service *parent);
 
-public:
+public:         // Simple pass-through methods acessing the Service
     ServiceContextValues context() const;
     bool    active() const;
     void    setActive(bool value);
@@ -63,18 +62,18 @@ public:
     QList<QDBusObjectPath> devicePaths() const;
     QStringList plugins() const;
 
-public slots:
+public slots:   // Simple pass-through methods acessing the Service
     void    setContextValues(ServiceContextValues);
     void    setContextValue(QString, QString);
     void    sendGenericEvent(ServiceContextValues);
-    void    sendKeyEvent(QString serial, int key);
+    void    sendKeyEvent(QString serial, int key);  ///< serial is that of target device
 
 private slots:
     void    onDeviceManagerAdded(keyleds::DeviceManager &);
     void    onDeviceManagerRemoved(keyleds::DeviceManager &);
 
 private:
-    keyleds::Service * parent() const;
+    keyleds::Service * parent() const;    ///< instance this adapter is attached to
     QString managerPath(const keyleds::DeviceManager &) const;
 };
 

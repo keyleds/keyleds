@@ -56,6 +56,7 @@ int xlib::Display::connection() const
 
 Atom xlib::Display::atom(const std::string & name) const
 {
+    // Atoms are kept sorted, so we can use bisect algorithm here
     const auto it = std::lower_bound(
         m_atomCache.cbegin(), m_atomCache.cend(), name,
         [](const auto & entry, const auto & name) { return entry.first < name; }
@@ -64,6 +65,7 @@ Atom xlib::Display::atom(const std::string & name) const
         return it->second;
     }
 
+    // Not in cache, run the query and insert it at correct spot, keeping cache sorted
     Atom atom = XInternAtom(m_display.get(), name.c_str(), True);
     m_atomCache.emplace(it, name, atom);
     return atom;
@@ -162,6 +164,7 @@ std::string xlib::Window::getProperty(Atom atom, Atom type) const
 
     std::size_t itemBytes;
     switch (actualFormat) {
+        // Yes, those numbers are historical values and map to those types
         case 8: itemBytes = sizeof(char); break;
         case 16: itemBytes = sizeof(short); break;
         case 32: itemBytes = sizeof(long); break;
@@ -172,6 +175,7 @@ std::string xlib::Window::getProperty(Atom atom, Atom type) const
 
 void xlib::Window::loadClass() const
 {
+    // The actual property is made of two strings with a NUL char in the middle
     m_className = getProperty(XA_WM_CLASS, XA_STRING);
     auto sep = m_className.find('\0');
     if (sep != std::string::npos) {
@@ -246,6 +250,7 @@ std::string Device::getProperty(Atom atom, Atom type) const
 
     std::size_t itemBytes;
     switch (actualFormat) {
+        // Yes, those numbers are historical values and map to those types
         case 8: itemBytes = sizeof(char); break;
         case 16: itemBytes = sizeof(short); break;
         case 32: itemBytes = sizeof(long); break;
@@ -283,10 +288,13 @@ ErrorCatcher::ErrorCatcher()
 
 ErrorCatcher::~ErrorCatcher()
 {
+    // We allow nesting ErrorCatcher, but no external interference
 #ifdef NDEBUG
+    // Assume nothing interfered
     XSetErrorHandler(m_oldHandler);
     s_current = m_oldCatcher;
 #else
+    // Actually check nothing interfered
     auto prevHandler = XSetErrorHandler(m_oldHandler);
     auto prevCatcher = s_current;
 

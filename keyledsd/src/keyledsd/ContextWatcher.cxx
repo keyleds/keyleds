@@ -23,7 +23,7 @@
 LOGGING("context-watcher");
 
 using keyleds::XContextWatcher;
-const std::string activeWindowAtom = "_NET_ACTIVE_WINDOW";
+static constexpr char activeWindowAtom[] = "_NET_ACTIVE_WINDOW";
 
 /****************************************************************************/
 
@@ -52,6 +52,7 @@ void XContextWatcher::handleEvent(const XEvent & event)
 {
     switch (event.type) {
     case PropertyNotify:
+        // Handle a change of active window
         if (event.xproperty.atom == m_display.atom(activeWindowAtom)) {
             auto active = m_display.getActiveWindow();
             if ((active == nullptr) != (m_activeWindow == nullptr) ||
@@ -62,10 +63,13 @@ void XContextWatcher::handleEvent(const XEvent & event)
             }
         }
 
+        // If we have an active window, see whether this is an update of its title
         if (m_activeWindow != nullptr && (
                 event.xproperty.atom == m_display.atom("_NET_WM_NAME") ||
                 event.xproperty.atom == m_display.atom("WM_NAME"))) {
 
+            // As events are asynchronous, the window might have been destroyed by
+            // the time the handler runs. Catch errors to prevent a crash.
             xlib::ErrorCatcher errors;
 
             setContext(m_activeWindow.get());
@@ -82,6 +86,8 @@ void XContextWatcher::handleEvent(const XEvent & event)
 
 void XContextWatcher::onActiveWindowChanged(xlib::Window * window, bool silent)
 {
+    // As events are asynchronous, either window (or both!) might have been
+    // destroyed by the time the handler runs. Catch errors to prevent a crash.
     xlib::ErrorCatcher errors;
 
     if (m_activeWindow != nullptr) {
@@ -108,14 +114,14 @@ void XContextWatcher::setContext(xlib::Window * window)
 {
     Context context;
     if (window == nullptr) {
-        context = {
+        context = { // Signal those attributes are now empty
             { "id", std::string() },
             { "title", std::string() },
             { "class", std::string() },
             { "instance", std::string() }
         };
     } else {
-        context = {
+        context = { // Signal new values for the attributes
             { "id", std::to_string(window->handle()) },
             { "title", window->name() },
             { "class", window->className() },
@@ -131,5 +137,5 @@ void XContextWatcher::setContext(xlib::Window * window)
 
 void XContextWatcher::displayEventCallback(const XEvent & event, void * ptr)
 {
-    reinterpret_cast<XContextWatcher *>(ptr)->handleEvent(event);
+    static_cast<XContextWatcher *>(ptr)->handleEvent(event);
 }

@@ -77,11 +77,13 @@ public:
                         Description(Description &&) = default;
     Description &       operator=(Description &&) = default;
 
+    // Hierarchy navigation
     Description         parent() const;
     Description         parentWithType(const std::string & subsystem,
                                        const std::string & devtype) const;
     std::vector<Description> descendantsWithType(const std::string & subsystem) const;
 
+    // Simple device property queries
     std::string         devPath() const;
     std::string         subsystem() const;
     std::string         devType() const;
@@ -94,6 +96,7 @@ public:
     unsigned long long  seqNum() const;
     unsigned long long  usecSinceInitialized() const;
 
+    // Structured device properties
     const property_map &    properties() const { return m_properties; };
     const tag_list &        tags() const { return m_tags; };
     const attribute_map &   attributes() const { return m_attributes; };
@@ -135,8 +138,8 @@ public:
                         ~DeviceWatcher() override;
 
 public slots:
-    void                scan();
-    void                setActive(bool active);
+    void                scan();                 ///< Rescans system's devices actively
+    void                setActive(bool active); ///< Enables listening for system notifications
 
 signals:
     void                deviceAdded(const device::Description &);
@@ -148,6 +151,7 @@ protected:
     virtual bool        isVisible(const Description & dev) const;
 
 private slots:
+    /// Invoked whenever system notifications from udev become available
     void                onMonitorReady(int socket);
 
 private:

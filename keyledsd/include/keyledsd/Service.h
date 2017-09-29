@@ -36,7 +36,9 @@ class DisplayManager;
 
 /** Main service
  *
- * Manages devices and their manager, and dispatches events.
+ * Only one instance typically exists per run. It ties all other objects
+ * together, notably managing event watchers and device managers, and
+ * passing messages around.
  */
 class Service final : public QObject
 {
@@ -46,7 +48,7 @@ public:
     using device_list = std::vector<std::unique_ptr<DeviceManager>>;
     using display_list = std::vector<std::unique_ptr<DisplayManager>>;
 public:
-                        Service(Configuration & configuration, QObject *parent = 0);
+                        Service(Configuration & configuration, QObject *parent = nullptr);
                         Service(const Service &) = delete;
                         ~Service() override;
 
@@ -57,23 +59,27 @@ public:
     const device_list & devices() const { return m_devices; }
 
 public slots:
-    void                init();
+    void                init();             ///< Invoked once to complete event-loop-depenent setup
     void                setActive(bool val);
     void                setContext(const keyleds::Context &);
     void                handleGenericEvent(const keyleds::Context &);
     void                handleKeyEvent(const std::string &, int, bool);
 
 signals:
-    void                deviceManagerAdded(keyleds::DeviceManager &);   // Fires right before device is added
-    void                deviceManagerRemoved(keyleds::DeviceManager &); // Fires right after device is removed
+    /// Fires whenever a device is added - whether it is in devices list is undefined
+    void                deviceManagerAdded(keyleds::DeviceManager &);
+    /// Fires whenever a device is removed - whether it is still in devices list is undefined
+    void                deviceManagerRemoved(keyleds::DeviceManager &);
 
 private slots:
+    // Events from Qt-based watchers
     void                onDeviceAdded(const device::Description &);
     void                onDeviceRemoved(const device::Description &);
     void                onDisplayAdded(std::unique_ptr<xlib::Display> &);
     void                onDisplayRemoved();
 
 private:
+    // Events from callback-based watchers
     static void         onFileWatchEvent(void *, FileWatcher::event, uint32_t, std::string);
 
 private:

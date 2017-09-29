@@ -137,7 +137,7 @@ void Service::onDeviceRemoved(const device::Description & description)
                                return device->sysPath() == description.sysPath();
                            });
     if (it != m_devices.end()) {
-        auto manager = std::move(*it);
+        std::unique_ptr<DeviceManager> manager = std::move(*it);
         std::iter_swap(it, m_devices.end() - 1);
         m_devices.pop_back();
 

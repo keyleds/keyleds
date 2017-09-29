@@ -78,7 +78,7 @@ private:
     static int readHandler(void * stream_ptr, unsigned char * buffer,
                            std::size_t size, std::size_t * size_read) noexcept
     {
-        auto & stream = *reinterpret_cast<std::istream*>(stream_ptr);
+        auto & stream = *static_cast<std::istream*>(stream_ptr);
         if (!stream.eof()) {
             stream.read(reinterpret_cast<std::istream::char_type*>(buffer), size);
             *size_read = stream.gcount();
@@ -103,6 +103,9 @@ static const char * toStr(const yaml_char_t * str) {
 }
 
 /****************************************************************************/
+
+YAMLParser::~YAMLParser()
+ {}
 
 void YAMLParser::parse(std::istream & stream)
 {

@@ -117,9 +117,10 @@ private:
 
 /** Profile configuration
  *
- * Holds the configuration of a single keyboard profile. Each profile
- * has a unique identifier used to be able to differentiate two otherwise
- * similar profiles.
+ * Holds the configuration of a single keyboard profile. A profile defines
+ * a set of conditions that can be used to match a Context, and a set of
+ * effects to apply when a context matches. The set of conditions is known
+ * as a Lookup.
  */
 class Configuration::Profile final
 {
@@ -128,9 +129,9 @@ public:
     class Lookup final
     {
         struct Entry {
-            std::string key;
-            std::string value;
-            std::regex  regex;
+            std::string key;        ///< context entry key
+            std::string value;      ///< string representation of the regex
+            std::regex  regex;      ///< regex to match context entry value against
         };
         using entry_list = std::vector<Entry>;
     public:

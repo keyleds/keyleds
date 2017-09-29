@@ -25,6 +25,7 @@ Q_DECLARE_METATYPE(DBusDeviceKeyInfoList)
 
 /****************************************************************************/
 
+/// DBusDeviceKeyInfo serializer for Qt
 QDBusArgument & operator<<(QDBusArgument & arg, const DBusDeviceKeyInfo & key)
 {
     arg.beginStructure();
@@ -38,6 +39,7 @@ QDBusArgument & operator<<(QDBusArgument & arg, const DBusDeviceKeyInfo & key)
     return arg;
 }
 
+/// DBusDeviceKeyInfo deserializer for Qt
 const QDBusArgument & operator>>(const QDBusArgument & arg, DBusDeviceKeyInfo & key)
 {
     arg.beginStructure();

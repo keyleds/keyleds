@@ -46,7 +46,7 @@ class FillPlugin final : public keyleds::EffectPlugin
 public:
     FillPlugin(const keyleds::DeviceManager &,
                const keyleds::Configuration::Plugin & conf,
-               const keyleds::EffectPluginFactory::group_list & groups)
+               const keyleds::EffectPluginFactory::group_list groups)
      : m_fill(0, 0, 0, 0)
     {
         const auto & colorStr = conf["color"];
@@ -75,17 +75,9 @@ public:
         }
     }
 
-    void handleGenericEvent(const keyleds::Context & context) override
-    {
-        auto fill = context["fill"];
-        if (!fill.empty()) {
-            m_fill = RGBAColor::parse(fill);
-        }
-    }
-
 private:
-    RGBAColor           m_fill;
-    std::vector<Rule>   m_rules;
+    RGBAColor           m_fill;         ///< color to fill whole target with before applying rules
+    std::vector<Rule>   m_rules;        ///< each rule maps a key group to a color
 };
 
 REGISTER_EFFECT_PLUGIN("fill", FillPlugin)

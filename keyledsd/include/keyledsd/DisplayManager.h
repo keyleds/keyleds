@@ -51,13 +51,16 @@ signals:
     void            keyEventReceived(const std::string & devNode, int key, bool press);
 
 private slots:
+    /// Receives notifications from m_contextWatcher. Forwards them through contextChanged signal.
     void            onContextChanged(const keyleds::Context &);
+
+    /// Receives notifications from m_inputWatcher. Forwards them through keyEventReceived signal.
     void            onKeyEventReceived(const std::string & devNode, int key, bool press);
 
 private:
-    std::unique_ptr<xlib::Display>          m_display;
-    std::unique_ptr<XContextWatcher>        m_contextWatcher;
-    std::unique_ptr<xlib::XInputWatcher>    m_inputWatcher;
+    std::unique_ptr<xlib::Display>          m_display;          ///< Connection to X display
+    std::unique_ptr<XContextWatcher>        m_contextWatcher;   ///< Watches window events
+    std::unique_ptr<xlib::XInputWatcher>    m_inputWatcher;     ///< Watches keypresses
 };
 
 };

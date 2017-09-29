@@ -49,7 +49,7 @@ class Device final
 {
 public:
     // Transient types
-    enum Type { Keyboard, Remote, NumPad, Mouse, TouchPad, TrackBall, Presenter, Receiver };
+    enum class Type { Keyboard, Remote, NumPad, Mouse, TouchPad, TrackBall, Presenter, Receiver };
     using ColorDirective = struct keyleds_key_color;
     using color_directive_list = std::vector<ColorDirective>;
 

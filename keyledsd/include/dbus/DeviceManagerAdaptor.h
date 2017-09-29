@@ -24,7 +24,11 @@
 
 namespace keyleds { class DeviceManager; }
 
-struct DBusDeviceKeyInfo
+/** DBus type representing a key of one of active devices
+ *
+ * It must live in the global namespace for Qt to find it
+ */
+struct DBusDeviceKeyInfo final
 {
     struct Rect { uint x0, y0, x1, y1; };
 
@@ -57,7 +61,7 @@ class DeviceManagerAdaptor final : public QDBusAbstractAdaptor
 public:
                 DeviceManagerAdaptor(keyleds::DeviceManager *parent);
 
-public:
+public:         // Simple pass-through methods accessing the DeviceManager
     QString     sysPath() const;
     QString     serial() const;
     QString     devNode() const;
@@ -70,7 +74,7 @@ public:
     void        setPaused(bool val);
 
 private:
-    keyleds::DeviceManager * parent() const;
+    keyleds::DeviceManager * parent() const;    ///< instance this adapter is attached to
 };
 
 };

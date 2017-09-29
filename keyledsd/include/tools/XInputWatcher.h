@@ -39,14 +39,23 @@ public:
     const Display & display() const { return m_display; }
 
 public slots:
-    void            scan();
+    void            scan();                 ///< Rescans Xinput devices actively
 
 signals:
+    /// Emitted whenever a key event happens on any slave keyboard
+    /// @param devNode the path to kernel device that the event originates from.
+    /// @param key the key code, as sent by the kernel device
+    /// @param pressed true if this indicates a keypress, otherwise it's a key release
     void            keyEventReceived(const std::string & devNode, int key, bool pressed);
 
 protected:
+    /// Invoked from the main X display event loop for Xinput events
     virtual void    handleEvent(const XEvent &);
+
+    /// Invoked by handleEvent when a Xinput device becomes ready. Int is device type (use field)
     virtual void    onInputEnabled(Device::handle_type, int);
+
+    /// Invoked by handleEvent when a Xinput device disappears. Int is device type (use field)
     virtual void    onInputDisabled(Device::handle_type, int);
 
 private:

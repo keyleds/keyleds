@@ -47,8 +47,8 @@ public:
     static LayoutDescription parse(std::istream &);
 
 private:
-    std::string         m_name;
-    key_list            m_keys;
+    std::string         m_name;     ///< Layout name, indicating its country code
+    key_list            m_keys;     ///< All keys from all blocks
 };
 
 /****************************************************************************/
@@ -62,6 +62,7 @@ public:
     using block_type = unsigned int;
     using code_type = unsigned int;
 public:
+                /// Dumb constructor, here so we can emplace keys in the container
                 Key(block_type block, code_type code, Rect position, std::string name);
 public:
     block_type  block;          ///< Block identifier, eg: 0 for normal keys, 64 for game/light keys, ...
@@ -79,7 +80,7 @@ public:
                             : std::runtime_error(what), m_line(line) {}
     int         line() const noexcept { return m_line; }
 private:
-    int         m_line;
+    int         m_line; ///< Line of the parsing error, as reported by xml lib
 };
 
 /****************************************************************************/

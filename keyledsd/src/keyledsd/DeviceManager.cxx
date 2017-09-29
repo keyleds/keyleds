@@ -34,18 +34,25 @@ using keyleds::KeyDatabase;
 using keyleds::LayoutDescription;
 using keyleds::RenderLoop;
 
-static const char defaultProfileName[] = "__default__";
-static const char overlayProfileName[] = "__overlay__";
+static constexpr char defaultProfileName[] = "__default__";
+static constexpr char overlayProfileName[] = "__overlay__";
 
 /****************************************************************************/
 
+/// Applies the configuration to a Context, matching profiles and resolving
+/// effect names. Returns the list of Effect entries in the configuration that
+/// should be loaded for the context. Returned list references Configuration
+/// entries directly, and are therefore invalidated by any operation that
+/// invalidates configuration's iterators.
 static std::vector<const Configuration::Effect *> effectsForContext(
     const Configuration & config, const std::string & serial, const Context & context)
 {
+    // Find a defined alias for the device; if none, use serial as is
     auto dit = std::find_if(config.devices().begin(), config.devices().end(),
                             [&serial](auto & item) { return item.first == serial; });
     const auto & devLabel = (dit == config.devices().end()) ? serial : dit->second;
 
+    // Match context against profile lookups
     const Configuration::Profile * profile = nullptr;
     const Configuration::Profile * defaultProfile = nullptr;
     const Configuration::Profile * overlayProfile = nullptr;
@@ -66,6 +73,7 @@ static std::vector<const Configuration::Effect *> effectsForContext(
     if (profile == nullptr) { profile = defaultProfile; }
     VERBOSE("selected profile <", profile->name(), ">");
 
+    // Collect effect names from selected profile and resolve them
     auto result = std::vector<const Configuration::Effect *>();
     for (const auto & name : profile->effects()) {
         auto eit = std::find_if(config.effects().begin(), config.effects().end(),
@@ -109,15 +117,15 @@ DeviceManager::DeviceManager(const device::Description & description, Device && 
       m_eventDevices(findEventDevices(description)),
       m_device(std::move(device)),
       m_keyDB(buildKeyDB(conf, m_device)),
-      m_renderLoop(m_device, 16)
+      m_renderLoop(m_device, KEYLEDSD_RENDER_FPS)
 {
-    setContext(context);
-    m_renderLoop.setPaused(false);
+    setContext(context);            // set initial context before starting render thread, avoiding a flash
+    m_renderLoop.setPaused(false);  // render thread starts in paused state
 }
 
 DeviceManager::~DeviceManager()
 {
-    m_renderLoop.stop();
+    m_renderLoop.stop();            // destroying the loop is UB if the thread is still running
 }
 
 void DeviceManager::setContext(const Context & context)
@@ -125,6 +133,7 @@ void DeviceManager::setContext(const Context & context)
     auto effects = loadEffects(context);
     DEBUG("enabling ", effects.size(), " effects for loop ", &m_renderLoop);
 
+    // Notify newly-active plugins of context change
     auto lock = m_renderLoop.lock();
     for (auto * effect : effects) { effect->handleContextChange(context); }
     m_renderLoop.effects() = std::move(effects);
@@ -138,12 +147,14 @@ void DeviceManager::handleGenericEvent(const Context & context)
 
 void DeviceManager::handleKeyEvent(int keyCode, bool press)
 {
+    // Convert raw key code into a reference to its database entry
     auto it = m_keyDB.find(keyCode);
     if (it == m_keyDB.end()) {
         DEBUG("unknown key ", keyCode, " on device ", m_serial);
         return;
     }
 
+    // Pass event to active effect plugins
     auto lock = m_renderLoop.lock();
     for (const auto & plugin : m_renderLoop.effects()) {
         plugin->handleKeyEvent(*it, press);
@@ -162,10 +173,12 @@ void DeviceManager::reloadConfiguration()
     auto lock = m_renderLoop.lock();
     m_renderLoop.effects().clear();
     m_effects.clear();
+    //TODO
 }
 
 std::string DeviceManager::getSerial(const device::Description & description)
 {
+    // Serial is stored on master USB device, so we walk up the hierarchy
     const auto & usbDevDescription = description.parentWithType("usb", "usb_device");
     auto it = std::find_if(
         usbDevDescription.attributes().begin(), usbDevDescription.attributes().end(),
@@ -186,6 +199,8 @@ std::string DeviceManager::getName(const Configuration & config, const std::stri
 
 DeviceManager::dev_list DeviceManager::findEventDevices(const device::Description & description)
 {
+    // Event devices are any device detected as input devices and attached
+    // to same USB device as ours
     dev_list result;
     const auto & usbdev = description.parentWithType("usb", "usb_device");
     const auto & candidates = usbdev.descendantsWithType("input");

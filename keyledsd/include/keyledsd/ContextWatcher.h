@@ -46,16 +46,24 @@ public:
                     XContextWatcher(xlib::Display & display, QObject *parent = nullptr);
                     ~XContextWatcher() override;
 
-    const Context & current() const noexcept { return m_context; }
-
     const xlib::Display & display() const { return m_display; }
+
+    const Context & current() const noexcept { return m_context; }
 
 signals:
     void            contextChanged(const keyleds::Context &);
 
 private:
+    /// Invoked from the main X display event loop for Xinput events
     virtual void    handleEvent(const XEvent &);
+
+    /// Invoked from handleEvent when it detects the active window has changed
+    /// Passed window is the new active window; m_activeWindow still has the old one.
+    /// Both may be nullptr.
     virtual void    onActiveWindowChanged(xlib::Window *, bool silent = false);
+
+    /// Builds a context and emit a contextChanged signal for given window
+    /// Signal is debounced: if built context is equal to current, signal is not sent.
     void            setContext(xlib::Window *);
 
     static void     displayEventCallback(const XEvent &, void*);

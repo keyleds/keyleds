@@ -14,6 +14,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+/** System-specific path resolution
+ *
+ * Implements tools for finding files based on their purpose. On UNIX systems,
+ * the intent is to follow the XDG Base Directory Specification:
+ * https://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html
+ */
 #ifndef TOOLS_PATH_H_B703CD61
 #define TOOLS_PATH_H_B703CD61
 
@@ -64,8 +70,13 @@ namespace detail {
         static constexpr bool is_file = true;
         static constexpr typename T::openmode default_mode = std::ios::out;
     };
-}
+} // namespace detail
 
+/// Opens the given file object, using the file described by given path and XDG type.
+/// This is a simple wrapper that extracts the filebuf, feeds it to open_filebuf
+/// and updates the file object's state flags to reflect the outcome.
+//  @TODO: Changed for a rvalue-returning function, legacy workaround for gcc4 is
+//  no longer useful.
 template <typename T>
 void open(T & file, XDG type, const std::string & path, typename T::openmode mode)
 {
@@ -75,7 +86,7 @@ void open(T & file, XDG type, const std::string & path, typename T::openmode mod
     if (!file.rdbuf()->is_open()) { file.setstate(std::ios::failbit); }
 }
 
-}   // namespace path
+} // namespace paths
 
 /****************************************************************************/
 

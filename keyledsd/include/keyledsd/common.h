@@ -44,14 +44,14 @@ struct RGBColor final {
     void print(std::ostream &) const;
 };
 
-static inline constexpr bool operator==(const RGBColor & a, const RGBColor & b) {
+inline constexpr bool operator==(RGBColor a, RGBColor b) {
     return (a.red == b.red &&
             a.green == b.green &&
             a.blue == b.blue);
 }
-static inline constexpr bool operator!=(const RGBColor & a, const RGBColor & b) { return !(a == b); }
+inline constexpr bool operator!=(RGBColor a, RGBColor b) { return !(a == b); }
 
-static inline std::ostream & operator<<(std::ostream & out, const RGBColor & obj)
+inline std::ostream & operator<<(std::ostream & out, RGBColor obj)
 {
     obj.print(out);
     return out;
@@ -73,23 +73,23 @@ struct RGBAColor final {
     channel_type alpha;
 
     RGBAColor() = default;
-    RGBAColor(channel_type r, channel_type g, channel_type b, channel_type a)
+    constexpr RGBAColor(channel_type r, channel_type g, channel_type b, channel_type a)
      : red(r), green(g), blue(b), alpha(a) {}
-    explicit RGBAColor(const RGBColor & c, channel_type a = std::numeric_limits<channel_type>::max())
+    explicit RGBAColor(RGBColor c, channel_type a = std::numeric_limits<channel_type>::max())
      : red(c.red), green(c.green), blue(c.blue), alpha(a) {}
 
     static RGBAColor parse(const std::string &);
     void print(std::ostream &) const;
 };
 
-static inline constexpr bool operator==(const RGBAColor & a, const RGBAColor & b) {
+inline constexpr bool operator==(RGBAColor a, RGBAColor b) {
     return (a.red == b.red &&
             a.green == b.green &&
             a.blue == b.blue);
 }
-static inline constexpr bool operator!=(const RGBAColor & a, const RGBAColor & b) { return !(a == b); }
+inline constexpr bool operator!=(RGBAColor a, RGBAColor b) { return !(a == b); }
 
-static inline std::ostream & operator<<(std::ostream & out, const RGBAColor & obj)
+inline std::ostream & operator<<(std::ostream & out, RGBAColor obj)
 {
     obj.print(out);
     return out;

@@ -80,7 +80,7 @@ void blend(RenderTarget &, const RenderTarget &);
 /** Device render loop
  *
  * An AnimationLoop that runs a set of Renderers and sends the resulting
- * RenderTarget state to a Device. It assumes entier control of the device.
+ * RenderTarget state to a Device. It assumes entire control of the device.
  * That is, no other thread is allowed to call Device's manipulation methods
  * while a RenderLoop for it exists.
  */
@@ -92,15 +92,24 @@ public:
                     RenderLoop(Device &, unsigned fps);
                     ~RenderLoop() override;
 
+    /// Returns a lock that bars the render loop from using effects while it is held
+    /// Holding it is mandatory for modifying any effect or the list itself
     std::unique_lock<std::mutex>    lock();
+
+    /// Effect list accessor. When using it to modify effects, a lock must be held.
+    /// The list only holds pointers, which must be valid as long as they remain
+    /// in the list. RenderLoop will not destroy them or interact in any way but
+    /// calling their render method.
     effect_plugin_list &            effects() { return m_effects; }
 
+    /// Creates a new render target matching the layout of given device
     static RenderTarget renderTargetFor(const Device &);
 
 private:
     bool            render(unsigned long) override;
     void            run() override;
 
+    /// Reads current device led state into the render target
     void            getDeviceState(RenderTarget & state);
 
 private:

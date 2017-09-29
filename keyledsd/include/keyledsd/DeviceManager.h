@@ -73,7 +73,7 @@ public:
                                           Device &&,
                                           const Configuration &,
                                           const Context &,
-                                          QObject *parent = 0);
+                                          QObject *parent = nullptr);
                             ~DeviceManager() override;
 
     const std::string &     sysPath() const noexcept { return m_sysPath; }
@@ -95,6 +95,7 @@ public slots:
     void                    reloadConfiguration();
 
 private:
+    // Static loaders, invoked once at manager creation to set it up
     static std::string      getSerial(const device::Description &);
     static std::string      getName(const Configuration &, const std::string & serial);
     static dev_list         findEventDevices(const device::Description &);
@@ -102,7 +103,10 @@ private:
     static LayoutDescription loadLayoutDescription(const Configuration &, const Device &);
     static KeyDatabase      buildKeyDB(const Configuration &, const Device &);
 
+    /// Loads the list of effects to activate for the given context
     RenderLoop::effect_plugin_list loadEffects(const Context &);
+
+    /// Instanciates an effect, combining its configuration with this device's info
     LoadedEffect &          getEffect(const Configuration::Effect &);
 
 private:

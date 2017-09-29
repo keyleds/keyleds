@@ -92,6 +92,7 @@ std::string Device::getName(struct keyleds_device * device)
     if (!keyleds_get_device_name(device, KEYLEDS_TARGET_DEFAULT, &name)) {
         throw error(keyleds_get_error_str(), keyleds_get_errno());
     }
+    // Wrap the pointer in a smart pointer in case string creation throws
     auto name_p = std::unique_ptr<char[], void(*)(char*)>(name, keyleds_free_device_name);
     return std::string(name);
 }
@@ -102,8 +103,10 @@ void Device::cacheVersion()
     if (!keyleds_get_device_version(m_device.get(), KEYLEDS_TARGET_DEFAULT, &version)) {
         throw error(keyleds_get_error_str(), keyleds_get_errno());
     }
+    // Wrap retrieved data in a smart pointer so it is freed if something throws
     auto version_p = std::unique_ptr<struct keyleds_device_version>(version);
 
+    // Build hex representation of HID++ device model
     std::ostringstream model;
     model <<std::hex <<std::setfill('0')
           <<std::setw(2) <<+version->model[0] <<std::setw(2) <<+version->model[1]
@@ -111,12 +114,14 @@ void Device::cacheVersion()
           <<std::setw(2) <<+version->model[4] <<std::setw(2) <<+version->model[5];
     m_model = model.str();
 
+    // Build hex representation of device's serial number
     std::ostringstream serial;
     serial <<std::hex <<std::setfill('0')
            <<std::setw(2) <<+version->serial[0] <<std::setw(2) <<+version->serial[1]
            <<std::setw(2) <<+version->serial[2] <<std::setw(2) <<+version->serial[3];
     m_serial = serial.str();
 
+    // Find active firmware and format its version string
     for (unsigned i = 0; i < version->length; i += 1) {
         const auto & protocol = version->protocols[i];
         if (protocol.is_active) {
@@ -136,14 +141,14 @@ void Device::cacheVersion()
 
 Device::block_list Device::getBlocks(struct keyleds_device * device)
 {
-    block_list blocks;
-
     struct keyleds_keyblocks_info * info;
     if (!keyleds_get_block_info(device, KEYLEDS_TARGET_DEFAULT, &info)) {
         throw error(keyleds_get_error_str(), keyleds_get_errno());
     }
+    // Wrap retrieved data in a smart pointer so it is freed if something throws
     auto blockinfo_p = std::unique_ptr<struct keyleds_keyblocks_info>(info);
 
+    block_list blocks;
     for (unsigned i = 0; i < info->length; i += 1) {
         const auto & block = info->blocks[i];
 
@@ -177,16 +182,20 @@ bool Device::hasLayout() const
 
 std::string Device::resolveKey(key_block_id_type blockId, key_id_type keyId) const
 {
-    if (blockId != KEYLEDS_BLOCK_KEYS) { return {}; }
+    if (blockId != KEYLEDS_BLOCK_KEYS) {
+        return {};  // only keys from the regular key block have a built-in symbol
+    }
     auto keyCode = keyleds_translate_scancode(keyId);
-    auto name = keyleds_lookup_string(keyleds_keycode_names, keyCode);
+    const char * name = keyleds_lookup_string(keyleds_keycode_names, keyCode);
     if (name == nullptr) { return {}; }
     return name;
 }
 
 int Device::decodeKeyId(key_block_id_type blockId, key_id_type keyId) const
 {
-    if (blockId != KEYLEDS_BLOCK_KEYS) { return 0; }
+    if (blockId != KEYLEDS_BLOCK_KEYS) {
+        return 0;  // only keys from the regular key block have a built-in key code
+    }
     return keyleds_translate_scancode(keyId);
 }
 
@@ -206,6 +215,9 @@ void Device::flush()
 
 bool Device::resync() noexcept
 {
+    // Note this method does not throw in case of failure. As it is used in error
+    // recovery, it is a normal outcome for it to be enable to resync device
+    // communications.
     return keyleds_flush_fd(m_device.get()) &&
            keyleds_ping(m_device.get(), KEYLEDS_TARGET_DEFAULT);
 }

@@ -26,6 +26,9 @@
  * Starts a thread that invokes a virtual method at a predefined frequency.
  * Supports asynchronous pausing and resuming, and synchronous stop().
  *
+ * The loop starts in paused state. That is, the run method starts immediately
+ * but goes into sleep without calling render until setPaused(false) is called.
+ *
  * The loop must be stopped before the object is deleted.
  */
 class AnimationLoop
@@ -45,6 +48,7 @@ protected:
     virtual bool    render(unsigned long) = 0;
 
 private:
+    /// Simply calls the animation loop's run method
     static void     threadEntry(AnimationLoop &);
 
 private:

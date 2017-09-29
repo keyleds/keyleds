@@ -45,7 +45,7 @@ class WavePlugin final : public keyleds::EffectPlugin
 public:
     WavePlugin(const keyleds::DeviceManager & manager,
                const keyleds::Configuration::Plugin & conf,
-               const keyleds::EffectPluginFactory::group_list & groups)
+               const keyleds::EffectPluginFactory::group_list groups)
      : m_buffer(manager.getRenderTarget()),
        m_time(0),
        m_period(10000),
@@ -196,16 +196,16 @@ private:
     }
 
 private:
-    RenderTarget            m_buffer;
-    KeyGroup                m_keys;
+    RenderTarget            m_buffer;   ///< this plugin's rendered state
+    KeyGroup                m_keys;     ///< what keys the effect applies to. Empty for whole keyboard.
     std::vector<unsigned>   m_phases;   ///< one per key in m_keys or one per key in m_buffer.
                                         ///< From 0 (no phase shift) to 1000 (2*pi shift)
-    std::vector<RGBAColor>  m_colors;
+    std::vector<RGBAColor>  m_colors;   ///< pre-computed color samples, build by generateColorTable.
 
-    unsigned            m_time;
-    unsigned            m_period;
-    unsigned            m_length;
-    unsigned            m_direction;
+    unsigned            m_time;         ///< time in milliseconds since beginning of current cycle.
+    unsigned            m_period;       ///< total duration of a cycle in milliseconds.
+    unsigned            m_length;       ///< wave length, in keyboard 1000th.
+    unsigned            m_direction;    ///< wave propagation direction, compass style (0 for North).
 };
 
 REGISTER_EFFECT_PLUGIN("wave", WavePlugin)

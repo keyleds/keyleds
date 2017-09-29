@@ -32,14 +32,14 @@ class FeedbackPlugin final : public keyleds::EffectPlugin
 {
     struct KeyPress
     {
-        const KeyDatabase::Key *    key;
-        unsigned                    age;
+        const KeyDatabase::Key *    key;    ///< Entry in the database
+        unsigned                    age;    ///< How long ago the press happened in ms
     };
 
 public:
     FeedbackPlugin(const keyleds::DeviceManager & manager,
                    const keyleds::Configuration::Plugin & conf,
-                   const keyleds::EffectPluginFactory::group_list &)
+                   const keyleds::EffectPluginFactory::group_list)
      : m_buffer(manager.getRenderTarget()),
        m_color(255, 255, 255, 255),
        m_duration(3000)
@@ -84,11 +84,11 @@ public:
     }
 
 private:
-    RenderTarget        m_buffer;
+    RenderTarget        m_buffer;       ///< this plugin's rendered state
 
-    RGBAColor           m_color;
-    unsigned            m_duration;
-    std::vector<KeyPress> m_presses;
+    RGBAColor           m_color;        ///< color taken by keys on keypress
+    unsigned            m_duration;     ///< how long it takes for keys to fade out in ms
+    std::vector<KeyPress> m_presses;    ///< list of recent keypresses still drawn
 };
 
 REGISTER_EFFECT_PLUGIN("feedback", FeedbackPlugin)

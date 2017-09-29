@@ -77,28 +77,28 @@ void XInputWatcher::handleEvent(const XEvent & event)
 
     switch (event.xcookie.evtype) {
     case XI_HierarchyChanged: {
-        const auto & data = *reinterpret_cast<XIHierarchyEvent *>(event.xcookie.data);
-        for (int i = 0; i < data.num_info; ++i) {
-            if (data.info[i].flags & XIDeviceEnabled) {
-                onInputEnabled(data.info[i].deviceid, data.info[i].use);
+        const auto * data = static_cast<XIHierarchyEvent *>(event.xcookie.data);
+        for (int i = 0; i < data->num_info; ++i) {
+            if (data->info[i].flags & XIDeviceEnabled) {
+                onInputEnabled(data->info[i].deviceid, data->info[i].use);
             }
-            if (data.info[i].flags & XIDeviceDisabled) {
-                onInputDisabled(data.info[i].deviceid, data.info[i].use);
+            if (data->info[i].flags & XIDeviceDisabled) {
+                onInputDisabled(data->info[i].deviceid, data->info[i].use);
             }
         }
         } break;
     case XI_RawKeyPress:
     case XI_RawKeyRelease: {
-        const auto & data = *reinterpret_cast<XIRawEvent *>(event.xcookie.data);
-        DEBUG("key ", data.detail - MIN_KEYCODE, " ",
+        const auto * data = static_cast<XIRawEvent *>(event.xcookie.data);
+        DEBUG("key ", data->detail - MIN_KEYCODE, " ",
               event.xcookie.evtype == XI_RawKeyPress ? "pressed" : "released",
-              " on device ", data.deviceid);
+              " on device ", data->deviceid);
         auto it = std::lower_bound(
-            m_devices.begin(), m_devices.end(), data.deviceid,
+            m_devices.begin(), m_devices.end(), data->deviceid,
             [](const auto & device, auto id) { return device.handle() < id; }
         );
-        if (it != m_devices.end() && it->handle() == data.deviceid) {
-            emit keyEventReceived(it->devNode(), data.detail - MIN_KEYCODE,
+        if (it != m_devices.end() && it->handle() == data->deviceid) {
+            emit keyEventReceived(it->devNode(), data->detail - MIN_KEYCODE,
                                   event.xcookie.evtype == XI_RawKeyPress);
         }
         } break;
@@ -150,5 +150,5 @@ void XInputWatcher::onInputDisabled(Device::handle_type id, int type)
 
 void XInputWatcher::displayEventCallback(const XEvent & event, void * ptr)
 {
-    reinterpret_cast<XInputWatcher *>(ptr)->handleEvent(event);
+    static_cast<XInputWatcher *>(ptr)->handleEvent(event);
 }
