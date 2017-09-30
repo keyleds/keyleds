@@ -70,7 +70,7 @@ public:
         if (m_keys.empty()) {
             for (auto & key : m_buffer) { key.alpha = alpha; }
         } else {
-            for (const auto & key : m_keys) { m_buffer.get(key.index).alpha = alpha; }
+            for (const auto & key : m_keys) { m_buffer[key.index].alpha = alpha; }
         }
         blend(target, m_buffer);
     }

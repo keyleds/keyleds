@@ -86,7 +86,7 @@ public:
         for (auto & star : m_stars) {
             star.age += ms;
             if (star.age >= m_duration) { rebirth(star); }
-            m_buffer.get(star.key->index) = RGBAColor(
+            m_buffer[star.key->index] = RGBAColor(
                 star.color.red,
                 star.color.green,
                 star.color.blue,
@@ -102,7 +102,7 @@ public:
         using distribution = std::uniform_int_distribution<>;
 
         if (star.key != nullptr) {
-            m_buffer.get(star.key->index) = RGBAColor{0, 0, 0, 0};
+            m_buffer[star.key->index] = RGBAColor{0, 0, 0, 0};
         }
         if (!m_keys.empty()) {
             star.key = &m_keys[distribution(0, m_keys.size() - 1)(m_random)];

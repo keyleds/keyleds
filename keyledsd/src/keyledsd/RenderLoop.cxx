@@ -14,6 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <algorithm>
 #include <cassert>
 #include <cerrno>
 #include <chrono>
@@ -43,37 +44,32 @@ static std::size_t align(std::size_t value, std::size_t alignment)
 
 /****************************************************************************/
 
-RenderTarget::RenderTarget(const std::vector<std::size_t> & block_sizes)
- : m_colors(nullptr)
+RenderTarget::RenderTarget(size_type numKeys)
+ : m_colors(nullptr),
+   m_nbColors(numKeys)
 {
-    m_blocks.reserve(block_sizes.size());
+    numKeys = align(numKeys, align_colors);
 
-    // Compute required number of colors. Insert padding in between blocks
-    // so all blocks are align_colors-aligned.
-    std::size_t totalColors = 0;
-    for (auto nbColors : block_sizes) {
-        totalColors = align(totalColors + nbColors, align_colors);
-    }
-
-    if (::posix_memalign(reinterpret_cast<void**>(&m_colors), align_bytes, totalColors * sizeof(m_colors[0])) != 0) {
+    if (::posix_memalign(reinterpret_cast<void**>(&m_colors), align_bytes, numKeys * sizeof(m_colors[0])) != 0) {
         throw std::bad_alloc();
-    }
-    m_nbColors = totalColors;
-
-    totalColors = 0;
-    for (auto nbColors : block_sizes) {
-        m_blocks.push_back(&m_colors[totalColors]);
-        totalColors = align(totalColors + nbColors, align_colors);
     }
 }
 
 RenderTarget::RenderTarget(RenderTarget && other) noexcept
- : m_colors(nullptr)
+ : m_colors(nullptr),
+   m_nbColors(other.m_nbColors)
 {
     using std::swap;
     swap(m_colors, other.m_colors);
-    m_nbColors = other.m_nbColors;
-    m_blocks = std::move(other.m_blocks);
+}
+
+RenderTarget & RenderTarget::operator=(RenderTarget && other) noexcept
+{
+    using std::swap;
+    free(m_colors);
+    m_colors = nullptr;
+    swap(*this, other);
+    return *this;
 }
 
 RenderTarget::~RenderTarget()
@@ -86,7 +82,6 @@ void keyleds::swap(RenderTarget & lhs, RenderTarget & rhs) noexcept
     using std::swap;
     swap(lhs.m_colors, rhs.m_colors);
     swap(lhs.m_nbColors, rhs.m_nbColors);
-    swap(lhs.m_blocks, rhs.m_blocks);
 }
 
 void keyleds::blend(RenderTarget & lhs, const RenderTarget & rhs)
@@ -122,12 +117,10 @@ std::unique_lock<std::mutex> RenderLoop::lock()
 
 RenderTarget RenderLoop::renderTargetFor(const Device & device)
 {
-    std::vector<std::size_t> block_sizes;
-    block_sizes.reserve(device.blocks().size());
-    for (const auto & block : device.blocks()) {
-        block_sizes.push_back(block.keys().size());
-    }
-    return RenderTarget(block_sizes);
+    return RenderTarget(std::accumulate(
+        device.blocks().begin(), device.blocks().end(), RenderTarget::size_type{0},
+        [](auto sum, const auto & block) { return sum + block.keys().size(); }
+    ));
 }
 
 bool RenderLoop::render(unsigned long nanosec)
@@ -148,27 +141,32 @@ bool RenderLoop::render(unsigned long nanosec)
 
         // Compute diff
         bool hasChanges = false;
-        const auto & blocks = m_device.blocks();
-        for (size_t bidx = 0; bidx < blocks.size(); ++bidx) {
-            const size_t nKeys = blocks[bidx].keys().size();
+        auto oldKeyIt = m_state.cbegin();
+        auto newKeyIt = m_buffer.cbegin();
+
+        for (const auto & block : m_device.blocks()) {
+            const size_t numBlockKeys = block.keys().size();
             m_directives.clear();
 
-            for (size_t idx = 0; idx < nKeys; ++idx) {
-                const auto & color = m_buffer.get(bidx, idx);
-                if (color != m_state.get(bidx, idx)) {
+            for (size_t kIdx = 0; kIdx < numBlockKeys; ++kIdx) {
+                if (*oldKeyIt != *newKeyIt) {
                     m_directives.push_back({
-                        blocks[bidx].keys()[idx], color.red, color.green, color.blue
+                        block.keys()[kIdx], newKeyIt->red, newKeyIt->green, newKeyIt->blue
                     });
                 }
+                ++oldKeyIt;
+                ++newKeyIt;
             }
             if (!m_directives.empty()) {
-                m_device.setColors(blocks[bidx], m_directives.data(), m_directives.size());
+                m_device.setColors(block, m_directives.data(), m_directives.size());
                 hasChanges = true;
             }
         }
 
         // Commit color changes
         if (hasChanges) { m_device.commitColors(); }
+
+        using std::swap;
         swap(m_state, m_buffer);
     }
 
@@ -220,17 +218,18 @@ void RenderLoop::run()
 
 void RenderLoop::getDeviceState(RenderTarget & state)
 {
-    const auto & blocks = m_device.blocks();
+    auto kit = state.begin();
 
-    for (size_t block_idx = 0; block_idx < blocks.size(); ++block_idx) {
-        auto colors = m_device.getColors(blocks[block_idx]);
+    for (const auto & block : m_device.blocks()) {
+        auto colors = m_device.getColors(block);
 
-        for (size_t idx = 0; idx < colors.size(); ++idx) {
-            auto & color = state.get(block_idx, idx);
-            color.red = colors[idx].red;
-            color.green = colors[idx].green;
-            color.blue = colors[idx].blue;
-            color.alpha = 255;
+        assert(block.keys().size() == colors.size());
+        for (const auto & color : colors) {
+            kit->red = color.red;
+            kit->green = color.green;
+            kit->blue = color.blue;
+            kit->alpha = 255;
+            ++kit;
         }
     }
 }

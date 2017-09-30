@@ -45,29 +45,36 @@ class RenderTarget final
     static constexpr std::size_t   align_bytes = 32;
     static constexpr std::size_t   align_colors = align_bytes / sizeof(RGBAColor);
 public:
-    using iterator = RGBAColor *;
-    using key_descriptor = std::pair<std::size_t, std::size_t>;
+    using value_type = RGBAColor;
+    using size_type = std::size_t;
+    using difference_type = std::ptrdiff_t;
+    using reference = value_type &;
+    using const_reference = const value_type &;
+    using iterator = value_type *;
+    using const_iterator = const value_type *;
 public:
-                                RenderTarget(const std::vector<std::size_t> & block_sizes);
+                                RenderTarget(size_type numKeys);
                                 RenderTarget(RenderTarget &&) noexcept;
+    RenderTarget &              operator=(RenderTarget &&) noexcept;
                                 ~RenderTarget();
 
-    iterator                    begin() noexcept { return &m_colors[0]; }
-    iterator                    end() noexcept { return &m_colors[m_nbColors]; }
-    std::size_t                 size() const noexcept { return m_nbColors; }
-    RGBAColor *                 data() noexcept { return m_colors; }
-    const RGBAColor *           data() const noexcept { return m_colors; }
-    RGBAColor &                 operator[](std::size_t idx) noexcept { return m_colors[idx]; }
-    const RGBAColor &           operator[](std::size_t idx) const noexcept { return m_colors[idx]; }
+    iterator                    begin() { return &m_colors[0]; }
+    const_iterator              begin() const { return &m_colors[0]; }
+    const_iterator              cbegin() const { return &m_colors[0]; }
+    iterator                    end() { return &m_colors[m_nbColors]; }
+    const_iterator              end() const { return &m_colors[m_nbColors]; }
+    const_iterator              cend() const { return &m_colors[m_nbColors]; }
+    bool                        empty() const { return false; }
+    size_type                   size() const noexcept { return m_nbColors; }
+    size_type                   max_size() const noexcept { return m_nbColors; }
+    value_type *                data() { return m_colors; }
+    const value_type *          data() const { return m_colors; }
+    reference                   operator[](size_type idx) { return m_colors[idx]; }
+    const_reference             operator[](size_type idx) const { return m_colors[idx]; }
 
-    RGBAColor &                 get(std::size_t bidx, std::size_t kidx) noexcept
-                                { return *(m_blocks[bidx] + kidx); }
-    RGBAColor &                 get(const key_descriptor & desc) noexcept
-                                { return *(m_blocks[desc.first] + desc.second); }
 private:
     RGBAColor *                 m_colors;       ///< Color buffer. RGBAColor is a POD type
     std::size_t                 m_nbColors;     ///< Number of items in m_colors
-    std::vector<RGBAColor *>    m_blocks;       ///< Block pointers withing m_colors
 
     friend void swap(RenderTarget &, RenderTarget &) noexcept;
 };

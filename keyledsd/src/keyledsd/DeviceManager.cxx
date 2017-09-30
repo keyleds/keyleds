@@ -157,7 +157,7 @@ void DeviceManager::handleGenericEvent(const Context & context)
 void DeviceManager::handleKeyEvent(int keyCode, bool press)
 {
     // Convert raw key code into a reference to its database entry
-    auto it = m_keyDB.find(keyCode);
+    auto it = m_keyDB.findKeyCode(keyCode);
     if (it == m_keyDB.end()) {
         DEBUG("unknown key ", keyCode, " on device ", m_serial);
         return;
@@ -262,9 +262,9 @@ KeyDatabase DeviceManager::buildKeyDB(const Configuration & conf, const Device &
     auto layout = loadLayoutDescription(conf, device);
 
     KeyDatabase::key_list db;
-    for (Device::block_list::size_type bidx = 0; bidx < device.blocks().size(); ++bidx) {
-        const auto & block = device.blocks()[bidx];
+    RenderTarget::size_type keyIndex = 0;
 
+    for (const auto & block : device.blocks()) {
         for (Device::key_list::size_type kidx = 0; kidx < block.keys().size(); ++kidx) {
             const auto keyId = block.keys()[kidx];
             std::string name;
@@ -281,11 +281,12 @@ KeyDatabase DeviceManager::buildKeyDB(const Configuration & conf, const Device &
             if (name.empty()) { name = device.resolveKey(block.id(), keyId); }
 
             db.emplace_back(KeyDatabase::Key{
-                { bidx, kidx },
+                keyIndex,
                 device.decodeKeyId(block.id(), keyId),
                 name,
                 position
             });
+            ++keyIndex;
         }
     }
     return db;

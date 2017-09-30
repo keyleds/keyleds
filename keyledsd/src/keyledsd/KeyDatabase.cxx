@@ -26,19 +26,19 @@ KeyDatabase::KeyDatabase(key_list keys)
    m_bounds(computeBounds(m_keys))
 {}
 
-KeyDatabase::const_iterator KeyDatabase::find(RenderTarget::key_descriptor index) const
+KeyDatabase::const_iterator KeyDatabase::findIndex(RenderTarget::size_type index) const
 {
     return std::find_if(m_keys.cbegin(), m_keys.cend(),
                         [index](const auto & key) { return key.index == index; });
 }
 
-KeyDatabase::const_iterator KeyDatabase::find(int keyCode) const
+KeyDatabase::const_iterator KeyDatabase::findKeyCode(int keyCode) const
 {
     return std::find_if(m_keys.cbegin(), m_keys.cend(),
                         [keyCode](const auto & key) { return key.keyCode == keyCode; });
 }
 
-KeyDatabase::const_iterator KeyDatabase::find(const std::string & name) const
+KeyDatabase::const_iterator KeyDatabase::findName(const std::string & name) const
 {
     return std::find_if(m_keys.cbegin(), m_keys.cend(),
                         [name](const auto & key) { return key.name == name; });

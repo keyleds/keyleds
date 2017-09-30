@@ -40,10 +40,10 @@ public:
     public:
         struct Rect { unsigned x0, y0, x1, y1; };
     public:
-        RenderTarget::key_descriptor    index;      ///< index in render targets
-        int                             keyCode;    ///< linux input event code
-        std::string                     name;       ///< user-readable name
-        Rect                            position;   ///< physical position on keyboard
+        RenderTarget::size_type index;      ///< index in render targets
+        int                     keyCode;    ///< linux input event code
+        std::string             name;       ///< user-readable name
+        Rect                    position;   ///< physical position on keyboard
     };
     class KeyGroup;
 
@@ -59,9 +59,9 @@ public:
     explicit        KeyDatabase(const KeyDatabase &) = default;
                     KeyDatabase(KeyDatabase &&) = default;
 
-    const_iterator  find(RenderTarget::key_descriptor) const;
-    const_iterator  find(int keyCode) const;
-    const_iterator  find(const std::string & name) const;
+    const_iterator  findIndex(RenderTarget::size_type) const;
+    const_iterator  findKeyCode(int keyCode) const;
+    const_iterator  findName(const std::string & name) const;
 
     const_iterator  begin() const { return m_keys.cbegin(); }
     const_iterator  end() const { return m_keys.cend(); }
@@ -182,7 +182,7 @@ KeyDatabase::KeyGroup KeyDatabase::makeGroup(std::string name, It first, It last
 {
     std::vector<iterator> result;
     for (auto it = first; it != last; ++it) {
-        auto kit = find(*it);
+        auto kit = findName(*it);
         if (kit != end()) { result.push_back(kit); }
     }
     return KeyGroup(std::move(name), std::move(result));

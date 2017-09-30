@@ -59,7 +59,7 @@ public:
         for (auto & keyPress : m_presses) {
             keyPress.age += ms;
             if (keyPress.age > m_duration) { keyPress.age = m_duration; }
-            m_buffer.get(keyPress.key->index) = RGBAColor(
+            m_buffer[keyPress.key->index] = RGBAColor(
                 m_color.red,
                 m_color.green,
                 m_color.blue,

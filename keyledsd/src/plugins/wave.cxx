@@ -28,6 +28,7 @@
 
 LOGGING("plugin-wave");
 
+using KeyDatabase = keyleds::KeyDatabase;
 using KeyGroup = keyleds::KeyDatabase::KeyGroup;
 using keyleds::RGBAColor;
 using keyleds::RenderTarget;
@@ -80,7 +81,7 @@ public:
         }
 
         // Get ready
-        computePhases(manager);
+        computePhases(manager.keyDB());
         std::fill(m_buffer.begin(), m_buffer.end(), RGBAColor{0, 0, 0, 0});
     }
 
@@ -105,56 +106,46 @@ public:
                 int tphi = t - m_phases[idx];
                 if (tphi < 0) { tphi += accuracy; }
 
-                m_buffer.get(m_keys[idx].index) = m_colors[tphi];
+                m_buffer[m_keys[idx].index] = m_colors[tphi];
             }
         }
         blend(target, m_buffer);
     }
 
 private:
-    void computePhases(const keyleds::DeviceManager & manager)
+    void computePhases(const KeyDatabase & keyDB)
     {
         float frequency = float(accuracy) * 1000.0f / float(m_length);
         int freqX = int(frequency * std::sin(2.0f * pi / 360.0f * float(m_direction)));
         int freqY = int(frequency * std::cos(2.0f * pi / 360.0f * float(m_direction)));
-        auto bounds = manager.keyDB().bounds();
+        auto bounds = keyDB.bounds();
 
         m_phases.clear();
-        const auto & blocks = manager.device().blocks();
 
         if (m_keys.empty()) {
-            for (std::size_t bidx = 0; bidx < blocks.size(); ++bidx) {
-                const auto & block = blocks[bidx];
-
-                std::size_t kidx;
-                for (kidx = 0; kidx < block.keys().size(); ++kidx) {
-                    auto it = manager.keyDB().find(RenderTarget::key_descriptor{bidx, kidx});
-                    if (it == manager.keyDB().end()) {
-                        WARNING("Key(", bidx, ", ", kidx, ") code ", +block.keys()[kidx], " missing in database");
-                        m_phases.push_back(0);
-                        continue;
-                    }
-
-                    int x = (it->position.x0 + it->position.x1) / 2;
-                    int y = (it->position.y0 + it->position.y1) / 2;
-                    if (x == 0 && y == 0) {
-                        m_phases.push_back(0);
-                    } else {
-                        // Reverse Y axis as keyboard layout uses top<down
-                        x = accuracy * (x - bounds.x0) / (bounds.x1 - bounds.x0);
-                        y = accuracy - accuracy * (y - bounds.x0) / (bounds.x1 - bounds.x0);
-                        auto val = (freqX * x + freqY * y) / accuracy % accuracy;
-                        if (val < 0) { val += accuracy; }
-                        m_phases.push_back(val);
-                    }
+            for (RenderTarget::size_type kidx = 0; kidx < m_buffer.size(); ++kidx) {
+                auto it = keyDB.findIndex(kidx);
+                if (it == keyDB.end()) {
+                    WARNING("Key(", kidx, ") missing in database");
+                    m_phases.push_back(0);
+                    continue;
                 }
 
-                auto curPtr = &m_buffer.get(bidx, kidx);
-                auto nextPtr = bidx + 1 < blocks.size() ? &m_buffer.get(bidx + 1, 0) : m_buffer.end();
-                m_phases.insert(m_phases.end(), nextPtr - curPtr, 0);
+                int x = (it->position.x0 + it->position.x1) / 2;
+                int y = (it->position.y0 + it->position.y1) / 2;
+                if (x == 0 && y == 0) {
+                    m_phases.push_back(0);
+                } else {
+                    // Reverse Y axis as keyboard layout uses top<down
+                    x = accuracy * (x - bounds.x0) / (bounds.x1 - bounds.x0);
+                    y = accuracy - accuracy * (y - bounds.x0) / (bounds.x1 - bounds.x0);
+                    auto val = (freqX * x + freqY * y) / accuracy % accuracy;
+                    if (val < 0) { val += accuracy; }
+                    m_phases.push_back(val);
+                }
             }
         } else {
-            for (auto key : m_keys) {
+            for (const auto & key : m_keys) {
                 int x = (key.position.x0 + key.position.x1) / 2;
                 int y = (key.position.y0 + key.position.y1) / 2;
                 if (x == 0 && y == 0) {

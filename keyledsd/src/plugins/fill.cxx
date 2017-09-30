@@ -70,7 +70,7 @@ public:
         }
         for (const auto & rule : m_rules) {
             for (const auto & key : rule.keys()) {
-                target.get(key.index) = rule.color();
+                target[key.index] = rule.color();
             }
         }
     }
