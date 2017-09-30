@@ -31,10 +31,11 @@ struct FileWatcher::Watch final
 {
     watch_id    id;
     Listener    callback;
-    void *      userData;
 };
 
 /****************************************************************************/
+
+constexpr FileWatcher::watch_id FileWatcher::invalid_watch;
 
 FileWatcher::FileWatcher(QObject * parent)
  : QObject(parent),
@@ -56,8 +57,7 @@ FileWatcher::~FileWatcher()
 }
 
 
-FileWatcher::watch_id FileWatcher::subscribe(const std::string & path, event events,
-                                             Listener listener, void * data)
+FileWatcher::subscription FileWatcher::subscribe(const std::string & path, event events, Listener listener)
 {
     watch_id wd = inotify_add_watch(m_fd, path.c_str(), static_cast<uint32_t>(events));
     if (wd < 0) {
@@ -66,9 +66,10 @@ FileWatcher::watch_id FileWatcher::subscribe(const std::string & path, event eve
     m_listeners.insert(
         std::upper_bound(m_listeners.begin(), m_listeners.end(), wd,
                          [](watch_id id, const auto & listener) { return id < listener.id; }),
-        {wd, listener, data}
+        {wd, listener}
     );
-    return wd;
+    DEBUG("subscribed to events on ", path, " => ", wd);
+    return subscription(*this, wd);
 }
 
 void FileWatcher::unsubscribe(watch_id wd)
@@ -79,21 +80,9 @@ void FileWatcher::unsubscribe(watch_id wd)
         throw std::invalid_argument("Unknown subscription");
     }
     inotify_rm_watch(m_fd, wd);
-    m_listeners.erase(it);
-}
-
-void FileWatcher::unsubscribe(Listener callback, void * data)
-{
-    auto it = std::stable_partition(
-        m_listeners.begin(), m_listeners.end(),
-        [callback, data](const auto & listener) {
-            return !(listener.callback == callback && listener.userData == data);
-        }
-    );
-
-    std::for_each(it, m_listeners.end(),
-                  [this](auto & listener) { inotify_rm_watch(m_fd, listener.id); });
-    m_listeners.erase(it, m_listeners.end());
+    std::iter_swap(it, m_listeners.end() - 1);
+    m_listeners.pop_back();
+    DEBUG("unsubscribed from events => ", wd);
 }
 
 void FileWatcher::onNotifyReady(int)
@@ -112,13 +101,17 @@ void FileWatcher::onNotifyReady(int)
         );
         if (it == m_listeners.end()) { continue; }
         assert(it->id == buffer.event.wd);
-        (*it->callback)(it->userData,
-                        static_cast<enum event>(buffer.event.mask),
-                        buffer.event.cookie,
-                        std::string(buffer.event.name, buffer.event.len));
+        it->callback(static_cast<enum event>(buffer.event.mask),
+                     buffer.event.cookie,
+                     std::string(buffer.event.name, buffer.event.len));
     }
 
     if (errno != EAGAIN) {
         ERROR("read on inotify fd returned error ", errno);
     }
+}
+
+FileWatcher::subscription::~subscription()
+{
+    if (m_id != invalid_watch) { m_watcher.unsubscribe(m_id); }
 }

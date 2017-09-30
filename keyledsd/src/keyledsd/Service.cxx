@@ -16,7 +16,6 @@
  */
 #include <QCoreApplication>
 #include <cassert>
-#include <unistd.h>
 #include "keyledsd/Configuration.h"
 #include "keyledsd/Device.h"
 #include "keyledsd/DeviceManager.h"
@@ -48,8 +47,6 @@ Service::Service(Configuration & configuration, QObject * parent)
 Service::~Service()
 {
     setActive(false);
-    std::for_each(m_devices.begin(), m_devices.end(),
-                  [this](auto & manager) { m_fileWatcher.unsubscribe(onFileWatchEvent, manager.get()); });
     m_devices.clear();
 }
 
@@ -106,10 +103,11 @@ void Service::onDeviceAdded(const device::Description & description)
     try {
         auto device = Device(description.devNode());
         auto manager = std::make_unique<DeviceManager>(
-            description, std::move(device), m_configuration, m_context
+            m_fileWatcher,
+            description, std::move(device), m_configuration
         );
-        m_fileWatcher.subscribe(description.devNode(), FileWatcher::event::Attrib,
-                                onFileWatchEvent, manager.get());
+        manager->setContext(m_context);
+
         emit deviceManagerAdded(*manager);
 
         INFO("opened device ", description.devNode(),
@@ -119,6 +117,7 @@ void Service::onDeviceAdded(const device::Description & description)
              " firmware ", manager->device().firmware(),
              ", <", manager->device().name(), ">");
 
+        manager->setPaused(false);
         m_devices.emplace_back(std::move(manager));
 
     } catch (Device::error & error) {
@@ -144,7 +143,7 @@ void Service::onDeviceRemoved(const device::Description & description)
         m_devices.pop_back();
 
         INFO("removing device ", manager->serial());
-        m_fileWatcher.unsubscribe(onFileWatchEvent, manager.get());
+
         emit deviceManagerRemoved(*manager);
 
         if (m_devices.empty() && m_configuration.autoQuit()) {
@@ -157,13 +156,13 @@ void Service::onDeviceRemoved(const device::Description & description)
 
 void Service::onDisplayAdded(std::unique_ptr<xlib::Display> & display)
 {
+    INFO("connected to display ", display->name());
     auto displayManager = std::make_unique<DisplayManager>(std::move(display));
     QObject::connect(displayManager.get(), &DisplayManager::contextChanged,
                      this, &Service::setContext);
     QObject::connect(displayManager.get(), &DisplayManager::keyEventReceived,
                      this, &Service::handleKeyEvent);
     displayManager->scanDevices();
-    INFO("connected to display ", displayManager->display().name());
     setContext(displayManager->currentContext());
 
     m_displays.emplace_back(std::move(displayManager));
@@ -174,13 +173,4 @@ void Service::onDisplayRemoved()
     assert(m_displays.size() == 1);
     INFO("disconnecting from display ", m_displays.front()->display().name());
     m_displays.clear();
-}
-
-/****************************************************************************/
-
-void Service::onFileWatchEvent(void * managerPtr, FileWatcher::event, uint32_t, std::string)
-{
-    auto manager = static_cast<DeviceManager *>(managerPtr);
-    int result = access(manager->device().path().c_str(), R_OK | W_OK);
-    manager->setPaused(result != 0);
 }

@@ -21,6 +21,7 @@
 
 #include <sys/inotify.h>
 #include <QObject>
+#include <functional>
 #include <vector>
 
 class FileWatcher final : public QObject
@@ -45,8 +46,21 @@ public:
     };
 
     using watch_id = int;
-    using Listener = void (*)(void *, event mask, uint32_t cookie, std::string path);
+    using Listener = std::function<void(event mask, uint32_t cookie, std::string path)>;
+    static constexpr watch_id invalid_watch = -1;
 
+    class subscription final
+    {
+        FileWatcher &   m_watcher;
+        watch_id        m_id;
+    public:
+                    subscription(FileWatcher & watcher, watch_id id)
+                     : m_watcher(watcher), m_id(id) {}
+                    subscription(subscription && other)
+                     : m_watcher(other.m_watcher), m_id(invalid_watch)
+                     { std::swap(m_id, other.m_id); }
+                    ~subscription();
+    };
 private:
     struct Watch;
     using listener_list = std::vector<Watch>;
@@ -56,14 +70,13 @@ public:
                         ~FileWatcher() override;
                         FileWatcher(const FileWatcher &) = delete;
 
-    watch_id            subscribe(const std::string & path, event events, Listener, void * data);
-    void                unsubscribe(watch_id);
-    void                unsubscribe(Listener, void * data);
+    subscription        subscribe(const std::string & path, event events, Listener);
 
 private slots:
     /// Invoked whenever system notifications from udev become available
     void                onNotifyReady(int socket);
-
+private:
+    void                unsubscribe(watch_id);
 private:
     int                 m_fd;           ///< file descriptor of inotify device
     listener_list       m_listeners;    ///< list of registered watches

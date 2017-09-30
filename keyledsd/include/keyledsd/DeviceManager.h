@@ -22,6 +22,7 @@
 #include "keyledsd/Device.h"
 #include "keyledsd/KeyDatabase.h"
 #include "keyledsd/RenderLoop.h"
+#include "tools/FileWatcher.h"
 #include <memory>
 #include <string>
 #include <vector>
@@ -69,10 +70,10 @@ private:
 public:
     using dev_list = std::vector<std::string>;
 public:
-                            DeviceManager(const device::Description &,
+                            DeviceManager(FileWatcher &,
+                                          const device::Description &,
                                           Device &&,
                                           const Configuration &,
-                                          const Context &,
                                           QObject *parent = nullptr);
                             ~DeviceManager() override;
 
@@ -89,6 +90,7 @@ public:
 
 public slots:
     void                    setContext(const Context &);
+    void                    handleFileEvent(FileWatcher::event, uint32_t, std::string);
     void                    handleGenericEvent(const Context &);
     void                    handleKeyEvent(int, bool);
     void                    setPaused(bool);
@@ -118,6 +120,7 @@ private:
     const dev_list          m_eventDevices;     ///< List of event device paths that the
                                                 ///  physical device can communicate on.
     Device                  m_device;           ///< The device handled by this manager
+    FileWatcher::subscription m_fileWatcherSub; ///< Ensures we get notifications for devnode events
     const KeyDatabase       m_keyDB;            ///< Fully loaded key descriptions
 
     effect_list             m_effects;          ///< Loaded effect instances

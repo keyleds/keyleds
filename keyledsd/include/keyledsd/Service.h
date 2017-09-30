@@ -79,10 +79,6 @@ private slots:
     void                onDisplayRemoved();
 
 private:
-    // Events from callback-based watchers
-    static void         onFileWatchEvent(void *, FileWatcher::event, uint32_t, std::string);
-
-private:
     Configuration &     m_configuration;    ///< Service configuration
     Context             m_context;          ///< Current context. Used when instanciating new managers
     bool                m_active;           ///< If clear, the service stops watching devices

@@ -14,6 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <unistd.h>
 #include <algorithm>
 #include <fstream>
 #include <iomanip>
@@ -107,8 +108,9 @@ DeviceManager::LoadedEffect::LoadedEffect(std::string name, plugin_list && plugi
 
 /****************************************************************************/
 
-DeviceManager::DeviceManager(const device::Description & description, Device && device,
-                             const Configuration & conf, const Context & context, QObject *parent)
+DeviceManager::DeviceManager(FileWatcher & fileWatcher,
+                             const device::Description & description, Device && device,
+                             const Configuration & conf, QObject *parent)
     : QObject(parent),
       m_configuration(conf),
       m_sysPath(description.sysPath()),
@@ -116,12 +118,13 @@ DeviceManager::DeviceManager(const device::Description & description, Device && 
       m_name(getName(conf, m_serial)),
       m_eventDevices(findEventDevices(description)),
       m_device(std::move(device)),
+      m_fileWatcherSub(fileWatcher.subscribe(description.devNode(), FileWatcher::event::Attrib,
+                                             std::bind(&DeviceManager::handleFileEvent, this,
+                                                       std::placeholders::_1, std::placeholders::_2,
+                                                       std::placeholders::_3))),
       m_keyDB(buildKeyDB(conf, m_device)),
       m_renderLoop(m_device, KEYLEDSD_RENDER_FPS)
-{
-    setContext(context);            // set initial context before starting render thread, avoiding a flash
-    m_renderLoop.setPaused(false);  // render thread starts in paused state
-}
+{}
 
 DeviceManager::~DeviceManager()
 {
@@ -137,6 +140,12 @@ void DeviceManager::setContext(const Context & context)
     auto lock = m_renderLoop.lock();
     for (auto * effect : effects) { effect->handleContextChange(context); }
     m_renderLoop.effects() = std::move(effects);
+}
+
+void DeviceManager::handleFileEvent(FileWatcher::event, uint32_t, std::string)
+{
+    int result = access(m_device.path().c_str(), R_OK | W_OK);
+    setPaused(result != 0);
 }
 
 void DeviceManager::handleGenericEvent(const Context & context)
