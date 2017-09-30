@@ -26,6 +26,7 @@
 #include <X11/Xlib.h>
 // Work around Xlib.h defining macros, breaking moc-generated cpp
 #undef Bool
+#include <functional>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -128,12 +129,29 @@ public:
     using handle_type = X11Display *;
     using atom_map = std::vector<std::pair<std::string, Atom>>;
     using event_type = int;
-    using event_handler = void (*)(const XEvent &, void * data);
+    using event_handler = std::function<void(const XEvent &)>;
+
+    class subscription final
+    {
+    public:
+        using id_type = int;
+        static constexpr id_type invalid_id = 0;
+    public:
+                    subscription(Display & watcher, id_type id)
+                     : m_display(watcher), m_id(id) {}
+                    subscription(subscription && other)
+                     : m_display(other.m_display), m_id(invalid_id)
+                     { std::swap(m_id, other.m_id); }
+                    ~subscription();
+    private:
+        Display &   m_display;
+        id_type     m_id;
+    };
 private:
     struct HandlerInfo {
-        event_type      event;
-        event_handler   handler;
-        void *          data;
+        subscription::id_type id;
+        event_type          event;
+        event_handler       handler;
     };
 public:
                             Display(std::string name = std::string());
@@ -151,8 +169,7 @@ public:
     // Event handling
     int                     connection() const; ///< file descriptor of connection to X server
     void                    processEvents();    ///< handles awaiting X events. Does not block.
-    void                    registerHandler(event_type, event_handler, void * data = nullptr);
-    void                    unregisterHandler(event_handler);
+    subscription            registerHandler(event_type, event_handler);
 
     std::unique_ptr<Window> getActiveWindow();  ///< Window keypresses currently go into. Might be null.
 
@@ -161,12 +178,15 @@ private:
     /// Invoked once by the constructor. Display name might be empty to use Xlib defaults
     static std::unique_ptr<X11Display> openDisplay(const std::string &);
 
+    void                    unregisterHandler(subscription::id_type);
+
 private:
     std::unique_ptr<X11Display> m_display;      ///< Xlib descriptor for the connection to the server
     std::string             m_name;             ///< Display name, in Xlib format, eg: ":0"
     Window                  m_root;             ///< Window at the root of the display.
     mutable atom_map        m_atomCache;        ///< key-sorted list of key-values
     std::vector<HandlerInfo> m_handlers;        ///< Callback list
+    subscription::id_type   m_nextSubscription; ///< Next available subscription id
 };
 
 /****************************************************************************/

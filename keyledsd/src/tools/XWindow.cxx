@@ -23,6 +23,9 @@
 #include <X11/Xatom.h>
 #include <X11/extensions/XInput2.h>
 #include "tools/XWindow.h"
+#include "logging.h"
+
+LOGGING("xwindow");
 
 using xlib::Device;
 using xlib::ErrorCatcher;
@@ -40,7 +43,8 @@ void std::default_delete<X11Display>::operator()(X11Display *ptr) const { XClose
 xlib::Display::Display(std::string name)
  : m_display(openDisplay(name)),
    m_name(DisplayString(m_display.get())),
-   m_root(*this, DefaultRootWindow(m_display.get()))
+   m_root(*this, DefaultRootWindow(m_display.get())),
+   m_nextSubscription(1)
 {
 }
 
@@ -97,22 +101,36 @@ void xlib::Display::processEvents()
         XGetEventData(m_display.get(), &event.xcookie);
         for (const auto & item : m_handlers) {
             if (item.event == event.type || item.event == 0) {
-                (*item.handler)(event, item.data);
+                item.handler(event);
             }
         }
         XFreeEventData(m_display.get(), &event.xcookie);
     }
 }
 
-void xlib::Display::registerHandler(event_type type, event_handler handler, void * data)
+xlib::Display::subscription xlib::Display::registerHandler(event_type type, event_handler handler)
 {
-    m_handlers.push_back({type, handler, data});
+    auto id = m_nextSubscription++;
+    m_handlers.push_back({id, type, std::move(handler)});
+    DEBUG("subscribed to events on ", m_name, " => ", id);
+    return subscription(*this, id);
 }
 
-void xlib::Display::unregisterHandler(event_handler handler)
+void xlib::Display::unregisterHandler(subscription::id_type id)
 {
-    m_handlers.erase(std::remove_if(m_handlers.begin(), m_handlers.end(),
-                                    [handler](const auto & item){ return item.handler == handler; }));
+    auto it = std::find_if(m_handlers.begin(), m_handlers.end(),
+                           [id](const auto & item){ return item.id == id; });
+    assert(it != m_handlers.end());
+    std::iter_swap(it, m_handlers.end() - 1);
+    m_handlers.pop_back();
+    DEBUG("unsubscribed from events => ", id);
+}
+
+constexpr xlib::Display::subscription::id_type xlib::Display::subscription::invalid_id;
+
+xlib::Display::subscription::~subscription()
+{
+    if (m_id != invalid_id) { m_display.unregisterHandler(m_id); }
 }
 
 /****************************************************************************/

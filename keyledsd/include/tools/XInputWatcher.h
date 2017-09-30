@@ -58,11 +58,9 @@ protected:
     /// Invoked by handleEvent when a Xinput device disappears. Int is device type (use field)
     virtual void    onInputDisabled(Device::handle_type, int);
 
-private:
-    static void     displayEventCallback(const XEvent &, void*);
-
 protected:
     Display &       m_display;          ///< X display connection
+    Display::subscription m_displayReg; ///< callback registration for X events
     int             m_XIopcode;         ///< XInput extension code
     device_list     m_devices;          ///< List of enabled devices
 };

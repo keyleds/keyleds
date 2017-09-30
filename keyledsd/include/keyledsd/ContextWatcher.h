@@ -23,11 +23,7 @@
 #include <QObject>
 #include <memory>
 #include "keyledsd/Context.h"
-
-namespace xlib {
-    class Display;
-    class Window;
-};
+#include "tools/XWindow.h"
 
 namespace keyleds {
 
@@ -66,10 +62,9 @@ private:
     /// Signal is debounced: if built context is equal to current, signal is not sent.
     void            setContext(xlib::Window *);
 
-    static void     displayEventCallback(const XEvent &, void*);
-
 private:
     xlib::Display &                 m_display;          ///< X display connection
+    xlib::Display::subscription     m_displayReg;       ///< callback registration for X events
     std::unique_ptr<xlib::Window>   m_activeWindow;     ///< Currently active window, or nullptr if none
     Context                         m_context;          ///< Current context
 };

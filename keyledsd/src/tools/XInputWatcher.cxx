@@ -33,7 +33,9 @@ static constexpr char XInputExtensionName[] = "XInputExtension";
 
 XInputWatcher::XInputWatcher(Display & display, QObject *parent)
  : QObject(parent),
-   m_display(display)
+   m_display(display),
+   m_displayReg(m_display.registerHandler(GenericEvent, std::bind(
+                &XInputWatcher::handleEvent, this, std::placeholders::_1)))
 {
     int event, error;
     if (!XQueryExtension(display.handle(), XInputExtensionName, &m_XIopcode, &event, &error)) {
@@ -44,14 +46,10 @@ XInputWatcher::XInputWatcher(Display & display, QObject *parent)
     XIEventMask eventMask = { XIAllDevices, (int)mask.size(), mask.data() };
     XISetMask(mask.data(), XI_HierarchyChanged);
     XISelectEvents(display.handle(), display.root().handle(), &eventMask, 1);
-
-    m_display.registerHandler(GenericEvent, displayEventCallback, this);
 }
 
 XInputWatcher::~XInputWatcher()
-{
-    m_display.unregisterHandler(displayEventCallback);
-}
+{}
 
 void XInputWatcher::scan()
 {
@@ -146,9 +144,4 @@ void XInputWatcher::onInputDisabled(Device::handle_type id, int type)
     if (errors) {
         DEBUG("onInputDisabled, ignoring ", errors.errors().size(), " errors");
     }
-}
-
-void XInputWatcher::displayEventCallback(const XEvent & event, void * ptr)
-{
-    static_cast<XInputWatcher *>(ptr)->handleEvent(event);
 }

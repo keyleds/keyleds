@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <X11/Xlib.h>
+#include <functional>
 #include <string>
 #include "keyledsd/ContextWatcher.h"
-#include "tools/XWindow.h"
 #include "logging.h"
 
 LOGGING("context-watcher");
@@ -29,10 +29,10 @@ static constexpr char activeWindowAtom[] = "_NET_ACTIVE_WINDOW";
 
 XContextWatcher::XContextWatcher(xlib::Display & display, QObject *parent)
  : QObject(parent),
-   m_display(display)
+   m_display(display),
+   m_displayReg(m_display.registerHandler(PropertyNotify, std::bind(
+                &XContextWatcher::handleEvent, this, std::placeholders::_1)))
 {
-    m_display.registerHandler(PropertyNotify, displayEventCallback, this);
-
     // Setup active window watch
     XSetWindowAttributes attributes;
     attributes.event_mask = PropertyChangeMask;
@@ -45,7 +45,6 @@ XContextWatcher::XContextWatcher(xlib::Display & display, QObject *parent)
 XContextWatcher::~XContextWatcher()
 {
     onActiveWindowChanged(nullptr, true);
-    m_display.unregisterHandler(displayEventCallback);
 }
 
 void XContextWatcher::handleEvent(const XEvent & event)
@@ -133,9 +132,4 @@ void XContextWatcher::setContext(xlib::Window * window)
         m_context = std::move(context);
         emit contextChanged(m_context);
     }
-}
-
-void XContextWatcher::displayEventCallback(const XEvent & event, void * ptr)
-{
-    static_cast<XContextWatcher *>(ptr)->handleEvent(event);
 }
