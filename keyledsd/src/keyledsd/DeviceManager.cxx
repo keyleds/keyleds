@@ -124,7 +124,9 @@ DeviceManager::DeviceManager(FileWatcher & fileWatcher,
                                                        std::placeholders::_3))),
       m_keyDB(buildKeyDB(conf, m_device)),
       m_renderLoop(m_device, KEYLEDSD_RENDER_FPS)
-{}
+{
+    m_renderLoop.start();
+}
 
 DeviceManager::~DeviceManager()
 {

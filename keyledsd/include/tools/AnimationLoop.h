@@ -40,6 +40,7 @@ public:
     bool            paused() const { return m_paused; }
     int             error() const { return m_error; }
 
+    void            start();
     void            setPaused(bool paused);
     void            stop();
 

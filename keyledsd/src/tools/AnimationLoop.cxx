@@ -26,13 +26,17 @@ AnimationLoop::AnimationLoop(unsigned fps)
     : m_period(1000 / fps),
       m_paused(true),
       m_abort(false),
-      m_error(0),
-      m_thread(threadEntry, std::ref(*this))
+      m_error(0)
 {
 }
 
 AnimationLoop::~AnimationLoop()
 {}
+
+void AnimationLoop::start()
+{
+    m_thread = std::thread(threadEntry, std::ref(*this));
+}
 
 void AnimationLoop::stop()
 {
