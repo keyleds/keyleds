@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="utf-8"?>
+<keyboards layout="FRA">
+  <keyboard x="11" y="42" width="44" height="44" zone="16">
+    <row>
+      <key code="0x01" />
+    </row>
+  </keyboard>
+  <keyboard x="521" y="56" width="110" height="18" zone="64">
+    <row>
+      <key style="blank" width=".4" />
+      <key glyph="NumLock" code="0x05" width=".2" />
+      <key style="blank" width=".8" />
+      <key glyph="CapsLock" code="0x03" width=".2" />
+      <key style="blank" width=".8" />
+      <key glyph="ScrollLock" code="0x04" width=".2" />
+      <key style="blank" width=".4" />
+    </row>
+  </keyboard>
+  <keyboard x="710" y="48" width="120" height="35" zone="64">
+    <row>
+      <key glyph="Game" code="0x02" />
+      <key style="blank" width=".8" />
+      <key glyph="Light" code="0x01" />
+    </row>
+  </keyboard>
+  <keyboard x="858" y="48" width="35" height="35" zone="2">
+    <row>
+      <key glyph="Mute" code="0xe2" />
+    </row>
+  </keyboard>
+  <keyboard x="858" y="103" width="176" height="35" zone="2">
+    <row>
+      <key glyph="Play" code="0xcd" />
+      <key glyph="Stop" code="0xb7" />
+      <key glyph="Prev" code="0xb6" />
+      <key glyph="Next" code="0xb5" />
+    </row>
+  </keyboard>
+  <keyboard x="13" y="96" width="46" height="46" zone="1">
+    <row>
+      <key code="0x29" />
+    </row>
+  </keyboard>
+  <keyboard x="89" y="96" width="184" height="46" zone="1">
+    <row>
+      <key code="0x3a" />
+      <key code="0x3b" />
+      <key code="0x3c" />
+      <key code="0x3d" />
+    </row>
+  </keyboard>
+  <keyboard x="299" y="96" width="184" height="46" zone="1">
+    <row>
+      <key code="0x3e" />
+      <key code="0x3f" />
+      <key code="0x40" />
+      <key code="0x41" />
+    </row>
+  </keyboard>
+  <keyboard x="507" y="96" width="184" height="46" zone="1">
+    <row>
+      <key code="0x42" />
+      <key code="0x43" />
+      <key code="0x44" />
+      <key code="0x45" />
+    </row>
+  </keyboard>
+  <keyboard x="702" y="96" width="133" height="46" zone="1">
+    <row>
+      <key code="0x46" />
+      <key code="0x47" />
+      <key code="0x48" />
+    </row>
+  </keyboard>
+  <keyboard x="13" y="152" width="678" height="228" zone="1">
+    <row>
+      <key code="0x35" />
+      <key code="0x1e" />
+      <key code="0x1f" />
+      <key code="0x20" />
+      <key code="0x21" />
+      <key code="0x22" />
+      <key code="0x23" />
+      <key code="0x24" />
+      <key code="0x25" />
+      <key code="0x26" />
+      <key code="0x27" />
+      <key code="0x2d" />
+      <key code="0x2e" />
+      <key code="0x2a" width="1.5" />
+    </row>
+    <row>
+      <key code="0x2b"  width="1.3" />
+      <key code="0x14" />
+      <key code="0x1a" />
+      <key code="0x8" />
+      <key code="0x15" />
+      <key code="0x17" />
+      <key code="0x1c" />
+      <key code="0x18" />
+      <key code="0xc" />
+      <key code="0x12" />
+      <key code="0x13" />
+      <key code="0x2f" />
+      <key code="0x30" width="1.3" /> 
+      <key code="0x28" width="1.25" style="down" />
+    </row>
+    <row>
+      <key code="0x39"  width="1.5" />
+      <key code="0x4" />
+      <key code="0x16" />
+      <key code="0x7" />
+      <key code="0x9" />
+      <key code="0xa" />
+      <key code="0xb" />
+      <key code="0xd" />
+      <key code="0xe" />
+      <key code="0xf" />
+      <key code="0x33" />
+      <key code="0x34" />
+      <key code ="0x32" width="1.08" />
+      <key width="1.17" style="blank" />
+    </row>
+    <row>
+      <key code="0xe1" width="1.25" /> 
+      <key code="0x64" /> 
+      <key code="0x1d" />
+      <key code="0x1b" />
+      <key code="0x6" />
+      <key code="0x19" />
+      <key code="0x5" />
+      <key code="0x11" />
+      <key code="0x10" />
+      <key code="0x36" />
+      <key code="0x37" />
+      <key code="0x38" />
+      <key code="0xe5"  width="2.5" />
+    </row>
+    <row>
+      <key code="0xe0" width="1.5" />
+      <key code="0xe3" width="1.25" />
+      <key code="0xe2" width="1.25" />
+      <key code="0x2c" width="5.75" />
+      <key code="0xe6" width="1.25" />
+      <key code="0xe7" width="1.25" />
+      <key code="0x65" width="1.25" />
+      <key code="0xe4" width="1.5" />
+    </row>
+  </keyboard>
+  <keyboard x="702" y="152" width="330" height="228"  zone="1">
+    <row>
+      <key code="0x49" />
+      <key code="0x4a" />
+      <key code="0x4b" />
+      <key style="blank" width=".5" />
+      <key code="0x53" />
+      <key code="0x54" />
+      <key code="0x55" />
+      <key code="0x56" />
+    </row>
+    <row>
+      <key code="0x4c" />
+      <key code="0x4d" />
+      <key code="0x4e" />
+      <key style="blank" width=".5" />
+      <key code="0x5f" />
+      <key code="0x60" />
+      <key code="0x61" />
+      <key code="0x57" style="down" />
+    </row>
+    <row>
+      <key style="blank" />
+      <key style="blank" />
+      <key style="blank" />
+      <key style="blank" width=".5" />
+      <key code="0x5c" />
+      <key code="0x5d" />
+      <key code="0x5e" />
+      <key style="blank" />
+    </row>
+    <row>
+      <key style="blank" />
+      <key code="0x52" />
+      <key style="blank" />
+      <key style="blank" width=".5" />
+      <key code="0x59" />
+      <key code="0x5a" />
+      <key code="0x5b" />
+      <key code="0x58" style="down" />
+    </row>
+    <row>
+      <key code="0x50" />
+      <key code="0x51" />
+      <key code="0x4f" />
+      <key style="blank" width=".5" />
+      <key code="0x62" width="2" />
+      <key code="0x63" />
+      <key style="blank" />
+    </row>
+  </keyboard>
+</keyboards>
