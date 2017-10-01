@@ -73,7 +73,7 @@ public:
                             DeviceManager(FileWatcher &,
                                           const device::Description &,
                                           Device &&,
-                                          const Configuration &,
+                                          const Configuration *,
                                           QObject *parent = nullptr);
                             ~DeviceManager() override;
 
@@ -89,12 +89,12 @@ public:
           bool              paused() const { return m_renderLoop.paused(); }
 
 public slots:
+    void                    setConfiguration(const Configuration *);
     void                    setContext(const Context &);
     void                    handleFileEvent(FileWatcher::event, uint32_t, std::string);
     void                    handleGenericEvent(const Context &);
     void                    handleKeyEvent(int, bool);
     void                    setPaused(bool);
-    void                    reloadConfiguration();
 
 private:
     // Static loaders, invoked once at manager creation to set it up
@@ -112,11 +112,11 @@ private:
     LoadedEffect &          getEffect(const Configuration::Effect &);
 
 private:
-    const Configuration &   m_configuration;    ///< Reference to service configuration
+    const Configuration *   m_configuration;    ///< Reference to service configuration
 
     const std::string       m_sysPath;          ///< Device path on sys filesystem
     const std::string       m_serial;           ///< Device serial number
-    const std::string       m_name;             ///< User-given name
+          std::string       m_name;             ///< User-given name
     const dev_list          m_eventDevices;     ///< List of event device paths that the
                                                 ///  physical device can communicate on.
     Device                  m_device;           ///< The device handled by this manager

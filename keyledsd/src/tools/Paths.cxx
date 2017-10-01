@@ -73,6 +73,21 @@ static std::string expandVars(const std::string & value)
     return result;
 }
 
+static std::string canonicalPath(const std::string & path)
+{
+#if _POSIX_C_SOURCE >= 200809L
+    std::unique_ptr<char[], void(*)(void*)> result(
+        realpath(path.c_str(), nullptr), free
+    );
+    if (result == nullptr) { return {}; }
+    return std::string(result.get());
+#else
+    char buffer[PATH_MAX];
+    if (realpath(path.c_str(), buffer) == nullptr) { return {}; }
+    return std::string(buffer);
+#endif
+}
+
 std::vector<std::string> paths::getPaths(XDG type, bool extra)
 {
     auto specIt = std::find_if(variables.begin(), variables.end(),
@@ -110,15 +125,16 @@ std::vector<std::string> paths::getPaths(XDG type, bool extra)
     return paths;
 }
 
-
 void paths::open_filebuf(std::filebuf & buf, XDG type, const std::string & path,
-                         std::ios::openmode mode)
+                         std::ios::openmode mode, std::string * actualPath)
 {
     if (path.empty()) { throw std::runtime_error("empty path"); }
 
     // Handle simple cases not using dynamic lookup
     if (path[0] == '/' || path[0] == '.') {
-        buf.open(path, mode);
+        if (buf.open(path, mode) != nullptr) {
+            if (actualPath != nullptr) { *actualPath = path; }
+        }
         return;
     }
 
@@ -126,7 +142,10 @@ void paths::open_filebuf(std::filebuf & buf, XDG type, const std::string & path,
 
     // Actually look for file
     for (const auto & dir : dirs) {
-        auto fullPath = dir + "/" + path;
-        if (buf.open(fullPath, mode) != nullptr) { return; }
+        auto fullPath = canonicalPath(dir + "/" + path);
+        if (buf.open(fullPath, mode) != nullptr) {
+            if (actualPath != nullptr) { *actualPath = fullPath; }
+            return;
+        }
     }
 }

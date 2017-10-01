@@ -16,6 +16,7 @@
  */
 #include <QCoreApplication>
 #include <cassert>
+#include <functional>
 #include "keyledsd/Configuration.h"
 #include "keyledsd/Device.h"
 #include "keyledsd/DeviceManager.h"
@@ -31,16 +32,18 @@ using keyleds::Service;
 
 /****************************************************************************/
 
-Service::Service(Configuration & configuration, QObject * parent)
+Service::Service(std::unique_ptr<Configuration> configuration, QObject * parent)
     : QObject(parent),
-      m_configuration(configuration),
+      m_configuration(nullptr),
+      m_autoQuit(false),
+      m_active(false),
       m_deviceWatcher(nullptr)
 {
-    m_active = false;
     QObject::connect(&m_deviceWatcher, &DeviceWatcher::deviceAdded,
                      this, &Service::onDeviceAdded);
     QObject::connect(&m_deviceWatcher, &DeviceWatcher::deviceRemoved,
                      this, &Service::onDeviceRemoved);
+    setConfiguration(std::move(configuration));
     DEBUG("created");
 }
 
@@ -64,6 +67,30 @@ void Service::init()
 }
 
 /****************************************************************************/
+
+void Service::setConfiguration(std::unique_ptr<Configuration> config)
+{
+    using std::swap;
+    m_fileWatcherSub = FileWatcher::subscription(); // destroy it so it isn't reused
+    m_configuration = std::move(config);
+
+    // Propagate configuration
+    for (auto & device : m_devices) { device->setConfiguration(m_configuration.get()); }
+    setContext({}); // force context reloading without changing it
+
+    // Setup configuration file watch
+    if (!m_configuration->path().empty()) {
+        m_fileWatcherSub = m_fileWatcher.subscribe(
+            m_configuration->path(), FileWatcher::event::CloseWrite,
+            std::bind(&Service::onConfigurationFileChanged, this, std::placeholders::_1)
+        );
+    }
+}
+
+void Service::setAutoQuit(bool val)
+{
+    m_autoQuit = val;
+}
 
 void Service::setActive(bool active)
 {
@@ -97,6 +124,32 @@ void Service::handleKeyEvent(const std::string & devNode, int key, bool press)
 
 /****************************************************************************/
 
+void Service::onConfigurationFileChanged(FileWatcher::event event)
+{
+    INFO("reloading ", m_configuration->path());
+
+    std::unique_ptr<Configuration> conf;
+    try {
+        conf = std::make_unique<Configuration>(
+            Configuration::loadFile(m_configuration->path())
+        );
+    } catch (std::exception & error) {
+        CRITICAL("reloading failed: ", error.what());
+    }
+    if (conf != nullptr) {
+        setConfiguration(std::move(conf));
+        return; // setConfiguration reloads the watch unconditionally
+    }
+
+    if ((event & FileWatcher::event::Ignored) != 0) {
+        // Happens when editors swap in the configuration file instead of rewriting it
+        m_fileWatcherSub = m_fileWatcher.subscribe(
+            m_configuration->path(), FileWatcher::event::CloseWrite,
+            std::bind(&Service::onConfigurationFileChanged, this, std::placeholders::_1)
+        );
+    }
+}
+
 void Service::onDeviceAdded(const device::Description & description)
 {
     VERBOSE("device added: ", description.devNode());
@@ -104,7 +157,7 @@ void Service::onDeviceAdded(const device::Description & description)
         auto device = Device(description.devNode());
         auto manager = std::make_unique<DeviceManager>(
             m_fileWatcher,
-            description, std::move(device), m_configuration
+            description, std::move(device), m_configuration.get()
         );
         manager->setContext(m_context);
 
@@ -146,7 +199,7 @@ void Service::onDeviceRemoved(const device::Description & description)
 
         emit deviceManagerRemoved(*manager);
 
-        if (m_devices.empty() && m_configuration.autoQuit()) {
+        if (m_devices.empty() && m_autoQuit) {
             QCoreApplication::quit();
         }
     }

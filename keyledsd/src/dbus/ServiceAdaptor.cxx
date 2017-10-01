@@ -48,6 +48,11 @@ inline keyleds::Service * ServiceAdaptor::parent() const
     return static_cast<keyleds::Service *>(QObject::parent());
 }
 
+QString ServiceAdaptor::configurationPath() const
+{
+    return QString(parent()->configuration().path().c_str());
+}
+
 ServiceContextValues ServiceAdaptor::context() const
 {
     ServiceContextValues data;
@@ -69,12 +74,12 @@ void ServiceAdaptor::setActive(bool value)
 
 bool ServiceAdaptor::autoQuit() const
 {
-    return parent()->configuration().autoQuit();
+    return parent()->autoQuit();
 }
 
 void ServiceAdaptor::setAutoQuit(bool value)
 {
-    parent()->configuration().setAutoQuit(value);
+    parent()->setAutoQuit(value);
 }
 
 QList<QDBusObjectPath> ServiceAdaptor::devicePaths() const

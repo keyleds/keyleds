@@ -48,19 +48,22 @@ public:
     using device_list = std::vector<std::unique_ptr<DeviceManager>>;
     using display_list = std::vector<std::unique_ptr<DisplayManager>>;
 public:
-                        Service(Configuration & configuration, QObject *parent = nullptr);
+                        Service(std::unique_ptr<Configuration>, QObject *parent = nullptr);
                         Service(const Service &) = delete;
                         ~Service() override;
 
-    Configuration &     configuration() { return m_configuration; }
-    const Configuration & configuration() const { return m_configuration; }
+    const Configuration & configuration() const { return *m_configuration; }
+    bool                autoQuit() const { return m_autoQuit; }
     const Context &     context() const { return m_context; }
     bool                active() const { return m_active; }
     const device_list & devices() const { return m_devices; }
 
+    void                setConfiguration(std::unique_ptr<Configuration>);
+    void                setAutoQuit(bool);
+    void                setActive(bool val);
+
 public slots:
     void                init();             ///< Invoked once to complete event-loop-depenent setup
-    void                setActive(bool val);
     void                setContext(const keyleds::Context &);
     void                handleGenericEvent(const keyleds::Context &);
     void                handleKeyEvent(const std::string &, int, bool);
@@ -71,15 +74,17 @@ signals:
     /// Fires whenever a device is removed - whether it is still in devices list is undefined
     void                deviceManagerRemoved(keyleds::DeviceManager &);
 
-private slots:
-    // Events from Qt-based watchers
+private:
+    // Events from watchers
+    void                onConfigurationFileChanged(FileWatcher::event);
     void                onDeviceAdded(const device::Description &);
     void                onDeviceRemoved(const device::Description &);
     void                onDisplayAdded(std::unique_ptr<xlib::Display> &);
     void                onDisplayRemoved();
-
 private:
-    Configuration &     m_configuration;    ///< Service configuration
+    std::unique_ptr<Configuration> m_configuration;
+    bool                m_autoQuit;         ///< Quit when last device is removed?
+
     Context             m_context;          ///< Current context. Used when instanciating new managers
     bool                m_active;           ///< If clear, the service stops watching devices
     device_list         m_devices;          ///< Map of serial number to DeviceManager instances
@@ -87,6 +92,7 @@ private:
 
     DeviceWatcher       m_deviceWatcher;    ///< Connection to libudev
     FileWatcher         m_fileWatcher;      ///< Connection to inotify
+    FileWatcher::subscription m_fileWatcherSub; ///< Notifications for conf change
 };
 
 };

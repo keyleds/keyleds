@@ -45,6 +45,7 @@ class ServiceAdaptor final : public QDBusAbstractAdaptor
 {
     Q_OBJECT
     Q_CLASSINFO("D-Bus Interface", "org.etherdream.keyleds.Service")
+    Q_PROPERTY(QString configurationPath READ configurationPath)
     Q_PROPERTY(ServiceContextValues context READ context)
     Q_PROPERTY(bool active READ active WRITE setActive)
     Q_PROPERTY(bool autoQuit READ autoQuit WRITE setAutoQuit)
@@ -54,6 +55,7 @@ public:
             ServiceAdaptor(keyleds::Service *parent);
 
 public:         // Simple pass-through methods acessing the Service
+    QString configurationPath() const;
     ServiceContextValues context() const;
     bool    active() const;
     void    setActive(bool value);

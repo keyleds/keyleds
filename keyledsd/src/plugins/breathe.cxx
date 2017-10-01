@@ -38,9 +38,7 @@ public:
      : m_buffer(manager.getRenderTarget()),
        m_time(0), m_period(10000)
     {
-        auto color = RGBAColor(0, 0, 0, 0);
-        const auto & colorStr = conf["color"];
-        if (!colorStr.empty()) { color = RGBAColor::parse(colorStr); }
+        auto color = RGBAColor::parse(conf["color"]);
         m_alpha = color.alpha;
         color.alpha = 0;
 

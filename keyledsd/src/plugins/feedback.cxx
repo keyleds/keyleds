@@ -41,11 +41,9 @@ public:
                    const keyleds::Configuration::Plugin & conf,
                    const keyleds::EffectPluginFactory::group_list)
      : m_buffer(manager.getRenderTarget()),
-       m_color(255, 255, 255, 255),
        m_duration(3000)
     {
-        const auto & colorStr = conf["color"];
-        if (!colorStr.empty()) { m_color = RGBAColor::parse(colorStr); }
+        m_color = RGBAColor::parse(conf["color"]);
 
         auto duration = std::stoul(conf["duration"]);
         if (duration > 0) { m_duration = duration; }

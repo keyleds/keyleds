@@ -36,9 +36,6 @@
 
 using keyleds::Configuration;
 
-static constexpr std::array<const char *, 3> truthy = {{"yes", "1", "true"}};
-static constexpr std::array<const char *, 3> falsy = {{"no", "0", "false"}};
-
 /****************************************************************************/
 /****************************************************************************/
 /** Builder class that creates a Configuration object from a YAML file.
@@ -75,11 +72,7 @@ public:
     void scalar(const std::string & value, const std::string &, const std::string & anchor) override;
 
     ParseError makeError(const std::string & what);
-
-    template<typename T> T parseScalar(const std::string &);
 public:
-    bool                        m_autoQuit;
-    bool                        m_noDBus;
     Configuration::path_list    m_pluginPaths;
     Configuration::path_list    m_layoutPaths;
     Configuration::device_map   m_devices;
@@ -92,13 +85,6 @@ private:
     std::vector<std::pair<std::string, std::string>>             m_scalarAliases;
     std::vector<std::pair<std::string, Configuration::key_list>> m_groupAliases;
 };
-
-template<> bool ConfigurationBuilder::parseScalar<bool>(const std::string & val)
-{
-    if (std::find(truthy.begin(), truthy.end(), val) != truthy.end()) { return true; }
-    if (std::find(falsy.begin(), falsy.end(), val) != falsy.end()) { return false; }
-    throw makeError("Invalid boolean value <" + val + ">");
-}
 
 /****************************************************************************/
 
@@ -558,9 +544,7 @@ public:
     void scalarEntry(ConfigurationBuilder & builder, const std::string & key,
                      const std::string & value, const std::string & anchor) override
     {
-        if (key == "auto_quit")     { builder.m_autoQuit = builder.parseScalar<bool>(value); }
-        else if (key == "dbus")     { builder.m_noDBus = !builder.parseScalar<bool>(value); }
-        else if (key == "plugins")  { builder.m_pluginPaths = { value }; }
+        if (key == "plugins")  { builder.m_pluginPaths = { value }; }
         else if (key == "layouts")  { builder.m_layoutPaths = { value }; }
         else MappingBuildState::scalarEntry(builder, key, value, anchor);
     }
@@ -607,7 +591,6 @@ public:
 /****************************************************************************/
 
 ConfigurationBuilder::ConfigurationBuilder()
- : m_autoQuit(false), m_noDBus(false)
 {
     m_state.push(std::make_unique<InitialState>());
 }
@@ -683,18 +666,14 @@ ConfigurationBuilder::ParseError ConfigurationBuilder::makeError(const std::stri
 
 /****************************************************************************/
 
-Configuration::Configuration(unsigned logLevel,
-                             bool autoQuit,
-                             bool noDBus,
+Configuration::Configuration(std::string path,
                              path_list pluginPaths,
                              path_list layoutPaths,
                              device_map devices,
                              group_map groups,
                              effect_list effects,
                              profile_list profiles)
- : m_logLevel(logLevel),
-   m_autoQuit(autoQuit),
-   m_noDBus(noDBus),
+ : m_path(std::move(path)),
    m_pluginPaths(std::move(pluginPaths)),
    m_layoutPaths(std::move(layoutPaths)),
    m_devices(std::move(devices)),
@@ -710,7 +689,8 @@ Configuration Configuration::loadFile(const std::string & path)
     }
 
     std::ifstream file;
-    paths::open(file, paths::XDG::Config, path, std::ios::binary);
+    std::string actualPath;
+    paths::open(file, paths::XDG::Config, path, std::ios::binary, &actualPath);
     if (!file) {
         throw std::system_error(errno, std::generic_category());
     }
@@ -718,9 +698,7 @@ Configuration Configuration::loadFile(const std::string & path)
     auto builder = ConfigurationBuilder();
     builder.parse(file);
     return Configuration(
-        logging::warning::value,
-        builder.m_autoQuit,
-        builder.m_noDBus,
+        actualPath,
         std::move(builder.m_pluginPaths),
         std::move(builder.m_layoutPaths),
         std::move(builder.m_devices),
@@ -728,73 +706,6 @@ Configuration Configuration::loadFile(const std::string & path)
         std::move(builder.m_effects),
         std::move(builder.m_profiles)
     );
-}
-
-#ifdef _GNU_SOURCE
-#include <getopt.h>
-static const struct option options[] = {
-    {"config",    1, nullptr, 'c' },
-    {"help",      0, nullptr, 'h' },
-    {"quiet",     0, nullptr, 'q' },
-    {"single",    0, nullptr, 's' },
-    {"verbose",   0, nullptr, 'v' },
-    {"no-dbus",   0, nullptr, 'D' },
-    {nullptr, 0, nullptr, 0}
-};
-#endif
-
-Configuration Configuration::loadArguments(int & argc, char * argv[])
-{
-    int opt;
-    std::ostringstream msgBuf;
-
-    const char * configPath = nullptr;
-    unsigned logLevel = logging::warning::value;
-    bool autoQuit = false;
-    bool noDBus = false;
-
-    ::opterr = 0;
-#ifdef _GNU_SOURCE
-    while ((opt = ::getopt_long(argc, argv, ":c:hqsvD", options, nullptr)) >= 0) {
-#else
-    while ((opt = ::getopt(argc, argv, ":c:hqsvD")) >= 0) {
-#endif
-        switch(opt) {
-        case 'c':
-            if (configPath != nullptr) {
-                throw std::runtime_error("-c option can only be specified once");
-            }
-            configPath = optarg;
-            break;
-        case 'h':
-            std::cout <<"Usage: " <<argv[0] <<" [-c path] [-h] [-q] [-s] [-v] [-D]" <<std::endl;
-            ::exit(EXIT_SUCCESS);
-        case 'q':
-            logLevel = logging::critical::value;
-            break;
-        case 's':
-            autoQuit = true;
-            break;
-        case 'v':
-            logLevel += 1;
-            break;
-        case 'D':
-            noDBus = true;
-            break;
-        case ':':
-            msgBuf <<argv[0] <<": option -- '" <<(char)::optopt <<"' requires an argument";
-            throw std::runtime_error(msgBuf.str());
-        default:
-            msgBuf <<argv[0] <<": invalid option -- '" <<(char)::optopt <<"'";
-            throw std::runtime_error(msgBuf.str());
-        }
-    }
-
-    auto config = loadFile(configPath != nullptr ? configPath : KEYLEDSD_CONFIG_FILE);
-    config.m_logLevel = logLevel;
-    if (autoQuit) { config.m_autoQuit = true; }
-    if (noDBus) { config.m_noDBus = true; }
-    return config;
 }
 
 /****************************************************************************/

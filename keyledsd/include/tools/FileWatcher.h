@@ -28,7 +28,7 @@ class FileWatcher final : public QObject
 {
     Q_OBJECT
 public:
-    enum class event : uint32_t {
+    enum event : uint32_t {
         Access = IN_ACCESS,
         Attrib = IN_ATTRIB,
         CloseWrite = IN_CLOSE_WRITE,
@@ -42,7 +42,10 @@ public:
         MovedTo = IN_MOVED_TO,
         Open = IN_OPEN,
         ExcludeUnlinked = IN_EXCL_UNLINK,
-        Unmounted = IN_UNMOUNT
+        Unmounted = IN_UNMOUNT,
+
+        Ignored = IN_IGNORED,
+        IsDirectory = IN_ISDIR
     };
 
     using watch_id = int;
@@ -51,14 +54,17 @@ public:
 
     class subscription final
     {
-        FileWatcher &   m_watcher;
+        FileWatcher *   m_watcher;
         watch_id        m_id;
     public:
+                    subscription()
+                     : m_watcher(nullptr), m_id(invalid_watch) {}
                     subscription(FileWatcher & watcher, watch_id id)
-                     : m_watcher(watcher), m_id(id) {}
-                    subscription(subscription && other)
+                     : m_watcher(&watcher), m_id(id) {}
+                    subscription(subscription && other) noexcept
                      : m_watcher(other.m_watcher), m_id(invalid_watch)
                      { std::swap(m_id, other.m_id); }
+        subscription& operator=(subscription &&);
                     ~subscription();
     };
 private:

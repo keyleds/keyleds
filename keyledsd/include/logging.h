@@ -138,10 +138,10 @@ private:
  * Describes log severity: associated value and printing method.
  */
 template <level_t L> struct level {
-    static constexpr int value = L;
+    static constexpr level_t value = L;
     template <typename...Args> static void print(Logger & logger, Args && ...args);
 };
-template <level_t L> constexpr int level<L>::value;
+template <level_t L> constexpr level_t level<L>::value;
 
 /// @private
 namespace detail {

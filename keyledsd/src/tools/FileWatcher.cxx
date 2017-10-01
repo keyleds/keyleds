@@ -100,10 +100,12 @@ void FileWatcher::onNotifyReady(int)
             [](const auto & listener, watch_id id) { return listener.id < id; }
         );
         if (it == m_listeners.end()) { continue; }
-        assert(it->id == buffer.event.wd);
+        if (it->id != buffer.event.wd) { continue; }
+        INFO("Got event for ", it->id, ": ", std::string(buffer.event.name, buffer.event.len));
         it->callback(static_cast<enum event>(buffer.event.mask),
                      buffer.event.cookie,
                      std::string(buffer.event.name, buffer.event.len));
+        //NOTE at that point `it` is invalid, because callback is allowed to unsubscribe
     }
 
     if (errno != EAGAIN) {
@@ -111,7 +113,16 @@ void FileWatcher::onNotifyReady(int)
     }
 }
 
+FileWatcher::subscription & FileWatcher::subscription::operator=(subscription && other)
+{
+    if (m_id != invalid_watch) { m_watcher->unsubscribe(m_id); }
+    m_watcher = other.m_watcher;
+    m_id = other.m_id;
+    other.m_id = invalid_watch;
+    return *this;
+}
+
 FileWatcher::subscription::~subscription()
 {
-    if (m_id != invalid_watch) { m_watcher.unsubscribe(m_id); }
+    if (m_id != invalid_watch) { m_watcher->unsubscribe(m_id); }
 }

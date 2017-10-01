@@ -47,24 +47,17 @@ public:
     using effect_list = std::vector<Effect>;
     using profile_list = std::vector<Profile>;
 private:
-                        Configuration(unsigned logLevel,
-                                      bool autoQuit,
-                                      bool noDBus,
+                        Configuration(std::string path,
                                       path_list pluginPaths,
                                       path_list layoutPaths,
                                       device_map devices,
                                       group_map groups,
                                       effect_list effects,
                                       profile_list profiles);
-
 public:
                         Configuration() = default;
 
-          unsigned      logLevel() const { return m_logLevel; }
-          bool          autoQuit() const { return m_autoQuit; }
-          void          setAutoQuit(bool v) { m_autoQuit = v; }
-          bool          noDBus() const { return m_noDBus; }
-
+    const std::string & path() const { return m_path; }
     const path_list &   pluginPaths() const { return m_pluginPaths; }
     const path_list &   layoutPaths() const { return m_layoutPaths; }
     const device_map &  devices() const { return m_devices; }
@@ -74,13 +67,9 @@ public:
 
 public:
     static Configuration loadFile(const std::string & path);
-    static Configuration loadArguments(int & argc, char * argv[]);
 
 private:
-    unsigned            m_logLevel;     ///< Maximum level of messsages to log
-    bool                m_autoQuit;     ///< If set, the service will exit when last device is removed.
-    bool                m_noDBus;       ///< If set, DBus adapters are not loaded on startup
-
+    std::string         m_path;         ///< Configuration file path, if loaded from disk
     path_list           m_pluginPaths;  ///< List of directories to search for plugins
     path_list           m_layoutPaths;  ///< List of directories to search for layout files
     device_map          m_devices;      ///< Map of device serials to device names

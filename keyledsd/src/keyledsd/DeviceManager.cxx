@@ -16,6 +16,7 @@
  */
 #include <unistd.h>
 #include <algorithm>
+#include <cassert>
 #include <fstream>
 #include <iomanip>
 #include <sstream>
@@ -110,21 +111,21 @@ DeviceManager::LoadedEffect::LoadedEffect(std::string name, plugin_list && plugi
 
 DeviceManager::DeviceManager(FileWatcher & fileWatcher,
                              const device::Description & description, Device && device,
-                             const Configuration & conf, QObject *parent)
+                             const Configuration * conf, QObject *parent)
     : QObject(parent),
-      m_configuration(conf),
+      m_configuration(nullptr),
       m_sysPath(description.sysPath()),
       m_serial(getSerial(description)),
-      m_name(getName(conf, m_serial)),
       m_eventDevices(findEventDevices(description)),
       m_device(std::move(device)),
       m_fileWatcherSub(fileWatcher.subscribe(description.devNode(), FileWatcher::event::Attrib,
                                              std::bind(&DeviceManager::handleFileEvent, this,
                                                        std::placeholders::_1, std::placeholders::_2,
                                                        std::placeholders::_3))),
-      m_keyDB(buildKeyDB(conf, m_device)),
+      m_keyDB(buildKeyDB(*conf, m_device)),
       m_renderLoop(m_device, KEYLEDSD_RENDER_FPS)
 {
+    setConfiguration(conf);
     m_renderLoop.start();
 }
 
@@ -132,6 +133,19 @@ DeviceManager::~DeviceManager()
 {
     m_renderLoop.stop();            // destroying the loop is UB if the thread is still running
 }
+
+void DeviceManager::setConfiguration(const Configuration * conf)
+{
+    assert(conf != nullptr);
+    auto lock = m_renderLoop.lock();
+
+    m_renderLoop.effects().clear();
+    m_effects.clear();
+
+    m_configuration = conf;
+    m_name = getName(*conf, m_serial);
+}
+
 
 void DeviceManager::setContext(const Context & context)
 {
@@ -176,15 +190,6 @@ void DeviceManager::handleKeyEvent(int keyCode, bool press)
 void DeviceManager::setPaused(bool val)
 {
     m_renderLoop.setPaused(val);
-}
-
-void DeviceManager::reloadConfiguration()
-{
-    DEBUG("Device(", this, ") clearing effects cache");
-    auto lock = m_renderLoop.lock();
-    m_renderLoop.effects().clear();
-    m_effects.clear();
-    //TODO
 }
 
 std::string DeviceManager::getSerial(const device::Description & description)
@@ -296,7 +301,7 @@ KeyDatabase DeviceManager::buildKeyDB(const Configuration & conf, const Device &
 
 keyleds::RenderLoop::effect_plugin_list DeviceManager::loadEffects(const Context & context)
 {
-    const auto & effects = effectsForContext(m_configuration, m_serial, context);
+    const auto & effects = effectsForContext(*m_configuration, m_serial, context);
 
     RenderLoop::effect_plugin_list plugins;
     for (const auto & effect : effects) {
@@ -325,7 +330,7 @@ DeviceManager::LoadedEffect & DeviceManager::getEffect(const Configuration::Effe
     };
     std::transform(conf.groups().begin(), conf.groups().end(),
                    std::back_inserter(groups), group_from_conf);
-    std::transform(m_configuration.groups().begin(), m_configuration.groups().end(),
+    std::transform(m_configuration->groups().begin(), m_configuration->groups().end(),
                    std::back_inserter(groups), group_from_conf);
 
     // Load effects

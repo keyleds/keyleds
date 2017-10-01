@@ -40,7 +40,8 @@ enum class XDG { Cache, Config, Data, Runtime };
 /// If path is absolute or starths with a dot, it is used as is. Otherwise,
 /// system-dependent locations are searched depenting on file type and open mode.
 /// Errors leave filebuf in a bad state.
-void open_filebuf(std::filebuf &, XDG type, const std::string & path, std::ios::openmode);
+void open_filebuf(std::filebuf &, XDG type, const std::string & path, std::ios::openmode,
+                  std::string * actualPath = nullptr);
 
 /// Returns the list of system-dependent locations that would be searched for
 /// files of the given type. Those may differ depending on open mode, thus the read flag.
@@ -78,11 +79,12 @@ namespace detail {
 //  @TODO: Changed for a rvalue-returning function, legacy workaround for gcc4 is
 //  no longer useful.
 template <typename T>
-void open(T & file, XDG type, const std::string & path, typename T::openmode mode)
+void open(T & file, XDG type, const std::string & path, typename T::openmode mode,
+          std::string * actualPath = nullptr)
 {
     static_assert(detail::stream_traits<T>::is_file, "open must be passed a file stream");
     mode |= detail::stream_traits<T>::default_mode;
-    open_filebuf(*file.rdbuf(), type, path, mode);
+    open_filebuf(*file.rdbuf(), type, path, mode, actualPath);
     if (!file.rdbuf()->is_open()) { file.setstate(std::ios::failbit); }
 }
 
