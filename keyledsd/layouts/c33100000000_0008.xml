@@ -1,8 +1,8 @@
-<?xml version="1.0"encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <keyboards layout="PAN">
   <keyboard x="12" y="41" width="46" height="46" zone="16">
     <row>
-      <key code="0x01" style="key" />
+      <key code="0x01" />
     </row>
   </keyboard>
   <keyboard x="521" y="56" width="110" height="18" zone="64">

@@ -2,7 +2,7 @@
 <keyboards layout="US">
   <keyboard x="12" y="41" width="46" height="46" zone="16">
     <row>
-      <key code="0x01" style="key" />
+      <key code="0x01" />
     </row>
   </keyboard>
   <keyboard x="521" y="56" width="110" height="18" zone="64">
