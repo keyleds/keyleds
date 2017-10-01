@@ -65,12 +65,12 @@ public:         // Simple pass-through methods acessing the Service
     QStringList plugins() const;
 
 public slots:   // Simple pass-through methods acessing the Service
-    void    setContextValues(ServiceContextValues);
-    void    setContextValue(QString, QString);
-    void    sendGenericEvent(ServiceContextValues);
-    void    sendKeyEvent(QString serial, int key);  ///< serial is that of target device
+    Q_NOREPLY void    setContextValues(ServiceContextValues);
+    Q_NOREPLY void    setContextValue(QString, QString);
+    Q_NOREPLY void    sendGenericEvent(ServiceContextValues);
+    Q_NOREPLY void    sendKeyEvent(QString serial, int key);  ///< serial is that of target device
 
-private slots:
+private:
     void    onDeviceManagerAdded(keyleds::DeviceManager &);
     void    onDeviceManagerRemoved(keyleds::DeviceManager &);
 

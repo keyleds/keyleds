@@ -38,7 +38,6 @@ public:
 
     const Display & display() const { return m_display; }
 
-public slots:
     void            scan();                 ///< Rescans Xinput devices actively
 
 signals:

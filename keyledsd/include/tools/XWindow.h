@@ -178,6 +178,7 @@ private:
     /// Invoked once by the constructor. Display name might be empty to use Xlib defaults
     static std::unique_ptr<X11Display> openDisplay(const std::string &);
 
+    /// Invoked by subscription destructors
     void                    unregisterHandler(subscription::id_type);
 
 private:

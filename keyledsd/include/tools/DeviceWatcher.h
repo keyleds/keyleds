@@ -137,7 +137,6 @@ public:
                         DeviceWatcher(struct udev * udev = nullptr, QObject *parent = nullptr);
                         ~DeviceWatcher() override;
 
-public slots:
     void                scan();                 ///< Rescans system's devices actively
     void                setActive(bool active); ///< Enables listening for system notifications
 
@@ -150,7 +149,7 @@ protected:
     virtual void        setupMonitor(struct udev_monitor & monitor) const;
     virtual bool        isVisible(const Description & dev) const;
 
-private slots:
+private:
     /// Invoked whenever system notifications from udev become available
     void                onMonitorReady(int socket);
 

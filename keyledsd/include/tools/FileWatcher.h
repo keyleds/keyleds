@@ -78,10 +78,10 @@ public:
 
     subscription        subscribe(const std::string & path, event events, Listener);
 
-private slots:
+private:
     /// Invoked whenever system notifications from udev become available
     void                onNotifyReady(int socket);
-private:
+    /// Invoked by subscription destructors
     void                unsubscribe(watch_id);
 private:
     int                 m_fd;           ///< file descriptor of inotify device

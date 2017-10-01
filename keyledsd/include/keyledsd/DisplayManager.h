@@ -50,7 +50,7 @@ signals:
     void            contextChanged(const keyleds::Context &);
     void            keyEventReceived(const std::string & devNode, int key, bool press);
 
-private slots:
+private:
     /// Receives notifications from m_contextWatcher. Forwards them through contextChanged signal.
     void            onContextChanged(const keyleds::Context &);
 

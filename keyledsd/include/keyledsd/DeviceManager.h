@@ -88,7 +88,7 @@ public:
 
           bool              paused() const { return m_renderLoop.paused(); }
 
-public slots:
+public:
     void                    setConfiguration(const Configuration *);
     void                    setContext(const Context &);
     void                    handleFileEvent(FileWatcher::event, uint32_t, std::string);

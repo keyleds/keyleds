@@ -43,7 +43,6 @@ class DisplayManager;
 class Service final : public QObject
 {
     Q_OBJECT
-    Q_PROPERTY(bool active READ active WRITE setActive);
 public:
     using device_list = std::vector<std::unique_ptr<DeviceManager>>;
     using display_list = std::vector<std::unique_ptr<DisplayManager>>;
@@ -58,12 +57,11 @@ public:
     bool                active() const { return m_active; }
     const device_list & devices() const { return m_devices; }
 
+    void                init();             ///< Invoked once to complete event-loop-depenent setup
+
     void                setConfiguration(std::unique_ptr<Configuration>);
     void                setAutoQuit(bool);
     void                setActive(bool val);
-
-public slots:
-    void                init();             ///< Invoked once to complete event-loop-depenent setup
     void                setContext(const keyleds::Context &);
     void                handleGenericEvent(const keyleds::Context &);
     void                handleKeyEvent(const std::string &, int, bool);
