@@ -23,7 +23,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include "keyledsd/common.h"
+#include "keyledsd/colors.h"
 #include "tools/DeviceWatcher.h"
 
 struct keyleds_device;

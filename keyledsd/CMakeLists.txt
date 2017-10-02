@@ -42,18 +42,16 @@ include_directories("${PROJECT_BINARY_DIR}" "include")
 
 # List of sources
 set(keyledsd_SRCS
-    src/keyledsd/common.cxx
+    src/keyledsd/device/Device.cxx
+    src/keyledsd/device/DeviceManager.cxx
+    src/keyledsd/device/KeyDatabase.cxx
+    src/keyledsd/device/LayoutDescription.cxx
+    src/keyledsd/device/RenderLoop.cxx
     src/keyledsd/Configuration.cxx
-    src/keyledsd/Context.cxx
-    src/keyledsd/ContextWatcher.cxx
-    src/keyledsd/Device.cxx
-    src/keyledsd/DeviceManager.cxx
     src/keyledsd/DisplayManager.cxx
-    src/keyledsd/KeyDatabase.cxx
-    src/keyledsd/LayoutDescription.cxx
     src/keyledsd/PluginManager.cxx
-    src/keyledsd/RenderLoop.cxx
     src/keyledsd/Service.cxx
+    src/keyledsd/colors.cxx
     src/plugins/breathe.cxx
     src/plugins/feedback.cxx
     src/plugins/fill.cxx
@@ -65,6 +63,7 @@ set(keyledsd_SRCS
     src/tools/DeviceWatcher.cxx
     src/tools/FileWatcher.cxx
     src/tools/Paths.cxx
+    src/tools/XContextWatcher.cxx
     src/tools/XInputWatcher.cxx
     src/tools/XWindow.cxx
     src/tools/YAMLParser.cxx
@@ -73,8 +72,8 @@ set(keyledsd_SRCS
 )
 if(NOT NO_DBUS)
     set(keyledsd_SRCS ${keyledsd_SRCS}
-        src/dbus/DeviceManagerAdaptor.cxx
-        src/dbus/ServiceAdaptor.cxx)
+        src/keyledsd/dbus/DeviceManagerAdaptor.cxx
+        src/keyledsd/dbus/ServiceAdaptor.cxx)
 endif()
 if(KEYLEDSD_USE_MMX)
     set(keyledsd_SRCS ${keyledsd_SRCS} src/tools/accelerated_mmx.c)
@@ -113,13 +112,13 @@ find_package(Qt5 COMPONENTS ${QT_MODULES} REQUIRED)
 include_directories(${Qt5Core_INCLUDE_DIRS})
 set(keyledsd_DEPS ${keyledsd_DEPS} Qt5Core)
 qt5_wrap_cpp(moc_sources
-    include/keyledsd/ContextWatcher.h
-    include/keyledsd/Device.h
-    include/keyledsd/DeviceManager.h
+    include/keyledsd/device/Device.h
+    include/keyledsd/device/DeviceManager.h
     include/keyledsd/DisplayManager.h
     include/keyledsd/Service.h
     include/tools/DeviceWatcher.h
     include/tools/FileWatcher.h
+    include/tools/XContextWatcher.h
     include/tools/XInputWatcher.h
 )
 set(keyledsd_SRCS ${keyledsd_SRCS} ${moc_sources})
@@ -128,8 +127,8 @@ IF(NOT NO_DBUS)
     include_directories(${Qt5DBus_INCLUDE_DIRS})
     set(keyledsd_DEPS ${keyledsd_DEPS} Qt5DBus)
     qt5_wrap_cpp(moc_sources
-        include/dbus/DeviceManagerAdaptor.h
-        include/dbus/ServiceAdaptor.h
+        include/keyledsd/dbus/DeviceManagerAdaptor.h
+        include/keyledsd/dbus/ServiceAdaptor.h
     )
     set(keyledsd_SRCS ${keyledsd_SRCS} ${moc_sources})
 ENDIF()

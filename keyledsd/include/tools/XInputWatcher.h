@@ -17,12 +17,16 @@
 #ifndef TOOLS_XINPUTWATCHER_H_51CB4EAC
 #define TOOLS_XINPUTWATCHER_H_51CB4EAC
 
+/****************************************************************************/
+
 #include <QObject>
 #include <string>
 #include <vector>
 #include "tools/XWindow.h"
 
 namespace xlib {
+
+/****************************************************************************/
 
 /** X-Input - device events watcher
  *
@@ -64,6 +68,7 @@ protected:
     device_list     m_devices;          ///< List of enabled devices
 };
 
+/****************************************************************************/
 
 };
 

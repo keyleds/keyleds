@@ -14,6 +14,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "keyledsd/Configuration.h"
+
 #include <algorithm>
 #include <array>
 #include <cassert>
@@ -27,8 +29,6 @@
 #include <stdexcept>
 #include <system_error>
 #include <unistd.h>
-#include "keyledsd/Configuration.h"
-#include "keyledsd/Context.h"
 #include "tools/Paths.h"
 #include "tools/YAMLParser.h"
 #include "logging.h"
@@ -47,7 +47,7 @@ using keyleds::Configuration;
  *
  * Builder also keeps cross-state data such as aliases dictionary.
  */
-class ConfigurationBuilder final : public YAMLParser
+class ConfigurationBuilder final : public tools::YAMLParser
 {
 public:
     class BuildState;
@@ -684,13 +684,15 @@ Configuration::Configuration(std::string path,
 
 Configuration Configuration::loadFile(const std::string & path)
 {
+    using tools::paths::XDG;
+
     if (path.empty()) {
         throw std::runtime_error("Empty configuration file path");
     }
 
     std::ifstream file;
     std::string actualPath;
-    paths::open(file, paths::XDG::Config, path, std::ios::binary, &actualPath);
+    tools::paths::open(file, XDG::Config, path, std::ios::binary, &actualPath);
     if (!file) {
         throw std::system_error(errno, std::generic_category());
     }
@@ -732,20 +734,27 @@ Configuration::Profile::Profile(std::string name,
 
 /****************************************************************************/
 
-Configuration::Profile::Lookup::Lookup(filter_map filters)
+Configuration::Profile::Lookup::Lookup(string_map filters)
  : m_entries(buildRegexps(std::move(filters)))
 {}
 
-bool Configuration::Profile::Lookup::match(const Context & context) const
+bool Configuration::Profile::Lookup::match(const string_map & context) const
 {
-    return std::all_of(m_entries.cbegin(), m_entries.cend(),
-                       [&context](const auto & entry) {
-                           return std::regex_match(context[entry.key], entry.regex);
-                       });
+    // Each entry in m_entries must match corresponding item in context
+    return std::all_of(
+        m_entries.cbegin(), m_entries.cend(),
+        [&context](const auto & entry) {
+            auto it = std::find_if(
+                context.begin(), context.end(),
+                [&entry](const auto & ctxEntry) { return ctxEntry.first == entry.key; }
+            );
+            if (it == context.end()) { return false; }  // missing keys fail the match
+            return std::regex_match(it->second, entry.regex);
+    });
 }
 
 Configuration::Profile::Lookup::entry_list
-Configuration::Profile::Lookup::buildRegexps(filter_map filters)
+Configuration::Profile::Lookup::buildRegexps(string_map filters)
 {
     entry_list result;
     result.reserve(filters.size());

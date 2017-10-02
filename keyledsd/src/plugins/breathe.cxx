@@ -17,12 +17,12 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
-#include "keyledsd/common.h"
+#include "keyledsd/device/DeviceManager.h"
+#include "keyledsd/device/KeyDatabase.h"
+#include "keyledsd/device/RenderLoop.h"
 #include "keyledsd/Configuration.h"
-#include "keyledsd/DeviceManager.h"
-#include "keyledsd/KeyDatabase.h"
 #include "keyledsd/PluginManager.h"
-#include "keyledsd/RenderLoop.h"
+#include "keyledsd/colors.h"
 
 using KeyGroup = keyleds::KeyDatabase::KeyGroup;
 using keyleds::RGBAColor;

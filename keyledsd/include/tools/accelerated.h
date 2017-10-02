@@ -18,6 +18,7 @@
 #define TOOLS_ACCELERATED_H_D3D3B426
 
 #ifdef __cplusplus
+namespace tools { namespace accelerated {
 extern "C" {
 #endif
 
@@ -42,6 +43,7 @@ void blend(uint8_t * a, const uint8_t * b, unsigned length);
 
 #ifdef __cplusplus
 }
+} } // namespace tools::accelerated
 #endif
 
 #endif

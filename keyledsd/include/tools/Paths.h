@@ -25,12 +25,14 @@
 
 /****************************************************************************/
 
-#include <iosfwd>
+#include <ios>
 #include <string>
 #include <type_traits>
 #include <vector>
 
-namespace paths {
+namespace tools { namespace paths {
+
+/****************************************************************************/
 
 /// Represents a file use type, typically associated to one or more system-dependent
 /// locations.
@@ -88,8 +90,9 @@ void open(T & file, XDG type, const std::string & path, typename T::openmode mod
     if (!file.rdbuf()->is_open()) { file.setstate(std::ios::failbit); }
 }
 
-} // namespace paths
 
 /****************************************************************************/
+
+} } // namespace tools::paths
 
 #endif

@@ -14,15 +14,18 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "tools/XWindow.h"
+
+#define Bool int
+#include <X11/Xatom.h>
+#include <X11/extensions/XInput2.h>
+#undef Bool
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <limits>
 #include <sstream>
 #include <stdexcept>
-#include <X11/Xatom.h>
-#include <X11/extensions/XInput2.h>
-#include "tools/XWindow.h"
 #include "logging.h"
 
 LOGGING("xwindow");

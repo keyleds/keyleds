@@ -14,13 +14,18 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "tools/AnimationLoop.h"
+
 #include <cerrno>
 #include <chrono>
 #include <functional>
-#include "tools/AnimationLoop.h"
 #include "logging.h"
 
 LOGGING("anim-loop");
+
+using tools::AnimationLoop;
+
+/****************************************************************************/
 
 AnimationLoop::AnimationLoop(unsigned fps)
     : m_period(1000 / fps),

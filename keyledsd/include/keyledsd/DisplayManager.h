@@ -19,6 +19,7 @@
 
 #include <QObject>
 #include <memory>
+#include "tools/XContextWatcher.h"
 
 namespace xlib {
     class Display;
@@ -27,9 +28,6 @@ namespace xlib {
 
 namespace keyleds {
 
-class Context;
-class XContextWatcher;
-
 /** Main display manager
  *
  * Centralizes all operations and information for a specific display.
@@ -37,6 +35,7 @@ class XContextWatcher;
 class DisplayManager final : public QObject
 {
     Q_OBJECT
+    using context_map = std::vector<std::pair<std::string, std::string>>;
 public:
                     DisplayManager(std::unique_ptr<xlib::Display>, QObject *parent = nullptr);
                     ~DisplayManager() override;
@@ -44,23 +43,24 @@ public:
     xlib::Display & display() { return *m_display; }
 
     void            scanDevices();
-    const Context & currentContext() const;
+    const context_map & currentContext() const { return m_context; }
 
 signals:
-    void            contextChanged(const keyleds::Context &);
+    void            contextChanged(const context_map &);
     void            keyEventReceived(const std::string & devNode, int key, bool press);
 
 private:
     /// Receives notifications from m_contextWatcher. Forwards them through contextChanged signal.
-    void            onContextChanged(const keyleds::Context &);
+    void            onContextChanged(const xlib::XContextWatcher::context_map &);
 
     /// Receives notifications from m_inputWatcher. Forwards them through keyEventReceived signal.
     void            onKeyEventReceived(const std::string & devNode, int key, bool press);
 
 private:
     std::unique_ptr<xlib::Display>          m_display;          ///< Connection to X display
-    std::unique_ptr<XContextWatcher>        m_contextWatcher;   ///< Watches window events
+    std::unique_ptr<xlib::XContextWatcher>  m_contextWatcher;   ///< Watches window events
     std::unique_ptr<xlib::XInputWatcher>    m_inputWatcher;     ///< Watches keypresses
+    context_map                             m_context;          ///< Current context values
 };
 
 };

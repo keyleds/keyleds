@@ -21,10 +21,13 @@
  *
  * Parse errors are converted into YAMLParser::ParseError exceptions.
  */
+#include "tools/YAMLParser.h"
+
 #include <yaml.h>
 #include <istream>
 #include <sstream>
-#include "tools/YAMLParser.h"
+
+using tools::YAMLParser;
 
 /****************************************************************************/
 // Helpers

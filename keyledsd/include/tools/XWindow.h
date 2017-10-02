@@ -23,8 +23,9 @@
 #ifndef TOOLS_WINDOW_H_F1434518
 #define TOOLS_WINDOW_H_F1434518
 
+/****************************************************************************/
+
 #include <X11/Xlib.h>
-// Work around Xlib.h defining macros, breaking moc-generated cpp
 #undef Bool
 #include <functional>
 #include <memory>
@@ -38,6 +39,8 @@ namespace std {
 }
 
 namespace xlib {
+
+/****************************************************************************/
 
 class Display;
 using X11Display = ::Display;
@@ -228,6 +231,8 @@ private:
     handler_type    m_oldHandler;
     ErrorCatcher *  m_oldCatcher;
 };
+
+/****************************************************************************/
 
 }
 

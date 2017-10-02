@@ -14,14 +14,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "keyledsd/device/DeviceManager.h"
+
 #include <unistd.h>
 #include <algorithm>
 #include <cassert>
 #include <fstream>
 #include <iomanip>
 #include <sstream>
-#include "keyledsd/DeviceManager.h"
-#include "keyledsd/LayoutDescription.h"
+#include "keyledsd/device/LayoutDescription.h"
 #include "keyledsd/PluginManager.h"
 #include "tools/Paths.h"
 #include "config.h"
@@ -30,7 +31,6 @@
 LOGGING("dev-manager");
 
 using keyleds::Configuration;
-using keyleds::Context;
 using keyleds::DeviceManager;
 using keyleds::KeyDatabase;
 using keyleds::LayoutDescription;
@@ -38,67 +38,6 @@ using keyleds::RenderLoop;
 
 static constexpr char defaultProfileName[] = "__default__";
 static constexpr char overlayProfileName[] = "__overlay__";
-
-/****************************************************************************/
-
-/// Applies the configuration to a Context, matching profiles and resolving
-/// effect names. Returns the list of Effect entries in the configuration that
-/// should be loaded for the context. Returned list references Configuration
-/// entries directly, and are therefore invalidated by any operation that
-/// invalidates configuration's iterators.
-static std::vector<const Configuration::Effect *> effectsForContext(
-    const Configuration & config, const std::string & serial, const Context & context)
-{
-    // Find a defined alias for the device; if none, use serial as is
-    auto dit = std::find_if(config.devices().begin(), config.devices().end(),
-                            [&serial](auto & item) { return item.first == serial; });
-    const auto & devLabel = (dit == config.devices().end()) ? serial : dit->second;
-
-    // Match context against profile lookups
-    const Configuration::Profile * profile = nullptr;
-    const Configuration::Profile * defaultProfile = nullptr;
-    const Configuration::Profile * overlayProfile = nullptr;
-
-    for (const auto & profileEntry : config.profiles()) {
-        const auto & devices = profileEntry.devices();
-        if (!devices.empty() && std::find(devices.begin(), devices.end(), devLabel) == devices.end())
-            continue;
-        if (profileEntry.name() == defaultProfileName) {
-            defaultProfile = &profileEntry;
-        } else if (profileEntry.name() == overlayProfileName) {
-            overlayProfile = &profileEntry;
-        } else if (profileEntry.lookup().match(context)) {
-            DEBUG("profile matches: ", profileEntry.name());
-            profile = &profileEntry;
-        }
-    }
-    if (profile == nullptr) { profile = defaultProfile; }
-    VERBOSE("selected profile <", profile->name(), ">");
-
-    // Collect effect names from selected profile and resolve them
-    auto result = std::vector<const Configuration::Effect *>();
-    for (const auto & name : profile->effects()) {
-        auto eit = std::find_if(config.effects().begin(), config.effects().end(),
-                                [&name](auto & effect) { return effect.name() == name; });
-        if (eit == config.effects().end()) {
-            ERROR("profile <", profile->name(), "> references unknown effect <", name, ">");
-            continue;
-        }
-        result.push_back(&*eit);
-    }
-    if (overlayProfile != nullptr) {
-        for (const auto & name : overlayProfile->effects()) {
-            auto eit = std::find_if(config.effects().begin(), config.effects().end(),
-                                    [&name](auto & effect) { return effect.name() == name; });
-            if (eit == config.effects().end()) {
-                ERROR("overlay profile references unknown effect <", name, ">");
-                continue;
-            }
-            result.push_back(&*eit);
-        }
-    }
-    return result;
-}
 
 /****************************************************************************/
 
@@ -147,7 +86,7 @@ void DeviceManager::setConfiguration(const Configuration * conf)
 }
 
 
-void DeviceManager::setContext(const Context & context)
+void DeviceManager::setContext(const string_map & context)
 {
     auto effects = loadEffects(context);
     DEBUG("enabling ", effects.size(), " effects for loop ", &m_renderLoop);
@@ -164,7 +103,7 @@ void DeviceManager::handleFileEvent(FileWatcher::event, uint32_t, std::string)
     setPaused(result != 0);
 }
 
-void DeviceManager::handleGenericEvent(const Context & context)
+void DeviceManager::handleGenericEvent(const string_map & context)
 {
     auto lock = m_renderLoop.lock();
     for (auto * effect : m_renderLoop.effects()) { effect->handleGenericEvent(context); }
@@ -210,7 +149,7 @@ std::string DeviceManager::getName(const Configuration & config, const std::stri
 {
     auto dit = std::find_if(config.devices().begin(), config.devices().end(),
                             [&serial](auto & item) { return item.second == serial; });
-    return dit != config.devices().end() ? dit->first : std::string();
+    return dit != config.devices().end() ? dit->first : serial;
 }
 
 DeviceManager::dev_list DeviceManager::findEventDevices(const device::Description & description)
@@ -239,10 +178,11 @@ std::string DeviceManager::layoutName(const Device & device)
 
 LayoutDescription DeviceManager::loadLayoutDescription(const Configuration & conf, const Device & device)
 {
+    using tools::paths::XDG;
     if (!device.hasLayout()) { return LayoutDescription(std::string(), {}); }
 
     auto paths = conf.layoutPaths();
-    for (const auto & path : paths::getPaths(paths::XDG::Data, true)) {
+    for (const auto & path : tools::paths::getPaths(XDG::Data, true)) {
         paths.emplace_back(path + "/" KEYLEDSD_DATA_PREFIX "/layouts");
     }
     const auto & fileName = layoutName(device);
@@ -299,9 +239,57 @@ KeyDatabase DeviceManager::buildKeyDB(const Configuration & conf, const Device &
     return db;
 }
 
-keyleds::RenderLoop::effect_plugin_list DeviceManager::loadEffects(const Context & context)
+/// Applies the configuration to a string_map, matching profiles and resolving
+/// effect names. Returns the list of Effect entries in the configuration that
+/// should be loaded for the context. Returned list references Configuration
+/// entries directly, and are therefore invalidated by any operation that
+/// invalidates configuration's iterators.
+keyleds::RenderLoop::effect_plugin_list DeviceManager::loadEffects(const string_map & context)
 {
-    const auto & effects = effectsForContext(*m_configuration, m_serial, context);
+    // Match context against profile lookups
+    const Configuration::Profile * profile = nullptr;
+    const Configuration::Profile * defaultProfile = nullptr;
+    const Configuration::Profile * overlayProfile = nullptr;
+
+    for (const auto & profileEntry : m_configuration->profiles()) {
+        const auto & devices = profileEntry.devices();
+        if (!devices.empty() && std::find(devices.begin(), devices.end(), m_name) == devices.end())
+            continue;
+        if (profileEntry.name() == defaultProfileName) {
+            defaultProfile = &profileEntry;
+        } else if (profileEntry.name() == overlayProfileName) {
+            overlayProfile = &profileEntry;
+        } else if (profileEntry.lookup().match(context)) {
+            DEBUG("profile matches: ", profileEntry.name());
+            profile = &profileEntry;
+        }
+    }
+    if (profile == nullptr) { profile = defaultProfile; }
+    VERBOSE("selected profile <", profile->name(), ">");
+
+    // Collect effect names from selected profile and resolve them
+    std::vector<const Configuration::Effect *> effects;
+
+    for (const auto & name : profile->effects()) {
+        auto eit = std::find_if(m_configuration->effects().begin(), m_configuration->effects().end(),
+                                [&name](auto & effect) { return effect.name() == name; });
+        if (eit == m_configuration->effects().end()) {
+            ERROR("profile <", profile->name(), "> references unknown effect <", name, ">");
+            continue;
+        }
+        effects.push_back(&*eit);
+    }
+    if (overlayProfile != nullptr) {
+        for (const auto & name : overlayProfile->effects()) {
+            auto eit = std::find_if(m_configuration->effects().begin(), m_configuration->effects().end(),
+                                    [&name](auto & effect) { return effect.name() == name; });
+            if (eit == m_configuration->effects().end()) {
+                ERROR("profile <", profile->name(), "> references unknown effect <", name, ">");
+                continue;
+            }
+            effects.push_back(&*eit);
+        }
+    }
 
     RenderLoop::effect_plugin_list plugins;
     for (const auto & effect : effects) {

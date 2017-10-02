@@ -14,12 +14,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "tools/XInputWatcher.h"
+
+#define Bool int
 #include <X11/extensions/XInput2.h>
-#undef CursorShape
 #undef Bool
 #include <algorithm>
 #include <cassert>
-#include "tools/XInputWatcher.h"
 #include "logging.h"
 
 #define MIN_KEYCODE 8
@@ -27,6 +28,9 @@
 LOGGING("xinput-watcher");
 
 using xlib::XInputWatcher;
+
+/****************************************************************************/
+
 static constexpr char XInputExtensionName[] = "XInputExtension";
 
 /****************************************************************************/

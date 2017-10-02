@@ -14,6 +14,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "keyledsd/colors.h"
+
 #include <algorithm>
 #include <array>
 #include <cstdint>
@@ -23,7 +25,6 @@
 #include <stdexcept>
 #include <string>
 #include <utility>
-#include "keyledsd/common.h"
 
 using keyleds::RGBColor;
 using keyleds::RGBAColor;

@@ -24,6 +24,10 @@
 #include <functional>
 #include <vector>
 
+namespace tools {
+
+/****************************************************************************/
+
 class FileWatcher final : public QObject
 {
     Q_OBJECT
@@ -89,5 +93,7 @@ private:
 };
 
 /****************************************************************************/
+
+}
 
 #endif

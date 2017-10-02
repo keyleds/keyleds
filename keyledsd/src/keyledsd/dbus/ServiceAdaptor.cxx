@@ -14,21 +14,23 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "keyledsd/dbus/ServiceAdaptor.h"
+
 #include <QDBusConnection>
 #include <QDBusMetaType>
 #include <algorithm>
 #include <string>
+#include "keyledsd/dbus/DeviceManagerAdaptor.h"
+#include "keyledsd/device/DeviceManager.h"
 #include "keyledsd/Configuration.h"
-#include "keyledsd/Context.h"
-#include "keyledsd/DeviceManager.h"
 #include "keyledsd/PluginManager.h"
 #include "keyledsd/Service.h"
-#include "dbus/DeviceManagerAdaptor.h"
-#include "dbus/ServiceAdaptor.h"
 
 using dbus::ServiceAdaptor;
+
 Q_DECLARE_METATYPE(ServiceContextValues)
 
+/****************************************************************************/
 
 ServiceAdaptor::ServiceAdaptor(keyleds::Service *parent)
     : QDBusAbstractAdaptor(parent)
@@ -111,27 +113,31 @@ QStringList ServiceAdaptor::plugins() const
 
 void ServiceAdaptor::setContextValues(ServiceContextValues data)
 {
-    auto context = keyleds::Context::value_map();
+    std::vector<std::pair<std::string, std::string>> context;
+
     for (auto it = data.constBegin(); it != data.constEnd(); ++it) {
         context.emplace_back(std::string(it.key().toUtf8()),
                              std::string(it.value().toUtf8()));
     }
-    parent()->setContext(keyleds::Context(context));
+    parent()->setContext(std::move(context));
 }
 
 void ServiceAdaptor::setContextValue(QString key, QString val)
 {
-    parent()->setContext({{ std::string(key.toUtf8()), std::string(val.toUtf8()) }});
+    parent()->setContext({
+        { std::string(key.toUtf8()), std::string(val.toUtf8()) }
+    });
 }
 
 void ServiceAdaptor::sendGenericEvent(ServiceContextValues data)
 {
-    auto context = keyleds::Context::value_map();
+    std::vector<std::pair<std::string, std::string>> context;
+
     for (auto it = data.constBegin(); it != data.constEnd(); ++it) {
         context.emplace_back(std::string(it.key().toUtf8()),
                              std::string(it.value().toUtf8()));
     }
-    parent()->handleGenericEvent(keyleds::Context(context));
+    parent()->handleGenericEvent(std::move(context));
 }
 
 void ServiceAdaptor::sendKeyEvent(QString qSerial, int key)

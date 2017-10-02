@@ -24,8 +24,6 @@
 
 namespace keyleds {
 
-class Context;
-
 /** Complete service configuration
  *
  * Holds all configuration data to run an instance of the service,
@@ -107,7 +105,7 @@ private:
 /** Profile configuration
  *
  * Holds the configuration of a single keyboard profile. A profile defines
- * a set of conditions that can be used to match a Context, and a set of
+ * a set of conditions that can be used to match a, and a set of
  * effects to apply when a context matches. The set of conditions is known
  * as a Lookup.
  */
@@ -124,14 +122,14 @@ public:
         };
         using entry_list = std::vector<Entry>;
     public:
-        using filter_map = std::vector<std::pair<std::string, std::string>>;
+        using string_map = std::vector<std::pair<std::string, std::string>>;
     public:
                             Lookup() = default;
-                            Lookup(filter_map filters);
+                            Lookup(string_map filters);
 
-        bool                match(const Context &) const;
+        bool                match(const string_map &) const;
     private:
-        static entry_list   buildRegexps(filter_map);
+        static entry_list   buildRegexps(string_map);
     private:
         entry_list  m_entries;
     };

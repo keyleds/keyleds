@@ -20,7 +20,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "keyledsd/RenderLoop.h"
+#include "keyledsd/device/RenderLoop.h"
 
 namespace keyleds {
 

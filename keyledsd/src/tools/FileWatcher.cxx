@@ -14,16 +14,19 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "tools/FileWatcher.h"
+
 #include <unistd.h>
 #include <QSocketNotifier>
 #include <algorithm>
 #include <cassert>
 #include <cerrno>
 #include <system_error>
-#include "tools/FileWatcher.h"
 #include "logging.h"
 
 LOGGING("filewatcher");
+
+using tools::FileWatcher;
 
 /****************************************************************************/
 

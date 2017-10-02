@@ -20,13 +20,12 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "keyledsd/device/KeyDatabase.h"
 #include "keyledsd/Configuration.h"
-#include "keyledsd/KeyDatabase.h"
 #include "config.h"
 
 namespace keyleds {
 
-class Context;
 class DeviceManager;
 
 /****************************************************************************/
@@ -36,6 +35,8 @@ class DeviceManager;
  */
 class EffectPlugin
 {
+protected:
+    using string_map = std::vector<std::pair<std::string, std::string>>;
 public:
     virtual         ~EffectPlugin();
 
@@ -45,11 +46,11 @@ public:
     /// Invoked whenever the context of the service has changed while the plugin is active.
     /// Since plugins are loaded on context changes, this means this is always called
     /// once before periodic calls to render start.
-    virtual void    handleContextChange(const Context &);
+    virtual void    handleContextChange(const string_map &);
 
     /// Invoked whenever the Service is sent a generic event while the plugin is active.
-    /// Context holds whatever values the event includes, keyledsd does not use it.
-    virtual void    handleGenericEvent(const Context &);
+    /// string_map holds whatever values the event includes, keyledsd does not use it.
+    virtual void    handleGenericEvent(const string_map &);
 
     /// Invoked whenever the user presses or releases a key while the plugin is active.
     virtual void    handleKeyEvent(const KeyDatabase::Key &, bool press);

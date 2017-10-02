@@ -21,8 +21,7 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "keyledsd/Context.h"
-#include "keyledsd/Device.h"
+#include "keyledsd/device/Device.h"
 #include "tools/DeviceWatcher.h"
 #include "tools/FileWatcher.h"
 
@@ -43,6 +42,8 @@ class DisplayManager;
 class Service final : public QObject
 {
     Q_OBJECT
+    using FileWatcher = tools::FileWatcher;
+    using string_map = std::vector<std::pair<std::string, std::string>>;
 public:
     using device_list = std::vector<std::unique_ptr<DeviceManager>>;
     using display_list = std::vector<std::unique_ptr<DisplayManager>>;
@@ -53,7 +54,7 @@ public:
 
     const Configuration & configuration() const { return *m_configuration; }
     bool                autoQuit() const { return m_autoQuit; }
-    const Context &     context() const { return m_context; }
+    const string_map &  context() const { return m_context; }
     bool                active() const { return m_active; }
     const device_list & devices() const { return m_devices; }
 
@@ -62,8 +63,8 @@ public:
     void                setConfiguration(std::unique_ptr<Configuration>);
     void                setAutoQuit(bool);
     void                setActive(bool val);
-    void                setContext(const keyleds::Context &);
-    void                handleGenericEvent(const keyleds::Context &);
+    void                setContext(const string_map &);
+    void                handleGenericEvent(const string_map &);
     void                handleKeyEvent(const std::string &, int, bool);
 
 signals:
@@ -83,7 +84,7 @@ private:
     std::unique_ptr<Configuration> m_configuration;
     bool                m_autoQuit;         ///< Quit when last device is removed?
 
-    Context             m_context;          ///< Current context. Used when instanciating new managers
+    string_map          m_context;          ///< Current context. Used when instanciating new managers
     bool                m_active;           ///< If clear, the service stops watching devices
     device_list         m_devices;          ///< Map of serial number to DeviceManager instances
     display_list        m_displays;         ///< Connections to X displays

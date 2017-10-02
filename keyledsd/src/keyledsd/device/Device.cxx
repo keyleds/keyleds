@@ -14,6 +14,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "keyledsd/device/Device.h"
+
 #include <algorithm>
 #include <cerrno>
 #include <cstdlib>
@@ -22,7 +24,6 @@
 #include <sstream>
 #include <string>
 #include "keyleds.h"
-#include "keyledsd/Device.h"
 #include "logging.h"
 #include "config.h"
 

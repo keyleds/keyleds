@@ -14,16 +14,19 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "tools/Paths.h"
+
 #include <algorithm>
 #include <cstdlib>
 #include <fstream>
 #include <regex>
 #include <sstream>
 #include <stdexcept>
-#include "tools/Paths.h"
 #include "config.h"
 
-using paths::XDG;
+using tools::paths::XDG;
+
+/****************************************************************************/
 
 struct XDGVariables {
     XDG      type;           ///< which XDG variable
@@ -88,7 +91,9 @@ static std::string canonicalPath(const std::string & path)
 #endif
 }
 
-std::vector<std::string> paths::getPaths(XDG type, bool extra)
+/****************************************************************************/
+
+std::vector<std::string> tools::paths::getPaths(XDG type, bool extra)
 {
     auto specIt = std::find_if(variables.begin(), variables.end(),
                                [type](auto & item) { return item.type == type; });
@@ -125,8 +130,8 @@ std::vector<std::string> paths::getPaths(XDG type, bool extra)
     return paths;
 }
 
-void paths::open_filebuf(std::filebuf & buf, XDG type, const std::string & path,
-                         std::ios::openmode mode, std::string * actualPath)
+void tools::paths::open_filebuf(std::filebuf & buf, XDG type, const std::string & path,
+                                std::ios::openmode mode, std::string * actualPath)
 {
     if (path.empty()) { throw std::runtime_error("empty path"); }
 
@@ -138,7 +143,7 @@ void paths::open_filebuf(std::filebuf & buf, XDG type, const std::string & path,
         return;
     }
 
-    auto dirs = paths::getPaths(type, (mode & std::ios_base::out) == 0);
+    auto dirs = getPaths(type, (mode & std::ios::out) == 0);
 
     // Actually look for file
     for (const auto & dir : dirs) {

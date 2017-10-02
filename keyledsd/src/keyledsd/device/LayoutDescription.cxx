@@ -14,6 +14,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "keyledsd/device/LayoutDescription.h"
+
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 #include <algorithm>
@@ -22,7 +24,6 @@
 #include <istream>
 #include <sstream>
 #include <memory>
-#include "keyledsd/LayoutDescription.h"
 
 using keyleds::LayoutDescription;
 

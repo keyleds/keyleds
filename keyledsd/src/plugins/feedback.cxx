@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <vector>
-#include "keyledsd/common.h"
+#include "keyledsd/device/DeviceManager.h"
+#include "keyledsd/device/KeyDatabase.h"
+#include "keyledsd/device/RenderLoop.h"
 #include "keyledsd/Configuration.h"
-#include "keyledsd/DeviceManager.h"
-#include "keyledsd/KeyDatabase.h"
 #include "keyledsd/PluginManager.h"
-#include "keyledsd/RenderLoop.h"
+#include "keyledsd/colors.h"
 
 using keyleds::KeyDatabase;
 using keyleds::RenderTarget;

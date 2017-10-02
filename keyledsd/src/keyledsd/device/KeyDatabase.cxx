@@ -14,8 +14,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "keyledsd/device/KeyDatabase.h"
+
 #include <algorithm>
-#include "keyledsd/KeyDatabase.h"
 
 using keyleds::KeyDatabase;
 

@@ -24,9 +24,15 @@
 #ifndef TOOLS_YAML_PARSER_H_A07026A5
 #define TOOLS_YAML_PARSER_H_A07026A5
 
+/****************************************************************************/
+
 #include <iosfwd>
 #include <stdexcept>
 #include <string>
+
+namespace tools {
+
+/****************************************************************************/
 
 /** Abstract YAML parser
  *
@@ -79,5 +85,9 @@ private:
     line_t          m_line;     ///< Line of token being parsed. Only in event methods.
     col_t           m_column;   ///< Column of token being parsed. Only in event methods.
 };
+
+/****************************************************************************/
+
+}
 
 #endif

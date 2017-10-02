@@ -14,13 +14,14 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "tools/DeviceWatcher.h"
+
 #include <libudev.h>
 #include <QSocketNotifier>
 #include <algorithm>
 #include <cassert>
 #include <stdexcept>
 #include <string>
-#include "tools/DeviceWatcher.h"
 
 using device::Description;
 using device::DeviceWatcher;

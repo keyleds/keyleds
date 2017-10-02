@@ -14,15 +14,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "tools/XContextWatcher.h"
+
 #include <X11/Xlib.h>
 #include <functional>
 #include <string>
-#include "keyledsd/ContextWatcher.h"
 #include "logging.h"
 
 LOGGING("context-watcher");
 
-using keyleds::XContextWatcher;
+using xlib::XContextWatcher;
 static constexpr char activeWindowAtom[] = "_NET_ACTIVE_WINDOW";
 
 /****************************************************************************/
@@ -111,7 +112,7 @@ void XContextWatcher::onActiveWindowChanged(xlib::Window * window, bool silent)
 
 void XContextWatcher::setContext(xlib::Window * window)
 {
-    Context context;
+    context_map context;
     if (window == nullptr) {
         context = { // Signal those attributes are now empty
             { "id", std::string() },

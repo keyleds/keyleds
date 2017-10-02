@@ -17,15 +17,20 @@
 #ifndef KEYLEDSD_CONTEXTWATCHER_H_1CF5FE0A
 #define KEYLEDSD_CONTEXTWATCHER_H_1CF5FE0A
 
+/****************************************************************************/
+
 #include <X11/Xlib.h>
 #undef CursorShape
 #undef Bool
 #include <QObject>
 #include <memory>
-#include "keyledsd/Context.h"
+#include <utility>
+#include <vector>
 #include "tools/XWindow.h"
 
-namespace keyleds {
+namespace xlib {
+
+/****************************************************************************/
 
 /** X-Window - based context watcher
  *
@@ -39,15 +44,17 @@ class XContextWatcher final : public QObject
 {
     Q_OBJECT
 public:
-                    XContextWatcher(xlib::Display & display, QObject *parent = nullptr);
+    using context_map = std::vector<std::pair<std::string, std::string>>;
+public:
+                    XContextWatcher(Display & display, QObject *parent = nullptr);
                     ~XContextWatcher() override;
 
     const xlib::Display & display() const { return m_display; }
 
-    const Context & current() const noexcept { return m_context; }
+    const context_map & current() const noexcept { return m_context; }
 
 signals:
-    void            contextChanged(const keyleds::Context &);
+    void            contextChanged(const context_map &);
 
 private:
     /// Invoked from the main X display event loop for Xinput events
@@ -56,19 +63,20 @@ private:
     /// Invoked from handleEvent when it detects the active window has changed
     /// Passed window is the new active window; m_activeWindow still has the old one.
     /// Both may be nullptr.
-    virtual void    onActiveWindowChanged(xlib::Window *, bool silent = false);
+    virtual void    onActiveWindowChanged(Window *, bool silent = false);
 
     /// Builds a context and emit a contextChanged signal for given window
     /// Signal is debounced: if built context is equal to current, signal is not sent.
-    void            setContext(xlib::Window *);
+    void            setContext(Window *);
 
 private:
-    xlib::Display &                 m_display;          ///< X display connection
-    xlib::Display::subscription     m_displayReg;       ///< callback registration for X events
-    std::unique_ptr<xlib::Window>   m_activeWindow;     ///< Currently active window, or nullptr if none
-    Context                         m_context;          ///< Current context
+    Display &               m_display;          ///< X display connection
+    Display::subscription   m_displayReg;       ///< callback registration for X events
+    std::unique_ptr<Window> m_activeWindow;     ///< Currently active window, or nullptr if none
+    context_map             m_context;          ///< Current context
 };
 
+/****************************************************************************/
 
 };
 

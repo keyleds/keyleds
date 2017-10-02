@@ -14,14 +14,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "keyledsd/Service.h"
+
 #include <QCoreApplication>
 #include <cassert>
 #include <functional>
+#include <sstream>
+#include "keyledsd/device/Device.h"
+#include "keyledsd/device/DeviceManager.h"
 #include "keyledsd/Configuration.h"
-#include "keyledsd/Device.h"
-#include "keyledsd/DeviceManager.h"
 #include "keyledsd/DisplayManager.h"
-#include "keyledsd/Service.h"
 #include "tools/XWindow.h"
 #include "keyleds.h"
 #include "logging.h"
@@ -29,6 +31,47 @@
 LOGGING("service");
 
 using keyleds::Service;
+
+/****************************************************************************/
+
+static void merge(std::vector<std::pair<std::string, std::string>> & lhs,
+                  const std::vector<std::pair<std::string, std::string>> & rhs)
+{
+    for (auto & newItem : rhs) {
+        auto it = std::find_if(
+            lhs.begin(), lhs.end(),
+            [&newItem](const auto & item) { return item.first == newItem.first; }
+        );
+        if (it != lhs.end()) {
+            // Key exists
+            if (newItem.second.empty()) {
+                // Value is empty, destroy key
+                std::iter_swap(it, lhs.end() - 1);
+                lhs.pop_back();
+            } else {
+                // Update with new value
+                it->second = newItem.second;
+            }
+        } else if (!newItem.second.empty()) {
+            // Create key
+            lhs.emplace_back(newItem);
+        }
+    }
+}
+
+static std::string to_string(const std::vector<std::pair<std::string, std::string>> & val)
+{
+    std::ostringstream out;
+    bool first = true;
+    out <<'(';
+    for (const auto & entry : val) {
+        if (!first) { out <<", "; }
+        first = false;
+        out <<entry.first <<'=' <<entry.second;
+    }
+    out <<')';
+    return out.str();
+}
 
 /****************************************************************************/
 
@@ -99,14 +142,14 @@ void Service::setActive(bool active)
     m_active = active;
 }
 
-void Service::setContext(const Context & context)
+void Service::setContext(const string_map & context)
 {
-    VERBOSE("setContext ", context);
-    m_context.merge(context);
+    VERBOSE("setContext ", ::to_string(context));
+    merge(m_context, context);
     for (auto & device : m_devices) { device->setContext(m_context); }
 }
 
-void Service::handleGenericEvent(const Context & context)
+void Service::handleGenericEvent(const string_map & context)
 {
     for (auto & device : m_devices) { device->handleGenericEvent(context); }
 }

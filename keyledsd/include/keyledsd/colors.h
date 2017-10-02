@@ -97,6 +97,6 @@ inline std::ostream & operator<<(std::ostream & out, RGBAColor obj)
 
 /****************************************************************************/
 
-};
+} // namespace keyleds
 
 #endif

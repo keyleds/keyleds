@@ -31,7 +31,7 @@
 #include <iostream>
 #include "config.h"
 #ifndef NO_DBUS
-#include "dbus/ServiceAdaptor.h"
+#include "keyledsd/dbus/ServiceAdaptor.h"
 #endif
 #include "keyledsd/Configuration.h"
 #include "keyledsd/Service.h"

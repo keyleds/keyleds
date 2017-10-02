@@ -14,14 +14,18 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <QSocketNotifier>
-#include <cassert>
-#include "tools/XInputWatcher.h"
-#include "keyledsd/ContextWatcher.h"
 #include "keyledsd/DisplayManager.h"
 
+#include <QSocketNotifier>
+#include <cassert>
+#include "tools/XContextWatcher.h"
+#include "tools/XInputWatcher.h"
+
+using xlib::XContextWatcher;
 using xlib::XInputWatcher;
 using keyleds::DisplayManager;
+
+/****************************************************************************/
 
 DisplayManager::DisplayManager(std::unique_ptr<xlib::Display> display, QObject *parent)
  : QObject(parent),
@@ -47,14 +51,10 @@ void DisplayManager::scanDevices()
     m_inputWatcher->scan();
 }
 
-const keyleds::Context & DisplayManager::currentContext() const
+void DisplayManager::onContextChanged(const xlib::XContextWatcher::context_map & context)
 {
-    return m_contextWatcher->current();
-}
-
-void DisplayManager::onContextChanged(const keyleds::Context & context)
-{
-    emit contextChanged(context);
+    m_context = context;
+    emit contextChanged(m_context);
 }
 
 void DisplayManager::onKeyEventReceived(const std::string & devNode, int key, bool press)

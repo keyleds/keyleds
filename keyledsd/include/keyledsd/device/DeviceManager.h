@@ -18,20 +18,20 @@
 #define KEYLEDSD_DEVICEMANAGER_H_0517383B
 
 #include <QObject>
+#include "keyledsd/device/Device.h"
+#include "keyledsd/device/KeyDatabase.h"
+#include "keyledsd/device/RenderLoop.h"
 #include "keyledsd/Configuration.h"
-#include "keyledsd/Device.h"
-#include "keyledsd/KeyDatabase.h"
-#include "keyledsd/RenderLoop.h"
 #include "tools/FileWatcher.h"
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace device { class Description; }
 
 namespace keyleds {
 
-class Context;
 class LayoutDescription;
 
 /** Main device manager
@@ -44,6 +44,8 @@ class LayoutDescription;
 class DeviceManager final : public QObject
 {
     Q_OBJECT
+    using FileWatcher = tools::FileWatcher;
+    using string_map = std::vector<std::pair<std::string, std::string>>;
 private:
     /** An effect, fully loaded with plugins
      *
@@ -70,7 +72,7 @@ private:
 public:
     using dev_list = std::vector<std::string>;
 public:
-                            DeviceManager(FileWatcher &,
+                            DeviceManager(tools::FileWatcher &,
                                           const device::Description &,
                                           Device &&,
                                           const Configuration *,
@@ -90,9 +92,9 @@ public:
 
 public:
     void                    setConfiguration(const Configuration *);
-    void                    setContext(const Context &);
+    void                    setContext(const string_map &);
     void                    handleFileEvent(FileWatcher::event, uint32_t, std::string);
-    void                    handleGenericEvent(const Context &);
+    void                    handleGenericEvent(const string_map &);
     void                    handleKeyEvent(int, bool);
     void                    setPaused(bool);
 
@@ -106,7 +108,7 @@ private:
     static KeyDatabase      buildKeyDB(const Configuration &, const Device &);
 
     /// Loads the list of effects to activate for the given context
-    RenderLoop::effect_plugin_list loadEffects(const Context &);
+    RenderLoop::effect_plugin_list loadEffects(const string_map & context);
 
     /// Instanciates an effect, combining its configuration with this device's info
     LoadedEffect &          getEffect(const Configuration::Effect &);

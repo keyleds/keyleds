@@ -14,10 +14,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "keyledsd/dbus/DeviceManagerAdaptor.h"
+
 #include <QDBusArgument>
 #include <QDBusMetaType>
-#include "dbus/DeviceManagerAdaptor.h"
-#include "keyledsd/DeviceManager.h"
+#include "keyledsd/device/DeviceManager.h"
 
 using dbus::DeviceManagerAdaptor;
 Q_DECLARE_METATYPE(DBusDeviceKeyInfo)

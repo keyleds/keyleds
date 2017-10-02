@@ -21,8 +21,8 @@
 #include <mutex>
 #include <utility>
 #include <vector>
-#include "keyledsd/common.h"
-#include "keyledsd/Device.h"
+#include "keyledsd/device/Device.h"
+#include "keyledsd/colors.h"
 #include "tools/AnimationLoop.h"
 
 namespace keyleds {
@@ -91,7 +91,7 @@ void blend(RenderTarget &, const RenderTarget &);
  * That is, no other thread is allowed to call Device's manipulation methods
  * while a RenderLoop for it exists.
  */
-class RenderLoop final : public AnimationLoop
+class RenderLoop final : public tools::AnimationLoop
 {
 public:
     using effect_plugin_list = std::vector<EffectPlugin *>;

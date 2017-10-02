@@ -16,12 +16,11 @@
  */
 #include <algorithm>
 #include <vector>
-#include "keyledsd/common.h"
+#include "keyledsd/device/KeyDatabase.h"
+#include "keyledsd/device/RenderLoop.h"
 #include "keyledsd/Configuration.h"
-#include "keyledsd/Context.h"
-#include "keyledsd/KeyDatabase.h"
 #include "keyledsd/PluginManager.h"
-#include "keyledsd/RenderLoop.h"
+#include "keyledsd/colors.h"
 
 using KeyGroup = keyleds::KeyDatabase::KeyGroup;
 using keyleds::RGBAColor;
@@ -29,8 +28,7 @@ using keyleds::RGBAColor;
 class Rule final
 {
 public:
-                        Rule(KeyGroup keys,
-                             keyleds::RGBAColor color)
+                        Rule(KeyGroup keys, RGBAColor color)
                          : m_keys(std::move(keys)), m_color(color) {}
     const KeyGroup &    keys() const { return m_keys; }
     const RGBAColor &   color() const { return m_color; }
