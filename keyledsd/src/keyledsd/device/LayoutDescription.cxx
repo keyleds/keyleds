@@ -21,9 +21,15 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstring>
+#include <fstream>
 #include <istream>
 #include <sstream>
 #include <memory>
+#include "tools/Paths.h"
+#include "config.h"
+#include "logging.h"
+
+LOGGING("layout");
 
 using keyleds::LayoutDescription;
 
@@ -201,6 +207,30 @@ LayoutDescription LayoutDescription::parse(std::istream & stream)
     );
 }
 
+LayoutDescription LayoutDescription::loadFile(const std::string & name)
+{
+    const auto & xdgPaths = tools::paths::getPaths(tools::paths::XDG::Data, true);
+
+    std::vector<std::string> paths;
+    std::transform(xdgPaths.begin(), xdgPaths.end(), std::back_inserter(paths),
+                   [](const auto & path) { return path + "/" KEYLEDSD_DATA_PREFIX "/layouts"; });
+
+    for (const auto & path : paths) {
+        std::string fullName = path + '/' + name;
+        std::ifstream file(fullName);
+        if (!file) { continue; }
+        try {
+            auto result = parse(file);
+            INFO("loaded layout ", fullName);
+            return result;
+        } catch (ParseError & error) {
+            ERROR("layout ", fullName, " line ", error.line(), ": ", error.what());
+        } catch (std::exception & error) {
+            ERROR("layout ", fullName, ": ", error.what());
+        }
+    }
+    return LayoutDescription(std::string(), {});
+}
 /****************************************************************************/
 
 LayoutDescription::Key::Key(block_type block, code_type code, Rect position, std::string name)

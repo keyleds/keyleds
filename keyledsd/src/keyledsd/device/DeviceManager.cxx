@@ -19,22 +19,16 @@
 #include <unistd.h>
 #include <algorithm>
 #include <cassert>
-#include <fstream>
 #include <iomanip>
 #include <sstream>
 #include "keyledsd/device/LayoutDescription.h"
 #include "keyledsd/PluginManager.h"
 #include "tools/Paths.h"
-#include "config.h"
 #include "logging.h"
 
 LOGGING("dev-manager");
 
-using keyleds::Configuration;
 using keyleds::DeviceManager;
-using keyleds::KeyDatabase;
-using keyleds::LayoutDescription;
-using keyleds::RenderLoop;
 
 static constexpr char defaultProfileName[] = "__default__";
 static constexpr char overlayProfileName[] = "__overlay__";
@@ -61,7 +55,7 @@ DeviceManager::DeviceManager(FileWatcher & fileWatcher,
                                              std::bind(&DeviceManager::handleFileEvent, this,
                                                        std::placeholders::_1, std::placeholders::_2,
                                                        std::placeholders::_3))),
-      m_keyDB(buildKeyDB(*conf, m_device)),
+      m_keyDB(buildKeyDB(m_device)),
       m_renderLoop(m_device, KEYLEDSD_RENDER_FPS)
 {
     setConfiguration(conf);
@@ -176,37 +170,12 @@ std::string DeviceManager::layoutName(const Device & device)
     return fileNameBuf.str();
 }
 
-LayoutDescription DeviceManager::loadLayoutDescription(const Configuration & conf, const Device & device)
+keyleds::KeyDatabase DeviceManager::buildKeyDB(const Device & device)
 {
-    using tools::paths::XDG;
-    if (!device.hasLayout()) { return LayoutDescription(std::string(), {}); }
-
-    auto paths = conf.layoutPaths();
-    for (const auto & path : tools::paths::getPaths(XDG::Data, true)) {
-        paths.emplace_back(path + "/" KEYLEDSD_DATA_PREFIX "/layouts");
+    LayoutDescription layout;
+    if (device.hasLayout()) {
+        layout = LayoutDescription::loadFile(layoutName(device));
     }
-    const auto & fileName = layoutName(device);
-
-    for (const auto & path : paths) {
-        std::string fullName = path + '/' + fileName;
-        std::ifstream file(fullName);
-        if (!file) { continue; }
-        try {
-            auto result = LayoutDescription::parse(file);
-            INFO("loaded layout ", fullName);
-            return result;
-        } catch (LayoutDescription::ParseError & error) {
-            ERROR("layout ", fullName, " line ", error.line(), ": ", error.what());
-        } catch (std::exception & error) {
-            ERROR("layout ", fullName, ": ", error.what());
-        }
-    }
-    return LayoutDescription(std::string(), {});
-}
-
-KeyDatabase DeviceManager::buildKeyDB(const Configuration & conf, const Device & device)
-{
-    auto layout = loadLayoutDescription(conf, device);
 
     KeyDatabase::key_list db;
     RenderTarget::size_type keyIndex = 0;

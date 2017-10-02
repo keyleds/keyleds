@@ -2,9 +2,6 @@
 # kate: syntax yaml;
 # vi: ft=yaml :
 
-# Set additional lookup paths for keyboard layout files
-# layouts: /home/spectras/projects/keyleds/keyledsd/layouts
-
 # List of device names, used for filtering profiles
 # Serial can be found by plugin in the device while the service is
 # running. Service will output the serial on its debug output.

@@ -39,12 +39,14 @@ public:
     class ParseError;
     using key_list = std::vector<Key>;
 public:
+                        LayoutDescription() = default;
                         LayoutDescription(std::string name, key_list keys);
 
     const std::string & name() const { return m_name; }
     const key_list &    keys() const { return m_keys; }
 
     static LayoutDescription parse(std::istream &);
+    static LayoutDescription loadFile(const std::string & path);
 
 private:
     std::string         m_name;     ///< Layout name, indicating its country code

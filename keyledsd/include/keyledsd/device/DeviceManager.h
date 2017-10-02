@@ -105,7 +105,7 @@ private:
     static dev_list         findEventDevices(const device::Description &);
     static std::string      layoutName(const Device &);
     static LayoutDescription loadLayoutDescription(const Configuration &, const Device &);
-    static KeyDatabase      buildKeyDB(const Configuration &, const Device &);
+    static KeyDatabase      buildKeyDB(const Device &);
 
     /// Loads the list of effects to activate for the given context
     RenderLoop::effect_plugin_list loadEffects(const string_map & context);
