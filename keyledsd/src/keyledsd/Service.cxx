@@ -144,8 +144,8 @@ void Service::setActive(bool active)
 
 void Service::setContext(const string_map & context)
 {
-    VERBOSE("setContext ", ::to_string(context));
     merge(m_context, context);
+    VERBOSE("setContext ", ::to_string(m_context));
     for (auto & device : m_devices) { device->setContext(m_context); }
 }
 
@@ -207,7 +207,6 @@ void Service::onDeviceAdded(const device::Description & description)
         emit deviceManagerAdded(*manager);
 
         INFO("opened device ", description.devNode(),
-             ": serial ", manager->serial(),
              " [", manager->name(), ']',
              ", model ", manager->device().model(),
              " firmware ", manager->device().firmware(),

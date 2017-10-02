@@ -31,9 +31,9 @@ DisplayManager::DisplayManager(std::unique_ptr<xlib::Display> display, QObject *
  : QObject(parent),
    m_display(std::move(display)),
    m_contextWatcher(std::make_unique<XContextWatcher>(*m_display)),
-   m_inputWatcher(std::make_unique<XInputWatcher>(*m_display))
+   m_inputWatcher(std::make_unique<XInputWatcher>(*m_display)),
+   m_context(m_contextWatcher->current())
 {
-    assert(m_display != nullptr);
     auto * notifier = new QSocketNotifier(m_display->connection(), QSocketNotifier::Read, this);
     QObject::connect(notifier, &QSocketNotifier::activated,
                      [this](int){ m_display->processEvents(); });

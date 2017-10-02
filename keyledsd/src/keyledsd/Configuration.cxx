@@ -748,8 +748,8 @@ bool Configuration::Profile::Lookup::match(const string_map & context) const
                 context.begin(), context.end(),
                 [&entry](const auto & ctxEntry) { return ctxEntry.first == entry.key; }
             );
-            if (it == context.end()) { return false; }  // missing keys fail the match
-            return std::regex_match(it->second, entry.regex);
+            const auto & value = it != context.end() ? it->second : std::string();
+            return std::regex_match(value, entry.regex);
     });
 }
 
