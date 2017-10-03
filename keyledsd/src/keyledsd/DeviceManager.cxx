@@ -14,13 +14,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "keyledsd/device/DeviceManager.h"
+#include "keyledsd/DeviceManager.h"
 
 #include <unistd.h>
 #include <algorithm>
 #include <cassert>
-#include <iomanip>
-#include <sstream>
 #include "keyledsd/device/LayoutDescription.h"
 #include "keyledsd/PluginManager.h"
 #include "tools/Paths.h"
@@ -43,7 +41,7 @@ DeviceManager::LoadedEffect::LoadedEffect(std::string name, plugin_list && plugi
 /****************************************************************************/
 
 DeviceManager::DeviceManager(FileWatcher & fileWatcher,
-                             const device::Description & description, Device && device,
+                             const ::device::Description & description, Device && device,
                              const Configuration * conf, QObject *parent)
     : QObject(parent),
       m_configuration(nullptr),
@@ -55,7 +53,7 @@ DeviceManager::DeviceManager(FileWatcher & fileWatcher,
                                              std::bind(&DeviceManager::handleFileEvent, this,
                                                        std::placeholders::_1, std::placeholders::_2,
                                                        std::placeholders::_3))),
-      m_keyDB(buildKeyDB(m_device)),
+      m_keyDB(KeyDatabase::build(m_device)),
       m_renderLoop(m_device, KEYLEDSD_RENDER_FPS)
 {
     setConfiguration(conf);
@@ -72,7 +70,7 @@ void DeviceManager::setConfiguration(const Configuration * conf)
     assert(conf != nullptr);
     auto lock = m_renderLoop.lock();
 
-    m_renderLoop.effects().clear();
+    m_renderLoop.renderers().clear();
     m_effects.clear();
 
     m_configuration = conf;
@@ -87,8 +85,10 @@ void DeviceManager::setContext(const string_map & context)
 
     // Notify newly-active plugins of context change
     auto lock = m_renderLoop.lock();
-    for (auto * effect : effects) { effect->handleContextChange(context); }
-    m_renderLoop.effects() = std::move(effects);
+    for (auto * effect : effects) {
+        static_cast<EffectPlugin *>(effect)->handleContextChange(context);
+    }
+    m_renderLoop.renderers() = std::move(effects);
 }
 
 void DeviceManager::handleFileEvent(FileWatcher::event, uint32_t, std::string)
@@ -100,7 +100,9 @@ void DeviceManager::handleFileEvent(FileWatcher::event, uint32_t, std::string)
 void DeviceManager::handleGenericEvent(const string_map & context)
 {
     auto lock = m_renderLoop.lock();
-    for (auto * effect : m_renderLoop.effects()) { effect->handleGenericEvent(context); }
+    for (auto * effect : m_renderLoop.renderers()) {
+        static_cast<EffectPlugin *>(effect)->handleGenericEvent(context);
+    }
 }
 
 void DeviceManager::handleKeyEvent(int keyCode, bool press)
@@ -114,8 +116,8 @@ void DeviceManager::handleKeyEvent(int keyCode, bool press)
 
     // Pass event to active effect plugins
     auto lock = m_renderLoop.lock();
-    for (const auto & plugin : m_renderLoop.effects()) {
-        plugin->handleKeyEvent(*it, press);
+    for (const auto & effect : m_renderLoop.renderers()) {
+        static_cast<EffectPlugin *>(effect)->handleKeyEvent(*it, press);
     }
     DEBUG("key ", it->name, " ", press ? "pressed" : "released", " on device ", m_serial);
 }
@@ -125,7 +127,7 @@ void DeviceManager::setPaused(bool val)
     m_renderLoop.setPaused(val);
 }
 
-std::string DeviceManager::getSerial(const device::Description & description)
+std::string DeviceManager::getSerial(const ::device::Description & description)
 {
     // Serial is stored on master USB device, so we walk up the hierarchy
     const auto & usbDevDescription = description.parentWithType("usb", "usb_device");
@@ -146,7 +148,7 @@ std::string DeviceManager::getName(const Configuration & config, const std::stri
     return dit != config.devices().end() ? dit->first : serial;
 }
 
-DeviceManager::dev_list DeviceManager::findEventDevices(const device::Description & description)
+DeviceManager::dev_list DeviceManager::findEventDevices(const ::device::Description & description)
 {
     // Event devices are any device detected as input devices and attached
     // to same USB device as ours
@@ -162,58 +164,12 @@ DeviceManager::dev_list DeviceManager::findEventDevices(const device::Descriptio
     return result;
 }
 
-std::string DeviceManager::layoutName(const Device & device)
-{
-    std::ostringstream fileNameBuf;
-    fileNameBuf.fill('0');
-    fileNameBuf <<device.model() <<'_' <<std::hex <<std::setw(4) <<device.layout() <<".xml";
-    return fileNameBuf.str();
-}
-
-keyleds::KeyDatabase DeviceManager::buildKeyDB(const Device & device)
-{
-    LayoutDescription layout;
-    if (device.hasLayout()) {
-        layout = LayoutDescription::loadFile(layoutName(device));
-    }
-
-    KeyDatabase::key_list db;
-    RenderTarget::size_type keyIndex = 0;
-
-    for (const auto & block : device.blocks()) {
-        for (Device::key_list::size_type kidx = 0; kidx < block.keys().size(); ++kidx) {
-            const auto keyId = block.keys()[kidx];
-            std::string name;
-            auto position = KeyDatabase::Key::Rect{0, 0, 0, 0};
-
-            for (const auto & key : layout.keys()) {
-                if (key.block == block.id() && key.code == keyId) {
-                    name = key.name;
-                    position = {key.position.x0, key.position.y0,
-                                key.position.x1, key.position.y1};
-                    break;
-                }
-            }
-            if (name.empty()) { name = device.resolveKey(block.id(), keyId); }
-
-            db.emplace_back(KeyDatabase::Key{
-                keyIndex,
-                device.decodeKeyId(block.id(), keyId),
-                name,
-                position
-            });
-            ++keyIndex;
-        }
-    }
-    return db;
-}
-
 /// Applies the configuration to a string_map, matching profiles and resolving
 /// effect names. Returns the list of Effect entries in the configuration that
 /// should be loaded for the context. Returned list references Configuration
 /// entries directly, and are therefore invalidated by any operation that
 /// invalidates configuration's iterators.
-keyleds::RenderLoop::effect_plugin_list DeviceManager::loadEffects(const string_map & context)
+keyleds::device::RenderLoop::renderer_list DeviceManager::loadEffects(const string_map & context)
 {
     // Match context against profile lookups
     const Configuration::Profile * profile = nullptr;
@@ -260,7 +216,7 @@ keyleds::RenderLoop::effect_plugin_list DeviceManager::loadEffects(const string_
         }
     }
 
-    RenderLoop::effect_plugin_list plugins;
+    RenderLoop::renderer_list plugins;
     for (const auto & effect : effects) {
         const auto & loadedEffect = getEffect(*effect);
         const auto & effectPlugins = loadedEffect.plugins();
@@ -307,13 +263,13 @@ DeviceManager::LoadedEffect & DeviceManager::getEffect(const Configuration::Effe
     return *eit;
 }
 
-keyleds::RenderLoop::effect_plugin_list DeviceManager::LoadedEffect::plugins() const
+keyleds::device::RenderLoop::renderer_list DeviceManager::LoadedEffect::plugins() const
 {
-    RenderLoop::effect_plugin_list result;
+    RenderLoop::renderer_list result;
     result.reserve(m_plugins.size());
     std::transform(m_plugins.begin(),
                    m_plugins.end(),
                    std::back_inserter(result),
-                   [](auto & ptr) { return ptr.get(); });
+                   [](auto & ptr) { return static_cast<device::Renderer *>(ptr.get()); });
     return result;
 }

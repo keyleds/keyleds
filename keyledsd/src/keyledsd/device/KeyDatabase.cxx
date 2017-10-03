@@ -17,8 +17,22 @@
 #include "keyledsd/device/KeyDatabase.h"
 
 #include <algorithm>
+#include <iomanip>
+#include <sstream>
+#include "keyledsd/device/Device.h"
+#include "keyledsd/device/LayoutDescription.h"
 
-using keyleds::KeyDatabase;
+using keyleds::device::KeyDatabase;
+
+/****************************************************************************/
+
+static std::string layoutName(const keyleds::device::Device & device)
+{
+    std::ostringstream fileNameBuf;
+    fileNameBuf.fill('0');
+    fileNameBuf <<device.model() <<'_' <<std::hex <<std::setw(4) <<device.layout() <<".xml";
+    return fileNameBuf.str();
+}
 
 /****************************************************************************/
 
@@ -26,6 +40,44 @@ KeyDatabase::KeyDatabase(key_list keys)
  : m_keys(std::move(keys)),
    m_bounds(computeBounds(m_keys))
 {}
+
+KeyDatabase KeyDatabase::build(const Device & device)
+{
+    LayoutDescription layout;
+    if (device.hasLayout()) {
+        layout = LayoutDescription::loadFile(layoutName(device));
+    }
+
+    key_list db;
+    RenderTarget::size_type keyIndex = 0;
+
+    for (const auto & block : device.blocks()) {
+        for (Device::key_list::size_type kidx = 0; kidx < block.keys().size(); ++kidx) {
+            const auto keyId = block.keys()[kidx];
+            std::string name;
+            auto position = Key::Rect{0, 0, 0, 0};
+
+            for (const auto & key : layout.keys()) {
+                if (key.block == block.id() && key.code == keyId) {
+                    name = key.name;
+                    position = {key.position.x0, key.position.y0,
+                                key.position.x1, key.position.y1};
+                    break;
+                }
+            }
+            if (name.empty()) { name = device.resolveKey(block.id(), keyId); }
+
+            db.emplace_back(Key{
+                keyIndex,
+                device.decodeKeyId(block.id(), keyId),
+                name,
+                position
+            });
+            ++keyIndex;
+        }
+    }
+    return db;
+}
 
 KeyDatabase::const_iterator KeyDatabase::findIndex(RenderTarget::size_type index) const
 {

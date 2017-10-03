@@ -21,7 +21,7 @@
 #include <algorithm>
 #include <string>
 #include "keyledsd/dbus/DeviceManagerAdaptor.h"
-#include "keyledsd/device/DeviceManager.h"
+#include "keyledsd/DeviceManager.h"
 #include "keyledsd/Configuration.h"
 #include "keyledsd/PluginManager.h"
 #include "keyledsd/Service.h"

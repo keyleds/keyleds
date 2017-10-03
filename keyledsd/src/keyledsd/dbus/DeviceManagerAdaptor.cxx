@@ -18,7 +18,7 @@
 
 #include <QDBusArgument>
 #include <QDBusMetaType>
-#include "keyledsd/device/DeviceManager.h"
+#include "keyledsd/DeviceManager.h"
 
 using dbus::DeviceManagerAdaptor;
 Q_DECLARE_METATYPE(DBusDeviceKeyInfo)

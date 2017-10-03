@@ -21,6 +21,7 @@
 #include <string>
 #include <vector>
 #include "keyledsd/device/KeyDatabase.h"
+#include "keyledsd/device/RenderLoop.h"
 #include "keyledsd/Configuration.h"
 #include "config.h"
 
@@ -33,15 +34,13 @@ class DeviceManager;
  *
  * This interface is instanciated once per device, through the EffectPluginFactory
  */
-class EffectPlugin
+class EffectPlugin : public device::Renderer
 {
 protected:
+    using KeyDatabase = device::KeyDatabase;
     using string_map = std::vector<std::pair<std::string, std::string>>;
 public:
     virtual         ~EffectPlugin();
-
-    /// Modifies the target to reflect effect's display once the specified time has elapsed
-    virtual void    render(unsigned long nanosec, RenderTarget & target) = 0;
 
     /// Invoked whenever the context of the service has changed while the plugin is active.
     /// Since plugins are loaded on context changes, this means this is always called
@@ -66,7 +65,7 @@ public:
 class EffectPluginFactory
 {
 public:
-    using group_list = std::vector<KeyDatabase::KeyGroup>;
+    using group_list = std::vector<device::KeyDatabase::KeyGroup>;
 public:
     virtual                 ~EffectPluginFactory();
 

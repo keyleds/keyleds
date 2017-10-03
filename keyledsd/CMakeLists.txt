@@ -43,11 +43,11 @@ include_directories("${PROJECT_BINARY_DIR}" "include")
 # List of sources
 set(keyledsd_SRCS
     src/keyledsd/device/Device.cxx
-    src/keyledsd/device/DeviceManager.cxx
     src/keyledsd/device/KeyDatabase.cxx
     src/keyledsd/device/LayoutDescription.cxx
     src/keyledsd/device/RenderLoop.cxx
     src/keyledsd/Configuration.cxx
+    src/keyledsd/DeviceManager.cxx
     src/keyledsd/DisplayManager.cxx
     src/keyledsd/PluginManager.cxx
     src/keyledsd/Service.cxx
@@ -113,7 +113,7 @@ include_directories(${Qt5Core_INCLUDE_DIRS})
 set(keyledsd_DEPS ${keyledsd_DEPS} Qt5Core)
 qt5_wrap_cpp(moc_sources
     include/keyledsd/device/Device.h
-    include/keyledsd/device/DeviceManager.h
+    include/keyledsd/DeviceManager.h
     include/keyledsd/DisplayManager.h
     include/keyledsd/Service.h
     include/tools/DeviceWatcher.h

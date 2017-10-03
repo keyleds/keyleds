@@ -35,7 +35,7 @@ namespace std {
     };
 };
 
-namespace keyleds {
+namespace keyleds { namespace device {
 
 /****************************************************************************/
 
@@ -155,16 +155,16 @@ private:
  * A device::FilteredDeviceWatcher that further filters detected devices to only
  * let Logitech devices through.
  */
-class DeviceWatcher : public device::FilteredDeviceWatcher
+class DeviceWatcher : public ::device::FilteredDeviceWatcher
 {
     Q_OBJECT
 public:
             DeviceWatcher(struct udev * udev = nullptr, QObject *parent = nullptr);
-    bool    isVisible(const device::Description & dev) const override;
+    bool    isVisible(const ::device::Description & dev) const override;
 };
 
 /****************************************************************************/
 
-};
+} } // namespace keyleds::device
 
 #endif

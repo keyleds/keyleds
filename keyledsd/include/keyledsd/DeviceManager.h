@@ -32,8 +32,6 @@ namespace device { class Description; }
 
 namespace keyleds {
 
-class LayoutDescription;
-
 /** Main device manager
  *
  * Centralizes all operations and information for a specific device.
@@ -44,7 +42,10 @@ class LayoutDescription;
 class DeviceManager final : public QObject
 {
     Q_OBJECT
+    using Device = device::Device;
     using FileWatcher = tools::FileWatcher;
+    using KeyDatabase = device::KeyDatabase;
+    using RenderLoop = device::RenderLoop;
     using string_map = std::vector<std::pair<std::string, std::string>>;
 private:
     /** An effect, fully loaded with plugins
@@ -62,7 +63,7 @@ private:
         LoadedEffect &      operator=(LoadedEffect &&) = default;
 
         const std::string & name() const noexcept { return m_name; }
-        RenderLoop::effect_plugin_list plugins() const;
+        RenderLoop::renderer_list plugins() const;
     private:
         std::string m_name;
         plugin_list m_plugins;
@@ -72,8 +73,8 @@ private:
 public:
     using dev_list = std::vector<std::string>;
 public:
-                            DeviceManager(tools::FileWatcher &,
-                                          const device::Description &,
+                            DeviceManager(FileWatcher &,
+                                          const ::device::Description &,
                                           Device &&,
                                           const Configuration *,
                                           QObject *parent = nullptr);
@@ -86,7 +87,7 @@ public:
     const Device &          device() const { return m_device; }
     const KeyDatabase &     keyDB() const { return m_keyDB; }
 
-    RenderTarget            getRenderTarget() const { return RenderLoop::renderTargetFor(m_device); }
+    auto                    getRenderTarget() const { return RenderLoop::renderTargetFor(m_device); }
 
           bool              paused() const { return m_renderLoop.paused(); }
 
@@ -100,15 +101,12 @@ public:
 
 private:
     // Static loaders, invoked once at manager creation to set it up
-    static std::string      getSerial(const device::Description &);
+    static std::string      getSerial(const ::device::Description &);
     static std::string      getName(const Configuration &, const std::string & serial);
-    static dev_list         findEventDevices(const device::Description &);
-    static std::string      layoutName(const Device &);
-    static LayoutDescription loadLayoutDescription(const Configuration &, const Device &);
-    static KeyDatabase      buildKeyDB(const Device &);
+    static dev_list         findEventDevices(const ::device::Description &);
 
     /// Loads the list of effects to activate for the given context
-    RenderLoop::effect_plugin_list loadEffects(const string_map & context);
+    RenderLoop::renderer_list loadEffects(const string_map & context);
 
     /// Instanciates an effect, combining its configuration with this device's info
     LoadedEffect &          getEffect(const Configuration::Effect &);

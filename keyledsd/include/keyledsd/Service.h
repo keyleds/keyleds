@@ -42,6 +42,8 @@ class DisplayManager;
 class Service final : public QObject
 {
     Q_OBJECT
+    using Device = device::Device;
+    using DeviceWatcher = device::DeviceWatcher;
     using FileWatcher = tools::FileWatcher;
     using string_map = std::vector<std::pair<std::string, std::string>>;
 public:
@@ -76,8 +78,8 @@ signals:
 private:
     // Events from watchers
     void                onConfigurationFileChanged(FileWatcher::event);
-    void                onDeviceAdded(const device::Description &);
-    void                onDeviceRemoved(const device::Description &);
+    void                onDeviceAdded(const ::device::Description &);
+    void                onDeviceRemoved(const ::device::Description &);
     void                onDisplayAdded(std::unique_ptr<xlib::Display> &);
     void                onDisplayRemoved();
 private:

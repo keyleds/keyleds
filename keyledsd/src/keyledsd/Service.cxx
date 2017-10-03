@@ -21,7 +21,7 @@
 #include <functional>
 #include <sstream>
 #include "keyledsd/device/Device.h"
-#include "keyledsd/device/DeviceManager.h"
+#include "keyledsd/DeviceManager.h"
 #include "keyledsd/Configuration.h"
 #include "keyledsd/DisplayManager.h"
 #include "tools/XWindow.h"
@@ -193,7 +193,7 @@ void Service::onConfigurationFileChanged(FileWatcher::event event)
     }
 }
 
-void Service::onDeviceAdded(const device::Description & description)
+void Service::onDeviceAdded(const ::device::Description & description)
 {
     VERBOSE("device added: ", description.devNode());
     try {
@@ -226,7 +226,7 @@ void Service::onDeviceAdded(const device::Description & description)
     }
 }
 
-void Service::onDeviceRemoved(const device::Description & description)
+void Service::onDeviceRemoved(const ::device::Description & description)
 {
     auto it = std::find_if(m_devices.begin(), m_devices.end(),
                            [&description](const auto & device) {

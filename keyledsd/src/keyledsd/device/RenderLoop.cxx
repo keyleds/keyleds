@@ -34,8 +34,9 @@ static_assert(sizeof(keyleds::RGBAColor) == 4, "RGBAColor must be tightly packed
 
 LOGGING("render-loop");
 
-using keyleds::RenderTarget;
-using keyleds::RenderLoop;
+using keyleds::device::RenderTarget;
+using keyleds::device::Renderer;
+using keyleds::device::RenderLoop;
 
 /// Returns the given value, aligned to upper bound of given aligment
 static std::size_t align(std::size_t value, std::size_t alignment)
@@ -78,14 +79,14 @@ RenderTarget::~RenderTarget()
     free(m_colors);
 }
 
-void keyleds::swap(RenderTarget & lhs, RenderTarget & rhs) noexcept
+void keyleds::device::swap(RenderTarget & lhs, RenderTarget & rhs) noexcept
 {
     using std::swap;
     swap(lhs.m_colors, rhs.m_colors);
     swap(lhs.m_nbColors, rhs.m_nbColors);
 }
 
-void keyleds::blend(RenderTarget & lhs, const RenderTarget & rhs)
+void keyleds::device::blend(RenderTarget & lhs, const RenderTarget & rhs)
 {
     assert(lhs.size() == rhs.size());
     tools::accelerated::blend(
@@ -93,6 +94,11 @@ void keyleds::blend(RenderTarget & lhs, const RenderTarget & rhs)
         reinterpret_cast<const uint8_t*>(rhs.data()), rhs.size()
     );
 }
+
+/****************************************************************************/
+
+Renderer::~Renderer()
+ {}
 
 /****************************************************************************/
 
@@ -115,7 +121,7 @@ RenderLoop::~RenderLoop()
 
 std::unique_lock<std::mutex> RenderLoop::lock()
 {
-    return std::unique_lock<std::mutex>(m_mEffects);
+    return std::unique_lock<std::mutex>(m_mRenderers);
 }
 
 RenderTarget RenderLoop::renderTargetFor(const Device & device)
@@ -129,16 +135,16 @@ RenderTarget RenderLoop::renderTargetFor(const Device & device)
 bool RenderLoop::render(unsigned long nanosec)
 {
     // Run all renderers
-    bool hasEffects;
+    bool hasRenderers;
     {
-        std::lock_guard<std::mutex> lock(m_mEffects);
-        hasEffects = !m_effects.empty();
-        for (const auto & effect : m_effects) {
+        std::lock_guard<std::mutex> lock(m_mRenderers);
+        hasRenderers = !m_renderers.empty();
+        for (const auto & effect : m_renderers) {
             effect->render(nanosec, m_buffer);
         }
     }
 
-    if (hasEffects) {
+    if (hasRenderers) {
         m_device.flush();   // Ensure another program using the device did not fill
                             // The inbound report queue.
 

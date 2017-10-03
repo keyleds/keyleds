@@ -25,7 +25,7 @@ using keyleds::EffectPluginManager;
 EffectPlugin::~EffectPlugin() {}
 void EffectPlugin::handleContextChange(const string_map &) {}
 void EffectPlugin::handleGenericEvent(const string_map &) {}
-void EffectPlugin::handleKeyEvent(const KeyDatabase::Key &, bool) {}
+void EffectPlugin::handleKeyEvent(const device::KeyDatabase::Key &, bool) {}
 
 EffectPluginFactory::~EffectPluginFactory() {}
 

@@ -18,20 +18,15 @@
 #include <cmath>
 #include <cstddef>
 #include <string>
-#include "keyledsd/device/DeviceManager.h"
-#include "keyledsd/device/KeyDatabase.h"
-#include "keyledsd/device/RenderLoop.h"
 #include "keyledsd/Configuration.h"
+#include "keyledsd/DeviceManager.h"
 #include "keyledsd/PluginManager.h"
 #include "keyledsd/colors.h"
 #include "logging.h"
 
 LOGGING("plugin-wave");
 
-using KeyDatabase = keyleds::KeyDatabase;
-using KeyGroup = keyleds::KeyDatabase::KeyGroup;
 using keyleds::RGBAColor;
-using keyleds::RenderTarget;
 
 static constexpr float pi = 3.14159265358979f;
 static constexpr int accuracy = 1024;
@@ -43,6 +38,7 @@ static_assert(accuracy && ((accuracy & (accuracy - 1)) == 0),
 
 class WavePlugin final : public keyleds::EffectPlugin
 {
+    using KeyGroup = KeyDatabase::KeyGroup;
 public:
     WavePlugin(const keyleds::DeviceManager & manager,
                const keyleds::Configuration::Plugin & conf,

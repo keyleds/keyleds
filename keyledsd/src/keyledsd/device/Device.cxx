@@ -29,8 +29,8 @@
 
 LOGGING("device");
 
-using keyleds::Device;
-using keyleds::DeviceWatcher;
+using keyleds::device::Device;
+using keyleds::device::DeviceWatcher;
 
 namespace std {
     void default_delete<struct keyleds_device>::operator()(struct keyleds_device *p) const {
@@ -289,7 +289,7 @@ DeviceWatcher::DeviceWatcher(struct udev * udev, QObject *parent)
     setSubsystem("hidraw");
 }
 
-bool DeviceWatcher::isVisible(const device::Description & dev) const
+bool DeviceWatcher::isVisible(const ::device::Description & dev) const
 {
     // Filter interface protocol
     const auto & iface = dev.parentWithType("usb", "usb_interface");

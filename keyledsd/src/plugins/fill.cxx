@@ -16,31 +16,30 @@
  */
 #include <algorithm>
 #include <vector>
-#include "keyledsd/device/KeyDatabase.h"
-#include "keyledsd/device/RenderLoop.h"
 #include "keyledsd/Configuration.h"
 #include "keyledsd/PluginManager.h"
 #include "keyledsd/colors.h"
 
-using KeyGroup = keyleds::KeyDatabase::KeyGroup;
 using keyleds::RGBAColor;
 
-class Rule final
-{
-public:
-                        Rule(KeyGroup keys, RGBAColor color)
-                         : m_keys(std::move(keys)), m_color(color) {}
-    const KeyGroup &    keys() const { return m_keys; }
-    const RGBAColor &   color() const { return m_color; }
-private:
-    KeyGroup            m_keys;
-    RGBAColor           m_color;
-};
-
-
+/****************************************************************************/
 
 class FillPlugin final : public keyleds::EffectPlugin
 {
+    using KeyGroup = KeyDatabase::KeyGroup;
+
+    class Rule final
+    {
+    public:
+                            Rule(KeyGroup keys, RGBAColor color)
+                            : m_keys(std::move(keys)), m_color(color) {}
+        const KeyGroup &    keys() const { return m_keys; }
+        const RGBAColor &   color() const { return m_color; }
+    private:
+        KeyGroup            m_keys;
+        RGBAColor           m_color;
+    };
+
 public:
     FillPlugin(const keyleds::DeviceManager &,
                const keyleds::Configuration::Plugin & conf,
@@ -61,7 +60,7 @@ public:
         }
     }
 
-    void render(unsigned long, keyleds::RenderTarget & target) override
+    void render(unsigned long, RenderTarget & target) override
     {
         if (m_fill.alpha > 0) {
             std::fill(target.begin(), target.end(), m_fill);

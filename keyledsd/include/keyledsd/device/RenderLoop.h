@@ -29,6 +29,8 @@ namespace keyleds {
 
 class EffectPlugin;
 
+namespace device {
+
 /****************************************************************************/
 
 /** Rendering buffer for key colors
@@ -84,6 +86,25 @@ void blend(RenderTarget &, const RenderTarget &);
 
 /****************************************************************************/
 
+/** Renderer interface
+ *
+ * The interface an object must expose should it want to draw within a
+ * RenderLoop
+ */
+class Renderer
+{
+protected:
+    using RenderTarget = RenderTarget;
+public:
+    /// Modifies the target to reflect effect's display once the specified time has elapsed
+    virtual void    render(unsigned long nanosec, RenderTarget & target) = 0;
+protected:
+    // Protect the destructor so we can leave it non-virtual
+    ~Renderer();
+};
+
+/****************************************************************************/
+
 /** Device render loop
  *
  * An AnimationLoop that runs a set of Renderers and sends the resulting
@@ -94,20 +115,20 @@ void blend(RenderTarget &, const RenderTarget &);
 class RenderLoop final : public tools::AnimationLoop
 {
 public:
-    using effect_plugin_list = std::vector<EffectPlugin *>;
+    using renderer_list = std::vector<Renderer *>;
 public:
                     RenderLoop(Device &, unsigned fps);
                     ~RenderLoop() override;
 
-    /// Returns a lock that bars the render loop from using effects while it is held
-    /// Holding it is mandatory for modifying any effect or the list itself
+    /// Returns a lock that bars the render loop from using renderers while it is held
+    /// Holding it is mandatory for modifying any renderer or the list itself
     std::unique_lock<std::mutex>    lock();
 
-    /// Effect list accessor. When using it to modify effects, a lock must be held.
+    /// Renderer list accessor. When using it to modify renderers, a lock must be held.
     /// The list only holds pointers, which must be valid as long as they remain
     /// in the list. RenderLoop will not destroy them or interact in any way but
     /// calling their render method.
-    effect_plugin_list &            effects() { return m_effects; }
+    renderer_list &                 renderers() { return m_renderers; }
 
     /// Creates a new render target matching the layout of given device
     static RenderTarget renderTargetFor(const Device &);
@@ -121,8 +142,8 @@ private:
 
 private:
     Device &            m_device;               ///< The device to render to
-    effect_plugin_list  m_effects;              ///< Current list of effect plugins (unowned)
-    std::mutex          m_mEffects;             ///< Controls access to m_effects
+    renderer_list       m_renderers;            ///< Current list of renderers (unowned)
+    std::mutex          m_mRenderers;           ///< Controls access to m_renderers
 
     RenderTarget        m_state;                ///< Current state of the device
     RenderTarget        m_buffer;               ///< Buffer to render into, avoids re-creating it
@@ -133,6 +154,6 @@ private:
 
 /****************************************************************************/
 
-};
+} } // namespace keyleds::device
 
 #endif

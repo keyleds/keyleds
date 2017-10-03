@@ -15,15 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <vector>
-#include "keyledsd/device/DeviceManager.h"
-#include "keyledsd/device/KeyDatabase.h"
-#include "keyledsd/device/RenderLoop.h"
 #include "keyledsd/Configuration.h"
+#include "keyledsd/DeviceManager.h"
 #include "keyledsd/PluginManager.h"
 #include "keyledsd/colors.h"
 
-using keyleds::KeyDatabase;
-using keyleds::RenderTarget;
 using keyleds::RGBAColor;
 
 /****************************************************************************/
@@ -52,7 +48,7 @@ public:
         std::fill(m_buffer.begin(), m_buffer.end(), RGBAColor{0, 0, 0, 0});
     }
 
-    void render(unsigned long ms, keyleds::RenderTarget & target) override
+    void render(unsigned long ms, RenderTarget & target) override
     {
         for (auto & keyPress : m_presses) {
             keyPress.age += ms;

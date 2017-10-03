@@ -22,7 +22,9 @@
 #include <vector>
 #include "keyledsd/device/RenderLoop.h"
 
-namespace keyleds {
+namespace keyleds { namespace device {
+
+class Device;
 
 /****************************************************************************/
 
@@ -58,6 +60,9 @@ public:
                     KeyDatabase(key_list keys);
     explicit        KeyDatabase(const KeyDatabase &) = default;
                     KeyDatabase(KeyDatabase &&) = default;
+
+    static KeyDatabase build(const Device &);
+
 
     const_iterator  findIndex(RenderTarget::size_type) const;
     const_iterator  findKeyCode(int keyCode) const;
@@ -190,6 +195,6 @@ KeyDatabase::KeyGroup KeyDatabase::makeGroup(std::string name, It first, It last
 
 /****************************************************************************/
 
-}
+} } // namespace keyleds::device
 
 #endif

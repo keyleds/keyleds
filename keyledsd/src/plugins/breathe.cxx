@@ -17,20 +17,19 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
-#include "keyledsd/device/DeviceManager.h"
-#include "keyledsd/device/KeyDatabase.h"
-#include "keyledsd/device/RenderLoop.h"
 #include "keyledsd/Configuration.h"
+#include "keyledsd/DeviceManager.h"
 #include "keyledsd/PluginManager.h"
 #include "keyledsd/colors.h"
 
-using KeyGroup = keyleds::KeyDatabase::KeyGroup;
 using keyleds::RGBAColor;
-using keyleds::RenderTarget;
 static constexpr float pi = 3.14159265358979f;
+
+/****************************************************************************/
 
 class BreathePlugin final : public keyleds::EffectPlugin
 {
+    using KeyGroup = KeyDatabase::KeyGroup;
 public:
     BreathePlugin(const keyleds::DeviceManager & manager,
                   const keyleds::Configuration::Plugin & conf,

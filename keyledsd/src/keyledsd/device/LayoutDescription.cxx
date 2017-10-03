@@ -31,7 +31,7 @@
 
 LOGGING("layout");
 
-using keyleds::LayoutDescription;
+using keyleds::device::LayoutDescription;
 
 /****************************************************************************/
 

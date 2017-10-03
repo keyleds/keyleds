@@ -17,23 +17,20 @@
 #include <algorithm>
 #include <random>
 #include <vector>
-#include "keyledsd/device/DeviceManager.h"
-#include "keyledsd/device/KeyDatabase.h"
-#include "keyledsd/device/RenderLoop.h"
 #include "keyledsd/Configuration.h"
+#include "keyledsd/DeviceManager.h"
 #include "keyledsd/PluginManager.h"
 #include "keyledsd/colors.h"
 
 using keyleds::DeviceManager;
-using keyleds::KeyDatabase;
-using KeyGroup = keyleds::KeyDatabase::KeyGroup;
-using keyleds::RenderTarget;
 using keyleds::RGBAColor;
 
 /****************************************************************************/
 
 class StarsPlugin final : public keyleds::EffectPlugin
 {
+    using KeyGroup = KeyDatabase::KeyGroup;
+
     struct Star
     {
         const KeyDatabase::Key *    key;

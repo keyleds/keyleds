@@ -22,7 +22,7 @@
 #include <string>
 #include <vector>
 
-namespace keyleds {
+namespace keyleds { namespace device {
 
 /****************************************************************************/
 
@@ -87,6 +87,6 @@ private:
 
 /****************************************************************************/
 
-};
+} } // namespace keyleds::device
 
 #endif
