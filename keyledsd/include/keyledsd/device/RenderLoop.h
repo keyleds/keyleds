@@ -25,11 +25,7 @@
 #include "keyledsd/colors.h"
 #include "tools/AnimationLoop.h"
 
-namespace keyleds {
-
-class EffectPlugin;
-
-namespace device {
+namespace keyleds { namespace device {
 
 /****************************************************************************/
 

@@ -27,7 +27,7 @@ using keyleds::RGBAColor;
 
 /****************************************************************************/
 
-class StarsPlugin final : public keyleds::EffectPlugin
+class StarsEffect final : public keyleds::Effect
 {
     using KeyGroup = KeyDatabase::KeyGroup;
 
@@ -39,8 +39,8 @@ class StarsPlugin final : public keyleds::EffectPlugin
     };
 
 public:
-    StarsPlugin(const keyleds::DeviceManager & manager,
-                const keyleds::Configuration::Plugin & conf,
+    StarsEffect(const keyleds::DeviceManager & manager,
+                const keyleds::Configuration::Effect & conf,
                 const keyleds::EffectPluginFactory::group_list groups)
      : m_manager(manager),
        m_buffer(manager.getRenderTarget()),
@@ -132,4 +132,4 @@ private:
     std::vector<Star>       m_stars;        ///< all the star objects
 };
 
-REGISTER_EFFECT_PLUGIN("stars", StarsPlugin)
+REGISTER_EFFECT_PLUGIN("stars", StarsEffect)

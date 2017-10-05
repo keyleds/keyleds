@@ -24,7 +24,7 @@ using keyleds::RGBAColor;
 
 /****************************************************************************/
 
-class FillPlugin final : public keyleds::EffectPlugin
+class FillEffect final : public keyleds::Effect
 {
     using KeyGroup = KeyDatabase::KeyGroup;
 
@@ -41,8 +41,8 @@ class FillPlugin final : public keyleds::EffectPlugin
     };
 
 public:
-    FillPlugin(const keyleds::DeviceManager &,
-               const keyleds::Configuration::Plugin & conf,
+    FillEffect(const keyleds::DeviceManager &,
+               const keyleds::Configuration::Effect & conf,
                const keyleds::EffectPluginFactory::group_list groups)
      : m_fill(0, 0, 0, 0)
     {
@@ -77,4 +77,4 @@ private:
     std::vector<Rule>   m_rules;        ///< each rule maps a key group to a color
 };
 
-REGISTER_EFFECT_PLUGIN("fill", FillPlugin)
+REGISTER_EFFECT_PLUGIN("fill", FillEffect)

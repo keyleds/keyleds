@@ -33,9 +33,9 @@ static constexpr char overlayProfileName[] = "__overlay__";
 
 /****************************************************************************/
 
-DeviceManager::LoadedEffect::LoadedEffect(std::string name, plugin_list && plugins)
+DeviceManager::EffectGroup::EffectGroup(std::string name, effect_list && effects)
  : m_name(std::move(name)),
-   m_plugins(std::move(plugins))
+   m_effects(std::move(effects))
 {}
 
 /****************************************************************************/
@@ -71,7 +71,7 @@ void DeviceManager::setConfiguration(const Configuration * conf)
     auto lock = m_renderLoop.lock();
 
     m_renderLoop.renderers().clear();
-    m_effects.clear();
+    m_effectGroups.clear();
 
     m_configuration = conf;
     m_name = getName(*conf, m_serial);
@@ -83,10 +83,10 @@ void DeviceManager::setContext(const string_map & context)
     auto effects = loadEffects(context);
     DEBUG("enabling ", effects.size(), " effects for loop ", &m_renderLoop);
 
-    // Notify newly-active plugins of context change
+    // Notify newly-active effects of context change
     auto lock = m_renderLoop.lock();
     for (auto * effect : effects) {
-        static_cast<EffectPlugin *>(effect)->handleContextChange(context);
+        static_cast<Effect *>(effect)->handleContextChange(context);
     }
     m_renderLoop.renderers() = std::move(effects);
 }
@@ -101,7 +101,7 @@ void DeviceManager::handleGenericEvent(const string_map & context)
 {
     auto lock = m_renderLoop.lock();
     for (auto * effect : m_renderLoop.renderers()) {
-        static_cast<EffectPlugin *>(effect)->handleGenericEvent(context);
+        static_cast<Effect *>(effect)->handleGenericEvent(context);
     }
 }
 
@@ -114,10 +114,10 @@ void DeviceManager::handleKeyEvent(int keyCode, bool press)
         return;
     }
 
-    // Pass event to active effect plugins
+    // Pass event to active effects
     auto lock = m_renderLoop.lock();
     for (const auto & effect : m_renderLoop.renderers()) {
-        static_cast<EffectPlugin *>(effect)->handleKeyEvent(*it, press);
+        static_cast<Effect *>(effect)->handleKeyEvent(*it, press);
     }
     DEBUG("key ", it->name, " ", press ? "pressed" : "released", " on device ", m_serial);
 }
@@ -193,82 +193,82 @@ keyleds::device::RenderLoop::renderer_list DeviceManager::loadEffects(const stri
     VERBOSE("selected profile <", profile->name(), ">");
 
     // Collect effect names from selected profile and resolve them
-    std::vector<const Configuration::Effect *> effects;
+    std::vector<const Configuration::EffectGroup *> effectGroups;
 
-    for (const auto & name : profile->effects()) {
-        auto eit = std::find_if(m_configuration->effects().begin(), m_configuration->effects().end(),
-                                [&name](auto & effect) { return effect.name() == name; });
-        if (eit == m_configuration->effects().end()) {
-            ERROR("profile <", profile->name(), "> references unknown effect <", name, ">");
+    for (const auto & name : profile->effectGroups()) {
+        auto eit = std::find_if(m_configuration->effectGroups().begin(),
+                                m_configuration->effectGroups().end(),
+                                [&name](auto & group) { return group.name() == name; });
+        if (eit == m_configuration->effectGroups().end()) {
+            ERROR("profile <", profile->name(), "> references unknown effect group <", name, ">");
             continue;
         }
-        effects.push_back(&*eit);
+        effectGroups.push_back(&*eit);
     }
     if (overlayProfile != nullptr) {
-        for (const auto & name : overlayProfile->effects()) {
-            auto eit = std::find_if(m_configuration->effects().begin(), m_configuration->effects().end(),
-                                    [&name](auto & effect) { return effect.name() == name; });
-            if (eit == m_configuration->effects().end()) {
-                ERROR("profile <", profile->name(), "> references unknown effect <", name, ">");
+        for (const auto & name : overlayProfile->effectGroups()) {
+            auto eit = std::find_if(m_configuration->effectGroups().begin(),
+                                    m_configuration->effectGroups().end(),
+                                    [&name](auto & group) { return group.name() == name; });
+            if (eit == m_configuration->effectGroups().end()) {
+                ERROR("profile <", profile->name(), "> references unknown effect group <", name, ">");
                 continue;
             }
-            effects.push_back(&*eit);
+            effectGroups.push_back(&*eit);
         }
     }
 
-    RenderLoop::renderer_list plugins;
-    for (const auto & effect : effects) {
-        const auto & loadedEffect = getEffect(*effect);
-        const auto & effectPlugins = loadedEffect.plugins();
-        std::copy(effectPlugins.begin(),
-                  effectPlugins.end(),
-                  std::back_inserter(plugins));
+    RenderLoop::renderer_list renderers;
+    for (const auto & effectGroup : effectGroups) {
+        const auto & loadedEffectGroup = getEffectGroup(*effectGroup);
+        const auto & effects = loadedEffectGroup.effects();
+        std::copy(effects.begin(), effects.end(), std::back_inserter(renderers));
     }
-    return plugins;
+    return renderers;
 }
 
-DeviceManager::LoadedEffect & DeviceManager::getEffect(const Configuration::Effect & conf)
+DeviceManager::EffectGroup & DeviceManager::getEffectGroup(const Configuration::EffectGroup & conf)
 {
     auto eit = std::lower_bound(
-        m_effects.begin(), m_effects.end(), conf.name(),
-        [](const auto & effect, const auto & name) { return effect.name() < name; }
+        m_effectGroups.begin(), m_effectGroups.end(), conf.name(),
+        [](const auto & group, const auto & name) { return group.name() < name; }
     );
-    if (eit != m_effects.end() && eit->name() == conf.name()) { return *eit; }
+    if (eit != m_effectGroups.end() && eit->name() == conf.name()) { return *eit; }
 
-    // Load groups
-    EffectPluginFactory::group_list groups;
+    // Load key groups
+    EffectPluginFactory::group_list keyGroups;
 
     auto group_from_conf = [this](const auto & conf) {
-        return m_keyDB.makeGroup(conf.first, conf.second.begin(), conf.second.end());
+        return m_keyDB.makeGroup(conf.name(), conf.keys().begin(), conf.keys().end());
     };
-    std::transform(conf.groups().begin(), conf.groups().end(),
-                   std::back_inserter(groups), group_from_conf);
-    std::transform(m_configuration->groups().begin(), m_configuration->groups().end(),
-                   std::back_inserter(groups), group_from_conf);
+    std::transform(conf.keyGroups().begin(), conf.keyGroups().end(),
+                   std::back_inserter(keyGroups), group_from_conf);
+    std::transform(m_configuration->keyGroups().begin(), m_configuration->keyGroups().end(),
+                   std::back_inserter(keyGroups), group_from_conf);
 
     // Load effects
     auto & manager = EffectPluginManager::instance();
-    LoadedEffect::plugin_list plugins;
-    for (const auto & pluginConf : conf.plugins()) {
-        auto plugin = manager.get(pluginConf.name());
+    EffectGroup::effect_list effects;
+    for (const auto & effectConf : conf.effects()) {
+        auto plugin = manager.get(effectConf.name());
         if (!plugin) {
-            ERROR("plugin ", pluginConf.name(), " not found");
+            ERROR("plugin ", effectConf.name(), " not found");
             continue;
         }
-        VERBOSE("loaded plugin ", pluginConf.name());
-        plugins.emplace_back(plugin->createEffect(*this, pluginConf, groups));
+        VERBOSE("loaded plugin ", effectConf.name());
+        effects.emplace_back(plugin->createEffect(*this, effectConf, keyGroups));
     }
 
-    eit = m_effects.emplace(eit, conf.name(), std::move(plugins));
+    eit = m_effectGroups.emplace(eit, conf.name(), std::move(effects));
     return *eit;
 }
 
-keyleds::device::RenderLoop::renderer_list DeviceManager::LoadedEffect::plugins() const
+keyleds::device::RenderLoop::renderer_list DeviceManager::EffectGroup::effects() const
 {
     RenderLoop::renderer_list result;
-    result.reserve(m_plugins.size());
-    std::transform(m_plugins.begin(),
-                   m_plugins.end(),
+    result.reserve(m_effects.size());
+    std::transform(m_effects.begin(),
+                   m_effects.end(),
                    std::back_inserter(result),
                    [](auto & ptr) { return static_cast<device::Renderer *>(ptr.get()); });
     return result;

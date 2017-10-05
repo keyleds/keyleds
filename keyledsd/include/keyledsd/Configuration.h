@@ -33,71 +33,86 @@ namespace keyleds {
 class Configuration final
 {
 public:
+    class EffectGroup;
     class Effect;
-    class Plugin;
+    class KeyGroup;
     class Profile;
-
-    using key_list = std::vector<std::string>;
 
     using path_list = std::vector<std::string>;
     using device_map = std::vector<std::pair<std::string, std::string>>;
-    using group_map = std::vector<std::pair<std::string, key_list>>;
-    using effect_list = std::vector<Effect>;
+    using key_group_list = std::vector<KeyGroup>;
+    using effect_group_list = std::vector<EffectGroup>;
     using profile_list = std::vector<Profile>;
 private:
-                        Configuration(std::string path,
-                                      path_list pluginPaths,
-                                      path_list layoutPaths,
-                                      device_map devices,
-                                      group_map groups,
-                                      effect_list effects,
-                                      profile_list profiles);
+                            Configuration(std::string path,
+                                          path_list pluginPaths,
+                                          device_map devices,
+                                          key_group_list groups,
+                                          effect_group_list effectGroups,
+                                          profile_list profiles);
 public:
-                        Configuration() = default;
+                            Configuration() = default;
 
-    const std::string & path() const { return m_path; }
-    const path_list &   pluginPaths() const { return m_pluginPaths; }
-    const path_list &   layoutPaths() const { return m_layoutPaths; }
-    const device_map &  devices() const { return m_devices; }
-    const group_map &   groups() const { return m_groups; }
-    const effect_list & effects() const { return m_effects; }
-    const profile_list& profiles() const { return m_profiles; }
+    const std::string &     path() const { return m_path; }
+    const path_list &       pluginPaths() const { return m_pluginPaths; }
+    const device_map &      devices() const { return m_devices; }
+    const key_group_list &  keyGroups() const { return m_keyGroups; }
+    const effect_group_list & effectGroups() const { return m_effectGroups; }
+    const profile_list&     profiles() const { return m_profiles; }
 
 public:
-    static Configuration loadFile(const std::string & path);
+    static Configuration    loadFile(const std::string & path);
 
 private:
-    std::string         m_path;         ///< Configuration file path, if loaded from disk
-    path_list           m_pluginPaths;  ///< List of directories to search for plugins
-    path_list           m_layoutPaths;  ///< List of directories to search for layout files
-    device_map          m_devices;      ///< Map of device serials to device names
-    group_map           m_groups;       ///< Map of key group names to lists of key names
-    effect_list         m_effects;      ///< Map of effect names to effect configurations
-    profile_list        m_profiles;     ///< List of profile configurations
+    std::string             m_path;         ///< Configuration file path, if loaded from disk
+    path_list               m_pluginPaths;  ///< List of directories to search for plugins
+    device_map              m_devices;      ///< Map of device serials to device names
+    key_group_list          m_keyGroups;    ///< Map of key group names to lists of key names
+    effect_group_list       m_effectGroups; ///< Map of effect group names to configurations
+    profile_list            m_profiles;     ///< List of profile configurations
 };
 
 /****************************************************************************/
 
-/** Effect configuration
+/** EffectGroup configuration
  */
-class Configuration::Effect final
+class Configuration::EffectGroup final
 {
 public:
-    using group_map = Configuration::group_map;
-    using plugin_list = std::vector<Plugin>;
+    using key_group_list = Configuration::key_group_list;
+    using effect_list = std::vector<Effect>;
 public:
-                        Effect(std::string name,
-                               group_map groups,
-                               plugin_list plugins);
+                            EffectGroup(std::string name,
+                                        key_group_list keyGroups,
+                                        effect_list effects);
 
-    const std::string & name() const { return m_name; }
-    const group_map &   groups() const { return m_groups; }
-    const plugin_list & plugins() const { return m_plugins; }
+    const std::string &     name() const { return m_name; }
+    const key_group_list &  keyGroups() const { return m_keyGroups; }
+    const effect_list &     effects() const { return m_effects; }
 
 private:
-    std::string         m_name;         ///< User-readable name
-    group_map           m_groups;       ///< Map of key group names to lists of key names
-    plugin_list         m_plugins;      ///< List of plugin configurations for this effect
+    std::string             m_name;         ///< User-readable name
+    key_group_list          m_keyGroups;    ///< Map of key group names to lists of key names
+    effect_list             m_effects;      ///< List of effect configurations for this group
+};
+
+/****************************************************************************/
+
+/** KeyGroup configuration
+ */
+class Configuration::KeyGroup final
+{
+public:
+    using key_list = std::vector<std::string>;
+public:
+                            KeyGroup(std::string name, key_list keys);
+
+    const std::string &     name() const { return m_name; }
+    const key_list &        keys() const { return m_keys; }
+
+private:
+    std::string             m_name;         ///< User-readable name
+    key_list                m_keys;         ///< List of key names
 };
 
 /****************************************************************************/
@@ -106,7 +121,7 @@ private:
  *
  * Holds the configuration of a single keyboard profile. A profile defines
  * a set of conditions that can be used to match a, and a set of
- * effects to apply when a context matches. The set of conditions is known
+ * effect groups to apply when a context matches. The set of conditions is known
  * as a Lookup.
  */
 class Configuration::Profile final
@@ -135,44 +150,44 @@ public:
     };
 
     using device_list = std::vector<std::string>;
-    using effect_list = std::vector<std::string>;
+    using effect_group_list = std::vector<std::string>;
 public:
                         Profile(std::string name,
                                 Lookup lookup,
                                 device_list devices,
-                                effect_list effects);
+                                effect_group_list effectGroups);
 
-    const std::string & name() const { return m_name; }
-    const Lookup &      lookup() const { return m_lookup; }
-    const device_list & devices() const { return m_devices; }
-    const effect_list & effects() const { return m_effects; }
+    const std::string &     name() const { return m_name; }
+    const Lookup &          lookup() const { return m_lookup; }
+    const device_list &     devices() const { return m_devices; }
+    const effect_group_list & effectGroups() const { return m_effectGroups; }
 
 private:
-    std::string         m_name;         ///< User-readable name
-    Lookup              m_lookup;       ///< Matched against a context to determine whether to apply the profile
-    device_list         m_devices;      ///< List of device names this profile is restricted to
-    effect_list         m_effects;      ///< List of effect names this profile activates
+    std::string             m_name;         ///< User-readable name
+    Lookup                  m_lookup;       ///< Determines when to apply the profile
+    device_list             m_devices;      ///< List of device names this profile is restricted to
+    effect_group_list       m_effectGroups; ///< List of effect group names this profile activates
 };
 
 /****************************************************************************/
 
-/** Plugin configuration
+/** Effect configuration
  *
- * Holds the configuration of a single rendering plugin. It is a simple string
- * map, and a plugin name used to look it up in the plugin manager.
+ * Holds the configuration of a single rendering effect. It is a simple string
+ * map, and a effect name used to look it up in the effect manager.
  */
-class Configuration::Plugin final
+class Configuration::Effect final
 {
 public:
     using conf_map = std::vector<std::pair<std::string, std::string>>;
 public:
-                        Plugin(std::string name, conf_map items);
+                        Effect(std::string name, conf_map items);
     const std::string & name() const { return m_name; }
     const conf_map &    items() const { return m_items; }
     const std::string & operator[](const std::string &) const;
 private:
-    std::string         m_name;         ///< Plugin name as registered in plugin manager
-    conf_map            m_items;        ///< Flat string map passed through to plugin
+    std::string         m_name;         ///< Effect name as registered in effect manager
+    conf_map            m_items;        ///< Flat string map passed through to effect
 };
 
 };

@@ -24,7 +24,7 @@ using keyleds::RGBAColor;
 
 /****************************************************************************/
 
-class FeedbackPlugin final : public keyleds::EffectPlugin
+class FeedbackEffect final : public keyleds::Effect
 {
     struct KeyPress
     {
@@ -33,8 +33,8 @@ class FeedbackPlugin final : public keyleds::EffectPlugin
     };
 
 public:
-    FeedbackPlugin(const keyleds::DeviceManager & manager,
-                   const keyleds::Configuration::Plugin & conf,
+    FeedbackEffect(const keyleds::DeviceManager & manager,
+                   const keyleds::Configuration::Effect & conf,
                    const keyleds::EffectPluginFactory::group_list)
      : m_buffer(manager.getRenderTarget()),
        m_duration(3000)
@@ -85,4 +85,4 @@ private:
     std::vector<KeyPress> m_presses;    ///< list of recent keypresses still drawn
 };
 
-REGISTER_EFFECT_PLUGIN("feedback", FeedbackPlugin)
+REGISTER_EFFECT_PLUGIN("feedback", FeedbackEffect)

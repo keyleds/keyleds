@@ -27,12 +27,12 @@ static constexpr float pi = 3.14159265358979f;
 
 /****************************************************************************/
 
-class BreathePlugin final : public keyleds::EffectPlugin
+class BreateEffect final : public keyleds::Effect
 {
     using KeyGroup = KeyDatabase::KeyGroup;
 public:
-    BreathePlugin(const keyleds::DeviceManager & manager,
-                  const keyleds::Configuration::Plugin & conf,
+    BreateEffect(const keyleds::DeviceManager & manager,
+                  const keyleds::Configuration::Effect & conf,
                   const keyleds::EffectPluginFactory::group_list groups)
      : m_buffer(manager.getRenderTarget()),
        m_time(0), m_period(10000)
@@ -81,4 +81,4 @@ private:
     unsigned        m_period;       ///< total duration of a cycle in milliseconds
 };
 
-REGISTER_EFFECT_PLUGIN("breathe", BreathePlugin)
+REGISTER_EFFECT_PLUGIN("breathe", BreateEffect)

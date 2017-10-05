@@ -34,13 +34,13 @@ class DeviceManager;
  *
  * This interface is instanciated once per device, through the EffectPluginFactory
  */
-class EffectPlugin : public device::Renderer
+class Effect : public device::Renderer
 {
 protected:
     using KeyDatabase = device::KeyDatabase;
     using string_map = std::vector<std::pair<std::string, std::string>>;
 public:
-    virtual         ~EffectPlugin();
+    virtual         ~Effect();
 
     /// Invoked whenever the context of the service has changed while the plugin is active.
     /// Since plugins are loaded on context changes, this means this is always called
@@ -74,9 +74,9 @@ public:
     /// Builds an effect plugin instance for a specific device.
     /// Passed references are guaranteed to remain valid until after the
     /// EffectPlugin is destroyed.
-    virtual std::unique_ptr<EffectPlugin> createEffect(const DeviceManager &,
-                                                       const Configuration::Plugin &,
-                                                       const group_list) = 0;
+    virtual std::unique_ptr<Effect> createEffect(const DeviceManager &,
+                                                 const Configuration::Effect &,
+                                                 const group_list) = 0;
 };
 
 /****************************************************************************/
@@ -122,9 +122,9 @@ public:
     }
 
     const std::string & name() const noexcept override { return m_name; }
-    std::unique_ptr<EffectPlugin> createEffect(const DeviceManager & manager,
-                                               const Configuration::Plugin & conf,
-                                               const group_list groups) override
+    std::unique_ptr<Effect> createEffect(const DeviceManager & manager,
+                                         const Configuration::Effect & conf,
+                                         const group_list groups) override
     {
         return std::make_unique<T>(manager, conf, std::move(groups));
     }

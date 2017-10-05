@@ -36,12 +36,12 @@ static_assert(accuracy && ((accuracy & (accuracy - 1)) == 0),
 
 /****************************************************************************/
 
-class WavePlugin final : public keyleds::EffectPlugin
+class WaveEffect final : public keyleds::Effect
 {
     using KeyGroup = KeyDatabase::KeyGroup;
 public:
-    WavePlugin(const keyleds::DeviceManager & manager,
-               const keyleds::Configuration::Plugin & conf,
+    WaveEffect(const keyleds::DeviceManager & manager,
+               const keyleds::Configuration::Effect & conf,
                const keyleds::EffectPluginFactory::group_list groups)
      : m_buffer(manager.getRenderTarget()),
        m_time(0),
@@ -195,4 +195,4 @@ private:
     unsigned            m_direction;    ///< wave propagation direction, compass style (0 for North).
 };
 
-REGISTER_EFFECT_PLUGIN("wave", WavePlugin)
+REGISTER_EFFECT_PLUGIN("wave", WaveEffect)

@@ -57,8 +57,8 @@ public:
 
     void addScalarAlias(std::string anchor, std::string value);
     const std::string & getScalarAlias(const std::string & anchor);
-    void addGroupAlias(std::string anchor, Configuration::key_list);
-    const Configuration::key_list & getGroupAlias(std::string anchor);
+    void addGroupAlias(std::string anchor, Configuration::KeyGroup::key_list);
+    const Configuration::KeyGroup::key_list & getGroupAlias(std::string anchor);
 
     void streamStart() override {}
     void streamEnd() override {}
@@ -73,17 +73,16 @@ public:
 
     ParseError makeError(const std::string & what);
 public:
-    Configuration::path_list    m_pluginPaths;
-    Configuration::path_list    m_layoutPaths;
-    Configuration::device_map   m_devices;
-    Configuration::group_map    m_groups;
-    Configuration::effect_list  m_effects;
-    Configuration::profile_list m_profiles;
+    Configuration::path_list            m_pluginPaths;
+    Configuration::device_map           m_devices;
+    Configuration::key_group_list       m_keyGroups;
+    Configuration::effect_group_list    m_effectGroups;
+    Configuration::profile_list         m_profiles;
 
 private:
     std::stack<state_ptr, std::vector<state_ptr>>                m_state;
     std::vector<std::pair<std::string, std::string>>             m_scalarAliases;
-    std::vector<std::pair<std::string, Configuration::key_list>> m_groupAliases;
+    std::vector<std::pair<std::string, Configuration::KeyGroup::key_list>> m_groupAliases;
 };
 
 /****************************************************************************/
@@ -254,12 +253,12 @@ private:
 // Specific types for keyledsd configuration
 
 /// Configuration builder state: withing a key group list
-class GroupListState final : public MappingBuildState
+class KeyGroupListState final : public MappingBuildState
 {
 public:
-    using value_type = Configuration::group_map;
+    using value_type = Configuration::key_group_list;
 public:
-    GroupListState(state_type type) : MappingBuildState(type) {}
+    KeyGroupListState(state_type type) : MappingBuildState(type) {}
     void print(std::ostream & out) const override { out <<"group-list"; }
 
     state_ptr sequenceEntry(ConfigurationBuilder &, const std::string &,
@@ -276,10 +275,8 @@ public:
             std::transform(key.begin(), key.end(), key.begin(), ::toupper);
         }
 
+        if (!m_currentAnchor.empty()) { builder.addGroupAlias(m_currentAnchor, keys); }
         m_value.emplace_back(currentKey(), std::move(keys));
-        if (!m_currentAnchor.empty()) {
-            builder.addGroupAlias(m_currentAnchor, m_value.back().second);
-        }
         MappingBuildState::subStateEnd(builder, state);
     }
 
@@ -297,14 +294,14 @@ private:
 };
 
 
-/// Configuration builder state: within a profile's plugin list
-class PluginListState final : public ConfigurationBuilder::BuildState
+/// Configuration builder state: within an effect group's plugin list
+class EffectListState final : public ConfigurationBuilder::BuildState
 {
 public:
-    using value_type = Configuration::Effect::plugin_list;
+    using value_type = Configuration::EffectGroup::effect_list;
 public:
-    PluginListState(state_type type) : BuildState(type) {}
-    void print(std::ostream & out) const override { out <<"plugins-list"; }
+    EffectListState(state_type type) : BuildState(type) {}
+    void print(std::ostream & out) const override { out <<"plugin-list"; }
 
     state_ptr mappingStart(ConfigurationBuilder &, const std::string &) override
     {
@@ -315,7 +312,8 @@ public:
     {
         auto conf_map = state.as<StringMappingBuildState>().result();
         auto it_name = std::find_if(conf_map.cbegin(), conf_map.cend(),
-                                    [](auto & item) { return item.first == "plugin"; });
+                                    [](auto & item) { return item.first == "effect" ||
+                                                             item.first == "plugin"; });
         if (it_name == conf_map.end()) { throw builder.makeError("plugin configuration must have a name"); }
 
         auto name = it_name->second;
@@ -326,7 +324,7 @@ public:
 
     void scalar(ConfigurationBuilder &, const std::string & value, const std::string &) override
     {
-        m_value.emplace_back(Configuration::Plugin(value, Configuration::Plugin::conf_map()));
+        m_value.emplace_back(Configuration::Effect(value, Configuration::Effect::conf_map()));
     }
 
     value_type && result() { return std::move(m_value); }
@@ -336,75 +334,72 @@ private:
 };
 
 /// Configuration builder state: within an effect
-class EffectState final: public MappingBuildState
+class EffectGroupState final: public MappingBuildState
 {
-    enum SubState : state_type { GroupList, PluginList };
+    using EffectGroup = Configuration::EffectGroup;
+    enum SubState : state_type { KeyGroupList, EffectList };
 public:
-    EffectState(std::string name, state_type type = 0)
+    EffectGroupState(std::string name, state_type type = 0)
       : MappingBuildState(type), m_name(name) {}
     void print(std::ostream & out) const override { out <<"effect(" <<m_name <<')'; }
 
     state_ptr sequenceEntry(ConfigurationBuilder & builder, const std::string & key,
                             const std::string & anchor) override
     {
-        if (key == "plugins") { return std::make_unique<PluginListState>(SubState::PluginList); }
+        if (key == "plugins") { return std::make_unique<EffectListState>(SubState::EffectList); }
         return MappingBuildState::sequenceEntry(builder, key, anchor);
     }
 
     state_ptr mappingEntry(ConfigurationBuilder & builder, const std::string & key,
                            const std::string & anchor) override
     {
-        if (key == "groups") { return std::make_unique<GroupListState>(SubState::GroupList); }
+        if (key == "groups") { return std::make_unique<KeyGroupListState>(SubState::KeyGroupList); }
         return MappingBuildState::mappingEntry(builder, key, anchor);
     }
 
     void subStateEnd(ConfigurationBuilder & builder, BuildState & state) override
     {
         switch(state.type()) {
-            case SubState::GroupList: {
-                m_groups = state.as<GroupListState>().result();
+            case SubState::KeyGroupList: {
+                m_keyGroups = state.as<KeyGroupListState>().result();
                 break;
             }
-            case SubState::PluginList: {
-                m_plugins = state.as<PluginListState>().result();
+            case SubState::EffectList: {
+                m_effects = state.as<EffectListState>().result();
                 break;
             }
         }
         MappingBuildState::subStateEnd(builder, state);
     }
 
-    Configuration::Effect result()
+    EffectGroup result()
     {
-        return Configuration::Effect(
-            std::move(m_name),
-            std::move(m_groups),
-            std::move(m_plugins)
-        );
+        return {std::move(m_name), std::move(m_keyGroups), std::move(m_effects)};
     }
 
 private:
-    std::string                         m_name;
-    Configuration::Effect::group_map    m_groups;
-    Configuration::Effect::plugin_list  m_plugins;
+    std::string                 m_name;
+    EffectGroup::key_group_list m_keyGroups;
+    EffectGroup::effect_list    m_effects;
 };
 
 /// Configuration builder state: within an effect list
-class EffectListState final: public MappingBuildState
+class EffectGroupListState final: public MappingBuildState
 {
 public:
-    using value_type = Configuration::effect_list;
+    using value_type = Configuration::effect_group_list;
 public:
-    EffectListState(state_type type) : MappingBuildState(type) {}
+    EffectGroupListState(state_type type) : MappingBuildState(type) {}
     void print(std::ostream & out) const override { out <<"effect-map"; }
 
     state_ptr mappingEntry(ConfigurationBuilder &, const std::string & key, const std::string &) override
     {
-        return std::make_unique<EffectState>(key);
+        return std::make_unique<EffectGroupState>(key);
     }
 
     void subStateEnd(ConfigurationBuilder & builder, BuildState & state) override
     {
-        m_value.emplace_back(state.as<EffectState>().result());
+        m_value.emplace_back(state.as<EffectGroupState>().result());
         MappingBuildState::subStateEnd(builder, state);
     }
 
@@ -417,7 +412,8 @@ private:
 /// Configuration builder state: within a profile
 class ProfileState final: public MappingBuildState
 {
-    enum SubState : state_type { Lookup, DeviceList, EffectList };
+    using Profile = Configuration::Profile;
+    enum SubState : state_type { Lookup, DeviceList, EffectGroupList };
 public:
     ProfileState(std::string name, state_type type = 0)
       : MappingBuildState(type), m_name(name) {}
@@ -427,7 +423,7 @@ public:
                             const std::string & anchor) override
     {
         if (key == "devices") { return std::make_unique<StringSequenceBuildState>(SubState::DeviceList); }
-        if (key == "effects") { return std::make_unique<StringSequenceBuildState>(SubState::EffectList); }
+        if (key == "effects") { return std::make_unique<StringSequenceBuildState>(SubState::EffectGroupList); }
         return MappingBuildState::sequenceEntry(builder, key, anchor);
     }
 
@@ -446,7 +442,7 @@ public:
     void scalarEntry(ConfigurationBuilder & builder, const std::string & key,
                      const std::string & value, const std::string & anchor) override
     {
-        if (key == "effect")    { m_effects = { value }; return; }
+        if (key == "effect")    { m_effectGroups = { value }; return; }
         MappingBuildState::scalarEntry(builder, key, value, anchor);
     }
 
@@ -454,7 +450,7 @@ public:
     {
         switch(state.type()) {
             case SubState::Lookup: {
-                m_lookup = Configuration::Profile::Lookup(
+                m_lookup = Profile::Lookup(
                     state.as<StringMappingBuildState>().result()
                 );
                 break;
@@ -463,29 +459,25 @@ public:
                 m_devices = state.as<StringSequenceBuildState>().result();
                 break;
             }
-            case SubState::EffectList: {
-                m_effects = state.as<StringSequenceBuildState>().result();
+            case SubState::EffectGroupList: {
+                m_effectGroups = state.as<StringSequenceBuildState>().result();
                 break;
             }
         }
         MappingBuildState::subStateEnd(builder, state);
     }
 
-    Configuration::Profile result()
+    Profile result()
     {
-        return Configuration::Profile(
-            std::move(m_name),
-            std::move(m_lookup),
-            std::move(m_devices),
-            std::move(m_effects)
-        );
+        return {std::move(m_name), std::move(m_lookup),
+                std::move(m_devices), std::move(m_effectGroups)};
     }
 
 private:
-    std::string                         m_name;
-    Configuration::Profile::Lookup      m_lookup;
-    Configuration::Profile::device_list m_devices;
-    Configuration::Profile::effect_list m_effects;
+    std::string                 m_name;
+    Profile::Lookup             m_lookup;
+    Profile::device_list        m_devices;
+    Profile::effect_group_list  m_effectGroups;
 };
 
 /// Configuration builder state: within a profile list
@@ -518,7 +510,7 @@ private:
 /// Configuration builder state: at document root
 class RootState final : public MappingBuildState
 {
-    enum SubState : state_type { Plugins, Layouts, Devices, Groups, Effects, Profiles };
+    enum SubState : state_type { PluginPaths, Layouts, Devices, KeyGroups, EffectGroups, Profiles };
 public:
     RootState() : MappingBuildState(0) {}
     void print(std::ostream & out) const override { out <<"root"; }
@@ -526,8 +518,9 @@ public:
     state_ptr sequenceEntry(ConfigurationBuilder & builder, const std::string & key,
                            const std::string & anchor) override
     {
-        if (key == "layouts") { return std::make_unique<StringSequenceBuildState>(SubState::Layouts); }
-        if (key == "plugins") { return std::make_unique<StringSequenceBuildState>(SubState::Plugins); }
+        if (key == "plugins") {
+            return std::make_unique<StringSequenceBuildState>(SubState::PluginPaths);
+        }
         return MappingBuildState::sequenceEntry(builder, key, anchor);
     }
 
@@ -535,8 +528,8 @@ public:
                            const std::string & anchor) override
     {
         if (key == "devices")   { return std::make_unique<StringMappingBuildState>(SubState::Devices); }
-        if (key == "groups")    { return std::make_unique<GroupListState>(SubState::Groups); }
-        if (key == "effects")   { return std::make_unique<EffectListState>(SubState::Effects); }
+        if (key == "groups")    { return std::make_unique<KeyGroupListState>(SubState::KeyGroups); }
+        if (key == "effects")   { return std::make_unique<EffectGroupListState>(SubState::EffectGroups); }
         if (key == "profiles")  { return std::make_unique<ProfileListState>(SubState::Profiles); }
         return MappingBuildState::mappingEntry(builder, key, anchor);
     }
@@ -545,27 +538,23 @@ public:
                      const std::string & value, const std::string & anchor) override
     {
         if (key == "plugins")  { builder.m_pluginPaths = { value }; }
-        else if (key == "layouts")  { builder.m_layoutPaths = { value }; }
         else MappingBuildState::scalarEntry(builder, key, value, anchor);
     }
 
     void subStateEnd(ConfigurationBuilder & builder, BuildState & state) override
     {
         switch (state.type()) {
-        case SubState::Plugins:
+        case SubState::PluginPaths:
             builder.m_pluginPaths = state.as<StringSequenceBuildState>().result();
-            break;
-        case SubState::Layouts:
-            builder.m_layoutPaths = state.as<StringSequenceBuildState>().result();
             break;
         case SubState::Devices:
             builder.m_devices = state.as<StringMappingBuildState>().result();
             break;
-        case SubState::Groups:
-            builder.m_groups = state.as<GroupListState>().result();
+        case SubState::KeyGroups:
+            builder.m_keyGroups = state.as<KeyGroupListState>().result();
             break;
-        case SubState::Effects:
-            builder.m_effects = state.as<EffectListState>().result();
+        case SubState::EffectGroups:
+            builder.m_effectGroups = state.as<EffectGroupListState>().result();
             break;
         case SubState::Profiles:
             builder.m_profiles = state.as<ProfileListState>().result();
@@ -608,11 +597,11 @@ const std::string & ConfigurationBuilder::getScalarAlias(const std::string & anc
     return it->second;
 }
 
-void ConfigurationBuilder::addGroupAlias(std::string anchor, Configuration::key_list value) {
+void ConfigurationBuilder::addGroupAlias(std::string anchor, Configuration::KeyGroup::key_list value) {
     m_groupAliases.emplace_back(std::move(anchor), std::move(value));
 }
 
-const Configuration::key_list & ConfigurationBuilder::getGroupAlias(std::string anchor) {
+const Configuration::KeyGroup::key_list & ConfigurationBuilder::getGroupAlias(std::string anchor) {
     auto it = std::find_if(m_groupAliases.begin(), m_groupAliases.end(),
                            [anchor](const auto & alias) { return alias.first == anchor; });
     if (it == m_groupAliases.end()) {
@@ -668,17 +657,15 @@ ConfigurationBuilder::ParseError ConfigurationBuilder::makeError(const std::stri
 
 Configuration::Configuration(std::string path,
                              path_list pluginPaths,
-                             path_list layoutPaths,
                              device_map devices,
-                             group_map groups,
-                             effect_list effects,
+                             key_group_list keyGroups,
+                             effect_group_list effectGroups,
                              profile_list profiles)
  : m_path(std::move(path)),
    m_pluginPaths(std::move(pluginPaths)),
-   m_layoutPaths(std::move(layoutPaths)),
    m_devices(std::move(devices)),
-   m_groups(std::move(groups)),
-   m_effects(std::move(effects)),
+   m_keyGroups(std::move(keyGroups)),
+   m_effectGroups(std::move(effectGroups)),
    m_profiles(std::move(profiles))
 {}
 
@@ -702,22 +689,28 @@ Configuration Configuration::loadFile(const std::string & path)
     return Configuration(
         actualPath,
         std::move(builder.m_pluginPaths),
-        std::move(builder.m_layoutPaths),
         std::move(builder.m_devices),
-        std::move(builder.m_groups),
-        std::move(builder.m_effects),
+        std::move(builder.m_keyGroups),
+        std::move(builder.m_effectGroups),
         std::move(builder.m_profiles)
     );
 }
 
 /****************************************************************************/
 
-Configuration::Effect::Effect(std::string name,
-                              group_map groups,
-                              plugin_list plugins)
- : m_name(name),
-   m_groups(std::move(groups)),
-   m_plugins(std::move(plugins))
+Configuration::EffectGroup::EffectGroup(std::string name,
+                                        key_group_list keyGroups,
+                                        effect_list effects)
+ : m_name(std::move(name)),
+   m_keyGroups(std::move(keyGroups)),
+   m_effects(std::move(effects))
+{}
+
+/****************************************************************************/
+
+Configuration::KeyGroup::KeyGroup(std::string name, key_list keys)
+ : m_name(std::move(name)),
+   m_keys(std::move(keys))
 {}
 
 /****************************************************************************/
@@ -725,11 +718,11 @@ Configuration::Effect::Effect(std::string name,
 Configuration::Profile::Profile(std::string name,
                                 Lookup lookup,
                                 device_list devices,
-                                effect_list effects)
- : m_name(name),
+                                effect_group_list effectGroups)
+ : m_name(std::move(name)),
    m_lookup(std::move(lookup)),
    m_devices(std::move(devices)),
-   m_effects(std::move(effects))
+   m_effectGroups(std::move(effectGroups))
 {}
 
 /****************************************************************************/
@@ -773,11 +766,11 @@ Configuration::Profile::Lookup::buildRegexps(string_map filters)
 
 /****************************************************************************/
 
-Configuration::Plugin::Plugin(std::string name, conf_map items)
+Configuration::Effect::Effect(std::string name, conf_map items)
  : m_name(std::move(name)), m_items(std::move(items))
 {}
 
-const std::string & Configuration::Plugin::operator[](const std::string & key) const
+const std::string & Configuration::Effect::operator[](const std::string & key) const
 {
     static const std::string empty;
     auto it = std::find_if(m_items.begin(), m_items.end(),

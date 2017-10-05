@@ -32,6 +32,8 @@ namespace device { class Description; }
 
 namespace keyleds {
 
+class Effect;
+
 /** Main device manager
  *
  * Centralizes all operations and information for a specific device.
@@ -48,27 +50,27 @@ class DeviceManager final : public QObject
     using RenderLoop = device::RenderLoop;
     using string_map = std::vector<std::pair<std::string, std::string>>;
 private:
-    /** An effect, fully loaded with plugins
+    /** An effect group, fully loaded with effects
      *
-     * Holds a list of loaded effect plugins to include while rendering device status
+     * Holds a list of loaded effects to include while rendering device status
      * and the matching effect is enabled.
      */
-    class LoadedEffect final
+    class EffectGroup final
     {
     public:
-        using plugin_list = std::vector<std::unique_ptr<EffectPlugin>>;
+        using effect_list = std::vector<std::unique_ptr<Effect>>;
     public:
-                            LoadedEffect(std::string name, plugin_list && plugins);
-                            LoadedEffect(LoadedEffect &&) noexcept = default;
-        LoadedEffect &      operator=(LoadedEffect &&) = default;
+                            EffectGroup(std::string name, effect_list && effects);
+                            EffectGroup(EffectGroup &&) noexcept = default;
+        EffectGroup &       operator=(EffectGroup &&) = default;
 
         const std::string & name() const noexcept { return m_name; }
-        RenderLoop::renderer_list plugins() const;
+        RenderLoop::renderer_list effects() const;
     private:
-        std::string m_name;
-        plugin_list m_plugins;
+        std::string         m_name;
+        effect_list         m_effects;
     };
-    using effect_list = std::vector<LoadedEffect>;
+    using effect_group_list = std::vector<EffectGroup>;
 
 public:
     using dev_list = std::vector<std::string>;
@@ -109,7 +111,7 @@ private:
     RenderLoop::renderer_list loadEffects(const string_map & context);
 
     /// Instanciates an effect, combining its configuration with this device's info
-    LoadedEffect &          getEffect(const Configuration::Effect &);
+    EffectGroup &           getEffectGroup(const Configuration::EffectGroup &);
 
 private:
     const Configuration *   m_configuration;    ///< Reference to service configuration
@@ -123,7 +125,7 @@ private:
     FileWatcher::subscription m_fileWatcherSub; ///< Ensures we get notifications for devnode events
     const KeyDatabase       m_keyDB;            ///< Fully loaded key descriptions
 
-    effect_list             m_effects;          ///< Loaded effect instances
+    effect_group_list       m_effectGroups;     ///< Loaded effect group instances
     RenderLoop              m_renderLoop;       ///< The RenderLoop in charge of the device
 };
 

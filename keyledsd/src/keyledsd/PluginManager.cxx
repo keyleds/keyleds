@@ -18,14 +18,14 @@
 
 #include <algorithm>
 
-using keyleds::EffectPlugin;
+using keyleds::Effect;
 using keyleds::EffectPluginFactory;
 using keyleds::EffectPluginManager;
 
-EffectPlugin::~EffectPlugin() {}
-void EffectPlugin::handleContextChange(const string_map &) {}
-void EffectPlugin::handleGenericEvent(const string_map &) {}
-void EffectPlugin::handleKeyEvent(const device::KeyDatabase::Key &, bool) {}
+Effect::~Effect() {}
+void Effect::handleContextChange(const string_map &) {}
+void Effect::handleGenericEvent(const string_map &) {}
+void Effect::handleKeyEvent(const device::KeyDatabase::Key &, bool) {}
 
 EffectPluginFactory::~EffectPluginFactory() {}
 
