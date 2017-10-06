@@ -24,7 +24,6 @@
 #include <thread>
 #include <type_traits>
 #include "keyledsd/device/Device.h"
-#include "keyledsd/PluginManager.h"
 #include "tools/accelerated.h"
 #include "keyleds.h"
 #include "logging.h"
@@ -94,11 +93,6 @@ void keyleds::device::blend(RenderTarget & lhs, const RenderTarget & rhs)
         reinterpret_cast<const uint8_t*>(rhs.data()), rhs.size()
     );
 }
-
-/****************************************************************************/
-
-Renderer::~Renderer()
- {}
 
 /****************************************************************************/
 

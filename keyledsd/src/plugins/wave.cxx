@@ -18,13 +18,8 @@
 #include <cmath>
 #include <cstddef>
 #include <string>
-#include "keyledsd/Configuration.h"
-#include "keyledsd/DeviceManager.h"
-#include "keyledsd/PluginManager.h"
+#include "keyledsd/effect/PluginHelper.h"
 #include "keyledsd/colors.h"
-#include "logging.h"
-
-LOGGING("plugin-wave");
 
 using keyleds::RGBAColor;
 
@@ -36,31 +31,30 @@ static_assert(accuracy && ((accuracy & (accuracy - 1)) == 0),
 
 /****************************************************************************/
 
-class WaveEffect final : public keyleds::Effect
+class WaveEffect final : public plugin::Effect
 {
     using KeyGroup = KeyDatabase::KeyGroup;
 public:
-    WaveEffect(const keyleds::DeviceManager & manager,
-               const keyleds::Configuration::Effect & conf,
-               const keyleds::EffectPluginFactory::group_list groups)
-     : m_buffer(manager.getRenderTarget()),
+    WaveEffect(EffectService & service)
+     : m_buffer(service.createRenderTarget()),
+       m_keys(nullptr),
        m_time(0),
        m_period(10000),
        m_length(1000),
        m_direction(0)
     {
-        auto period = std::stoul(conf["period"]);
+        auto period = std::stoul(service.getConfig("period"));
         if (period > 0) { m_period = period; }
 
-        auto length = std::stoul(conf["length"]);
+        auto length = std::stoul(service.getConfig("length"));
         if (length > 0) { m_length = length; }
 
-        auto direction = std::stoul(conf["direction"]);
+        auto direction = std::stoul(service.getConfig("direction"));
         if (direction > 0) { m_direction = direction; }
 
         // Load color list
         std::vector<RGBAColor> colors;
-        for (const auto & item : conf.items()) {
+        for (const auto & item : service.configuration()) {
             if (item.first.rfind("color", 0) == 0) {
                 colors.push_back(RGBAColor::parse(item.second));
             }
@@ -68,17 +62,17 @@ public:
         m_colors = generateColorTable(colors);
 
         // Load key list
-        const auto & groupStr = conf["group"];
+        const auto & groupStr = service.getConfig("group");
         if (!groupStr.empty()) {
             auto git = std::find_if(
-                groups.begin(), groups.end(),
+                service.keyGroups().begin(), service.keyGroups().end(),
                 [groupStr](const auto & group) { return group.name() == groupStr; });
-            if (git != groups.end()) { m_keys = *git; }
+            if (git != service.keyGroups().end()) { m_keys = &*git; }
         }
 
         // Get ready
-        computePhases(manager.keyDB());
-        std::fill(m_buffer.begin(), m_buffer.end(), RGBAColor{0, 0, 0, 0});
+        computePhases(service.keyDB());
+        std::fill(m_buffer->begin(), m_buffer->end(), RGBAColor{0, 0, 0, 0});
     }
 
     void render(unsigned long ms, RenderTarget & target) override
@@ -88,24 +82,24 @@ public:
 
         int t = accuracy * m_time / m_period;
 
-        if (m_keys.empty()) {
-            assert(m_buffer.size() == m_phases.size());
-            for (std::size_t idx = 0; idx < m_buffer.size(); ++idx) {
+        if (m_keys) {
+            assert(m_keys->size() == m_phases.size());
+            for (std::size_t idx = 0; idx < m_keys->size(); ++idx) {
                 int tphi = t - m_phases[idx];
                 if (tphi < 0) { tphi += accuracy; }
 
-                m_buffer[idx] = m_colors[tphi];
+                (*m_buffer)[(*m_keys)[idx].index] = m_colors[tphi];
             }
         } else {
-            assert(m_keys.size() == m_phases.size());
-            for (std::size_t idx = 0; idx < m_keys.size(); ++idx) {
+            assert(m_buffer->size() == m_phases.size());
+            for (std::size_t idx = 0; idx < m_buffer->size(); ++idx) {
                 int tphi = t - m_phases[idx];
                 if (tphi < 0) { tphi += accuracy; }
 
-                m_buffer[m_keys[idx].index] = m_colors[tphi];
+                (*m_buffer)[idx] = m_colors[tphi];
             }
         }
-        blend(target, m_buffer);
+        blend(target, *m_buffer);
     }
 
 private:
@@ -118,17 +112,10 @@ private:
 
         m_phases.clear();
 
-        if (m_keys.empty()) {
-            for (RenderTarget::size_type kidx = 0; kidx < m_buffer.size(); ++kidx) {
-                auto it = keyDB.findIndex(kidx);
-                if (it == keyDB.end()) {
-                    WARNING("Key(", kidx, ") missing in database");
-                    m_phases.push_back(0);
-                    continue;
-                }
-
-                int x = (it->position.x0 + it->position.x1) / 2;
-                int y = (it->position.y0 + it->position.y1) / 2;
+        if (m_keys) {
+            for (const auto & key : *m_keys) {
+                int x = (key.position.x0 + key.position.x1) / 2;
+                int y = (key.position.y0 + key.position.y1) / 2;
                 if (x == 0 && y == 0) {
                     m_phases.push_back(0);
                 } else {
@@ -141,9 +128,15 @@ private:
                 }
             }
         } else {
-            for (const auto & key : m_keys) {
-                int x = (key.position.x0 + key.position.x1) / 2;
-                int y = (key.position.y0 + key.position.y1) / 2;
+            for (RenderTarget::size_type kidx = 0; kidx < m_buffer->size(); ++kidx) {
+                auto it = keyDB.findIndex(kidx);
+                if (it == keyDB.end()) {
+                    m_phases.push_back(0);
+                    continue;
+                }
+
+                int x = (it->position.x0 + it->position.x1) / 2;
+                int y = (it->position.y0 + it->position.y1) / 2;
                 if (x == 0 && y == 0) {
                     m_phases.push_back(0);
                 } else {
@@ -183,8 +176,8 @@ private:
     }
 
 private:
-    RenderTarget            m_buffer;   ///< this plugin's rendered state
-    KeyGroup                m_keys;     ///< what keys the effect applies to. Empty for whole keyboard.
+    RenderTarget *          m_buffer;   ///< this plugin's rendered state
+    const KeyGroup *        m_keys;     ///< what keys the effect applies to. Empty for whole keyboard.
     std::vector<unsigned>   m_phases;   ///< one per key in m_keys or one per key in m_buffer.
                                         ///< From 0 (no phase shift) to 1000 (2*pi shift)
     std::vector<RGBAColor>  m_colors;   ///< pre-computed color samples, build by generateColorTable.
@@ -195,4 +188,4 @@ private:
     unsigned            m_direction;    ///< wave propagation direction, compass style (0 for North).
 };
 
-REGISTER_EFFECT_PLUGIN("wave", WaveEffect)
+KEYLEDSD_SIMPLE_EFFECT("wave", WaveEffect);

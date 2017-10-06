@@ -15,16 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <vector>
-#include "keyledsd/Configuration.h"
-#include "keyledsd/DeviceManager.h"
-#include "keyledsd/PluginManager.h"
+#include "keyledsd/effect/PluginHelper.h"
 #include "keyledsd/colors.h"
 
 using keyleds::RGBAColor;
 
 /****************************************************************************/
 
-class FeedbackEffect final : public keyleds::Effect
+class FeedbackEffect final : public plugin::Effect
 {
     struct KeyPress
     {
@@ -33,19 +31,17 @@ class FeedbackEffect final : public keyleds::Effect
     };
 
 public:
-    FeedbackEffect(const keyleds::DeviceManager & manager,
-                   const keyleds::Configuration::Effect & conf,
-                   const keyleds::EffectPluginFactory::group_list)
-     : m_buffer(manager.getRenderTarget()),
+    FeedbackEffect(EffectService & service)
+     : m_buffer(service.createRenderTarget()),
        m_duration(3000)
     {
-        m_color = RGBAColor::parse(conf["color"]);
+        m_color = RGBAColor::parse(service.getConfig("color"));
 
-        auto duration = std::stoul(conf["duration"]);
+        auto duration = std::stoul(service.getConfig("duration"));
         if (duration > 0) { m_duration = duration; }
 
         // Get ready
-        std::fill(m_buffer.begin(), m_buffer.end(), RGBAColor{0, 0, 0, 0});
+        std::fill(m_buffer->begin(), m_buffer->end(), RGBAColor{0, 0, 0, 0});
     }
 
     void render(unsigned long ms, RenderTarget & target) override
@@ -53,7 +49,7 @@ public:
         for (auto & keyPress : m_presses) {
             keyPress.age += ms;
             if (keyPress.age > m_duration) { keyPress.age = m_duration; }
-            m_buffer[keyPress.key->index] = RGBAColor(
+            (*m_buffer)[keyPress.key->index] = RGBAColor(
                 m_color.red,
                 m_color.green,
                 m_color.blue,
@@ -63,7 +59,7 @@ public:
         m_presses.erase(std::remove_if(m_presses.begin(), m_presses.end(),
                                        [this](const auto & keyPress){ return keyPress.age >= m_duration; }),
                         m_presses.end());
-        blend(target, m_buffer);
+        blend(target, *m_buffer);
     }
 
     void handleKeyEvent(const KeyDatabase::Key & key, bool) override
@@ -78,11 +74,11 @@ public:
     }
 
 private:
-    RenderTarget        m_buffer;       ///< this plugin's rendered state
+    RenderTarget *      m_buffer;       ///< this plugin's rendered state
 
     RGBAColor           m_color;        ///< color taken by keys on keypress
     unsigned            m_duration;     ///< how long it takes for keys to fade out in ms
     std::vector<KeyPress> m_presses;    ///< list of recent keypresses still drawn
 };
 
-REGISTER_EFFECT_PLUGIN("feedback", FeedbackEffect)
+KEYLEDSD_SIMPLE_EFFECT("feedback", FeedbackEffect);

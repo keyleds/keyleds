@@ -17,9 +17,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
-#include "keyledsd/Configuration.h"
-#include "keyledsd/DeviceManager.h"
-#include "keyledsd/PluginManager.h"
+#include "keyledsd/effect/PluginHelper.h"
 #include "keyledsd/colors.h"
 
 using keyleds::RGBAColor;
@@ -27,32 +25,31 @@ static constexpr float pi = 3.14159265358979f;
 
 /****************************************************************************/
 
-class BreateEffect final : public keyleds::Effect
+class BreateEffect final : public plugin::Effect
 {
     using KeyGroup = KeyDatabase::KeyGroup;
 public:
-    BreateEffect(const keyleds::DeviceManager & manager,
-                  const keyleds::Configuration::Effect & conf,
-                  const keyleds::EffectPluginFactory::group_list groups)
-     : m_buffer(manager.getRenderTarget()),
+    BreateEffect(EffectService & service)
+     : m_buffer(service.createRenderTarget()),
+       m_keys(nullptr),
        m_time(0), m_period(10000)
     {
-        auto color = RGBAColor::parse(conf["color"]);
+        auto color = RGBAColor::parse(service.getConfig("color"));
         m_alpha = color.alpha;
         color.alpha = 0;
 
-        const auto & groupStr = conf["group"];
+        const auto & groupStr = service.getConfig("group");
         if (!groupStr.empty()) {
             auto git = std::find_if(
-                groups.begin(), groups.end(),
+                service.keyGroups().begin(), service.keyGroups().end(),
                 [groupStr](const auto & group) { return group.name() == groupStr; });
-            if (git != groups.end()) { m_keys = *git; }
+            if (git != service.keyGroups().end()) { m_keys = &*git; }
         }
 
-        auto period = std::stoul(conf["period"]);
+        auto period = std::stoul(service.getConfig("period"));
         if (period > 0) { m_period = period; }
 
-        std::fill(m_buffer.begin(), m_buffer.end(), color);
+        std::fill(m_buffer->begin(), m_buffer->end(), color);
     }
 
     void render(unsigned long ms, RenderTarget & target) override
@@ -64,21 +61,21 @@ public:
         float alphaf = -std::cos(2.0f * pi * t);
         uint8_t alpha = m_alpha * (unsigned(128.0f * alphaf) + 128) / 256;
 
-        if (m_keys.empty()) {
-            for (auto & key : m_buffer) { key.alpha = alpha; }
+        if (m_keys) {
+            for (const auto & key : *m_keys) { (*m_buffer)[key.index].alpha = alpha; }
         } else {
-            for (const auto & key : m_keys) { m_buffer[key.index].alpha = alpha; }
+            for (auto & key : *m_buffer) { key.alpha = alpha; }
         }
-        blend(target, m_buffer);
+        blend(target, *m_buffer);
     }
 
 private:
-    RenderTarget    m_buffer;       ///< this plugin's rendered state
-    KeyGroup        m_keys;         ///< what keys the effect applies to. Empty for whole keyboard.
+    RenderTarget *  m_buffer;       ///< this plugin's rendered state
+    const KeyGroup* m_keys;         ///< what keys the effect applies to. Empty for whole keyboard.
     uint8_t         m_alpha;        ///< peak alpha value through the breathing cycle
 
     unsigned        m_time;         ///< time in milliseconds since beginning of current cycle
     unsigned        m_period;       ///< total duration of a cycle in milliseconds
 };
 
-REGISTER_EFFECT_PLUGIN("breathe", BreateEffect)
+KEYLEDSD_SIMPLE_EFFECT("breathe", BreateEffect);

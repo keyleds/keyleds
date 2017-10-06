@@ -21,9 +21,9 @@
 #include <algorithm>
 #include <string>
 #include "keyledsd/dbus/DeviceManagerAdaptor.h"
+#include "keyledsd/effect/EffectManager.h"
 #include "keyledsd/DeviceManager.h"
 #include "keyledsd/Configuration.h"
-#include "keyledsd/PluginManager.h"
 #include "keyledsd/Service.h"
 
 using dbus::ServiceAdaptor;
@@ -98,16 +98,12 @@ QList<QDBusObjectPath> ServiceAdaptor::devicePaths() const
 
 QStringList ServiceAdaptor::plugins() const
 {
-    const auto & manager = keyleds::EffectPluginManager::instance();
+    const auto & names = parent()->effectManager().pluginNames();
 
     QStringList plugins;
-    plugins.reserve(manager.plugins().size());
-    std::transform(manager.plugins().cbegin(),
-                   manager.plugins().cend(),
-                   std::back_inserter(plugins),
-                   [](const auto & item) {
-                       return item->name().c_str();
-                   });
+    plugins.reserve(names.size());
+    std::transform(names.begin(), names.end(), std::back_inserter(plugins),
+                   [](const auto & name) { return name.c_str(); });
     return plugins;
 }
 

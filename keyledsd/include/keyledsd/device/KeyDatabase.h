@@ -21,6 +21,7 @@
 #include <utility>
 #include <vector>
 #include "keyledsd/device/RenderLoop.h"
+#include "config.h"
 
 namespace keyleds { namespace device {
 
@@ -64,9 +65,9 @@ public:
     static KeyDatabase build(const Device &);
 
 
-    const_iterator  findIndex(RenderTarget::size_type) const;
-    const_iterator  findKeyCode(int keyCode) const;
-    const_iterator  findName(const std::string & name) const;
+    KEYLEDSD_EXPORT const_iterator  findIndex(RenderTarget::size_type) const;
+    KEYLEDSD_EXPORT const_iterator  findKeyCode(int keyCode) const;
+    KEYLEDSD_EXPORT const_iterator  findName(const std::string & name) const;
 
     const_iterator  begin() const { return m_keys.cbegin(); }
     const_iterator  end() const { return m_keys.cend(); }

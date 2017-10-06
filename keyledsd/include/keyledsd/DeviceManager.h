@@ -21,6 +21,7 @@
 #include "keyledsd/device/Device.h"
 #include "keyledsd/device/KeyDatabase.h"
 #include "keyledsd/device/RenderLoop.h"
+#include "keyledsd/effect/EffectManager.h"
 #include "keyledsd/Configuration.h"
 #include "tools/FileWatcher.h"
 #include <memory>
@@ -32,7 +33,7 @@ namespace device { class Description; }
 
 namespace keyleds {
 
-class Effect;
+/****************************************************************************/
 
 /** Main device manager
  *
@@ -45,6 +46,8 @@ class DeviceManager final : public QObject
 {
     Q_OBJECT
     using Device = device::Device;
+    using Effect = effect::interface::Effect;
+    using EffectManager = effect::EffectManager;
     using FileWatcher = tools::FileWatcher;
     using KeyDatabase = device::KeyDatabase;
     using RenderLoop = device::RenderLoop;
@@ -58,10 +61,11 @@ private:
     class EffectGroup final
     {
     public:
-        using effect_list = std::vector<std::unique_ptr<Effect>>;
+        using effect_list = std::vector<EffectManager::effect_ptr>;
     public:
                             EffectGroup(std::string name, effect_list && effects);
                             EffectGroup(EffectGroup &&) noexcept = default;
+                            ~EffectGroup();
         EffectGroup &       operator=(EffectGroup &&) = default;
 
         const std::string & name() const noexcept { return m_name; }
@@ -75,7 +79,7 @@ private:
 public:
     using dev_list = std::vector<std::string>;
 public:
-                            DeviceManager(FileWatcher &,
+                            DeviceManager(EffectManager &, FileWatcher &,
                                           const ::device::Description &,
                                           Device &&,
                                           const Configuration *,
@@ -114,6 +118,7 @@ private:
     EffectGroup &           getEffectGroup(const Configuration::EffectGroup &);
 
 private:
+    EffectManager &         m_effectManager;    ///< Manages the lifecycle of effects
     const Configuration *   m_configuration;    ///< Reference to service configuration
 
     const std::string       m_sysPath;          ///< Device path on sys filesystem
@@ -129,6 +134,8 @@ private:
     RenderLoop              m_renderLoop;       ///< The RenderLoop in charge of the device
 };
 
-};
+/****************************************************************************/
+
+} // namespace keyleds
 
 #endif

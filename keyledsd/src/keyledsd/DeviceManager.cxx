@@ -19,9 +19,8 @@
 #include <unistd.h>
 #include <algorithm>
 #include <cassert>
-#include "keyledsd/device/LayoutDescription.h"
-#include "keyledsd/PluginManager.h"
 #include "tools/Paths.h"
+#include "config.h"
 #include "logging.h"
 
 LOGGING("dev-manager");
@@ -38,12 +37,15 @@ DeviceManager::EffectGroup::EffectGroup(std::string name, effect_list && effects
    m_effects(std::move(effects))
 {}
 
+DeviceManager::EffectGroup::~EffectGroup() {}
+
 /****************************************************************************/
 
-DeviceManager::DeviceManager(FileWatcher & fileWatcher,
+DeviceManager::DeviceManager(EffectManager & effectManager, FileWatcher & fileWatcher,
                              const ::device::Description & description, Device && device,
                              const Configuration * conf, QObject *parent)
     : QObject(parent),
+      m_effectManager(effectManager),
       m_configuration(nullptr),
       m_sysPath(description.sysPath()),
       m_serial(getSerial(description)),
@@ -236,7 +238,7 @@ DeviceManager::EffectGroup & DeviceManager::getEffectGroup(const Configuration::
     if (eit != m_effectGroups.end() && eit->name() == conf.name()) { return *eit; }
 
     // Load key groups
-    EffectPluginFactory::group_list keyGroups;
+    std::vector<KeyDatabase::KeyGroup> keyGroups;
 
     auto group_from_conf = [this](const auto & conf) {
         return m_keyDB.makeGroup(conf.name(), conf.keys().begin(), conf.keys().end());
@@ -247,16 +249,17 @@ DeviceManager::EffectGroup & DeviceManager::getEffectGroup(const Configuration::
                    std::back_inserter(keyGroups), group_from_conf);
 
     // Load effects
-    auto & manager = EffectPluginManager::instance();
     EffectGroup::effect_list effects;
     for (const auto & effectConf : conf.effects()) {
-        auto plugin = manager.get(effectConf.name());
-        if (!plugin) {
-            ERROR("plugin ", effectConf.name(), " not found");
+        auto effect = m_effectManager.createEffect(
+            effectConf.name(), *this, effectConf, keyGroups
+        );
+        if (!effect) {
+            ERROR("plugin for effect ", effectConf.name(), " not found");
             continue;
         }
-        VERBOSE("loaded plugin ", effectConf.name());
-        effects.emplace_back(plugin->createEffect(*this, effectConf, keyGroups));
+        VERBOSE("loaded plugin effect ", effectConf.name());
+        effects.emplace_back(std::move(effect));
     }
 
     eit = m_effectGroups.emplace(eit, conf.name(), std::move(effects));

@@ -20,9 +20,8 @@
 #include <cassert>
 #include <functional>
 #include <sstream>
-#include "keyledsd/device/Device.h"
-#include "keyledsd/DeviceManager.h"
 #include "keyledsd/Configuration.h"
+#include "keyledsd/DeviceManager.h"
 #include "keyledsd/DisplayManager.h"
 #include "tools/XWindow.h"
 #include "keyleds.h"
@@ -75,8 +74,10 @@ static std::string to_string(const std::vector<std::pair<std::string, std::strin
 
 /****************************************************************************/
 
-Service::Service(std::unique_ptr<Configuration> configuration, QObject * parent)
+Service::Service(EffectManager & effectManager,
+                 std::unique_ptr<Configuration> configuration, QObject * parent)
     : QObject(parent),
+      m_effectManager(effectManager),
       m_configuration(nullptr),
       m_autoQuit(false),
       m_active(false),
@@ -115,7 +116,9 @@ void Service::setConfiguration(std::unique_ptr<Configuration> config)
 {
     using std::swap;
     m_fileWatcherSub = FileWatcher::subscription(); // destroy it so it isn't reused
-    m_configuration = std::move(config);
+
+    // old configuration must not be destroyed until propagation is complete
+    swap(m_configuration, config);
 
     // Propagate configuration
     for (auto & device : m_devices) { device->setConfiguration(m_configuration.get()); }
@@ -199,7 +202,7 @@ void Service::onDeviceAdded(const ::device::Description & description)
     try {
         auto device = Device(description.devNode());
         auto manager = std::make_unique<DeviceManager>(
-            m_fileWatcher,
+            m_effectManager, m_fileWatcher,
             description, std::move(device), m_configuration.get()
         );
         manager->setContext(m_context);
