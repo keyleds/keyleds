@@ -55,10 +55,6 @@ public:
 
     // Data
     class KeyBlock;
-    using key_block_id_type = uint8_t;
-    using key_id_type = uint8_t;
-    using block_list = std::vector<KeyBlock>;
-    using key_list = std::vector<key_id_type>;
 
     // Exceptions
     class error : public std::runtime_error
@@ -73,10 +69,17 @@ public:
         int             m_oserror;
     };
 
+private:
+    using key_block_id_type = uint8_t;
+    using key_id_type = uint8_t;
+    using block_list = std::vector<KeyBlock>;
+    using key_list = std::vector<key_id_type>;
+
 public:
                         Device(std::string path);
                         Device(const Device &) = delete;
                         Device(Device &&) = default;
+                        ~Device();
     Device &            operator=(const Device &) = delete;
     Device &            operator=(Device &&) = default;
 
@@ -132,9 +135,8 @@ private:
 class Device::KeyBlock final
 {
 public:
-    using index_list = std::vector<key_list::size_type>;
-public:
                         KeyBlock(key_block_id_type id, key_list keys, RGBColor maxValues);
+                        ~KeyBlock();
 
     key_block_id_type   id() const { return m_id; }
     const std::string & name() const { return m_name; }

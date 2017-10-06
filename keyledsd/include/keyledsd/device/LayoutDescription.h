@@ -41,6 +41,7 @@ public:
 public:
                         LayoutDescription() = default;
                         LayoutDescription(std::string name, key_list keys);
+                        ~LayoutDescription();
 
     const std::string & name() const { return m_name; }
     const key_list &    keys() const { return m_keys; }
@@ -59,13 +60,13 @@ private:
  *
  * Describes the physical characteristics of a single key.
  */
-class LayoutDescription::Key final {
-public:
+class LayoutDescription::Key final
+{
     using block_type = unsigned int;
     using code_type = unsigned int;
 public:
-                /// Dumb constructor, here so we can emplace keys in the container
                 Key(block_type block, code_type code, Rect position, std::string name);
+                ~Key();
 public:
     block_type  block;          ///< Block identifier, eg: 0 for normal keys, 64 for game/light keys, ...
     code_type   code;           ///< Key identifier within block
@@ -78,8 +79,9 @@ public:
 class LayoutDescription::ParseError : public std::runtime_error
 {
 public:
-                        ParseError(const std::string & what, int line)
-                            : std::runtime_error(what), m_line(line) {}
+                ParseError(const std::string & what, int line);
+                ~ParseError();
+
     int         line() const noexcept { return m_line; }
 private:
     int         m_line; ///< Line of the parsing error, as reported by xml lib

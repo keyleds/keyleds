@@ -17,8 +17,6 @@
 #ifndef KEYLEDSD_CONTEXTWATCHER_H_1CF5FE0A
 #define KEYLEDSD_CONTEXTWATCHER_H_1CF5FE0A
 
-/****************************************************************************/
-
 #include <X11/Xlib.h>
 #undef CursorShape
 #undef Bool

@@ -17,8 +17,6 @@
 #ifndef TOOLS_FILE_WATCHER_H_3F146693
 #define TOOLS_FILE_WATCHER_H_3F146693
 
-/****************************************************************************/
-
 #include <sys/inotify.h>
 #include <QObject>
 #include <functional>
@@ -52,10 +50,14 @@ public:
         IsDirectory = IN_ISDIR
     };
 
+private:
     using watch_id = int;
     using Listener = std::function<void(event mask, uint32_t cookie, std::string path)>;
     static constexpr watch_id invalid_watch = -1;
 
+    struct Watch;
+    using listener_list = std::vector<Watch>;
+public:
     class subscription final
     {
         FileWatcher *   m_watcher;
@@ -71,9 +73,6 @@ public:
         subscription& operator=(subscription &&);
                     ~subscription();
     };
-private:
-    struct Watch;
-    using listener_list = std::vector<Watch>;
 
 public:
                         FileWatcher(QObject *parent = nullptr);
@@ -94,6 +93,6 @@ private:
 
 /****************************************************************************/
 
-}
+} // namespace tools
 
 #endif

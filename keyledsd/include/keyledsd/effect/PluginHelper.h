@@ -37,20 +37,19 @@ public:
 template <typename T>
 class Plugin final : public keyleds::effect::interface::Plugin
 {
-    using Effect = keyleds::effect::interface::Effect;
     using EffectService = keyleds::effect::interface::EffectService;
 public:
     Plugin(const char * name) : m_name(name) {}
     ~Plugin() {}
 
-    Effect *
+    keyleds::effect::interface::Effect *
     createEffect(const std::string & name, EffectService & service) override
     {
         if (name == m_name) { return new T(service); }
         return nullptr;
     }
 
-    void destroyEffect(Effect * ptr) override
+    void destroyEffect(keyleds::effect::interface::Effect * ptr) override
     {
         delete static_cast<T *>(ptr);
     }

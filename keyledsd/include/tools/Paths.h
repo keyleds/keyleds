@@ -23,8 +23,6 @@
 #ifndef TOOLS_PATH_H_B703CD61
 #define TOOLS_PATH_H_B703CD61
 
-/****************************************************************************/
-
 #include <ios>
 #include <string>
 #include <type_traits>

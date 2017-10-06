@@ -176,9 +176,7 @@ void Service::onConfigurationFileChanged(FileWatcher::event event)
 
     std::unique_ptr<Configuration> conf;
     try {
-        conf = std::make_unique<Configuration>(
-            Configuration::loadFile(m_configuration->path())
-        );
+        conf = Configuration::loadFile(m_configuration->path());
     } catch (std::exception & error) {
         CRITICAL("reloading failed: ", error.what());
     }

@@ -32,7 +32,9 @@ namespace keyleds {
     class Service;
 }
 
-namespace dbus {
+namespace keyleds { namespace dbus {
+
+/****************************************************************************/
 
 /** Expose keyleds::Service on DBus
  *
@@ -52,7 +54,7 @@ class ServiceAdaptor final : public QDBusAbstractAdaptor
     Q_PROPERTY(QList<QDBusObjectPath> devices READ devicePaths)
     Q_PROPERTY(QStringList plugins READ plugins)
 public:
-            ServiceAdaptor(keyleds::Service *parent);
+            ServiceAdaptor(Service *parent);
 
 public:         // Simple pass-through methods acessing the Service
     QString configurationPath() const;
@@ -71,14 +73,16 @@ public slots:   // Simple pass-through methods acessing the Service
     Q_NOREPLY void    sendKeyEvent(QString serial, int key);  ///< serial is that of target device
 
 private:
-    void    onDeviceManagerAdded(keyleds::DeviceManager &);
-    void    onDeviceManagerRemoved(keyleds::DeviceManager &);
+    void        onDeviceManagerAdded(DeviceManager &);
+    void        onDeviceManagerRemoved(DeviceManager &);
 
 private:
-    keyleds::Service * parent() const;    ///< instance this adapter is attached to
-    QString managerPath(const keyleds::DeviceManager &) const;
+    Service *   parent() const;    ///< instance this adapter is attached to
+    QString     managerPath(const DeviceManager &) const;
 };
 
-};
+/****************************************************************************/
+
+} } // namespace keyleds::dbus
 
 #endif

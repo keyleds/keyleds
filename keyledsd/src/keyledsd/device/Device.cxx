@@ -57,6 +57,8 @@ Device::Device(std::string path)
     cacheVersion();
 }
 
+Device::~Device() {}
+
 std::unique_ptr<struct keyleds_device> Device::openDevice(const std::string & path)
 {
     auto device = std::unique_ptr<struct keyleds_device>(
@@ -272,6 +274,8 @@ Device::KeyBlock::KeyBlock(key_block_id_type id, key_list keys, RGBColor maxValu
       m_keys(std::move(keys)),
       m_maxValues(maxValues)
 {}
+
+Device::KeyBlock::~KeyBlock() {}
 
 /****************************************************************************/
 

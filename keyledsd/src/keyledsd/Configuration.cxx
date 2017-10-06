@@ -37,6 +37,15 @@
 using keyleds::Configuration;
 
 /****************************************************************************/
+
+struct Configuration::Profile::Lookup::Entry
+{
+    std::string key;        ///< context entry key
+    std::string value;      ///< string representation of the regex
+    std::regex  regex;      ///< regex to match context entry value against
+};
+
+/****************************************************************************/
 /****************************************************************************/
 /** Builder class that creates a Configuration object from a YAML file.
  *
@@ -101,6 +110,7 @@ public:
 
 public:
     BuildState(state_type type = 0) : m_type(type) {}
+    virtual ~BuildState() {}
     state_type type() const noexcept { return m_type; }
     virtual void print(std::ostream &) const = 0;
 
@@ -664,7 +674,9 @@ Configuration::Configuration(std::string path,
    m_profiles(std::move(profiles))
 {}
 
-Configuration Configuration::loadFile(const std::string & path)
+Configuration::~Configuration() {}
+
+std::unique_ptr<Configuration> Configuration::loadFile(const std::string & path)
 {
     using tools::paths::XDG;
 
@@ -681,14 +693,14 @@ Configuration Configuration::loadFile(const std::string & path)
 
     auto builder = ConfigurationBuilder();
     builder.parse(file);
-    return Configuration(
+    return std::make_unique<Configuration>(Configuration(
         actualPath,
         std::move(builder.m_pluginPaths),
         std::move(builder.m_devices),
         std::move(builder.m_keyGroups),
         std::move(builder.m_effectGroups),
         std::move(builder.m_profiles)
-    );
+    ));
 }
 
 /****************************************************************************/
@@ -701,12 +713,16 @@ Configuration::EffectGroup::EffectGroup(std::string name,
    m_effects(std::move(effects))
 {}
 
+Configuration::EffectGroup::~EffectGroup() {}
+
 /****************************************************************************/
 
 Configuration::KeyGroup::KeyGroup(std::string name, key_list keys)
  : m_name(std::move(name)),
    m_keys(std::move(keys))
 {}
+
+Configuration::KeyGroup::~KeyGroup() {}
 
 /****************************************************************************/
 
@@ -720,11 +736,15 @@ Configuration::Profile::Profile(std::string name,
    m_effectGroups(std::move(effectGroups))
 {}
 
+Configuration::Profile::~Profile() {}
+
 /****************************************************************************/
 
 Configuration::Profile::Lookup::Lookup(string_map filters)
  : m_entries(buildRegexps(std::move(filters)))
 {}
+
+Configuration::Profile::Lookup::~Lookup() {}
 
 bool Configuration::Profile::Lookup::match(const string_map & context) const
 {
@@ -764,3 +784,5 @@ Configuration::Profile::Lookup::buildRegexps(string_map filters)
 Configuration::Effect::Effect(std::string name, string_map items)
  : m_name(std::move(name)), m_items(std::move(items))
 {}
+
+Configuration::Effect::~Effect() {}

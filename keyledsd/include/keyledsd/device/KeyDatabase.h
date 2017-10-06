@@ -40,17 +40,24 @@ class KeyDatabase final
 public:
     class Key final
     {
+        using index_type = RenderTarget::size_type;
     public:
         struct Rect { unsigned x0, y0, x1, y1; };
     public:
-        RenderTarget::size_type index;      ///< index in render targets
-        int                     keyCode;    ///< linux input event code
-        std::string             name;       ///< user-readable name
-        Rect                    position;   ///< physical position on keyboard
+        Key(index_type, int keyCode, std::string name, Rect position);
+        ~Key();
+    public:
+        index_type      index;      ///< index in render targets
+        int             keyCode;    ///< linux input event code
+        std::string     name;       ///< user-readable name
+        Rect            position;   ///< physical position on keyboard
     };
+
     class KeyGroup;
 
+private:
     using key_list = std::vector<Key>;
+public:
     using value_type = key_list::value_type;
     using reference = key_list::const_reference;
     using iterator = key_list::const_iterator;
@@ -61,6 +68,7 @@ public:
                     KeyDatabase(key_list keys);
     explicit        KeyDatabase(const KeyDatabase &) = default;
                     KeyDatabase(KeyDatabase &&) = default;
+                    ~KeyDatabase();
 
     static KeyDatabase build(const Device &);
 
@@ -135,6 +143,7 @@ public:
                     KeyGroup(std::string, key_list keys);
                     KeyGroup(const KeyGroup &) = default;
                     KeyGroup(KeyGroup &&) noexcept = default;
+    KEYLEDSD_EXPORT ~KeyGroup();
     KeyGroup &      operator=(const KeyGroup &) = default;
     KeyGroup &      operator=(KeyGroup &&) = default;
 

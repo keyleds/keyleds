@@ -83,7 +83,7 @@ static void parseKeyboard(const xmlNode * keyboard, LayoutDescription::key_list 
     unsigned kbY = parseUInt(keyboard, KEYBOARD_ATTR_Y, 10);
     unsigned kbWidth = parseUInt(keyboard, KEYBOARD_ATTR_WIDTH, 10);
     unsigned kbHeight = parseUInt(keyboard, KEYBOARD_ATTR_HEIGHT, 10);
-    LayoutDescription::Key::block_type kbZone = parseUInt(keyboard, KEYBOARD_ATTR_ZONE, 0);
+    unsigned kbZone = parseUInt(keyboard, KEYBOARD_ATTR_ZONE, 0);
 
     unsigned nbRows = 0;
     for (const xmlNode * row = keyboard->children; row != nullptr; row = row->next) {
@@ -130,7 +130,7 @@ static void parseKeyboard(const xmlNode * keyboard, LayoutDescription::key_list 
             }
 
             if (code != nullptr) {
-                auto codeVal = LayoutDescription::Key::code_type(parseUInt(key, KEY_ATTR_CODE, 0));
+                unsigned codeVal = parseUInt(key, KEY_ATTR_CODE, 0);
                 auto codeNameStr = glyph != nullptr ? std::string(reinterpret_cast<char *>(glyph.get()))
                                                     : std::string();
                 std::transform(codeNameStr.begin(), codeNameStr.end(), codeNameStr.begin(), ::toupper);
@@ -158,8 +158,9 @@ static void parseKeyboard(const xmlNode * keyboard, LayoutDescription::key_list 
 LayoutDescription::LayoutDescription(std::string name, key_list keys)
  : m_name(std::move(name)),
    m_keys(std::move(keys))
-{
-}
+{}
+
+LayoutDescription::~LayoutDescription() {}
 
 LayoutDescription LayoutDescription::parse(std::istream & stream)
 {
@@ -231,8 +232,19 @@ LayoutDescription LayoutDescription::loadFile(const std::string & name)
     }
     return LayoutDescription(std::string(), {});
 }
+
 /****************************************************************************/
 
 LayoutDescription::Key::Key(block_type block, code_type code, Rect position, std::string name)
  : block(block), code(code), position(position), name(std::move(name))
 {}
+
+LayoutDescription::Key::~Key() {}
+
+/****************************************************************************/
+
+LayoutDescription::ParseError::ParseError(const std::string & what, int line)
+ : std::runtime_error(what), m_line(line)
+{}
+
+LayoutDescription::ParseError::~ParseError() {}

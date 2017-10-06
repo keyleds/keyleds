@@ -23,8 +23,6 @@
 #ifndef TOOLS_DEVICE_WATCHER_H_20E285D9
 #define TOOLS_DEVICE_WATCHER_H_20E285D9
 
-/****************************************************************************/
-
 #include <QObject>
 #include <memory>
 #include <stdexcept>
@@ -75,6 +73,7 @@ public:
                         Description(struct udev_device * device);
     explicit            Description(const Description & other);
                         Description(Description &&) = default;
+                        ~Description();
     Description &       operator=(Description &&) = default;
 
     // Hierarchy navigation

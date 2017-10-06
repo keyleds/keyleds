@@ -38,7 +38,9 @@ struct DBusDeviceKeyInfo final
 };
 using DBusDeviceKeyInfoList = QList<DBusDeviceKeyInfo>;
 
-namespace dbus {
+namespace keyleds { namespace dbus {
+
+/****************************************************************************/
 
 /** Expose keyleds::DeviceManager on DBus
  *
@@ -59,7 +61,7 @@ class DeviceManagerAdaptor final : public QDBusAbstractAdaptor
     Q_PROPERTY(DBusDeviceKeyInfoList keys READ keys)
     Q_PROPERTY(bool paused READ paused WRITE setPaused)
 public:
-                DeviceManagerAdaptor(keyleds::DeviceManager *parent);
+                DeviceManagerAdaptor(DeviceManager *parent);
 
 public:         // Simple pass-through methods accessing the DeviceManager
     QString     sysPath() const;
@@ -74,9 +76,11 @@ public:         // Simple pass-through methods accessing the DeviceManager
     void        setPaused(bool val);
 
 private:
-    keyleds::DeviceManager * parent() const;    ///< instance this adapter is attached to
+    DeviceManager * parent() const;    ///< instance this adapter is attached to
 };
 
-};
+/****************************************************************************/
+
+} } // namespace keyleds::dbus
 
 #endif

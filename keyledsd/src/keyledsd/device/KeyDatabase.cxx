@@ -41,6 +41,8 @@ KeyDatabase::KeyDatabase(key_list keys)
    m_bounds(computeBounds(m_keys))
 {}
 
+KeyDatabase::~KeyDatabase() {}
+
 KeyDatabase KeyDatabase::build(const Device & device)
 {
     LayoutDescription layout;
@@ -52,7 +54,7 @@ KeyDatabase KeyDatabase::build(const Device & device)
     RenderTarget::size_type keyIndex = 0;
 
     for (const auto & block : device.blocks()) {
-        for (Device::key_list::size_type kidx = 0; kidx < block.keys().size(); ++kidx) {
+        for (unsigned kidx = 0; kidx < block.keys().size(); ++kidx) {
             const auto keyId = block.keys()[kidx];
             std::string name;
             auto position = Key::Rect{0, 0, 0, 0};
@@ -67,12 +69,12 @@ KeyDatabase KeyDatabase::build(const Device & device)
             }
             if (name.empty()) { name = device.resolveKey(block.id(), keyId); }
 
-            db.emplace_back(Key{
+            db.emplace_back(
                 keyIndex,
                 device.decodeKeyId(block.id(), keyId),
-                name,
+                std::move(name),
                 position
-            });
+            );
             ++keyIndex;
         }
     }
@@ -116,9 +118,22 @@ KeyDatabase::Key::Rect KeyDatabase::computeBounds(const key_list & keys)
 
 /****************************************************************************/
 
+KeyDatabase::Key::Key(index_type index, int keyCode, std::string name, Rect position)
+ : index(index),
+   keyCode(keyCode),
+   name(std::move(name)),
+   position(position)
+{}
+
+KeyDatabase::Key::~Key() {}
+
+/****************************************************************************/
+
 KeyDatabase::KeyGroup::KeyGroup(std::string name, key_list keys)
  : m_name(std::move(name)), m_keys(std::move(keys))
 {}
+
+KeyDatabase::KeyGroup::~KeyGroup() {}
 
 void KeyDatabase::KeyGroup::swap(KeyGroup & other) noexcept
 {

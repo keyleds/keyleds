@@ -35,6 +35,8 @@ class Configuration;
 class DeviceManager;
 class DisplayManager;
 
+/****************************************************************************/
+
 /** Main service
  *
  * Only one instance typically exists per run. It ties all other objects
@@ -49,7 +51,7 @@ class Service final : public QObject
     using EffectManager = effect::EffectManager;
     using FileWatcher = tools::FileWatcher;
     using string_map = std::vector<std::pair<std::string, std::string>>;
-public:
+
     using device_list = std::vector<std::unique_ptr<DeviceManager>>;
     using display_list = std::vector<std::unique_ptr<DisplayManager>>;
 public:
@@ -102,6 +104,8 @@ private:
     FileWatcher::subscription m_fileWatcherSub; ///< Notifications for conf change
 };
 
-};
+/****************************************************************************/
+
+} // namespace keyleds
 
 #endif

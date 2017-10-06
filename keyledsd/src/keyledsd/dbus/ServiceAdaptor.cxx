@@ -26,28 +26,28 @@
 #include "keyledsd/Configuration.h"
 #include "keyledsd/Service.h"
 
-using dbus::ServiceAdaptor;
+using keyleds::dbus::ServiceAdaptor;
 
 Q_DECLARE_METATYPE(ServiceContextValues)
 
 /****************************************************************************/
 
-ServiceAdaptor::ServiceAdaptor(keyleds::Service *parent)
+ServiceAdaptor::ServiceAdaptor(Service *parent)
     : QDBusAbstractAdaptor(parent)
 {
     Q_ASSERT(parent != nullptr);
     qDBusRegisterMetaType<ServiceContextValues>();
 
     setAutoRelaySignals(true);
-    QObject::connect(parent, &keyleds::Service::deviceManagerAdded,
+    QObject::connect(parent, &Service::deviceManagerAdded,
                      this, &ServiceAdaptor::onDeviceManagerAdded);
-    QObject::connect(parent, &keyleds::Service::deviceManagerRemoved,
+    QObject::connect(parent, &Service::deviceManagerRemoved,
                      this, &ServiceAdaptor::onDeviceManagerRemoved);
 }
 
 inline keyleds::Service * ServiceAdaptor::parent() const
 {
-    return static_cast<keyleds::Service *>(QObject::parent());
+    return static_cast<Service *>(QObject::parent());
 }
 
 QString ServiceAdaptor::configurationPath() const
@@ -148,7 +148,7 @@ void ServiceAdaptor::sendKeyEvent(QString qSerial, int key)
     }
 }
 
-void ServiceAdaptor::onDeviceManagerAdded(keyleds::DeviceManager & manager)
+void ServiceAdaptor::onDeviceManagerAdded(DeviceManager & manager)
 {
     auto connection = QDBusConnection::sessionBus();
     auto path = managerPath(manager);
@@ -158,12 +158,12 @@ void ServiceAdaptor::onDeviceManagerAdded(keyleds::DeviceManager & manager)
     }
 }
 
-void ServiceAdaptor::onDeviceManagerRemoved(keyleds::DeviceManager &)
+void ServiceAdaptor::onDeviceManagerRemoved(DeviceManager &)
 {
     return;
 }
 
-QString ServiceAdaptor::managerPath(const keyleds::DeviceManager & manager) const
+QString ServiceAdaptor::managerPath(const DeviceManager & manager) const
 {
     std::string path = "/Device/" + manager.serial();
     return QString(path.c_str());

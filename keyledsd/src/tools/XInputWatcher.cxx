@@ -107,16 +107,16 @@ void XInputWatcher::handleEvent(const XEvent & event)
     }
 }
 
-void XInputWatcher::onInputEnabled(Device::handle_type id, int type)
+void XInputWatcher::onInputEnabled(int deviceId, int type)
 {
     if (type != XISlaveKeyboard) { return; }
     auto it = std::lower_bound(
-        m_devices.begin(), m_devices.end(), id,
+        m_devices.begin(), m_devices.end(), deviceId,
         [](const auto & device, auto id) { return device.handle() < id; }
     );
-    if (it != m_devices.end() && it->handle() == id) { return; }
+    if (it != m_devices.end() && it->handle() == deviceId) { return; }
 
-    auto device = Device(m_display, id);
+    auto device = Device(m_display, deviceId);
     if (device.devNode().empty()) { return; }
 
     ErrorCatcher errors;
@@ -124,25 +124,26 @@ void XInputWatcher::onInputEnabled(Device::handle_type id, int type)
 
     errors.synchronize(m_display);
     if (errors) {
-        ERROR("failed to set events on device ", id, ": ", errors.errors().size(), " errors");
+        ERROR("failed to set events on device ", deviceId, ": ",
+              errors.errors().size(), " errors");
     } else {
-        VERBOSE("xinput keyboard ", id, " enabled for device ", device.devNode());
+        VERBOSE("xinput keyboard ", deviceId, " enabled for device ", device.devNode());
         m_devices.emplace(it, std::move(device));
     }
 }
 
-void XInputWatcher::onInputDisabled(Device::handle_type id, int type)
+void XInputWatcher::onInputDisabled(int deviceId, int type)
 {
     if (type != XISlaveKeyboard) { return; }
     auto it = std::lower_bound(
-        m_devices.begin(), m_devices.end(), id,
+        m_devices.begin(), m_devices.end(), deviceId,
         [](const auto & device, auto id) { return device.handle() < id; }
     );
-    if (it == m_devices.end() || it->handle() != id) { return; }
+    if (it == m_devices.end() || it->handle() != deviceId) { return; }
 
     ErrorCatcher errors;
     m_devices.erase(it);
-    VERBOSE("xinput keyboard ", id, " disabled");
+    VERBOSE("xinput keyboard ", deviceId, " disabled");
 
     errors.synchronize(m_display);
     if (errors) {

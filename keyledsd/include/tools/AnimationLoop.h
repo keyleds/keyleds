@@ -17,8 +17,6 @@
 #ifndef TOOLS_ANIM_LOOP_H_A32C4648
 #define TOOLS_ANIM_LOOP_H_A32C4648
 
-/****************************************************************************/
-
 #include <condition_variable>
 #include <mutex>
 #include <thread>
@@ -73,6 +71,6 @@ private:
 
 /****************************************************************************/
 
-}
+} // namespace tools
 
 #endif

@@ -77,6 +77,8 @@ Description::Description(const Description & other)
     m_attributes = other.m_attributes;
 }
 
+Description::~Description() {}
+
 Description Description::parent() const
 {
     auto dev = udev_device_get_parent(m_device.get());  // unowned

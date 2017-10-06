@@ -50,6 +50,7 @@ class DeviceManager final : public QObject
     using EffectManager = effect::EffectManager;
     using FileWatcher = tools::FileWatcher;
     using KeyDatabase = device::KeyDatabase;
+    using Renderer = device::Renderer;
     using RenderLoop = device::RenderLoop;
     using string_map = std::vector<std::pair<std::string, std::string>>;
 private:
@@ -60,7 +61,6 @@ private:
      */
     class EffectGroup final
     {
-    public:
         using effect_list = std::vector<EffectManager::effect_ptr>;
     public:
                             EffectGroup(std::string name, effect_list && effects);
@@ -69,7 +69,7 @@ private:
         EffectGroup &       operator=(EffectGroup &&) = default;
 
         const std::string & name() const noexcept { return m_name; }
-        RenderLoop::renderer_list effects() const;
+        std::vector<Renderer *> effects() const;
     private:
         std::string         m_name;
         effect_list         m_effects;
@@ -112,7 +112,7 @@ private:
     static dev_list         findEventDevices(const ::device::Description &);
 
     /// Loads the list of effects to activate for the given context
-    RenderLoop::renderer_list loadEffects(const string_map & context);
+    std::vector<Renderer *> loadEffects(const string_map & context);
 
     /// Instanciates an effect, combining its configuration with this device's info
     EffectGroup &           getEffectGroup(const Configuration::EffectGroup &);

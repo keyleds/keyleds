@@ -19,6 +19,9 @@
 
 #include <QObject>
 #include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 #include "tools/XContextWatcher.h"
 
 namespace xlib {
@@ -28,6 +31,8 @@ namespace xlib {
 
 namespace keyleds {
 
+/****************************************************************************/
+
 /** Main display manager
  *
  * Centralizes all operations and information for a specific display.
@@ -35,12 +40,15 @@ namespace keyleds {
 class DisplayManager final : public QObject
 {
     Q_OBJECT
+    using Display = xlib::Display;
+    using XContextWatcher = xlib::XContextWatcher;
+    using XInputWatcher = xlib::XInputWatcher;
     using context_map = std::vector<std::pair<std::string, std::string>>;
 public:
-                    DisplayManager(std::unique_ptr<xlib::Display>, QObject *parent = nullptr);
+                    DisplayManager(std::unique_ptr<Display>, QObject *parent = nullptr);
                     ~DisplayManager() override;
 
-    xlib::Display & display() { return *m_display; }
+    Display &       display() { return *m_display; }
 
     void            scanDevices();
     const context_map & currentContext() const { return m_context; }
@@ -51,18 +59,20 @@ signals:
 
 private:
     /// Receives notifications from m_contextWatcher. Forwards them through contextChanged signal.
-    void            onContextChanged(const xlib::XContextWatcher::context_map &);
+    void            onContextChanged(const XContextWatcher::context_map &);
 
     /// Receives notifications from m_inputWatcher. Forwards them through keyEventReceived signal.
     void            onKeyEventReceived(const std::string & devNode, int key, bool press);
 
 private:
-    std::unique_ptr<xlib::Display>          m_display;          ///< Connection to X display
-    std::unique_ptr<xlib::XContextWatcher>  m_contextWatcher;   ///< Watches window events
-    std::unique_ptr<xlib::XInputWatcher>    m_inputWatcher;     ///< Watches keypresses
-    context_map                             m_context;          ///< Current context values
+    std::unique_ptr<Display>            m_display;          ///< Connection to X display
+    std::unique_ptr<XContextWatcher>    m_contextWatcher;   ///< Watches window events
+    std::unique_ptr<XInputWatcher>      m_inputWatcher;     ///< Watches keypresses
+    context_map                         m_context;          ///< Current context values
 };
 
-};
+/****************************************************************************/
+
+} // namespace keyleds
 
 #endif

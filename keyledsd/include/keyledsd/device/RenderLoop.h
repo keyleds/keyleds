@@ -111,11 +111,10 @@ protected:
  */
 class RenderLoop final : public tools::AnimationLoop
 {
-public:
     using renderer_list = std::vector<Renderer *>;
 public:
-                    RenderLoop(Device &, unsigned fps);
-                    ~RenderLoop() override;
+                        RenderLoop(Device &, unsigned fps);
+                        ~RenderLoop() override;
 
     /// Returns a lock that bars the render loop from using renderers while it is held
     /// Holding it is mandatory for modifying any renderer or the list itself
@@ -125,17 +124,17 @@ public:
     /// The list only holds pointers, which must be valid as long as they remain
     /// in the list. RenderLoop will not destroy them or interact in any way but
     /// calling their render method.
-    renderer_list &                 renderers() { return m_renderers; }
+    renderer_list &     renderers() { return m_renderers; }
 
     /// Creates a new render target matching the layout of given device
     static RenderTarget renderTargetFor(const Device &);
 
 private:
-    bool            render(unsigned long) override;
-    void            run() override;
+    bool                render(unsigned long) override;
+    void                run() override;
 
     /// Reads current device led state into the render target
-    void            getDeviceState(RenderTarget & state);
+    void                getDeviceState(RenderTarget & state);
 
 private:
     Device &            m_device;               ///< The device to render to

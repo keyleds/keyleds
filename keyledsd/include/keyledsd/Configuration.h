@@ -17,12 +17,15 @@
 #ifndef KEYLEDSD_CONFIGURATION_H_603C2B68
 #define KEYLEDSD_CONFIGURATION_H_603C2B68
 
+#include <memory>
 #include <regex>
 #include <string>
 #include <utility>
 #include <vector>
 
 namespace keyleds {
+
+/****************************************************************************/
 
 /** Complete service configuration
  *
@@ -52,6 +55,7 @@ private:
                                           profile_list profiles);
 public:
                             Configuration() = default;
+                            ~Configuration();
 
     const std::string &     path() const { return m_path; }
     const path_list &       pluginPaths() const { return m_pluginPaths; }
@@ -61,7 +65,7 @@ public:
     const profile_list&     profiles() const { return m_profiles; }
 
 public:
-    static Configuration    loadFile(const std::string & path);
+    static std::unique_ptr<Configuration>   loadFile(const std::string & path);
 
 private:
     std::string             m_path;         ///< Configuration file path, if loaded from disk
@@ -85,6 +89,7 @@ public:
                             EffectGroup(std::string name,
                                         key_group_list keyGroups,
                                         effect_list effects);
+                            ~EffectGroup();
 
     const std::string &     name() const { return m_name; }
     const key_group_list &  keyGroups() const { return m_keyGroups; }
@@ -106,6 +111,7 @@ public:
     using key_list = std::vector<std::string>;
 public:
                             KeyGroup(std::string name, key_list keys);
+                            ~KeyGroup();
 
     const std::string &     name() const { return m_name; }
     const key_list &        keys() const { return m_keys; }
@@ -130,17 +136,13 @@ public:
     /// Filters a context to determine whether a profile should be enabled
     class Lookup final
     {
-        struct Entry {
-            std::string key;        ///< context entry key
-            std::string value;      ///< string representation of the regex
-            std::regex  regex;      ///< regex to match context entry value against
-        };
+        struct Entry;
         using entry_list = std::vector<Entry>;
-    public:
         using string_map = std::vector<std::pair<std::string, std::string>>;
     public:
                             Lookup() = default;
                             Lookup(string_map filters);
+                            ~Lookup();
 
         bool                match(const string_map &) const;
     private:
@@ -152,10 +154,11 @@ public:
     using device_list = std::vector<std::string>;
     using effect_group_list = std::vector<std::string>;
 public:
-                        Profile(std::string name,
-                                Lookup lookup,
-                                device_list devices,
-                                effect_group_list effectGroups);
+                            Profile(std::string name,
+                                    Lookup lookup,
+                                    device_list devices,
+                                    effect_group_list effectGroups);
+                            ~Profile();
 
     const std::string &     name() const { return m_name; }
     const Lookup &          lookup() const { return m_lookup; }
@@ -178,10 +181,10 @@ private:
  */
 class Configuration::Effect final
 {
-public:
     using string_map = std::vector<std::pair<std::string, std::string>>;
 public:
                         Effect(std::string name, string_map items);
+                        ~Effect();
     const std::string & name() const { return m_name; }
     const string_map &  items() const { return m_items; }
 private:
@@ -189,6 +192,8 @@ private:
     string_map          m_items;        ///< Flat string map passed through to effect
 };
 
-};
+/****************************************************************************/
+
+} // namespace keyleds
 
 #endif

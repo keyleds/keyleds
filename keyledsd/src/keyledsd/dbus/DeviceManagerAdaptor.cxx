@@ -20,7 +20,8 @@
 #include <QDBusMetaType>
 #include "keyledsd/DeviceManager.h"
 
-using dbus::DeviceManagerAdaptor;
+using keyleds::dbus::DeviceManagerAdaptor;
+
 Q_DECLARE_METATYPE(DBusDeviceKeyInfo)
 Q_DECLARE_METATYPE(DBusDeviceKeyInfoList)
 
@@ -56,7 +57,7 @@ const QDBusArgument & operator>>(const QDBusArgument & arg, DBusDeviceKeyInfo & 
 
 /****************************************************************************/
 
-DeviceManagerAdaptor::DeviceManagerAdaptor(keyleds::DeviceManager *parent)
+DeviceManagerAdaptor::DeviceManagerAdaptor(DeviceManager *parent)
     : QDBusAbstractAdaptor(parent)
 {
     Q_ASSERT(parent != nullptr);
@@ -68,7 +69,7 @@ DeviceManagerAdaptor::DeviceManagerAdaptor(keyleds::DeviceManager *parent)
 
 inline keyleds::DeviceManager * DeviceManagerAdaptor::parent() const
 {
-    return static_cast<keyleds::DeviceManager *>(QObject::parent());
+    return static_cast<DeviceManager *>(QObject::parent());
 }
 
 QString DeviceManagerAdaptor::sysPath() const

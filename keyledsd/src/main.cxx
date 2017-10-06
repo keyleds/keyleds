@@ -150,9 +150,7 @@ static void handleSignalEvent(const Options & options, keyleds::Service * servic
             case SIGHUP:
                 INFO("reloading ", options.configPath);
                 try {
-                    auto conf = std::make_unique<Configuration>(
-                        Configuration::loadFile(options.configPath)
-                    );
+                    auto conf = Configuration::loadFile(options.configPath);
                     service->setConfiguration(std::move(conf));
                 } catch (std::exception & error) {
                     CRITICAL("reloading failed: ", error.what());
@@ -186,9 +184,7 @@ int main(int argc, char * argv[])
     // Load configuration
     std::unique_ptr<Configuration> configuration;
     try {
-        configuration = std::make_unique<Configuration>(
-            Configuration::loadFile(options.configPath)
-        );
+        configuration = Configuration::loadFile(options.configPath);
         VERBOSE("using ", configuration->path());
     } catch (std::exception & error) {
         CRITICAL("Could not load configuration: ", error.what());
@@ -214,7 +210,7 @@ int main(int argc, char * argv[])
 #ifndef NO_DBUS
     if (!options.noDBus) {
         auto connection = QDBusConnection::sessionBus();
-        new dbus::ServiceAdaptor(service);   // service takes ownership
+        new keyleds::dbus::ServiceAdaptor(service);   // service takes ownership
         if (!connection.registerObject("/Service", service) ||
             !connection.registerService("org.etherdream.KeyledsService")) {
             CRITICAL("DBus registration failed");

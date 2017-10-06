@@ -81,6 +81,8 @@ class Policy
 {
 public:
     virtual void    write(level_t, const std::string & name, const std::string & msg) const = 0;
+protected:
+    ~Policy();
 };
 
 /****************************************************************************/

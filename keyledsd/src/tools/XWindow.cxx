@@ -43,6 +43,17 @@ void std::default_delete<X11Display>::operator()(X11Display *ptr) const { XClose
 
 /****************************************************************************/
 
+struct xlib::Display::HandlerInfo
+{
+    subscription_id_type id;
+    event_type          event;
+    event_handler       handler;
+};
+
+/****************************************************************************/
+
+constexpr xlib::Display::subscription_id_type xlib::Display::invalid_subscription;
+
 xlib::Display::Display(std::string name)
  : m_display(openDisplay(name)),
    m_name(DisplayString(m_display.get())),
@@ -119,7 +130,7 @@ xlib::Display::subscription xlib::Display::registerHandler(event_type type, even
     return subscription(*this, id);
 }
 
-void xlib::Display::unregisterHandler(subscription::id_type id)
+void xlib::Display::unregisterHandler(subscription_id_type id)
 {
     auto it = std::find_if(m_handlers.begin(), m_handlers.end(),
                            [id](const auto & item){ return item.id == id; });
@@ -129,11 +140,13 @@ void xlib::Display::unregisterHandler(subscription::id_type id)
     DEBUG("unsubscribed from events => ", id);
 }
 
-constexpr xlib::Display::subscription::id_type xlib::Display::subscription::invalid_id;
+xlib::Display::subscription::subscription(Display & watcher, subscription_id_type id)
+ : m_display(watcher), m_id(id)
+{}
 
 xlib::Display::subscription::~subscription()
 {
-    if (m_id != invalid_id) { m_display.unregisterHandler(m_id); }
+    if (m_id != invalid_subscription) { m_display.unregisterHandler(m_id); }
 }
 
 /****************************************************************************/
@@ -141,6 +154,8 @@ xlib::Display::subscription::~subscription()
 xlib::Window::Window(Display & display, handle_type window)
  : m_display(display), m_window(window), m_classLoaded(false)
 {}
+
+xlib::Window::~Window() {}
 
 void xlib::Window::changeAttributes(unsigned long mask, const XSetWindowAttributes & attrs)
 {
@@ -282,18 +297,30 @@ std::string Device::getProperty(Atom atom, Atom type) const
 
 /****************************************************************************/
 
-std::string xlib::Error::makeMessage(X11Display *display, XErrorEvent *event)
+xlib::Error::Error(const std::string & msg)
+ : std::runtime_error(msg)
+{}
+
+xlib::Error::Error(XErrorEvent *event)
+ : std::runtime_error(makeMessage(event))
+{}
+
+xlib::Error::~Error() {}
+
+std::string xlib::Error::makeMessage(XErrorEvent *event)
 {
     std::ostringstream msg;
 
     char buffer[256];
-    if (XGetErrorText(display, event->error_code, buffer, sizeof(buffer)) == Success) {
+    if (XGetErrorText(event->display, event->error_code,
+                      buffer, sizeof(buffer)) == Success) {
         msg <<buffer;
     } else {
         msg <<"error code " <<event->error_code;
     }
-    msg <<" on display " <<DisplayString(display)
-        <<" while performing request " <<int(event->request_code) <<"." <<int(event->minor_code);
+    msg <<" on display " <<DisplayString(event->display)
+        <<" while performing request "
+        <<int(event->request_code) <<"." <<int(event->minor_code);
 
     return msg.str();
 }
@@ -331,10 +358,10 @@ void ErrorCatcher::synchronize(Display & display) const
     XSync(display.handle(), False);
 }
 
-int ErrorCatcher::errorHandler(X11Display * display, XErrorEvent * error)
+int ErrorCatcher::errorHandler(X11Display *, XErrorEvent * error)
 {
     assert(s_current != nullptr);
-    s_current->m_errors.emplace_back(display, error);
+    s_current->m_errors.push_back(*error);
     return 0;
 }
 

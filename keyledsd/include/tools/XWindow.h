@@ -23,8 +23,6 @@
 #ifndef TOOLS_WINDOW_H_F1434518
 #define TOOLS_WINDOW_H_F1434518
 
-/****************************************************************************/
-
 #include <X11/Xlib.h>
 #undef Bool
 #include <functional>
@@ -54,10 +52,10 @@ using X11Display = ::Display;
  */
 class Window final
 {
-public:
     using handle_type = ::Window;
 public:
                             Window(Display & display, handle_type window);
+                            ~Window();
 
     Display &               display() const { return m_display; }
     handle_type             handle() const { return m_window; }
@@ -94,7 +92,6 @@ private:
  */
 class Device final
 {
-public:
     using handle_type = int;
     static constexpr handle_type invalid_device = 0;
 public:
@@ -128,34 +125,27 @@ private:
  */
 class Display final
 {
-public:
-    using handle_type = X11Display *;
+    struct HandlerInfo;
     using atom_map = std::vector<std::pair<std::string, Atom>>;
-    using event_type = int;
+    using handle_type = X11Display *;
     using event_handler = std::function<void(const XEvent &)>;
-
+    using event_type = int;
+    using subscription_id_type = unsigned;
+    static constexpr subscription_id_type invalid_subscription = 0;
+public:
     class subscription final
     {
     public:
-        using id_type = int;
-        static constexpr id_type invalid_id = 0;
-    public:
-                    subscription(Display & watcher, id_type id)
-                     : m_display(watcher), m_id(id) {}
+                    subscription(Display & watcher, subscription_id_type id);
                     subscription(subscription && other)
-                     : m_display(other.m_display), m_id(invalid_id)
+                     : m_display(other.m_display), m_id(invalid_subscription)
                      { std::swap(m_id, other.m_id); }
                     ~subscription();
     private:
-        Display &   m_display;
-        id_type     m_id;
+        Display &               m_display;
+        subscription_id_type    m_id;
     };
-private:
-    struct HandlerInfo {
-        subscription::id_type id;
-        event_type          event;
-        event_handler       handler;
-    };
+
 public:
                             Display(std::string name = std::string());
                             Display(const Display &) = delete;
@@ -182,7 +172,7 @@ private:
     static std::unique_ptr<X11Display> openDisplay(const std::string &);
 
     /// Invoked by subscription destructors
-    void                    unregisterHandler(subscription::id_type);
+    void                    unregisterHandler(subscription_id_type);
 
 private:
     std::unique_ptr<X11Display> m_display;      ///< Xlib descriptor for the connection to the server
@@ -190,7 +180,7 @@ private:
     Window                  m_root;             ///< Window at the root of the display.
     mutable atom_map        m_atomCache;        ///< key-sorted list of key-values
     std::vector<HandlerInfo> m_handlers;        ///< Callback list
-    subscription::id_type   m_nextSubscription; ///< Next available subscription id
+    subscription_id_type    m_nextSubscription; ///< Next available subscription id
 };
 
 /****************************************************************************/
@@ -198,12 +188,11 @@ private:
 class Error : public std::runtime_error
 {
 public:
-                            Error(const std::string & msg)
-                             : std::runtime_error(msg) {}
-                            Error(X11Display *display, XErrorEvent *event)
-                             : std::runtime_error(makeMessage(display, event)) {}
+                            Error(const std::string & msg);
+                            Error(XErrorEvent *event);
+                            ~Error();
 private:
-    static std::string      makeMessage(X11Display *display, XErrorEvent *event);
+    static std::string      makeMessage(XErrorEvent *event);
 };
 
 /****************************************************************************/
@@ -211,7 +200,7 @@ private:
 class ErrorCatcher
 {
 public:
-    using error_list = std::vector<Error>;
+    using error_list = std::vector<XErrorEvent>;
     using handler_type = int (*)(X11Display *, XErrorEvent *);
 public:
     ErrorCatcher();
@@ -234,6 +223,6 @@ private:
 
 /****************************************************************************/
 
-}
+} // namespace xlib
 
 #endif

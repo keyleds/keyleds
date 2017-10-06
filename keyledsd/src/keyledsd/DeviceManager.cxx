@@ -171,7 +171,7 @@ DeviceManager::dev_list DeviceManager::findEventDevices(const ::device::Descript
 /// should be loaded for the context. Returned list references Configuration
 /// entries directly, and are therefore invalidated by any operation that
 /// invalidates configuration's iterators.
-keyleds::device::RenderLoop::renderer_list DeviceManager::loadEffects(const string_map & context)
+std::vector<DeviceManager::Renderer *> DeviceManager::loadEffects(const string_map & context)
 {
     // Match context against profile lookups
     const Configuration::Profile * profile = nullptr;
@@ -220,7 +220,7 @@ keyleds::device::RenderLoop::renderer_list DeviceManager::loadEffects(const stri
         }
     }
 
-    RenderLoop::renderer_list renderers;
+    std::vector<Renderer *> renderers;
     for (const auto & effectGroup : effectGroups) {
         const auto & loadedEffectGroup = getEffectGroup(*effectGroup);
         const auto & effects = loadedEffectGroup.effects();
@@ -249,7 +249,7 @@ DeviceManager::EffectGroup & DeviceManager::getEffectGroup(const Configuration::
                    std::back_inserter(keyGroups), group_from_conf);
 
     // Load effects
-    EffectGroup::effect_list effects;
+    std::vector<EffectManager::effect_ptr> effects;
     for (const auto & effectConf : conf.effects()) {
         auto effect = m_effectManager.createEffect(
             effectConf.name(), *this, effectConf, keyGroups
@@ -266,13 +266,11 @@ DeviceManager::EffectGroup & DeviceManager::getEffectGroup(const Configuration::
     return *eit;
 }
 
-keyleds::device::RenderLoop::renderer_list DeviceManager::EffectGroup::effects() const
+std::vector<DeviceManager::Renderer *> DeviceManager::EffectGroup::effects() const
 {
-    RenderLoop::renderer_list result;
+    std::vector<Renderer *> result;
     result.reserve(m_effects.size());
-    std::transform(m_effects.begin(),
-                   m_effects.end(),
-                   std::back_inserter(result),
-                   [](auto & ptr) { return static_cast<device::Renderer *>(ptr.get()); });
+    std::transform(m_effects.begin(), m_effects.end(), std::back_inserter(result),
+                   [](auto & ptr) { return ptr.get(); });
     return result;
 }

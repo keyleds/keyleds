@@ -17,17 +17,13 @@
 #include "keyledsd/DisplayManager.h"
 
 #include <QSocketNotifier>
-#include <cassert>
-#include "tools/XContextWatcher.h"
 #include "tools/XInputWatcher.h"
 
-using xlib::XContextWatcher;
-using xlib::XInputWatcher;
 using keyleds::DisplayManager;
 
 /****************************************************************************/
 
-DisplayManager::DisplayManager(std::unique_ptr<xlib::Display> display, QObject *parent)
+DisplayManager::DisplayManager(std::unique_ptr<Display> display, QObject *parent)
  : QObject(parent),
    m_display(std::move(display)),
    m_contextWatcher(std::make_unique<XContextWatcher>(*m_display)),
@@ -51,7 +47,7 @@ void DisplayManager::scanDevices()
     m_inputWatcher->scan();
 }
 
-void DisplayManager::onContextChanged(const xlib::XContextWatcher::context_map & context)
+void DisplayManager::onContextChanged(const XContextWatcher::context_map & context)
 {
     m_context = context;
     emit contextChanged(m_context);

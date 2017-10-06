@@ -17,8 +17,6 @@
 #ifndef TOOLS_XINPUTWATCHER_H_51CB4EAC
 #define TOOLS_XINPUTWATCHER_H_51CB4EAC
 
-/****************************************************************************/
-
 #include <QObject>
 #include <string>
 #include <vector>
@@ -55,11 +53,11 @@ protected:
     /// Invoked from the main X display event loop for Xinput events
     virtual void    handleEvent(const XEvent &);
 
-    /// Invoked by handleEvent when a Xinput device becomes ready. Int is device type (use field)
-    virtual void    onInputEnabled(Device::handle_type, int);
+    /// Invoked by handleEvent when a Xinput device becomes ready.
+    virtual void    onInputEnabled(int deviceId, int use);
 
-    /// Invoked by handleEvent when a Xinput device disappears. Int is device type (use field)
-    virtual void    onInputDisabled(Device::handle_type, int);
+    /// Invoked by handleEvent when a Xinput device disappears.
+    virtual void    onInputDisabled(int deviceId, int use);
 
 protected:
     Display &       m_display;          ///< X display connection
@@ -70,6 +68,6 @@ protected:
 
 /****************************************************************************/
 
-};
+} // namespace xlib
 
 #endif

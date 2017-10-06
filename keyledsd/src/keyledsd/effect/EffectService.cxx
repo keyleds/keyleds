@@ -24,7 +24,6 @@
 LOGGING("effect-service");
 
 using keyleds::effect::EffectService;
-using keyleds::device::KeyDatabase;
 
 /****************************************************************************/
 
@@ -50,7 +49,7 @@ const std::string & EffectService::deviceModel() const
 const std::string & EffectService::deviceSerial() const
     { return m_manager.serial(); }
 
-const KeyDatabase & EffectService::keyDB() const
+const EffectService::KeyDatabase & EffectService::keyDB() const
     { return m_manager.keyDB(); }
 
 const std::vector<EffectService::KeyGroup> & EffectService::keyGroups() const
