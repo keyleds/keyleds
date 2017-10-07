@@ -23,16 +23,15 @@ include(CheckCSourceCompiles)
 
 option(NO_DBUS "Do not compile DBus support" OFF)
 
-if(NOT KEYLEDSD_DATA_PREFIX)
-    set(KEYLEDSD_DATA_PREFIX ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME})
-endif()
-
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -std=c++14 -fPIC -fno-rtti -fstrict-enums -fvisibility=hidden")
 
 if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL x86_64 OR ${CMAKE_SYSTEM_PROCESSOR} STREQUAL i686)
     set(KEYLEDSD_USE_MMX 1)
     set(KEYLEDSD_USE_SSE2 1)
 endif()
+
+set(keyledsd_STATIC_MODULES breathe fill)
+set(keyledsd_DYNAMIC_MODULES feedback stars wave)
 
 ##############################################################################
 # Sources
@@ -46,21 +45,19 @@ set(keyledsd_SRCS
     src/keyledsd/device/KeyDatabase.cxx
     src/keyledsd/device/LayoutDescription.cxx
     src/keyledsd/device/RenderLoop.cxx
+    src/keyledsd/effect/EffectManager.cxx
+    src/keyledsd/effect/EffectService.cxx
+    src/keyledsd/effect/StaticModuleRegistry.cxx
     src/keyledsd/Configuration.cxx
     src/keyledsd/DeviceManager.cxx
     src/keyledsd/DisplayManager.cxx
-    src/keyledsd/PluginManager.cxx
     src/keyledsd/Service.cxx
     src/keyledsd/colors.cxx
-    src/plugins/breathe.cxx
-    src/plugins/feedback.cxx
-    src/plugins/fill.cxx
-    src/plugins/stars.cxx
-    src/plugins/wave.cxx
     src/tools/accelerated.c
     src/tools/accelerated_plain.c
     src/tools/AnimationLoop.cxx
     src/tools/DeviceWatcher.cxx
+    src/tools/DynamicLibrary.cxx
     src/tools/FileWatcher.cxx
     src/tools/Paths.cxx
     src/tools/XContextWatcher.cxx
@@ -85,6 +82,11 @@ if(KEYLEDSD_USE_SSE2)
     set_source_files_properties("src/tools/accelerated_sse2.c"
                                 PROPERTIES COMPILE_FLAGS "-msse2")
 endif()
+foreach(module ${keyledsd_STATIC_MODULES})
+    set(keyledsd_SRCS ${keyledsd_SRCS} src/plugins/${module}.cxx)
+endforeach()
+
+set(keyledsd_DEPS ${CMAKE_DL_LIBS})
 
 ##############################################################################
 # Feature detection
@@ -163,10 +165,19 @@ configure_file("include/config.h.in" "config.h")
 
 # Binary
 add_executable(${PROJECT_NAME} ${keyledsd_SRCS})
+target_compile_definitions(${PROJECT_NAME} PRIVATE KEYLEDSD_MODULES_STATIC=1)
 target_link_libraries(${PROJECT_NAME} libkeyleds ${keyledsd_DEPS})
 
-# Installing stuff (stub)
+foreach(module ${keyledsd_DYNAMIC_MODULES})
+    add_library(${module} MODULE src/plugins/${module}.cxx)
+    set_target_properties(${module} PROPERTIES PREFIX fx_)
+endforeach()
+
+# Installing stuff
 install(TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_BINDIR})
-install(DIRECTORY layouts/ DESTINATION ${KEYLEDSD_DATA_PREFIX}/layouts
+install(TARGETS ${keyledsd_DYNAMIC_MODULES} DESTINATION ${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME})
+install(DIRECTORY layouts/
+        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/layouts
         FILES_MATCHING PATTERN "*.xml")
-install(FILES keyledsd.conf.sample keyledsd.desktop DESTINATION ${KEYLEDSD_DATA_PREFIX})
+install(FILES keyledsd.conf.sample keyledsd.desktop
+        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME})

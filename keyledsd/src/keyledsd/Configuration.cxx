@@ -310,21 +310,16 @@ public:
 
     void subStateEnd(ConfigurationBuilder & builder, BuildState & state) override
     {
-        auto conf_map = state.as<StringMappingBuildState>().result();
-        auto it_name = std::find_if(conf_map.cbegin(), conf_map.cend(),
+        auto conf = state.as<StringMappingBuildState>().result();
+        auto it_name = std::find_if(conf.cbegin(), conf.cend(),
                                     [](auto & item) { return item.first == "effect" ||
                                                              item.first == "plugin"; });
-        if (it_name == conf_map.end()) { throw builder.makeError("plugin configuration must have a name"); }
+        if (it_name == conf.end()) { throw builder.makeError("plugin configuration must have a name"); }
 
         auto name = it_name->second;
-        conf_map.erase(it_name);
+        conf.erase(it_name);
 
-        m_value.emplace_back(std::move(name), std::move(conf_map));
-    }
-
-    void scalar(ConfigurationBuilder &, const std::string & value, const std::string &) override
-    {
-        m_value.emplace_back(Configuration::Effect(value, Configuration::Effect::conf_map()));
+        m_value.emplace_back(std::move(name), std::move(conf));
     }
 
     value_type && result() { return std::move(m_value); }
@@ -766,14 +761,6 @@ Configuration::Profile::Lookup::buildRegexps(string_map filters)
 
 /****************************************************************************/
 
-Configuration::Effect::Effect(std::string name, conf_map items)
+Configuration::Effect::Effect(std::string name, string_map items)
  : m_name(std::move(name)), m_items(std::move(items))
 {}
-
-const std::string & Configuration::Effect::operator[](const std::string & key) const
-{
-    static const std::string empty;
-    auto it = std::find_if(m_items.begin(), m_items.end(),
-                           [key](const auto & item) { return item.first == key; });
-    return it != m_items.end() ? it->second : empty;
-}

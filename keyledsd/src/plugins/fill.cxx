@@ -16,15 +16,14 @@
  */
 #include <algorithm>
 #include <vector>
-#include "keyledsd/Configuration.h"
-#include "keyledsd/PluginManager.h"
+#include "keyledsd/effect/PluginHelper.h"
 #include "keyledsd/colors.h"
 
 using keyleds::RGBAColor;
 
 /****************************************************************************/
 
-class FillEffect final : public keyleds::Effect
+class FillEffect final : public plugin::Effect
 {
     using KeyGroup = KeyDatabase::KeyGroup;
 
@@ -41,21 +40,19 @@ class FillEffect final : public keyleds::Effect
     };
 
 public:
-    FillEffect(const keyleds::DeviceManager &,
-               const keyleds::Configuration::Effect & conf,
-               const keyleds::EffectPluginFactory::group_list groups)
+    FillEffect(EffectService & service)
      : m_fill(0, 0, 0, 0)
     {
-        const auto & colorStr = conf["color"];
+        const auto & colorStr = service.getConfig("color");
         if (!colorStr.empty()) { m_fill = RGBAColor::parse(colorStr); }
 
-        for (const auto & item : conf.items()) {
+        for (const auto & item : service.configuration()) {
             if (item.first == "color") { continue; }
             auto git = std::find_if(
-                groups.begin(), groups.end(),
+                service.keyGroups().begin(), service.keyGroups().end(),
                 [item](const auto & group) { return group.name() == item.first; }
             );
-            if (git == groups.end()) { continue; }
+            if (git == service.keyGroups().end()) { continue; }
             m_rules.emplace_back(*git, RGBAColor::parse(item.second));
         }
     }
@@ -77,4 +74,4 @@ private:
     std::vector<Rule>   m_rules;        ///< each rule maps a key group to a color
 };
 
-REGISTER_EFFECT_PLUGIN("fill", FillEffect)
+KEYLEDSD_SIMPLE_EFFECT("fill", FillEffect);

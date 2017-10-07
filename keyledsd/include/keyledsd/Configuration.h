@@ -179,15 +179,14 @@ private:
 class Configuration::Effect final
 {
 public:
-    using conf_map = std::vector<std::pair<std::string, std::string>>;
+    using string_map = std::vector<std::pair<std::string, std::string>>;
 public:
-                        Effect(std::string name, conf_map items);
+                        Effect(std::string name, string_map items);
     const std::string & name() const { return m_name; }
-    const conf_map &    items() const { return m_items; }
-    const std::string & operator[](const std::string &) const;
+    const string_map &  items() const { return m_items; }
 private:
     std::string         m_name;         ///< Effect name as registered in effect manager
-    conf_map            m_items;        ///< Flat string map passed through to effect
+    string_map          m_items;        ///< Flat string map passed through to effect
 };
 
 };

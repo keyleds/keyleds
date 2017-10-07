@@ -24,6 +24,7 @@
 #include "keyledsd/device/Device.h"
 #include "keyledsd/colors.h"
 #include "tools/AnimationLoop.h"
+#include "config.h"
 
 namespace keyleds { namespace device {
 
@@ -77,8 +78,8 @@ private:
     friend void swap(RenderTarget &, RenderTarget &) noexcept;
 };
 
-void swap(RenderTarget &, RenderTarget &) noexcept;
-void blend(RenderTarget &, const RenderTarget &);
+KEYLEDSD_EXPORT void swap(RenderTarget &, RenderTarget &) noexcept;
+KEYLEDSD_EXPORT void blend(RenderTarget &, const RenderTarget &);
 
 /****************************************************************************/
 
@@ -90,13 +91,13 @@ void blend(RenderTarget &, const RenderTarget &);
 class Renderer
 {
 protected:
-    using RenderTarget = RenderTarget;
+    using RenderTarget = keyleds::device::RenderTarget;
 public:
     /// Modifies the target to reflect effect's display once the specified time has elapsed
     virtual void    render(unsigned long nanosec, RenderTarget & target) = 0;
 protected:
     // Protect the destructor so we can leave it non-virtual
-    ~Renderer();
+    ~Renderer() {}
 };
 
 /****************************************************************************/

@@ -33,6 +33,8 @@
 #ifndef NO_DBUS
 #include "keyledsd/dbus/ServiceAdaptor.h"
 #endif
+#include "keyledsd/effect/EffectManager.h"
+#include "keyledsd/effect/StaticModuleRegistry.h"
 #include "keyledsd/Configuration.h"
 #include "keyledsd/Service.h"
 #include "config.h"
@@ -47,12 +49,13 @@ using keyleds::Configuration;
 
 #ifdef _GNU_SOURCE
 static const struct option optionDescriptions[] = {
-    {"config",    1, nullptr, 'c' },
-    {"help",      0, nullptr, 'h' },
-    {"quiet",     0, nullptr, 'q' },
-    {"single",    0, nullptr, 's' },
-    {"verbose",   0, nullptr, 'v' },
-    {"no-dbus",   0, nullptr, 'D' },
+    {"config",      1, nullptr, 'c' },
+    {"help",        0, nullptr, 'h' },
+    {"module-path", 1, nullptr, 'm' },
+    {"quiet",       0, nullptr, 'q' },
+    {"single",      0, nullptr, 's' },
+    {"verbose",     0, nullptr, 'v' },
+    {"no-dbus",     0, nullptr, 'D' },
     {nullptr, 0, nullptr, 0}
 };
 #endif
@@ -60,10 +63,11 @@ static const struct option optionDescriptions[] = {
 class Options final
 {
 public:
-    const char *        configPath;
-    logging::level_t    logLevel;
-    bool                autoQuit;
-    bool                noDBus;
+    const char *                configPath;
+    std::vector<std::string>    modulePaths;
+    logging::level_t            logLevel;
+    bool                        autoQuit;
+    bool                        noDBus;
 
 public:
     Options() : configPath(KEYLEDSD_CONFIG_FILE),
@@ -78,12 +82,13 @@ public:
         std::ostringstream msgBuf;
         ::opterr = 0;
 #ifdef _GNU_SOURCE
-        while ((opt = ::getopt_long(argc, argv, ":c:hqsvD", optionDescriptions, nullptr)) >= 0) {
+        while ((opt = ::getopt_long(argc, argv, ":c:hm:qsvD", optionDescriptions, nullptr)) >= 0) {
 #else
-        while ((opt = ::getopt(argc, argv, ":c:hqsvD")) >= 0) {
+        while ((opt = ::getopt(argc, argv, ":c:hm:qsvD")) >= 0) {
 #endif
             switch(opt) {
             case 'c': options.configPath = optarg; break;
+            case 'm': options.modulePaths.push_back(optarg); break;
             case 'q': options.logLevel = logging::critical::value; break;
             case 's': options.autoQuit = true; break;
             case 'v': options.logLevel += 1; break;
@@ -109,7 +114,12 @@ public:
 
 // This defines a signal handler that simply write signal number to signalSendFd
 static int signalSendFd;
-static void sigHandler(int sig) { write(signalSendFd, &sig, sizeof(sig)); }
+static void sigHandler(int sig)
+{
+    if (write(signalSendFd, &sig, sizeof(sig)) < 0) {
+        CRITICAL("ignoring signal ", sig, " due to failed write");
+    }
+}
 
 /// Returns a socket that get an int everytime sigHandler catches a signal
 static int openSignalSocket(std::vector<int> sigs)
@@ -156,6 +166,8 @@ static void handleSignalEvent(const Options & options, keyleds::Service * servic
 
 int main(int argc, char * argv[])
 {
+    keyleds::effect::EffectManager effectManager;
+
     // Create event loop
     QCoreApplication app(argc, argv);
     app.setOrganizationDomain("etherdream.org");
@@ -183,8 +195,19 @@ int main(int argc, char * argv[])
         return 1;
     }
 
+    // Register modules
+    const auto & staticRegistry = keyleds::effect::StaticModuleRegistry::instance();
+    for (const auto & module : staticRegistry.modules()) {
+        std::string error;
+        if (!effectManager.add(module.first, module.second, &error)) {
+            ERROR("static module <", module.first, ">: ", error);
+        }
+    }
+    effectManager.searchPaths() = options.modulePaths;
+    effectManager.searchPaths().push_back(SYS_CONFIG_LIBDIR "/" KEYLEDSD_MODULE_PREFIX);
+
     // Setup application components
-    auto service = new keyleds::Service(std::move(configuration), &app);
+    auto service = new keyleds::Service(effectManager, std::move(configuration), &app);
     service->setAutoQuit(options.autoQuit);
     QTimer::singleShot(0, service, &keyleds::Service::init);
 

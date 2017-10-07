@@ -17,17 +17,14 @@
 #include <algorithm>
 #include <random>
 #include <vector>
-#include "keyledsd/Configuration.h"
-#include "keyledsd/DeviceManager.h"
-#include "keyledsd/PluginManager.h"
+#include "keyledsd/effect/PluginHelper.h"
 #include "keyledsd/colors.h"
 
-using keyleds::DeviceManager;
 using keyleds::RGBAColor;
 
 /****************************************************************************/
 
-class StarsEffect final : public keyleds::Effect
+class StarsEffect final : public plugin::Effect
 {
     using KeyGroup = KeyDatabase::KeyGroup;
 
@@ -39,37 +36,36 @@ class StarsEffect final : public keyleds::Effect
     };
 
 public:
-    StarsEffect(const keyleds::DeviceManager & manager,
-                const keyleds::Configuration::Effect & conf,
-                const keyleds::EffectPluginFactory::group_list groups)
-     : m_manager(manager),
-       m_buffer(manager.getRenderTarget()),
-       m_duration(1000)
+    StarsEffect(EffectService & service)
+     : m_service(service),
+       m_buffer(service.createRenderTarget()),
+       m_duration(1000),
+       m_keys(nullptr)
     {
-        auto duration = std::stoul(conf["duration"]);
+        auto duration = std::stoul(service.getConfig("duration"));
         if (duration > 0) { m_duration = duration; }
 
-        auto number = std::stoul(conf["number"]);
+        auto number = std::stoul(service.getConfig("number"));
         m_stars.resize(number > 0 ? number : 8);
 
         // Load color list
-        for (const auto & item : conf.items()) {
+        for (const auto & item : service.configuration()) {
             if (item.first.rfind("color", 0) == 0) {
                 m_colors.push_back(RGBAColor::parse(item.second));
             }
         }
 
         // Load key list
-        const auto & groupStr = conf["group"];
+        const auto & groupStr = service.getConfig("group");
         if (!groupStr.empty()) {
             auto git = std::find_if(
-                groups.begin(), groups.end(),
+                service.keyGroups().begin(), service.keyGroups().end(),
                 [groupStr](const auto & group) { return group.name() == groupStr; });
-            if (git != groups.end()) { m_keys = *git; }
+            if (git != service.keyGroups().end()) { m_keys = &*git; }
         }
 
         // Get ready
-        std::fill(m_buffer.begin(), m_buffer.end(), RGBAColor{0, 0, 0, 0});
+        std::fill(m_buffer->begin(), m_buffer->end(), RGBAColor{0, 0, 0, 0});
 
         for (std::size_t idx = 0; idx < m_stars.size(); ++idx) {
             auto & star = m_stars[idx];
@@ -83,7 +79,7 @@ public:
         for (auto & star : m_stars) {
             star.age += ms;
             if (star.age >= m_duration) { rebirth(star); }
-            m_buffer[star.key->index] = RGBAColor(
+            (*m_buffer)[star.key->index] = RGBAColor(
                 star.color.red,
                 star.color.green,
                 star.color.blue,
@@ -91,7 +87,7 @@ public:
             );
         }
 
-        blend(target, m_buffer);
+        blend(target, *m_buffer);
     }
 
     void rebirth(Star & star)
@@ -99,12 +95,12 @@ public:
         using distribution = std::uniform_int_distribution<>;
 
         if (star.key != nullptr) {
-            m_buffer[star.key->index] = RGBAColor{0, 0, 0, 0};
+            (*m_buffer)[star.key->index] = RGBAColor{0, 0, 0, 0};
         }
-        if (!m_keys.empty()) {
-            star.key = &m_keys[distribution(0, m_keys.size() - 1)(m_random)];
+        if (m_keys) {
+            star.key = &(*m_keys)[distribution(0, m_keys->size() - 1)(m_random)];
         } else {
-            star.key = &m_manager.keyDB()[distribution(0, m_manager.keyDB().size() - 1)(m_random)];
+            star.key = &m_service.keyDB()[distribution(0, m_service.keyDB().size() - 1)(m_random)];
         }
         if (m_colors.empty()) {
             auto colordist = distribution(std::numeric_limits<RGBAColor::channel_type>::min(),
@@ -121,15 +117,15 @@ public:
 
 
 private:
-    const DeviceManager &   m_manager;
-    RenderTarget            m_buffer;       ///< this plugin's rendered state
+    const EffectService &   m_service;
+    RenderTarget *          m_buffer;       ///< this plugin's rendered state
     std::minstd_rand        m_random;       ///< picks stars when they are reborn
 
     unsigned                m_duration;     ///< how long stars stay alive, in milliseconds
     std::vector<RGBAColor>  m_colors;       ///< list of colors to choose from
-    KeyGroup                m_keys;         ///< what keys the effect applies to. Empty for whole keyboard.
+    const KeyGroup *        m_keys;         ///< what keys the effect applies to. Empty for whole keyboard.
 
     std::vector<Star>       m_stars;        ///< all the star objects
 };
 
-REGISTER_EFFECT_PLUGIN("stars", StarsEffect)
+KEYLEDSD_SIMPLE_EFFECT("stars", StarsEffect);

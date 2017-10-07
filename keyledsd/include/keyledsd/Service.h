@@ -27,6 +27,8 @@
 
 namespace xlib { class Display; }
 
+namespace keyleds { namespace effect { class EffectManager; } }
+
 namespace keyleds {
 
 class Configuration;
@@ -44,16 +46,19 @@ class Service final : public QObject
     Q_OBJECT
     using Device = device::Device;
     using DeviceWatcher = device::DeviceWatcher;
+    using EffectManager = effect::EffectManager;
     using FileWatcher = tools::FileWatcher;
     using string_map = std::vector<std::pair<std::string, std::string>>;
 public:
     using device_list = std::vector<std::unique_ptr<DeviceManager>>;
     using display_list = std::vector<std::unique_ptr<DisplayManager>>;
 public:
-                        Service(std::unique_ptr<Configuration>, QObject *parent = nullptr);
+                        Service(EffectManager &,
+                                std::unique_ptr<Configuration>, QObject *parent = nullptr);
                         Service(const Service &) = delete;
                         ~Service() override;
 
+    const EffectManager & effectManager() const { return m_effectManager; }
     const Configuration & configuration() const { return *m_configuration; }
     bool                autoQuit() const { return m_autoQuit; }
     const string_map &  context() const { return m_context; }
@@ -83,6 +88,7 @@ private:
     void                onDisplayAdded(std::unique_ptr<xlib::Display> &);
     void                onDisplayRemoved();
 private:
+    EffectManager &     m_effectManager;    ///< Controls lifecycle of effects (injected)
     std::unique_ptr<Configuration> m_configuration;
     bool                m_autoQuit;         ///< Quit when last device is removed?
 
