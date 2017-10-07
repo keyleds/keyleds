@@ -7,6 +7,8 @@ keyledsd \- Logitech keyboard per-key lighting service
 .B keyledsd
 .RB [ \-c
 .IR path ]
+.RB [ \-m
+.IR path ]
 .RB [ \-hqsvD ]
 .SH DESCRIPTION
 .B keyledsd
@@ -25,6 +27,10 @@ instead of default. If
 starts with a “/” or “.”, it is used as is. Otherwise it will be searched for in
 environment-defined
 .BR XDG_CONFIG_HOME \ and\  XDG_CONFIG_DIRS \ directories.
+.TP
+.BI \-m\  path
+Additional path to search effect plugins in. If specified several times, the
+directories are searched in the order they are given.
 .TP
 .BR \-h , \--help
 Display usage help and exit immediately.

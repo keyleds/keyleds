@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 cmake_minimum_required (VERSION 3.0)
-project(keyledsd VERSION 0.5.0 LANGUAGES CXX)
+project(keyledsd VERSION 0.6.0 LANGUAGES CXX)
 include(CheckCSourceCompiles)
 
 ##############################################################################
@@ -30,8 +30,8 @@ if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL x86_64 OR ${CMAKE_SYSTEM_PROCESSOR} STREQU
     set(KEYLEDSD_USE_SSE2 1)
 endif()
 
-set(keyledsd_STATIC_MODULES breathe fill)
-set(keyledsd_DYNAMIC_MODULES feedback stars wave)
+set(keyledsd_STATIC_MODULES breathe feedback fill wave)
+set(keyledsd_DYNAMIC_MODULES stars)
 
 ##############################################################################
 # Sources

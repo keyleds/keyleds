@@ -37,6 +37,8 @@ Features
 
 And a few goodies:
 
+* Effects are implemented as **loadable modules**, using a clean API. Develop
+  yours now.
 * **Command-line tool** for your scripting needs and extended configuration
   (set game-mode keys, change report rate, see USB exchanges…).
 * Optimized pure **C library**.

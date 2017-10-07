@@ -6,4 +6,4 @@ Comment=Manage Logitech per-key lighting keyboards
 Exec=keyledsd
 Terminal=false
 StartupNotify=false
-Keywords=logitech;keyboard;lighting;
+Keywords=logitech;keyboard;lighting;RGB;

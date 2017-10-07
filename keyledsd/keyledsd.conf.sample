@@ -36,10 +36,18 @@ groups:
 # to opaque black or some other color.
 #
 effects:
-    logitech-default:
+    keyleds-default:
         plugins:
-            - effect: fill
-              color: logitech
+            - effect: wave
+              period: 8000
+              length: 2000
+              direction: 240
+              color0: 5f5fff
+              color1: 5f5fff
+              color2: 5f5fff
+              color3: 5f5fff
+              color4: 5f5fff
+              color5: 0f0f0f
     rainbow:
         plugins:
             - effect: wave
@@ -108,8 +116,8 @@ effects:
     feedback:
         plugins:
             - effect: feedback      # turn keys on when pressed
-              color: red            # color when just pressed
-              duration: 1000        # how long (in milliseconds) it takes to fade out
+              color: ffbfbf         # color when just pressed
+              duration: 1200        # how long (in milliseconds) it takes to fade out
 
 # Profiles trigger effect activation when their lookup matches
 # Their name doesn't matter, but order does, as when several profiles match
@@ -121,7 +129,7 @@ effects:
 #
 profiles:
     __default__:                    # Special name __default__ is active when no other profile matches
-        effect: logitech-default    # Apply this effect
+        effect: keyleds-default     # Apply this effect
     __overlay__:
         effect: feedback
     empty:
@@ -137,7 +145,7 @@ profiles:
         lookup: { class: kate, title: ".* [*] — Kate" }
         effects: [ text-colors, alert ] # Apply those effects, in that order
     konsole:
-        lookup: { class: konsole }
+        lookup: { class: Gnome-terminal|konsole|XTerm }
         effect: green-breathe
     chromium:                       # Okay that profile is ugly, it's just for demo
         lookup: { class: "[Cc]hromium-browser" }

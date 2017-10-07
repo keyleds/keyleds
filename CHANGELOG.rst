@@ -3,7 +3,29 @@ Release Notes
 #############
 
 *****************************
-0.5.0 - current release
+0.6.0 - current release
+*****************************
+
+Released on October 7th, 2017
+
+Features:
+
+- Added layout descriptions for G610 and G910.
+- Introduced the possibility to set custom context entries through DBus.
+- Introduced the possibility to send both custom events and fake keypresses
+  through DBus.
+- Added online, instant-reloading of configuration.
+- Introduced the new dynamic plugin architecture, laying the ground for
+  third-party effects and in-engine scripting.
+
+Bugfixes:
+
+- No longer crashes when X display is not reachable.
+- No longer sometimes lock up on startup due to race condition in device thread
+  initialization.
+
+*****************************
+0.5.0
 *****************************
 
 Released on September 24th, 2017
