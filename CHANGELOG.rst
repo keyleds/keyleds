@@ -3,8 +3,10 @@ Release Notes
 #############
 
 *****************************
-0.7.0 - upcoming release
+0.6.1 - current release
 *****************************
+
+Released on October 8th, 2017
 
 Features:
 
@@ -12,8 +14,13 @@ Features:
   Key color remains still for ``sustain`` milliseconds, then fades in ``decay``
   milliseconds. The old ``duration`` configuration key is no longer recognized.
 
+Bugfixes:
+
+- Missing (defaulted) parameters in plugin configurarion no longer cause the
+  service to crash.
+
 *****************************
-0.6.0 - current release
+0.6.0
 *****************************
 
 Released on October 7th, 2017
