@@ -40,14 +40,9 @@ public:
        m_length(1000),
        m_direction(0)
     {
-        auto period = std::stoul(service.getConfig("period"));
-        if (period > 0) { m_period = period; }
-
-        auto length = std::stoul(service.getConfig("length"));
-        if (length > 0) { m_length = length; }
-
-        auto direction = std::stoul(service.getConfig("direction"));
-        if (direction > 0) { m_direction = direction; }
+        service.parseNumber(service.getConfig("period"), &m_period);
+        service.parseNumber(service.getConfig("length"), &m_length);
+        service.parseNumber(service.getConfig("direction"), &m_direction);
 
         // Load color list
         std::vector<RGBAColor> colors;

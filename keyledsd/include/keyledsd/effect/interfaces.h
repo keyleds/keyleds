@@ -84,6 +84,7 @@ public:
     virtual const string_map &  configuration() const = 0;
     virtual const std::string & getConfig(const std::string &) const = 0;
     virtual       bool          parseColor(const std::string &, RGBAColor *) const = 0;
+    virtual       bool          parseNumber(const std::string &, unsigned *) const = 0;
 
     virtual RenderTarget *      createRenderTarget() = 0;
     virtual void                destroyRenderTarget(RenderTarget *) = 0;

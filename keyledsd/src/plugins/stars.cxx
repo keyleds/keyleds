@@ -39,11 +39,11 @@ public:
        m_duration(1000),
        m_keys(nullptr)
     {
-        auto duration = std::stoul(service.getConfig("duration"));
-        if (duration > 0) { m_duration = duration; }
+        service.parseNumber(service.getConfig("duration"), &m_duration);
 
-        auto number = std::stoul(service.getConfig("number"));
-        m_stars.resize(number > 0 ? number : 8);
+        unsigned number = 8;
+        service.parseNumber(service.getConfig("number"), &number);
+        m_stars.resize(number);
 
         // Load color list
         for (const auto & item : service.configuration()) {

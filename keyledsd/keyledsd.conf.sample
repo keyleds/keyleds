@@ -117,7 +117,8 @@ effects:
         plugins:
             - effect: feedback      # turn keys on when pressed
               color: ffbfbf         # color when just pressed
-              duration: 1200        # how long (in milliseconds) it takes to fade out
+              sustain: 500          # how long (in milliseconds) the color is held
+              decay: 500            # how long (in milliseconds) it then takes to fade out
 
 # Profiles trigger effect activation when their lookup matches
 # Their name doesn't matter, but order does, as when several profiles match

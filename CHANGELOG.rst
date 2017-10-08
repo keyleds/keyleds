@@ -3,6 +3,16 @@ Release Notes
 #############
 
 *****************************
+0.7.0 - upcoming release
+*****************************
+
+Features:
+
+- Feedback effect now uses sustain+decay timings instead of straight duration.
+  Key color remains still for ``sustain`` milliseconds, then fades in ``decay``
+  milliseconds. The old ``duration`` configuration key is no longer recognized.
+
+*****************************
 0.6.0 - current release
 *****************************
 

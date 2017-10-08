@@ -31,12 +31,12 @@ public:
     FeedbackEffect(EffectService & service)
      : m_buffer(service.createRenderTarget()),
        m_color(255, 255, 255, 255),
-       m_duration(2000)
+       m_sustain(750),
+       m_decay(500)
     {
         service.parseColor(service.getConfig("color"), &m_color);
-
-        auto duration = std::stoul(service.getConfig("duration"));
-        if (duration > 0) { m_duration = duration; }
+        service.parseNumber(service.getConfig("sustain"), &m_sustain);
+        service.parseNumber(service.getConfig("decay"), &m_decay);
 
         // Get ready
         std::fill(m_buffer->begin(), m_buffer->end(), RGBAColor{0, 0, 0, 0});
@@ -44,19 +44,23 @@ public:
 
     void render(unsigned long ms, RenderTarget & target) override
     {
+        const auto lifetime = m_sustain + m_decay;
+
         for (auto & keyPress : m_presses) {
             keyPress.age += ms;
-            if (keyPress.age > m_duration) { keyPress.age = m_duration; }
+            if (keyPress.age > lifetime) { keyPress.age = lifetime; }
             (*m_buffer)[keyPress.key->index] = RGBAColor(
                 m_color.red,
                 m_color.green,
                 m_color.blue,
-                m_color.alpha * (m_duration - keyPress.age) / m_duration
+                m_color.alpha * std::min(lifetime - keyPress.age, m_decay) / m_decay
             );
         }
-        m_presses.erase(std::remove_if(m_presses.begin(), m_presses.end(),
-                                       [this](const auto & keyPress){ return keyPress.age >= m_duration; }),
-                        m_presses.end());
+        m_presses.erase(
+            std::remove_if(m_presses.begin(), m_presses.end(),
+                           [this, lifetime](const auto & keyPress){ return keyPress.age >= lifetime; }),
+            m_presses.end()
+        );
         blend(target, *m_buffer);
     }
 
@@ -75,7 +79,8 @@ private:
     RenderTarget *      m_buffer;       ///< this plugin's rendered state
 
     RGBAColor           m_color;        ///< color taken by keys on keypress
-    unsigned            m_duration;     ///< how long it takes for keys to fade out in ms
+    unsigned            m_sustain;      ///< how long key remains at full color in ms
+    unsigned            m_decay;        ///< how long it takes for keys to fade out in ms
     std::vector<KeyPress> m_presses;    ///< list of recent keypresses still drawn
 };
 

@@ -16,7 +16,6 @@
  */
 #include <algorithm>
 #include <cmath>
-#include <cstdint>
 #include "keyledsd/effect/PluginHelper.h"
 
 static constexpr float pi = 3.14159265358979f;
@@ -45,8 +44,7 @@ public:
             if (git != service.keyGroups().end()) { m_keys = &*git; }
         }
 
-        auto period = std::stoul(service.getConfig("period"));
-        if (period > 0) { m_period = period; }
+        service.parseNumber(service.getConfig("period"), &m_period);
 
         std::fill(m_buffer->begin(), m_buffer->end(), color);
     }
