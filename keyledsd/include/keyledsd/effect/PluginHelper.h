@@ -28,6 +28,7 @@ class Effect : public keyleds::effect::interface::Effect
 {
 protected:
     using EffectService = keyleds::effect::interface::EffectService;
+    using RGBAColor = keyleds::RGBAColor;
 public:
     void    handleContextChange(const string_map &) override {}
     void    handleGenericEvent(const string_map &) override {}

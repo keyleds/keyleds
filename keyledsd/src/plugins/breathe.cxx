@@ -18,9 +18,7 @@
 #include <cmath>
 #include <cstdint>
 #include "keyledsd/effect/PluginHelper.h"
-#include "keyledsd/colors.h"
 
-using keyleds::RGBAColor;
 static constexpr float pi = 3.14159265358979f;
 
 /****************************************************************************/
@@ -34,7 +32,8 @@ public:
        m_keys(nullptr),
        m_time(0), m_period(10000)
     {
-        auto color = RGBAColor::parse(service.getConfig("color"));
+        auto color = RGBAColor(255, 255, 255, 255);
+        service.parseColor(service.getConfig("color"), &color);
         m_alpha = color.alpha;
         color.alpha = 0;
 

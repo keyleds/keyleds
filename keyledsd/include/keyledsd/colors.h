@@ -20,7 +20,6 @@
 #include <iosfwd>
 #include <limits>
 #include <string>
-#include "config.h"
 
 namespace keyleds {
 
@@ -30,7 +29,7 @@ namespace keyleds {
  *
  * Holds a single R8G8B8 value. Not intended to be tightly packed.
  */
-struct KEYLEDSD_EXPORT RGBColor final {
+struct RGBColor final {
     using channel_type = unsigned char;
 
     channel_type red;
@@ -41,7 +40,7 @@ struct KEYLEDSD_EXPORT RGBColor final {
     constexpr RGBColor(channel_type r, channel_type g, channel_type b)
      : red(r), green(g), blue(b) {}
 
-    static RGBColor parse(const std::string &, bool * error = nullptr);
+    static bool parse(const std::string &, RGBColor *);
     void print(std::ostream &) const;
 };
 
@@ -65,7 +64,7 @@ inline std::ostream & operator<<(std::ostream & out, RGBColor obj)
  * Holds a single R8G8B8A8 value. Should not generate any padding, but remember
  * to static_assert sizeof(RGBAColor) == 4 if using that fact.
  */
-struct KEYLEDSD_EXPORT RGBAColor final {
+struct RGBAColor final {
     using channel_type = unsigned char;
 
     channel_type red;
@@ -79,7 +78,7 @@ struct KEYLEDSD_EXPORT RGBAColor final {
     explicit RGBAColor(RGBColor c, channel_type a = std::numeric_limits<channel_type>::max())
      : red(c.red), green(c.green), blue(c.blue), alpha(a) {}
 
-    static RGBAColor parse(const std::string &, bool * error = nullptr);
+    static bool parse(const std::string &, RGBAColor *);
     void print(std::ostream &) const;
 };
 

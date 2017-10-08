@@ -22,6 +22,8 @@
 #include "keyledsd/device/KeyDatabase.h"
 #include "keyledsd/device/RenderLoop.h"
 
+namespace keyleds { struct RGBAColor; }
+
 namespace keyleds { namespace effect { namespace interface {
 
 class EffectService;
@@ -81,6 +83,7 @@ public:
 
     virtual const string_map &  configuration() const = 0;
     virtual const std::string & getConfig(const std::string &) const = 0;
+    virtual       bool          parseColor(const std::string &, RGBAColor *) const = 0;
 
     virtual RenderTarget *      createRenderTarget() = 0;
     virtual void                destroyRenderTarget(RenderTarget *) = 0;

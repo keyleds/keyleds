@@ -17,9 +17,6 @@
 #include <algorithm>
 #include <vector>
 #include "keyledsd/effect/PluginHelper.h"
-#include "keyledsd/colors.h"
-
-using keyleds::RGBAColor;
 
 /****************************************************************************/
 
@@ -43,8 +40,7 @@ public:
     FillEffect(EffectService & service)
      : m_fill(0, 0, 0, 0)
     {
-        const auto & colorStr = service.getConfig("color");
-        if (!colorStr.empty()) { m_fill = RGBAColor::parse(colorStr); }
+        service.parseColor(service.getConfig("color"), &m_fill);
 
         for (const auto & item : service.configuration()) {
             if (item.first == "color") { continue; }
@@ -53,7 +49,10 @@ public:
                 [item](const auto & group) { return group.name() == item.first; }
             );
             if (git == service.keyGroups().end()) { continue; }
-            m_rules.emplace_back(*git, RGBAColor::parse(item.second));
+            RGBAColor color;
+            if (service.parseColor(item.second, &color)) {
+                m_rules.emplace_back(*git, color);
+            }
         }
     }
 

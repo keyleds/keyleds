@@ -47,6 +47,7 @@ public:
 
     const string_map &  configuration() const override;
     const std::string & getConfig(const std::string &) const override;
+          bool          parseColor(const std::string &, RGBAColor *) const override;
 
     RenderTarget *      createRenderTarget() override;
     void                destroyRenderTarget(RenderTarget *) override;

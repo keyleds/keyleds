@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <cassert>
 #include "keyledsd/DeviceManager.h"
+#include "keyledsd/colors.h"
 #include "logging.h"
 
 LOGGING("effect-service");
@@ -66,6 +67,10 @@ const std::string & EffectService::getConfig(const std::string & key) const
     return it != m_configuration.items().end() ? it->second : empty;
 }
 
+bool EffectService::parseColor(const std::string & str, RGBAColor * color) const
+{
+    return RGBAColor::parse(str, color);
+}
 
 EffectService::RenderTarget * EffectService::createRenderTarget()
 {

@@ -19,9 +19,6 @@
 #include <cstddef>
 #include <string>
 #include "keyledsd/effect/PluginHelper.h"
-#include "keyledsd/colors.h"
-
-using keyleds::RGBAColor;
 
 static constexpr float pi = 3.14159265358979f;
 static constexpr int accuracy = 1024;
@@ -55,8 +52,9 @@ public:
         // Load color list
         std::vector<RGBAColor> colors;
         for (const auto & item : service.configuration()) {
-            if (item.first.rfind("color", 0) == 0) {
-                colors.push_back(RGBAColor::parse(item.second));
+            RGBAColor color;
+            if (item.first.rfind("color", 0) == 0 && service.parseColor(item.second, &color)) {
+                colors.push_back(color);
             }
         }
         m_colors = generateColorTable(colors);

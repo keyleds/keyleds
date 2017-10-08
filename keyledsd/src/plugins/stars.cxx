@@ -18,9 +18,6 @@
 #include <random>
 #include <vector>
 #include "keyledsd/effect/PluginHelper.h"
-#include "keyledsd/colors.h"
-
-using keyleds::RGBAColor;
 
 /****************************************************************************/
 
@@ -50,8 +47,9 @@ public:
 
         // Load color list
         for (const auto & item : service.configuration()) {
-            if (item.first.rfind("color", 0) == 0) {
-                m_colors.push_back(RGBAColor::parse(item.second));
+            RGBAColor color;
+            if (item.first.rfind("color", 0) == 0 && service.parseColor(item.second, &color)) {
+                m_colors.push_back(color);
             }
         }
 

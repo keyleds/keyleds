@@ -16,9 +16,6 @@
  */
 #include <vector>
 #include "keyledsd/effect/PluginHelper.h"
-#include "keyledsd/colors.h"
-
-using keyleds::RGBAColor;
 
 /****************************************************************************/
 
@@ -33,9 +30,10 @@ class FeedbackEffect final : public plugin::Effect
 public:
     FeedbackEffect(EffectService & service)
      : m_buffer(service.createRenderTarget()),
-       m_duration(3000)
+       m_color(255, 255, 255, 255),
+       m_duration(2000)
     {
-        m_color = RGBAColor::parse(service.getConfig("color"));
+        service.parseColor(service.getConfig("color"), &m_color);
 
         auto duration = std::stoul(service.getConfig("duration"));
         if (duration > 0) { m_duration = duration; }

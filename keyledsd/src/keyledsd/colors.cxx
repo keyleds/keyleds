@@ -184,15 +184,15 @@ static constexpr std::array<std::pair<const char *, RGBColor>, 149> predefinedCo
 static_assert(predefinedColors.back().second == RGBColor(0x9A, 0xCD, 0x32),
               "Last predefined color is not the expected one - is length correct?");
 
-RGBColor RGBColor::parse(const std::string & str, bool * error)
+bool RGBColor::parse(const std::string & str, RGBColor * color)
 {
     // Attempt parsing as hex color
     if (str.size() == 6) {
         char * endptr;
         auto code = uint32_t(::strtoul(str.c_str(), &endptr, 16));
         if (*endptr == '\0') {
-            if (error != nullptr) { *error = false; }
-            return RGBColor(code >> 16, code >> 8, code >> 0);
+            *color = RGBColor(code >> 16, code >> 8, code >> 0);
+            return true;
         }
     }
 
@@ -206,12 +206,11 @@ RGBColor RGBColor::parse(const std::string & str, bool * error)
         lower, [](const auto & item, const auto & name) { return item.first < name; }
     );
     if (it != predefinedColors.end() && it->first == lower) {
-        if (error != nullptr) { *error = false; }
-        return it->second;
+        *color = it->second;
+        return true;
     }
 
-    if (error != nullptr) { *error = true; }
-    return { 0, 0, 0 };
+    return false;
 }
 
 void RGBColor::print(std::ostream & out) const
@@ -223,18 +222,22 @@ void RGBColor::print(std::ostream & out) const
     out.fill(fillChar);
 }
 
-
-RGBAColor RGBAColor::parse(const std::string & str, bool * error)
+bool RGBAColor::parse(const std::string & str, RGBAColor * color)
 {
     if (str.size() == 8) {
         char * endptr;
         auto code = uint32_t(::strtoul(str.c_str(), &endptr, 16));
         if (*endptr == '\0') {
-            if (error != nullptr) { *error = false; }
-            return RGBAColor(code >> 24, code >> 16, code >> 8, code >> 0);
+            *color = RGBAColor(code >> 24, code >> 16, code >> 8, code >> 0);
+            return true;
         }
     }
-    return RGBAColor(RGBColor::parse(str, error), 255);
+    RGBColor opaque;
+    if (RGBColor::parse(str, &opaque)) {
+        *color = RGBAColor(opaque);
+        return true;
+    }
+    return false;
 }
 
 void RGBAColor::print(std::ostream & out) const
