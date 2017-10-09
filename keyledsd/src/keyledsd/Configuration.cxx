@@ -82,6 +82,7 @@ public:
 
     ParseError makeError(const std::string & what);
 public:
+    Configuration::string_list          m_plugins;
     Configuration::path_list            m_pluginPaths;
     Configuration::device_map           m_devices;
     Configuration::key_group_list       m_keyGroups;
@@ -515,7 +516,9 @@ private:
 /// Configuration builder state: at document root
 class RootState final : public MappingBuildState
 {
-    enum SubState : state_type { PluginPaths, Layouts, Devices, KeyGroups, EffectGroups, Profiles };
+    enum SubState : state_type {
+        Plugins, PluginPaths, Layouts, Devices, KeyGroups, EffectGroups, Profiles
+    };
 public:
     RootState() : MappingBuildState(0) {}
     void print(std::ostream & out) const override { out <<"root"; }
@@ -523,9 +526,10 @@ public:
     state_ptr sequenceEntry(ConfigurationBuilder & builder, const std::string & key,
                            const std::string & anchor) override
     {
-        if (key == "plugins") {
-            return std::make_unique<StringSequenceBuildState>(SubState::PluginPaths);
-        }
+        if (key == "plugins")
+            { return std::make_unique<StringSequenceBuildState>(SubState::Plugins); }
+        if (key == "plugin-paths")
+            { return std::make_unique<StringSequenceBuildState>(SubState::PluginPaths); }
         return MappingBuildState::sequenceEntry(builder, key, anchor);
     }
 
@@ -542,13 +546,16 @@ public:
     void scalarEntry(ConfigurationBuilder & builder, const std::string & key,
                      const std::string & value, const std::string & anchor) override
     {
-        if (key == "plugins")  { builder.m_pluginPaths = { value }; }
+        if (key == "plugin-path")  { builder.m_pluginPaths = { value }; }
         else MappingBuildState::scalarEntry(builder, key, value, anchor);
     }
 
     void subStateEnd(ConfigurationBuilder & builder, BuildState & state) override
     {
         switch (state.type()) {
+        case SubState::Plugins:
+            builder.m_plugins = state.as<StringSequenceBuildState>().result();
+            break;
         case SubState::PluginPaths:
             builder.m_pluginPaths = state.as<StringSequenceBuildState>().result();
             break;
@@ -661,12 +668,14 @@ ConfigurationBuilder::ParseError ConfigurationBuilder::makeError(const std::stri
 /****************************************************************************/
 
 Configuration::Configuration(std::string path,
+                             string_list plugins,
                              path_list pluginPaths,
                              device_map devices,
                              key_group_list keyGroups,
                              effect_group_list effectGroups,
                              profile_list profiles)
  : m_path(std::move(path)),
+   m_plugins(std::move(plugins)),
    m_pluginPaths(std::move(pluginPaths)),
    m_devices(std::move(devices)),
    m_keyGroups(std::move(keyGroups)),
@@ -695,6 +704,7 @@ std::unique_ptr<Configuration> Configuration::loadFile(const std::string & path)
     builder.parse(file);
     return std::make_unique<Configuration>(Configuration(
         actualPath,
+        std::move(builder.m_plugins),
         std::move(builder.m_pluginPaths),
         std::move(builder.m_devices),
         std::move(builder.m_keyGroups),

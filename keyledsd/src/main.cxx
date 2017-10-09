@@ -164,6 +164,7 @@ static void handleSignalEvent(const Options & options, keyleds::Service * servic
 
 int main(int argc, char * argv[])
 {
+    // Must be before app, so its destructor runs after, since Service holds a ref
     keyleds::effect::EffectManager effectManager;
 
     // Create event loop
@@ -192,15 +193,25 @@ int main(int argc, char * argv[])
     }
 
     // Register modules
-    const auto & staticRegistry = keyleds::effect::StaticModuleRegistry::instance();
-    for (const auto & module : staticRegistry.modules()) {
+    std::copy(options.modulePaths.cbegin(), options.modulePaths.cend(),
+              std::back_inserter(effectManager.searchPaths()));
+    std::copy(configuration->pluginPaths().begin(), configuration->pluginPaths().end(),
+              std::back_inserter(effectManager.searchPaths()));
+    effectManager.searchPaths().push_back(SYS_CONFIG_LIBDIR "/" KEYLEDSD_MODULE_PREFIX);
+
+    {
         std::string error;
-        if (!effectManager.add(module.first, module.second, &error)) {
-            ERROR("static module <", module.first, ">: ", error);
+        for (const auto & module : keyleds::effect::StaticModuleRegistry::instance().modules()) {
+            if (!effectManager.add(module.first, module.second, &error)) {
+                ERROR("static module <", module.first, ">: ", error);
+            }
+        }
+        for (const auto & name : configuration->plugins()) {
+            if (!effectManager.load(name, &error)) {
+                WARNING("loading module <", name, ">: ", error);
+            }
         }
     }
-    effectManager.searchPaths() = options.modulePaths;
-    effectManager.searchPaths().push_back(SYS_CONFIG_LIBDIR "/" KEYLEDSD_MODULE_PREFIX);
 
     // Setup application components
     auto service = new keyleds::Service(effectManager, std::move(configuration), &app);

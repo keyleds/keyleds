@@ -41,6 +41,7 @@ public:
     class KeyGroup;
     class Profile;
 
+    using string_list = std::vector<std::string>;
     using path_list = std::vector<std::string>;
     using device_map = std::vector<std::pair<std::string, std::string>>;
     using key_group_list = std::vector<KeyGroup>;
@@ -48,6 +49,7 @@ public:
     using profile_list = std::vector<Profile>;
 private:
                             Configuration(std::string path,
+                                          string_list plugins,
                                           path_list pluginPaths,
                                           device_map devices,
                                           key_group_list groups,
@@ -58,6 +60,7 @@ public:
                             ~Configuration();
 
     const std::string &     path() const { return m_path; }
+    const string_list       plugins() const { return m_plugins; }
     const path_list &       pluginPaths() const { return m_pluginPaths; }
     const device_map &      devices() const { return m_devices; }
     const key_group_list &  keyGroups() const { return m_keyGroups; }
@@ -69,6 +72,7 @@ public:
 
 private:
     std::string             m_path;         ///< Configuration file path, if loaded from disk
+    string_list             m_plugins;      ///< List of plugins to load on startup
     path_list               m_pluginPaths;  ///< List of directories to search for plugins
     device_map              m_devices;      ///< Map of device serials to device names
     key_group_list          m_keyGroups;    ///< Map of key group names to lists of key names

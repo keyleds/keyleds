@@ -2,6 +2,13 @@
 # kate: syntax yaml;
 # vi: ft=yaml :
 
+# List of plugin names to load on startup
+# Plugins that implement only one effect are normally auto-loaded and do not need
+# to be specified here. This is useful mostly for loading multi-effect plugins.
+# plugins: [foo, bar]
+# Additional paths to search plugins in. Similar to -m option on command line.
+# plugin-paths: []
+
 # List of device names, used for filtering profiles
 # Serial can be found by plugin in the device while the service is
 # running. Service will output the serial on its debug output.
