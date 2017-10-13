@@ -18,14 +18,13 @@
 #include <stdint.h>
 #include "config.h"
 
-void blend_plain(uint8_t * __restrict a, const uint8_t * __restrict b, unsigned length)
+void blend_plain(uint8_t * restrict a, const uint8_t * restrict b, unsigned length)
 {
-    a = (uint8_t*)__builtin_assume_aligned(a, 16);
-    b = (const uint8_t*)__builtin_assume_aligned(b, 16);
+    assert((uintptr_t)a % 8 == 0);    // Not a requirement, but lets compiler optimize stuff
+    assert((uintptr_t)b % 8 == 0);    // Not a requirement, but lets compiler optimize stuff
 
-    assert((uintptr_t)a % 16 == 0);
-    assert((uintptr_t)b % 16 == 0);
-    assert(length % 16 == 0);
+    a = (uint8_t*)__builtin_assume_aligned(a, 8);
+    b = (const uint8_t*)__builtin_assume_aligned(b, 8);
 
     while (length-- > 0) {
         uint16_t alpha = b[3];

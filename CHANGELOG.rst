@@ -3,6 +3,15 @@ Release Notes
 #############
 
 *****************************
+0.6.2 - upcoming release
+*****************************
+
+Bugfixes:
+
+- Fix crash on G810 due to incorreclty passing actual number of keys to blend
+  (instead of up-aligned target capacity, required for SSE2). — issue #10.
+
+*****************************
 0.6.1 - current release
 *****************************
 

@@ -21,6 +21,13 @@
 
 void blend_sse2(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
 {
+    assert((uintptr_t)dst % 16 == 0);   // SSE2 requires 16-bytes aligned data
+    assert((uintptr_t)src % 16 == 0);   // SSE2 requires 16-bytes aligned data
+    assert(length != 0);                // allows inverting loop condition, makes gcc generate
+                                        // better loop code
+    assert(length % 4 == 0);            // we'll process entries 4 by 4 and don't want to be
+                                        // slowed by boundary checks
+
     __m128i * restrict dstv = (__m128i *)__builtin_assume_aligned(dst, 16);
     const __m128i * restrict srcv = (const __m128i *)__builtin_assume_aligned(src, 16);
 
@@ -28,9 +35,6 @@ void blend_sse2(uint8_t * restrict dst, const uint8_t * restrict src, unsigned l
     const __m128i one = _mm_set1_epi16(1);
     const __m128i max = _mm_set1_epi16(256);
 
-    assert((uintptr_t)dst % 16 == 0);
-    assert((uintptr_t)src % 16 == 0);
-    assert(length % 4 == 0);
     length /= 4;
 
     do {

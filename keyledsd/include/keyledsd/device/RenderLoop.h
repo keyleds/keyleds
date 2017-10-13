@@ -41,18 +41,18 @@ namespace keyleds { namespace device {
  */
 class RenderTarget final
 {
-    static constexpr std::size_t   align_bytes = 32;
+    static constexpr std::size_t   align_bytes = 32;    // 16 is minimum for SSE2, 32 for AVX2
     static constexpr std::size_t   align_colors = align_bytes / sizeof(RGBAColor);
 public:
     using value_type = RGBAColor;
-    using size_type = std::size_t;
-    using difference_type = std::ptrdiff_t;
+    using size_type = unsigned int;                     // we don't need size_t extra range
+    using difference_type = signed int;
     using reference = value_type &;
     using const_reference = const value_type &;
     using iterator = value_type *;
     using const_iterator = const value_type *;
 public:
-                                RenderTarget(size_type numKeys);
+                                RenderTarget(size_type);
                                 RenderTarget(RenderTarget &&) noexcept;
     RenderTarget &              operator=(RenderTarget &&) noexcept;
                                 ~RenderTarget();
@@ -60,12 +60,12 @@ public:
     iterator                    begin() { return &m_colors[0]; }
     const_iterator              begin() const { return &m_colors[0]; }
     const_iterator              cbegin() const { return &m_colors[0]; }
-    iterator                    end() { return &m_colors[m_nbColors]; }
-    const_iterator              end() const { return &m_colors[m_nbColors]; }
-    const_iterator              cend() const { return &m_colors[m_nbColors]; }
-    bool                        empty() const { return false; }
-    size_type                   size() const noexcept { return m_nbColors; }
-    size_type                   max_size() const noexcept { return m_nbColors; }
+    iterator                    end() { return &m_colors[m_size]; }
+    const_iterator              end() const { return &m_colors[m_size]; }
+    const_iterator              cend() const { return &m_colors[m_size]; }
+    bool                        empty() const noexcept { return false; }
+    size_type                   size() const noexcept { return m_size; }
+    size_type                   capacity() const noexcept { return m_capacity; }
     value_type *                data() { return m_colors; }
     const value_type *          data() const { return m_colors; }
     reference                   operator[](size_type idx) { return m_colors[idx]; }
@@ -73,7 +73,8 @@ public:
 
 private:
     RGBAColor *                 m_colors;       ///< Color buffer. RGBAColor is a POD type
-    std::size_t                 m_nbColors;     ///< Number of items in m_colors
+    size_type                   m_size;         ///< Number of color entries
+    size_type                   m_capacity;     ///< Number of allocated color entries
 
     friend void swap(RenderTarget &, RenderTarget &) noexcept;
 };
