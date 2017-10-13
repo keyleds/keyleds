@@ -1,6 +1,6 @@
-=======
-keyleds
-=======
+==============
+|logo| keyleds
+==============
 
 Userspace service for Logitech keyboards with per-key RGB LEDs.
 
@@ -53,3 +53,8 @@ Feedback, feature ideas, pull requests are welcome!
 .. _sample configuration: https://github.com/spectras/keyleds/blob/master/keyledsd/keyledsd.conf.sample
 .. _issue tracker: https://github.com/spectras/keyleds/issues
 .. _key groups: https://github.com/spectras/keyleds/wiki/Key-Group
+.. |logo| image:: logo.svg
+   :width: 64px
+   :height: 80px
+   :align: middle
+   :alt:
