@@ -21,16 +21,19 @@
 
 void blend_mmx(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
 {
-    __m64 * restrict dstv = (__m64 *)__builtin_assume_aligned(dst, 16);
-    const __m64 * restrict srcv = (const __m64 *)__builtin_assume_aligned(src, 16);
+    assert((uintptr_t)dst % 8 == 0);    // MMX requires 8-bytes aligned data
+    assert((uintptr_t)src % 8 == 0);    // MMX requires 8-bytes aligned data
+    assert(length != 0);                // allows inverting loop condition, makes gcc generate
+                                        // better loop code
+    assert(length % 2 == 0);            // we'll process entries 2 by 2 and don't want to be
+                                        // slowed by boundary checks
+
+    __m64 * restrict dstv = (__m64 *)__builtin_assume_aligned(dst, 8);
+    const __m64 * restrict srcv = (const __m64 *)__builtin_assume_aligned(src, 8);
 
     const __m64 zero = _mm_setzero_si64();
     const __m64 one = _mm_set1_pi16(1);
     const __m64 max = _mm_set1_pi16(256);
-
-    assert((uintptr_t)dst % 16 == 0);
-    assert((uintptr_t)src % 16 == 0);
-    assert(length % 4 == 0);
 
     length /= 2;
 

@@ -45,30 +45,34 @@ static std::size_t align(std::size_t value, std::size_t alignment)
 
 /****************************************************************************/
 
-RenderTarget::RenderTarget(size_type numKeys)
+RenderTarget::RenderTarget(size_type size)
  : m_colors(nullptr),
-   m_nbColors(numKeys)
+   m_size(size),                            // m_size tracks actual number of keys
+   m_capacity(align(size, align_colors))    // m_capacity tracks actual buffer size
 {
-    numKeys = align(numKeys, align_colors);
-
-    if (::posix_memalign(reinterpret_cast<void**>(&m_colors), align_bytes, numKeys * sizeof(m_colors[0])) != 0) {
+    if (::posix_memalign(reinterpret_cast<void**>(&m_colors), align_bytes,
+                         m_capacity * sizeof(m_colors[0])) != 0) {
         throw std::bad_alloc();
     }
 }
 
 RenderTarget::RenderTarget(RenderTarget && other) noexcept
  : m_colors(nullptr),
-   m_nbColors(other.m_nbColors)
+   m_size(0u),
+   m_capacity(0u)
 {
     using std::swap;
-    swap(m_colors, other.m_colors);
+    swap(*this, other);
 }
 
 RenderTarget & RenderTarget::operator=(RenderTarget && other) noexcept
 {
-    using std::swap;
     free(m_colors);
     m_colors = nullptr;
+    m_size = 0u;
+    m_capacity = 0u;
+
+    using std::swap;
     swap(*this, other);
     return *this;
 }
@@ -82,15 +86,17 @@ void keyleds::device::swap(RenderTarget & lhs, RenderTarget & rhs) noexcept
 {
     using std::swap;
     swap(lhs.m_colors, rhs.m_colors);
-    swap(lhs.m_nbColors, rhs.m_nbColors);
+    swap(lhs.m_size, rhs.m_size);
+    swap(lhs.m_capacity, rhs.m_capacity);
 }
 
 void keyleds::device::blend(RenderTarget & lhs, const RenderTarget & rhs)
 {
-    assert(lhs.size() == rhs.size());
+    // This must use the full rendertarget capacity, which fulfills alignment constraints
+    assert(lhs.capacity() == rhs.capacity());
     tools::accelerated::blend(
         reinterpret_cast<uint8_t*>(lhs.data()),
-        reinterpret_cast<const uint8_t*>(rhs.data()), rhs.size()
+        reinterpret_cast<const uint8_t*>(rhs.data()), rhs.capacity()
     );
 }
 
