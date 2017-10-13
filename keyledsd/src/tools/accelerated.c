@@ -21,6 +21,7 @@
 /****************************************************************************/
 /* blend */
 
+void blend_avx2(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length);
 void blend_sse2(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length);
 void blend_mmx(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length);
 void blend_plain(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length);
@@ -30,6 +31,9 @@ static void (*resolve_blend(void))(uint8_t * restrict dst, const uint8_t * restr
 {
 #  if defined __GNUC__ && !defined __clang__
     __builtin_cpu_init();
+#  endif
+#  ifdef KEYLEDSD_USE_AVX2
+    if (__builtin_cpu_supports("avx2")) { return blend_avx2; }
 #  endif
 #  ifdef KEYLEDSD_USE_SSE2
     if (__builtin_cpu_supports("sse2")) { return blend_sse2; }

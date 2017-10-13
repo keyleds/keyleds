@@ -28,6 +28,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -std=c++14 -fPIC -
 if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL x86_64 OR ${CMAKE_SYSTEM_PROCESSOR} STREQUAL i686)
     set(KEYLEDSD_USE_MMX 1)
     set(KEYLEDSD_USE_SSE2 1)
+    set(KEYLEDSD_USE_AVX2 1)
 endif()
 
 set(keyledsd_STATIC_MODULES breathe feedback fill wave)
@@ -81,6 +82,11 @@ if(KEYLEDSD_USE_SSE2)
     set(keyledsd_SRCS ${keyledsd_SRCS} src/tools/accelerated_sse2.c)
     set_source_files_properties("src/tools/accelerated_sse2.c"
                                 PROPERTIES COMPILE_FLAGS "-msse2")
+endif()
+if(KEYLEDSD_USE_AVX2)
+    set(keyledsd_SRCS ${keyledsd_SRCS} src/tools/accelerated_avx2.c)
+    set_source_files_properties("src/tools/accelerated_avx2.c"
+                                PROPERTIES COMPILE_FLAGS "-mavx2")
 endif()
 foreach(module ${keyledsd_STATIC_MODULES})
     set(keyledsd_SRCS ${keyledsd_SRCS} src/plugins/${module}.cxx)
