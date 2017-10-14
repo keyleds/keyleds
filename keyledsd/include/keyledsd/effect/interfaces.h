@@ -56,7 +56,7 @@ class Plugin
 {
 public:
     virtual Effect *    createEffect(const std::string & name, EffectService &) = 0;
-    virtual void        destroyEffect(Effect *) = 0;
+    virtual void        destroyEffect(Effect *, EffectService &) = 0;
 
 protected:
     ~Plugin() {}
