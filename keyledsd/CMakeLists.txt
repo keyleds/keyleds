@@ -111,6 +111,8 @@ int main() { return foo(); }
 ##############################################################################
 # Dependencies
 
+find_package(PkgConfig)
+
 set(QT_MODULES Core)
 IF(NOT NO_DBUS)
     set(QT_MODULES ${QT_MODULES} DBus)
@@ -167,6 +169,31 @@ set(keyledsd_DEPS ${keyledsd_DEPS} ${X11_LIBRARIES} ${X11_Xinput_LIB})
 configure_file("include/config.h.in" "config.h")
 
 ##############################################################################
+# Optional plugins
+
+pkg_search_module(LUA luajit lua-5.3 lua-5.2 lua-5.1)
+
+IF(LUA_FOUND)
+    add_library(fx_lua MODULE
+        src/plugins/lua/Environment.cxx
+        src/plugins/lua/LuaEffect.cxx
+        src/plugins/lua/lua_Key.cxx
+        src/plugins/lua/lua_KeyDatabase.cxx
+        src/plugins/lua/lua_KeyGroup.cxx
+        src/plugins/lua/lua_RGBAColor.cxx
+        src/plugins/lua/lua_RenderTarget.cxx
+        src/plugins/lua/lua_Thread.cxx
+        src/plugins/lua/lua_common.cxx
+        src/plugins/lua/lua_types.cxx
+        src/plugins/lua.cxx
+    )
+    target_compile_options(fx_lua PRIVATE ${LUA_CFLAGS_OTHER})
+    target_include_directories(fx_lua PRIVATE ${LUA_INCLUDE_DIRS})
+    target_link_libraries(fx_lua ${LUA_LIBRARIES})
+    set(keyledsd_DYNAMIC_MODULES ${keyledsd_DYNAMIC_MODULES} lua)
+ENDIF(LUA_FOUND)
+
+##############################################################################
 # Targets
 
 # Binary
@@ -175,13 +202,22 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE KEYLEDSD_MODULES_STATIC=1)
 target_link_libraries(${PROJECT_NAME} libkeyleds ${keyledsd_DEPS})
 
 foreach(module ${keyledsd_DYNAMIC_MODULES})
-    add_library(${module} MODULE src/plugins/${module}.cxx)
-    set_target_properties(${module} PROPERTIES PREFIX fx_)
+    if(NOT TARGET fx_${module})
+        add_library(fx_${module} MODULE src/plugins/${module}.cxx)
+    endif()
+    set_target_properties(fx_${module} PROPERTIES PREFIX "")
+    set(keyledsd_MODULE_TARGETS ${keyledsd_MODULE_TARGETS} fx_${module})
 endforeach()
 
+##############################################################################
 # Installing stuff
 install(TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_BINDIR})
-install(TARGETS ${keyledsd_DYNAMIC_MODULES} DESTINATION ${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME})
+install(TARGETS ${keyledsd_MODULE_TARGETS} DESTINATION ${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME})
+IF(LUA_FOUND)
+    install(DIRECTORY effects/
+            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/effects
+            FILES_MATCHING PATTERN "*.lua")
+ENDIF(LUA_FOUND)
 install(DIRECTORY layouts/
         DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/layouts
         FILES_MATCHING PATTERN "*.xml")
