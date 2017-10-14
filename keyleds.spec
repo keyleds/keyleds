@@ -10,7 +10,7 @@
 
 Summary: Logitech Keyboard per-key lighting control
 Name: keyleds
-Version: 0.6.1
+Version: 0.6.2
 Release: 1%{?dist}
 License: GPL-3.0+
 Group: Applications/System
@@ -25,7 +25,7 @@ BuildRequires: qt5-qtbase-devel
 Requires: udev
 
 %description
-Session service and command-line tool to handle Logitech Gaming Keyboard RGB leds.
+Userspace service for Logitech keyboards with per-key RGB LEDs.
 The following features are supported:
  - Flexible per-application RGB settings with key groups.
  - Can react to window title changes, switching profiles based on current webpage in browser or open file extension in editors.

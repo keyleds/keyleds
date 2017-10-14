@@ -11,16 +11,18 @@ Package: keyleds
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: Logitech Keyboard per-key lighting control
- Includes a background service and a command-line tool to handle Logitech
- Gaming Keyboard lights.
+ Userspace service for Logitech keyboards with per-key RGB LEDs.
  The following features are supported:
-  - Device enumeration and basic information (keyboard type, firmware
-    version, …).
-  - Inspection of device capabilities and led configuration.
-  - Individual key led control (set and get).
-  - Automatic translation between led identifiers and keycodes.
-  - Game-mode configuration
-  - Report rate configuration
+  - Flexible per-application RGB settings with key groups.
+  - Can react to window title changes, switching profiles based on current
+    webpage in browser or open file extension in editors.
+  - Native animation plugins: fixed colors, keypress feedback, breathe, wave,
+    stars.
+  - Several plugins can be active at once, and composited with alpha blending
+    to build complex effects.
+  - Systemd session support, detecting user switches so multiple users can use
+    the service without them fighting over keyboard control.
+  - DBus interface for scripting
 
 Package: keyleds-dev
 Architecture: any

@@ -3,8 +3,14 @@ Release Notes
 #############
 
 *****************************
-0.6.2 - upcoming release
+0.6.2 - current release
 *****************************
+
+Released on October 14th, 2017
+
+Features:
+
+- Add AVX2 optimization for blending.
 
 Bugfixes:
 
@@ -12,7 +18,7 @@ Bugfixes:
   (instead of up-aligned target capacity, required for SSE2). — issue #10.
 
 *****************************
-0.6.1 - current release
+0.6.1
 *****************************
 
 Released on October 8th, 2017
