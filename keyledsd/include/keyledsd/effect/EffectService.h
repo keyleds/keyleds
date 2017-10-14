@@ -53,6 +53,8 @@ public:
     RenderTarget *      createRenderTarget() override;
     void                destroyRenderTarget(RenderTarget *) override;
 
+    void                log(unsigned, const char * msg) override;
+
 private:
     const DeviceManager &                       m_manager;
     const Configuration::Effect &               m_configuration;

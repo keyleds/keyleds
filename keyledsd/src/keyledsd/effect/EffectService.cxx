@@ -100,3 +100,8 @@ void EffectService::destroyRenderTarget(RenderTarget * ptr)
     std::iter_swap(it, m_renderTargets.end() - 1);
     m_renderTargets.pop_back();
 }
+
+void EffectService::log(unsigned level, const char * msg)
+{
+    l_logger.print(level, m_configuration.name() + ": " + msg);
+}
