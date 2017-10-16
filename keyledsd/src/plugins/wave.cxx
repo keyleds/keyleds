@@ -105,42 +105,23 @@ private:
 
         m_phases.clear();
 
-        if (m_keys) {
-            for (const auto & key : *m_keys) {
-                int x = (key.position.x0 + key.position.x1) / 2;
-                int y = (key.position.y0 + key.position.y1) / 2;
-                if (x == 0 && y == 0) {
-                    m_phases.push_back(0);
-                } else {
-                    // Reverse Y axis as keyboard layout uses top<down
-                    x = accuracy * (x - bounds.x0) / (bounds.x1 - bounds.x0);
-                    y = accuracy - accuracy * (y - bounds.x0) / (bounds.x1 - bounds.x0);
-                    auto val = (freqX * x + freqY * y) / accuracy % accuracy;
-                    if (val < 0) { val += accuracy; }
-                    m_phases.push_back(val);
-                }
-            }
-        } else {
-            for (RenderTarget::size_type kidx = 0; kidx < m_buffer->size(); ++kidx) {
-                auto it = keyDB.findIndex(kidx);
-                if (it == keyDB.end()) {
-                    m_phases.push_back(0);
-                    continue;
-                }
+        auto keyPhase = [&bounds, freqX, freqY](const auto & key) {
+            int x = (key.position.x0 + key.position.x1) / 2;
+            int y = (key.position.y0 + key.position.y1) / 2;
+            // Reverse Y axis as keyboard layout uses top<down
+            x = accuracy * (x - bounds.x0) / (bounds.x1 - bounds.x0);
+            y = accuracy - accuracy * (y - bounds.x0) / (bounds.x1 - bounds.x0);
+            auto val = (freqX * x + freqY * y) / accuracy % accuracy;
+            if (val < 0) { val += accuracy; }
+            return val;
+        };
 
-                int x = (it->position.x0 + it->position.x1) / 2;
-                int y = (it->position.y0 + it->position.y1) / 2;
-                if (x == 0 && y == 0) {
-                    m_phases.push_back(0);
-                } else {
-                    // Reverse Y axis as keyboard layout uses top<down
-                    x = accuracy * (x - bounds.x0) / (bounds.x1 - bounds.x0);
-                    y = accuracy - accuracy * (y - bounds.x0) / (bounds.x1 - bounds.x0);
-                    auto val = (freqX * x + freqY * y) / accuracy % accuracy;
-                    if (val < 0) { val += accuracy; }
-                    m_phases.push_back(val);
-                }
-            }
+        if (m_keys) {
+            std::transform(m_keys->begin(), m_keys->end(),
+                           std::back_inserter(m_phases), keyPhase);
+        } else {
+            std::transform(keyDB.begin(), keyDB.end(),
+                           std::back_inserter(m_phases), keyPhase);
         }
     }
 

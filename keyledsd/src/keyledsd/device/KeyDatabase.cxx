@@ -81,12 +81,6 @@ KeyDatabase KeyDatabase::build(const Device & device)
     return db;
 }
 
-KeyDatabase::const_iterator KeyDatabase::findIndex(RenderTarget::size_type index) const
-{
-    return std::find_if(m_keys.cbegin(), m_keys.cend(),
-                        [index](const auto & key) { return key.index == index; });
-}
-
 KeyDatabase::const_iterator KeyDatabase::findKeyCode(int keyCode) const
 {
     return std::find_if(m_keys.cbegin(), m_keys.cend(),
