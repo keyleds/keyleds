@@ -148,8 +148,8 @@ void tools::paths::open_filebuf(std::filebuf & buf, XDG type, const std::string 
     // Actually look for file
     for (const auto & dir : dirs) {
         auto fullPath = canonicalPath(dir + "/" + path);
-        if (buf.open(fullPath, mode) != nullptr) {
-            if (actualPath != nullptr) { *actualPath = fullPath; }
+        if (!fullPath.empty() && buf.open(fullPath, mode)) {
+            if (actualPath) { *actualPath = fullPath; }
             return;
         }
     }

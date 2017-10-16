@@ -53,6 +53,8 @@ public:
     RenderTarget *      createRenderTarget() override;
     void                destroyRenderTarget(RenderTarget *) override;
 
+    const std::string & getFile(const std::string &) override;
+
     void                log(unsigned, const char * msg) override;
 
 private:
@@ -60,6 +62,7 @@ private:
     const Configuration::Effect &               m_configuration;
     const std::vector<KeyGroup>                 m_keyGroups;
     std::vector<std::unique_ptr<RenderTarget>>  m_renderTargets;
+    std::string                                 m_fileData;
 };
 
 /****************************************************************************/
