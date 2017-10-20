@@ -5,7 +5,7 @@
 # List of plugin names to load on startup
 # Plugins that implement only one effect are normally auto-loaded and do not need
 # to be specified here. This is useful mostly for loading multi-effect plugins.
-# plugins: [foo, bar]
+plugins: [lua]
 # Additional paths to search plugins in. Similar to -m option on command line.
 # plugin-paths: []
 

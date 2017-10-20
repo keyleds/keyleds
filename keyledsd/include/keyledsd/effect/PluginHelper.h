@@ -50,7 +50,7 @@ public:
         return nullptr;
     }
 
-    void destroyEffect(keyleds::effect::interface::Effect * ptr) override
+    void destroyEffect(keyleds::effect::interface::Effect * ptr, EffectService &) override
     {
         delete static_cast<T *>(ptr);
     }

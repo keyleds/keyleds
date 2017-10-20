@@ -56,7 +56,7 @@ class Plugin
 {
 public:
     virtual Effect *    createEffect(const std::string & name, EffectService &) = 0;
-    virtual void        destroyEffect(Effect *) = 0;
+    virtual void        destroyEffect(Effect *, EffectService &) = 0;
 
 protected:
     ~Plugin() {}
@@ -88,6 +88,10 @@ public:
 
     virtual RenderTarget *      createRenderTarget() = 0;
     virtual void                destroyRenderTarget(RenderTarget *) = 0;
+
+    virtual const std::string & getFile(const std::string &) = 0;
+
+    virtual void                log(unsigned, const char *) = 0;
 protected:
     ~EffectService() {}
 };

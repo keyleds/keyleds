@@ -94,7 +94,7 @@ EffectManager::effect_deleter::~effect_deleter() {}
 
 void EffectManager::effect_deleter::operator()(interface::Effect * ptr) const
 {
-    m_manager->destroyEffect(m_tracker, ptr);
+    m_manager->destroyEffect(*m_tracker, *m_service, ptr);
 }
 
 /****************************************************************************/
@@ -241,8 +241,9 @@ EffectManager::effect_ptr EffectManager::createEffect(
     return effect_ptr(effect, {this, tracker, std::move(service)});
 }
 
-void EffectManager::destroyEffect(PluginTracker * tracker, interface::Effect * effect)
+void EffectManager::destroyEffect(PluginTracker & tracker, EffectService & service,
+                                  interface::Effect * effect)
 {
-    tracker->instance()->destroyEffect(effect);
-    tracker->decrementUseCount();
+    tracker.instance()->destroyEffect(effect, service);
+    tracker.decrementUseCount();
 }

@@ -81,7 +81,7 @@ public:
 
 private:
     void                unload(PluginTracker &);
-    void                destroyEffect(PluginTracker *, interface::Effect *);
+    void                destroyEffect(PluginTracker &, EffectService &, interface::Effect *);
 
 private:
     path_list                                   m_searchPaths;

@@ -19,8 +19,10 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
+#include <fstream>
 #include "keyledsd/DeviceManager.h"
 #include "keyledsd/colors.h"
+#include "tools/Paths.h"
 #include "logging.h"
 
 LOGGING("effect-service");
@@ -38,9 +40,7 @@ EffectService::EffectService(const DeviceManager & manager,
 {}
 
 EffectService::~EffectService()
-{
-    DEBUG("disposing of ", m_renderTargets.size(), " render targets from ", m_configuration.name());
-}
+{}
 
 const std::string & EffectService::deviceName() const
     { return m_manager.name(); }
@@ -99,4 +99,25 @@ void EffectService::destroyRenderTarget(RenderTarget * ptr)
     assert(it != m_renderTargets.end());
     std::iter_swap(it, m_renderTargets.end() - 1);
     m_renderTargets.pop_back();
+}
+
+const std::string & EffectService::getFile(const std::string & name)
+{
+    m_fileData.clear();
+    if (!name.empty()) {
+        std::ifstream file;
+        std::string actualPath;
+        tools::paths::open(file, tools::paths::XDG::Data, KEYLEDSD_DATA_PREFIX "/" + name,
+                           std::ios::binary, &actualPath);
+        if (file) {
+            m_fileData.assign(std::istreambuf_iterator<char>(file),
+                              std::istreambuf_iterator<char>());
+        }
+    }
+    return m_fileData;
+}
+
+void EffectService::log(unsigned level, const char * msg)
+{
+    l_logger.print(level, m_configuration.name() + ": " + msg);
 }

@@ -73,7 +73,6 @@ public:
     static KeyDatabase build(const Device &);
 
 
-    KEYLEDSD_EXPORT const_iterator  findIndex(RenderTarget::size_type) const;
     KEYLEDSD_EXPORT const_iterator  findKeyCode(int keyCode) const;
     KEYLEDSD_EXPORT const_iterator  findName(const std::string & name) const;
 
