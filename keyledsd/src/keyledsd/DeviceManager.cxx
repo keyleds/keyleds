@@ -191,7 +191,13 @@ std::vector<DeviceManager::Renderer *> DeviceManager::loadEffects(const string_m
             profile = &profileEntry;
         }
     }
-    if (profile == nullptr) { profile = defaultProfile; }
+    if (!profile) {
+        if (!defaultProfile) {
+            ERROR("no profile matches and no default profile defined");
+            return {};
+        }
+        profile = defaultProfile;
+    }
     VERBOSE("selected profile <", profile->name(), ">");
 
     // Collect effect names from selected profile and resolve them
