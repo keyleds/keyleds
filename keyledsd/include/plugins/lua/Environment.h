@@ -18,6 +18,7 @@
 #define KEYLEDS_PLUGINS_LUA_LUA_KEYLEDS_H_3EAF7EA0
 
 #include <string>
+#include "plugins/lua/lua_Interpolator.h"
 #include "plugins/lua/lua_Key.h"
 #include "plugins/lua/lua_KeyDatabase.h"
 #include "plugins/lua/lua_KeyGroup.h"
@@ -61,6 +62,8 @@ public:
 
     void            openKeyleds(Controller *);
     Controller *    controller() const;
+
+    void            stepInterpolators(unsigned ms) { Interpolator::stepAll(m_lua, ms); }
 
     static const void * const waitToken;
 private:

@@ -177,6 +177,7 @@ IF(LUA_FOUND)
     add_library(fx_lua MODULE
         src/plugins/lua/Environment.cxx
         src/plugins/lua/LuaEffect.cxx
+        src/plugins/lua/lua_Interpolator.cxx
         src/plugins/lua/lua_Key.cxx
         src/plugins/lua/lua_KeyDatabase.cxx
         src/plugins/lua/lua_KeyGroup.cxx

@@ -30,6 +30,8 @@ struct Thread
     unsigned    sleepTime;
 };
 
+int luaNewThread(lua_State *);
+
 template <> struct metatable<Thread>
     { static const char * name; static const struct luaL_Reg methods[];
       static const struct luaL_Reg meta_methods[]; struct weak_table : std::false_type{}; };

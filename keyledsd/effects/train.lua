@@ -29,8 +29,8 @@ function train(buffer, color, delay)
 end
 
 buffer = RenderTarget:new()
-Thread.new(train, buffer, tocolor(0, 1, 0, 1), 0)
-Thread.new(train, buffer, tocolor(1, 0, 0, 1), 3)
-Thread.new(train, buffer, tocolor(0, 0, 1, 1), 6)
+thread(train, buffer, tocolor(0, 1, 0, 1), 0)
+thread(train, buffer, tocolor(1, 0, 0, 1), 3)
+thread(train, buffer, tocolor(0, 0, 1, 1), 6)
 
 function render(ms, target) target:blend(buffer) end

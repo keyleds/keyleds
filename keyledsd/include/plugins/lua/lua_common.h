@@ -29,6 +29,7 @@ extern const char * const badTypeErrorMessage;
 extern const char * const badIndexErrorMessage;
 extern const char * const noLongerExistsErrorMessage;
 extern const char * const noEffectTokenErrorMessage;
+extern const char * const tooManyArgumentsErrorMessage;
 
 bool lua_handleMethodIndex(lua_State * lua, int index, const luaL_Reg[]);
 int lua_keyError(lua_State * lua, int index);

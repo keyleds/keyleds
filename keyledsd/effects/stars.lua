@@ -1,68 +1,34 @@
 -- Stars effect
 
-transparent = tocolor(0, 0, 0, 0)
+function stars(kb)
+    -- Read configuration
+    local duration = (tonumber(keyleds.config.duration) or 1000) / 1000
+    local number = tonumber(keyleds.config.number) or 8
+    local keys = keyleds.groups[keyleds.config.group] or keyleds.db
 
-config = {
-    duration = tonumber(keyleds.config.duration) or 1000,
-    number = tonumber(keyleds.config.number) or 8,
-    keys = keyleds.groups[keyleds.config.group] or keyleds.db,
-    colors = {}     -- will read it in init()
-}
-
--- Effect initialization
-
-function init()
-    local key, value
+    local colors, transparents = {}, {}
     for key, value in pairs(keyleds.config) do
         if string.sub(key, 1, 5) == "color" then
             local color = tocolor(value)
-            if color then config.colors[#config.colors + 1] = color end
+            if color then
+                colors[#colors + 1] = color
+                transparents[#transparents + 1] = tocolor(color.red, color.red, color.blue, 0)
+            end
         end
     end
-    if #config.colors == 0 then config.colors[1] = tocolor('white') end
+    if #colors == 0 then colors[1], transparents[1] = tocolor('white'), tocolor(1, 1, 1, 0) end
 
-    local i
-    stars = {}
-    for i = 1, config.number do
-        local star = Star:new()
-        star:rebirth()
-        star.age = (i - 1) * config.duration / config.number
-        stars[#stars + 1] = star
+    -- Animation loop
+    local delay = duration / number
+    while true do
+        local colornum = math.random(#colors)
+        local key = keys[math.random(#keys)]
+
+        kb[key] = fade(duration, colors[colornum], transparents[colornum])
+        wait(delay)
     end
-
-    buffer = RenderTarget:new()
 end
 
--- Effect rendering
-
-function render(ms, target)
-    local idx, star, duration
-    duration = config.duration
-    for idx, star in ipairs(stars) do
-        star.age = star.age + ms
-        if star.age >= duration then
-            buffer[star.key] = transparent
-            star:rebirth()
-        end
-        buffer[star.key] = tocolor(
-            star.color.red, star.color.green, star.color.blue,
-            star.color.alpha * (duration - star.age) / duration
-        )
-    end
-    target:blend(buffer)
-end
-
--- Star object
-
-Star = {}
-function Star:new(o)
-    o = o or {}
-    setmetatable(o, self)
-    self.__index = self
-    return o
-end
-function Star:rebirth()
-    self.key = config.keys[math.random(#config.keys)]
-    self.color = config.colors[math.random(#config.colors)]
-    self.age = 0
-end
+buffer = RenderTarget:new()
+thread(stars, buffer)
+function render(ms, target) target:blend(buffer) end

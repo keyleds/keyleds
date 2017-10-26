@@ -17,6 +17,7 @@
 #include "plugins/lua/lua_RGBAColor.h"
 
 #include <array>
+#include <cassert>
 #include <cstring>
 #include <iomanip>
 #include <sstream>
@@ -86,6 +87,7 @@ static int toString(lua_State * lua)
 
 void lua_push(lua_State * lua, RGBAColor value)
 {
+    SAVE_TOP(lua);
     lua_createtable(lua, 4, 0);
     luaL_getmetatable(lua, metatable<RGBAColor>::name);
     lua_setmetatable(lua, -2);
@@ -97,7 +99,42 @@ void lua_push(lua_State * lua, RGBAColor value)
     lua_rawseti(lua, -2, 3);
     lua_pushnumber(lua, lua_Number(value.alpha) / 255.0);
     lua_rawseti(lua, -2, 4);
+    CHECK_TOP(lua, +1);
 }
+
+RGBAColor lua_tocolor(lua_State * lua, int index)
+{
+    SAVE_TOP(lua);
+    lua_rawgeti(lua, index, 1);
+    lua_rawgeti(lua, index, 2);
+    lua_rawgeti(lua, index, 3);
+    lua_rawgeti(lua, index, 4);
+
+    if (!lua_isnumber(lua, -4) || !lua_isnumber(lua, -3) ||
+        !lua_isnumber(lua, -2) || !lua_isnumber(lua, -1)) {
+        luaL_argerror(lua, 2, badTypeErrorMessage);
+    }
+
+    auto result = RGBAColor(
+        std::min(255, int(256.0 * lua_tonumber(lua, -4))),
+        std::min(255, int(256.0 * lua_tonumber(lua, -3))),
+        std::min(255, int(256.0 * lua_tonumber(lua, -2))),
+        std::min(255, int(256.0 * lua_tonumber(lua, -1)))
+    );
+    lua_pop(lua, 4);
+    CHECK_TOP(lua, 0);
+    return result;
+}
+
+RGBAColor lua_checkcolor(lua_State * lua, int index)
+{
+    if (!lua_is<RGBAColor>(lua, index)) {
+        luaL_argerror(lua, index, badTypeErrorMessage);
+        // does not return
+    }
+    return lua_tocolor(lua, index);
+}
+
 
 /****************************************************************************/
 

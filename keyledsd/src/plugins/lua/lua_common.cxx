@@ -28,6 +28,7 @@ const char * const badTypeErrorMessage = "bad type";
 const char * const badIndexErrorMessage = "index out of bounds '%d'";
 const char * const noLongerExistsErrorMessage = "object no longer exists";
 const char * const noEffectTokenErrorMessage = "no effect token in environment";
+const char * const tooManyArgumentsErrorMessage = "too many arguments";
 
 /****************************************************************************/
 

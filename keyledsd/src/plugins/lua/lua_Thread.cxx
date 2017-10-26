@@ -23,7 +23,7 @@ namespace keyleds { namespace lua {
 
 /****************************************************************************/
 
-static int create(lua_State * lua)
+int luaNewThread(lua_State * lua)
 {
     if (!lua_isfunction(lua, 1)) { return luaL_argerror(lua, 1, badTypeErrorMessage); }
 
@@ -59,7 +59,7 @@ static int index(lua_State * lua)
 
 const char * metatable<Thread>::name = "Thread";
 const struct luaL_Reg metatable<Thread>::methods[] = {
-    { "new",        create },
+    { "new",        luaNewThread },
     { "pause",      pause },
     { "resume",     resume },
     { "stop",       stop },

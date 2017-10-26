@@ -142,25 +142,13 @@ static int newIndex(lua_State * lua)
                     /// generic code that works on different keyboards
     }
 
-    if (!lua_is<RGBAColor>(lua, 3)) {
-        return luaL_argerror(lua, 3, badTypeErrorMessage);
+    if (lua_is<Interpolator>(lua, 3)) {
+        lua_pushvalue(lua, 3);
+        lua_pushvalue(lua, 1);
+        Interpolator::start(lua, index);
+        return 0;
     }
-    lua_rawgeti(lua, 3, 1);
-    lua_rawgeti(lua, 3, 2);
-    lua_rawgeti(lua, 3, 3);
-    lua_rawgeti(lua, 3, 4);
-
-    if (!lua_isnumber(lua, -4) || !lua_isnumber(lua, -3) ||
-        !lua_isnumber(lua, -2) || !lua_isnumber(lua, -1)) {
-        return luaL_argerror(lua, 3, badTypeErrorMessage);
-    }
-
-    (*target)[index] = RGBAColor(
-        std::min(255, int(256.0 * lua_tonumber(lua, -4))),
-        std::min(255, int(256.0 * lua_tonumber(lua, -3))),
-        std::min(255, int(256.0 * lua_tonumber(lua, -2))),
-        std::min(255, int(256.0 * lua_tonumber(lua, -1)))
-    );
+    (*target)[index] = lua_checkcolor(lua, 3);
     return 0;
 }
 

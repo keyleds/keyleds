@@ -14,24 +14,41 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef KEYLEDS_PLUGINS_LUA_LUA_RGBACOLOR_H_5373E7AA
-#define KEYLEDS_PLUGINS_LUA_LUA_RGBACOLOR_H_5373E7AA
+#ifndef KEYLEDS_PLUGINS_LUA_LUA_INTERPOLATOR_H_BCD195FC
+#define KEYLEDS_PLUGINS_LUA_LUA_INTERPOLATOR_H_BCD195FC
 
 #include "plugins/lua/lua_types.h"
-
-namespace keyleds { struct RGBAColor; }
+#include "keyledsd/effect/PluginHelper.h"
 
 namespace keyleds { namespace lua {
 
 /****************************************************************************/
 
-template <> struct metatable<keyleds::RGBAColor>
+struct Interpolator
+{
+    enum {
+        hasStartValueFlag = (1 << 1)
+    };
+    int         id;                 ///< luaL_ref id in registry
+    int         flags;              ///< See flags_type above
+    unsigned    index;              ///< Key index withing render target
+    unsigned    duration;           ///< Animation duration in ms
+    unsigned    elapsed;            ///< Elapsed time in ms
+    RGBAColor   startValue;         ///< Color when elapsed == 0
+    RGBAColor   finishValue;        ///< Color when elapsed >= duration
+
+    static void start(lua_State *, unsigned index); // on stack: (interpolator, rendertarget) [-2, 0]
+    static void stop(lua_State *);                  // on stack: (interpolator) [-1, 0]
+    static void stepAll(lua_State *, unsigned ms);
+
+    RGBAColor   value() const;
+};
+
+int luaNewInterpolator(lua_State *);
+
+template <> struct metatable<Interpolator>
     { static const char * name; static constexpr struct luaL_Reg * methods = nullptr;
       static const struct luaL_Reg meta_methods[]; struct weak_table : std::false_type{}; };
-
-void lua_push(lua_State * lua, keyleds::RGBAColor);
-RGBAColor lua_tocolor(lua_State * lua, int index);
-RGBAColor lua_checkcolor(lua_State * lua, int index);
 
 /****************************************************************************/
 

@@ -98,7 +98,9 @@ static int luaWait(lua_State * lua)
 }
 
 static const luaL_reg keyledsGlobals[] = {
+    { "fade",       luaNewInterpolator },
     { "print",      luaPrint    },
+    { "thread",     luaNewThread },
     { "tocolor",    luaToColor  },
     { "wait",       luaWait     },
     { nullptr, nullptr }
@@ -118,6 +120,7 @@ void Environment::openKeyleds(Controller * controller)
     lua_rawset(m_lua, LUA_GLOBALSINDEX);
 
     // Register types
+    registerType<Interpolator>(m_lua);
     registerType<const device::KeyDatabase *>(m_lua);
     registerType<const device::KeyDatabase::KeyGroup *>(m_lua);
     registerType<const device::KeyDatabase::Key *>(m_lua);

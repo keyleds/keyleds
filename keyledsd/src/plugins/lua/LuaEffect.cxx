@@ -138,7 +138,7 @@ void LuaEffect::setupState()
         lua_call(lua, 0, 0);
     }
 
-    // Insert animation list
+    // Insert thread list
     lua_pushlightuserdata(lua, const_cast<void *>(threadToken));
     lua_newtable(lua);
     lua_rawset(lua, LUA_REGISTRYINDEX);
@@ -206,6 +206,7 @@ void LuaEffect::render(unsigned long ms, RenderTarget & target)
     if (!m_enabled) { return; }
     auto lua = m_state.get();
 
+    Environment(lua).stepInterpolators(ms);
     stepThreads(ms);
 
     SAVE_TOP(lua);
