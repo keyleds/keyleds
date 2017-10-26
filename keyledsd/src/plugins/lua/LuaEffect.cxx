@@ -350,6 +350,7 @@ void LuaEffect::destroyThread(lua_State * lua, Thread & thread)
 
     luaL_unref(lua, -1, thread.id);
     lua_pop(lua, 1);
+    thread.running = false;
     CHECK_TOP(lua, 0);
 }
 
@@ -374,9 +375,11 @@ void LuaEffect::stepThreads(unsigned ms)
             if (threadInfo.sleepTime <= ms) {
                 lua_getfenv(lua, -1);                   // push(fenv)
                 lua_getfield(lua, -1, "thread");        // push(thread)
-
                 auto * thread = static_cast<lua_State *>(const_cast<void *>(lua_topointer(lua, -1)));
-                runThread(threadInfo, thread, 0);
+
+                while (threadInfo.running && threadInfo.sleepTime <= ms) {
+                    runThread(threadInfo, thread, 0);
+                }
 
                 lua_pop(lua, 2);                        // pop(fenv, thread)
             }
