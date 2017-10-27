@@ -97,7 +97,7 @@ static int luaWait(lua_State * lua)
     return lua_yield(lua, 2);
 }
 
-static const luaL_reg keyledsGlobals[] = {
+static const luaL_Reg keyledsGlobals[] = {
     { "fade",       luaNewInterpolator },
     { "print",      luaPrint    },
     { "thread",     luaNewThread },

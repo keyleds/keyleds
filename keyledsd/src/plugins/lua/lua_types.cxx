@@ -25,7 +25,7 @@ namespace keyleds { namespace lua {
 /****************************************************************************/
 
 void detail::registerType(lua_State * lua, const char * name,
-                          const luaL_reg * methods, const luaL_reg * metaMethods, bool weakTable)
+                          const luaL_Reg * methods, const luaL_Reg * metaMethods, bool weakTable)
 {
     assert(lua);
     assert(name);
@@ -75,10 +75,10 @@ bool detail::isType(lua_State * lua, int index, const char * name)
     return result;
 }
 
-void detail::lua_pushref(lua_State * lua, const void * value, const char * name, const luaL_reg * metaMethods)
+void detail::lua_pushref(lua_State * lua, const void * value, const char * name, const luaL_Reg * metaMethods)
 {
     SAVE_TOP(lua);
-    lua_pushlightuserdata(lua, const_cast<luaL_reg *>(metaMethods));
+    lua_pushlightuserdata(lua, const_cast<luaL_Reg *>(metaMethods));
     lua_rawget(lua, LUA_REGISTRYINDEX);
     lua_pushlightuserdata(lua, const_cast<void *>(value));
     lua_rawget(lua, -2);
