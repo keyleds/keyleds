@@ -2,7 +2,7 @@ Source: keyleds
 Section: utils
 Priority: optional
 Maintainer: Julien Hartmann <juli1.hartmann@gmail.com>
-Build-Depends: debhelper:native (>=9), cmake:native, qtbase5-dev-tools:native, linux-libc-dev, qtbase5-dev, libudev-dev, libx11-dev, libxi-dev, libxml2-dev, libyaml-dev
+Build-Depends: debhelper:native (>=9), cmake:native, pkg-config:native, qtbase5-dev-tools:native, linux-libc-dev, qtbase5-dev, libudev-dev, libx11-dev, libxi-dev, libxml2-dev, libyaml-dev, libluajit-5.1-dev
 Standards-Version: 3.9.8
 Homepage: https://github.com/spectras/keyleds
 #Vcs-Git: https://github.com/spectras/keyleds.git
@@ -18,11 +18,12 @@ Description: Logitech Keyboard per-key lighting control
     webpage in browser or open file extension in editors.
   - Native animation plugins: fixed colors, keypress feedback, breathe, wave,
     stars.
+  - Build your effects using LUA scripting.
   - Several plugins can be active at once, and composited with alpha blending
     to build complex effects.
   - Systemd session support, detecting user switches so multiple users can use
     the service without them fighting over keyboard control.
-  - DBus interface for scripting
+  - DBus interface for scripting.
 
 Package: keyleds-dev
 Architecture: any

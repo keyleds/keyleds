@@ -3,7 +3,22 @@ Release Notes
 #############
 
 *****************************
-0.6.2 - current release
+0.7.0 - current release
+*****************************
+
+Released on October 27th, 2017
+
+Features:
+
+- The LUA scripting engine is there. Start writing your LUA effects now!
+- A few sample effects are included, check them out.
+
+Bugfixes:
+
+- Having no default profile in the configuration no longer crashed the service.
+
+*****************************
+0.6.2
 *****************************
 
 Released on October 14th, 2017

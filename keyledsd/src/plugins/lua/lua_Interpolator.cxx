@@ -18,7 +18,6 @@
 
 #include <cassert>
 #include <lua.hpp>
-#include <iostream>
 #include "plugins/lua/Environment.h"
 #include "plugins/lua/lua_common.h"
 

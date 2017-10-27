@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 cmake_minimum_required (VERSION 3.0)
-project(keyledsd VERSION 0.6.2 LANGUAGES CXX)
+project(keyledsd VERSION 0.7.0 LANGUAGES CXX)
 include(CheckCSourceCompiles)
 
 ##############################################################################
@@ -171,7 +171,7 @@ configure_file("include/config.h.in" "config.h")
 ##############################################################################
 # Optional plugins
 
-pkg_search_module(LUA luajit lua-5.3 lua-5.2 lua-5.1)
+pkg_search_module(LUA luajit lua-5.3 lua-5.2)
 
 IF(LUA_FOUND)
     add_library(fx_lua MODULE

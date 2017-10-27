@@ -29,6 +29,7 @@ Features
   - **Stars** effect *(number, color list and light duration configurable)*.
   - **Keypress feedback** effect *(as all plugins, can be composited)*.
 
+* Write your own effects using the **LUA scripting** engine.
 * Several plugins can be active at once, and composited with **alpha blending** to
   build complex effects.
 * Systemd **session support**, detecting user switches so multiple users can
@@ -37,8 +38,6 @@ Features
 
 And a few goodies:
 
-* Effects are implemented as **loadable modules**, using a clean API. Develop
-  yours now.
 * **Command-line tool** for your scripting needs and extended configuration
   (set game-mode keys, change report rate, see USB exchanges…).
 * Optimized pure **C library**.
