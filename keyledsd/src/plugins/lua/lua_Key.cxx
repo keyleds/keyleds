@@ -32,7 +32,7 @@ static int index(lua_State * lua)
     const char * field = luaL_checkstring(lua, 2);
 
     if (std::strcmp(field, "index") == 0) {
-        lua_pushnumber(lua, key->index);
+        lua_pushnumber(lua, key->index + 1);
     } else if (std::strcmp(field, "keyCode") == 0 ) {
         lua_pushnumber(lua, key->keyCode);
     } else if (std::strcmp(field, "name") == 0) {
