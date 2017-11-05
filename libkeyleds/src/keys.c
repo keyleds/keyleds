@@ -69,15 +69,44 @@ static const uint8_t keycode_to_scancode[] = {
     0x71, 0x72, 0x73, 0x00, 0x00, 0x00, 0x00, 0x00  /* 0xc0 */
 };
 
-KEYLEDS_EXPORT unsigned keyleds_translate_scancode(uint8_t scancode)
+KEYLEDS_EXPORT unsigned keyleds_translate_scancode(keyleds_block_id_t block, uint8_t scancode)
 {
-    return (unsigned)scancode_to_keycode[scancode];
+    if (block == KEYLEDS_BLOCK_KEYS) {
+        return (unsigned)scancode_to_keycode[scancode];
+    }
+    if (block == KEYLEDS_BLOCK_MULTIMEDIA) {
+        switch (scancode) {
+            case 0xb5: return 163;
+            case 0xb6: return 165;
+            case 0xb7: return 166;
+            case 0xcd: return 164;
+            case 0xe2: return 113;
+            default: return 0;
+        }
+    }
+    return 0;
 }
 
-KEYLEDS_EXPORT uint8_t keyleds_translate_keycode(unsigned keycode)
+KEYLEDS_EXPORT bool keyleds_translate_keycode(unsigned keycode, keyleds_block_id_t * blockptr,
+                                              uint8_t * scancodeptr)
 {
-    if (keycode >= sizeof(keycode_to_scancode) / sizeof(keycode_to_scancode[0])) {
-        return KEYLEDS_KEY_ID_INVALID;
+    keyleds_block_id_t block;
+    uint8_t scancode = 0;
+
+    switch (keycode) {
+        case 113: scancode = 0xe2, block = KEYLEDS_BLOCK_MULTIMEDIA; break;
+        case 163: scancode = 0xb5, block = KEYLEDS_BLOCK_MULTIMEDIA; break;
+        case 164: scancode = 0xcd, block = KEYLEDS_BLOCK_MULTIMEDIA; break;
+        case 165: scancode = 0xb6, block = KEYLEDS_BLOCK_MULTIMEDIA; break;
+        case 166: scancode = 0xb7, block = KEYLEDS_BLOCK_MULTIMEDIA; break;
+        default:
+            if (keycode < sizeof(keycode_to_scancode) / sizeof(keycode_to_scancode[0])) {
+                scancode = keycode_to_scancode[keycode], block = KEYLEDS_BLOCK_KEYS;
+            }
     }
-    return keycode_to_scancode[keycode];
+    if (scancode == 0) { return false; }
+
+    if (blockptr) { *blockptr = block; }
+    if (scancodeptr) { *scancodeptr = scancode; }
+    return true;
 }

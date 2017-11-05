@@ -185,10 +185,7 @@ bool Device::hasLayout() const
 
 std::string Device::resolveKey(key_block_id_type blockId, key_id_type keyId) const
 {
-    if (blockId != KEYLEDS_BLOCK_KEYS) {
-        return {};  // only keys from the regular key block have a built-in symbol
-    }
-    auto keyCode = keyleds_translate_scancode(keyId);
+    auto keyCode = keyleds_translate_scancode(keyleds_block_id_t(blockId), keyId);
     const char * name = keyleds_lookup_string(keyleds_keycode_names, keyCode);
     if (name == nullptr) { return {}; }
     return name;
@@ -196,10 +193,7 @@ std::string Device::resolveKey(key_block_id_type blockId, key_id_type keyId) con
 
 int Device::decodeKeyId(key_block_id_type blockId, key_id_type keyId) const
 {
-    if (blockId != KEYLEDS_BLOCK_KEYS) {
-        return 0;  // only keys from the regular key block have a built-in key code
-    }
-    return keyleds_translate_scancode(keyId);
+    return keyleds_translate_scancode(keyleds_block_id_t(blockId), keyId);
 }
 
 /****************************************************************************/

@@ -216,9 +216,9 @@ unsigned keyleds_string_id(const struct keyleds_indexed_string *,
 
 /* keycode is code event (eg KEY_F1)
  * scancode is physical key id as defined by USB standards
- * The keycode/scancode translation only applies to keys from block 0x01 (keys block) */
-unsigned keyleds_translate_scancode(uint8_t scancode);
-uint8_t keyleds_translate_keycode(unsigned keycode);
+ * The keycode/scancode translation only applies to keys from block 0x01 (keys block) and 0x02 (media) */
+unsigned keyleds_translate_scancode(keyleds_block_id_t block, uint8_t scancode);
+bool keyleds_translate_keycode(unsigned keycode, keyleds_block_id_t * block, uint8_t * scancode);
 
 #ifdef __cplusplus
 }

@@ -32,7 +32,7 @@ bool parse_keycode(const char * str, keyleds_block_id_t block_id, unsigned * out
 
     assert(out != NULL);
 
-    if (block_id == KEYLEDS_BLOCK_KEYS) {
+    if (block_id == KEYLEDS_BLOCK_KEYS || block_id == KEYLEDS_BLOCK_MULTIMEDIA) {
         unsigned idx;
         size_t length = strlen(str);
         char upper[length + 1];

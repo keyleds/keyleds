@@ -407,8 +407,8 @@ int main_get_leds(int argc, char * argv[])
 
     for (idx = 0; idx < nb_keys; idx += 1) {
         if (keys[idx].id == 0) { continue; }
-        if (options.block_id == KEYLEDS_BLOCK_KEYS) {
-            const unsigned keycode = keyleds_translate_scancode(keys[idx].id);
+        if (options.block_id == KEYLEDS_BLOCK_KEYS || options.block_id == KEYLEDS_BLOCK_MULTIMEDIA) {
+            const unsigned keycode = keyleds_translate_scancode(options.block_id, keys[idx].id);
             if (keycode == 0) { continue; }
             const char * name = keyleds_lookup_string(keyleds_keycode_names, keycode);
             if (name == NULL) {
@@ -477,8 +477,10 @@ bool parse_set_leds_options(int argc, char * argv[],
                     fprintf(stderr, "%s: invalid key in directive -- '%s'\n", argv[0], optarg);
                     goto err_free_options;
                 }
-                if (block_id == KEYLEDS_BLOCK_KEYS) {
-                    code = keyleds_translate_keycode(code);
+                if (block_id == KEYLEDS_BLOCK_KEYS || block_id == KEYLEDS_BLOCK_MULTIMEDIA) {
+                    uint8_t value;
+                    keyleds_translate_keycode(code, NULL, &value);
+                    code = value;
                 }
             }
 
@@ -635,8 +637,7 @@ bool parse_gamemode_options(int argc, char * argv[],
                 fprintf(stderr, "%s: invalid keycode %s\n", argv[0], argv[optind + idx]);
                 goto err_gamemode_free_ids;
             }
-            keyid = keyleds_translate_keycode(keycode);
-            if (keyid == KEYLEDS_KEY_ID_INVALID) {
+            if (!keyleds_translate_keycode(keycode, NULL, &keyid)) {
                 fprintf(stderr, "%s: invalid keycode %s\n", argv[0], argv[optind + idx]);
                 goto err_gamemode_free_ids;
             }
