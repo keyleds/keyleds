@@ -19,6 +19,9 @@
 #include <unistd.h>
 #include <algorithm>
 #include <cassert>
+#include <iomanip>
+#include <sstream>
+#include "keyledsd/device/LayoutDescription.h"
 #include "tools/Paths.h"
 #include "config.h"
 #include "logging.h"
@@ -29,6 +32,16 @@ using keyleds::DeviceManager;
 
 static constexpr char defaultProfileName[] = "__default__";
 static constexpr char overlayProfileName[] = "__overlay__";
+
+/****************************************************************************/
+
+static std::string layoutName(const keyleds::device::Device & device)
+{
+    std::ostringstream fileNameBuf;
+    fileNameBuf.fill('0');
+    fileNameBuf <<device.model() <<'_' <<std::hex <<std::setw(4) <<device.layout() <<".xml";
+    return fileNameBuf.str();
+}
 
 /****************************************************************************/
 
@@ -55,7 +68,7 @@ DeviceManager::DeviceManager(EffectManager & effectManager, FileWatcher & fileWa
                                              std::bind(&DeviceManager::handleFileEvent, this,
                                                        std::placeholders::_1, std::placeholders::_2,
                                                        std::placeholders::_3))),
-      m_keyDB(KeyDatabase::build(m_device)),
+      m_keyDB(setupKeyDatabase(m_device)),
       m_renderLoop(m_device, KEYLEDSD_RENDER_FPS)
 {
     setConfiguration(conf);
@@ -164,6 +177,33 @@ DeviceManager::dev_list DeviceManager::findEventDevices(const ::device::Descript
         }
     }
     return result;
+}
+
+DeviceManager::KeyDatabase DeviceManager::setupKeyDatabase(Device & device)
+{
+    // Load layout description file from disk
+    device::LayoutDescription layout;
+    if (device.hasLayout()) {
+        layout = device::LayoutDescription::loadFile(layoutName(device));
+    }
+
+    // Some keyboards do not report all keys, look for missing keys and patch device
+    for (const auto & block : device.blocks()) {
+        std::vector<Device::key_id_type> keyIds;
+
+        for (const auto & key : layout.keys()) {
+            if (key.block != block.id()) { continue; }
+            if (std::find(block.keys().begin(), block.keys().end(), key.code) == block.keys().end()) {
+                keyIds.push_back(key.code);
+            }
+        }
+        if (!keyIds.empty()) {
+            DEBUG("patching ", keyIds.size(), " missing keys in block ", block.name());
+            device.patchMissingKeys(block, keyIds);
+        }
+    }
+
+    return KeyDatabase::build(device, layout);
 }
 
 /// Applies the configuration to a string_map, matching profiles and resolving

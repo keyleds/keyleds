@@ -17,22 +17,10 @@
 #include "keyledsd/device/KeyDatabase.h"
 
 #include <algorithm>
-#include <iomanip>
-#include <sstream>
 #include "keyledsd/device/Device.h"
 #include "keyledsd/device/LayoutDescription.h"
 
 using keyleds::device::KeyDatabase;
-
-/****************************************************************************/
-
-static std::string layoutName(const keyleds::device::Device & device)
-{
-    std::ostringstream fileNameBuf;
-    fileNameBuf.fill('0');
-    fileNameBuf <<device.model() <<'_' <<std::hex <<std::setw(4) <<device.layout() <<".xml";
-    return fileNameBuf.str();
-}
 
 /****************************************************************************/
 
@@ -43,16 +31,10 @@ KeyDatabase::KeyDatabase(key_list keys)
 
 KeyDatabase::~KeyDatabase() {}
 
-KeyDatabase KeyDatabase::build(const Device & device)
+KeyDatabase KeyDatabase::build(const Device & device, const LayoutDescription & layout)
 {
-    LayoutDescription layout;
-    if (device.hasLayout()) {
-        layout = LayoutDescription::loadFile(layoutName(device));
-    }
-
     key_list db;
     RenderTarget::size_type keyIndex = 0;
-
     for (const auto & block : device.blocks()) {
         for (unsigned kidx = 0; kidx < block.keys().size(); ++kidx) {
             const auto keyId = block.keys()[kidx];

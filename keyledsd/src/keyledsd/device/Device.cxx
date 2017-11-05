@@ -260,6 +260,13 @@ void Device::commitColors()
     }
 }
 
+void Device::patchMissingKeys(const KeyBlock & block, const key_list & keyIds)
+{
+    // Note: the intent here is block is used for "indexing".
+    // Conceptually, this searches the block within m_blocks to modify it.
+    const_cast<KeyBlock &>(block).patchMissingKeys(keyIds);
+}
+
 /****************************************************************************/
 
 Device::KeyBlock::KeyBlock(key_block_id_type id, key_list keys, RGBColor maxValues)
@@ -270,6 +277,12 @@ Device::KeyBlock::KeyBlock(key_block_id_type id, key_list keys, RGBColor maxValu
 {}
 
 Device::KeyBlock::~KeyBlock() {}
+
+void Device::KeyBlock::patchMissingKeys(const key_list & keyIds)
+{
+    m_keys.reserve(m_keys.size() + keyIds.size());
+    std::copy(keyIds.begin(), keyIds.end(), std::back_inserter(m_keys));
+}
 
 /****************************************************************************/
 

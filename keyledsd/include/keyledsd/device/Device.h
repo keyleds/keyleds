@@ -69,9 +69,9 @@ public:
         int             m_oserror;
     };
 
-private:
     using key_block_id_type = uint8_t;
     using key_id_type = uint8_t;
+private:
     using block_list = std::vector<KeyBlock>;
     using key_list = std::vector<key_id_type>;
 
@@ -108,6 +108,9 @@ public:
     color_directive_list getColors(const KeyBlock & block);
     void                commitColors();
 
+    // Quirks
+    void                patchMissingKeys(const KeyBlock &, const key_list &);
+
 private:
     static std::unique_ptr<struct keyleds_device> openDevice(const std::string &);
     static Type         getType(struct keyleds_device *);
@@ -143,9 +146,12 @@ public:
     const key_list &    keys() const { return m_keys; }
     const RGBColor &    maxValues() const { return m_maxValues; }
 
+    // Quirks
+    void                patchMissingKeys(const key_list &);
+
 private:
     key_block_id_type   m_id;           ///< Block identifier, eg: 0 for normal keys, 64 for game/light keys, ...
-    std::string         m_name;         ///< USer-readable block name
+    std::string         m_name;         ///< User-readable block name
     key_list            m_keys;         ///< List of key identifiers in block
     RGBColor            m_maxValues;    ///< Color values that represent maximum light power for the block
 };

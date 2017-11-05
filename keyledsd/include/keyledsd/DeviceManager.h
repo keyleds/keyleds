@@ -110,6 +110,7 @@ private:
     static std::string      getSerial(const ::device::Description &);
     static std::string      getName(const Configuration &, const std::string & serial);
     static dev_list         findEventDevices(const ::device::Description &);
+    static KeyDatabase      setupKeyDatabase(Device &);
 
     /// Loads the list of effects to activate for the given context
     std::vector<Renderer *> loadEffects(const string_map & context);

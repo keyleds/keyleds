@@ -26,6 +26,7 @@
 namespace keyleds { namespace device {
 
 class Device;
+class LayoutDescription;
 
 /****************************************************************************/
 
@@ -70,7 +71,7 @@ public:
                     KeyDatabase(KeyDatabase &&) = default;
                     ~KeyDatabase();
 
-    static KeyDatabase build(const Device &);
+    static KeyDatabase build(const Device &, const LayoutDescription &);
 
 
     KEYLEDSD_EXPORT const_iterator  findKeyCode(int keyCode) const;
