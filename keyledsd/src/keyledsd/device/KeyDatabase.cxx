@@ -22,11 +22,24 @@
 
 using keyleds::device::KeyDatabase;
 
+static constexpr double pi = 3.14159265358979323846;
+
 /****************************************************************************/
+
+// Return index in relation table for key pair, given a.index < b.index
+static unsigned relationIndex(const KeyDatabase::Key & a, const KeyDatabase::Key & b, unsigned N)
+{
+    // Relations are stored in pyramidal array
+    return a.index * (2 * N - 1 - a.index) / 2 + b.index - a.index - 1;
+}
+
+/****************************************************************************/
+
 
 KeyDatabase::KeyDatabase(key_list keys)
  : m_keys(std::move(keys)),
-   m_bounds(computeBounds(m_keys))
+   m_bounds(computeBounds(m_keys)),
+   m_relations(computeRelations(m_keys))
 {}
 
 KeyDatabase::~KeyDatabase() {}
@@ -44,8 +57,12 @@ KeyDatabase KeyDatabase::build(const Device & device, const LayoutDescription & 
             for (const auto & key : layout.keys()) {
                 if (key.block == block.id() && key.code == keyId) {
                     name = key.name;
-                    position = {key.position.x0, key.position.y0,
-                                key.position.x1, key.position.y1};
+                    position = {
+                        position_type(key.position.x0),
+                        position_type(key.position.y0),
+                        position_type(key.position.x1),
+                        position_type(key.position.y1)
+                    };
                     break;
                 }
             }
@@ -75,6 +92,23 @@ KeyDatabase::const_iterator KeyDatabase::findName(const std::string & name) cons
                         [name](const auto & key) { return key.name == name; });
 }
 
+KeyDatabase::position_type KeyDatabase::distance(const Key & a, const Key & b) const
+{
+    if (a.index == b.index) { return 0; }
+    return m_relations[a.index < b.index ? relationIndex(a, b, m_keys.size())
+                                         : relationIndex(b, a, m_keys.size())].distance;
+}
+
+double KeyDatabase::angle(const Key & a, const Key & b) const
+{
+    if (a.index == b.index) { return 0.0; }
+    auto xa = (a.position.x1 + a.position.x0) / 2;
+    auto ya = (a.position.y1 + a.position.y0) / 2;
+    auto xb = (b.position.x1 + b.position.x0) / 2;
+    auto yb = (b.position.y1 + b.position.y0) / 2;
+    return std::atan2(ya - yb, xb - xa);    // note: y axis is inverted
+}
+
 KeyDatabase::Key::Rect KeyDatabase::computeBounds(const key_list & keys)
 {
     auto result = Key::Rect{
@@ -88,6 +122,28 @@ KeyDatabase::Key::Rect KeyDatabase::computeBounds(const key_list & keys)
         if (key.position.y0 < result.y0) { result.y0 = key.position.y0; }
         if (key.position.x1 > result.x1) { result.x1 = key.position.x1; }
         if (key.position.y1 > result.y1) { result.y1 = key.position.y1; }
+    }
+    return result;
+}
+
+KeyDatabase::relation_list KeyDatabase::computeRelations(const key_list & keys)
+{
+    KeyDatabase::relation_list result;
+    result.reserve(keys.size() * (keys.size() - 1) / 2);
+
+    for (auto it = keys.begin(); it != keys.end(); ++it) {
+        for (auto other = std::next(it); other != keys.end(); ++other) {
+            auto xa = (it->position.x1 + it->position.x0) / 2;
+            auto ya = (it->position.y1 + it->position.y0) / 2;
+            auto xb = (other->position.x1 + other->position.x0) / 2;
+            auto yb = (other->position.y1 + other->position.y0) / 2;
+            auto dx = xb - xa;
+            auto dy = yb - ya;
+
+            result.push_back(Relation{
+                position_type(std::sqrt(dx * dx + dy * dy))
+            });
+        }
     }
     return result;
 }

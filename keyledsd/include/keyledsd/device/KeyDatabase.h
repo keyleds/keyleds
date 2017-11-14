@@ -39,11 +39,13 @@ class LayoutDescription;
 class KeyDatabase final
 {
 public:
+    using position_type = int;
+
     class Key final
     {
         using index_type = RenderTarget::size_type;
     public:
-        struct Rect { unsigned x0, y0, x1, y1; };
+        struct Rect { position_type x0, y0, x1, y1; };
     public:
         Key(index_type, int keyCode, std::string name, Rect position);
         ~Key();
@@ -57,7 +59,13 @@ public:
     class KeyGroup;
 
 private:
+    struct Relation final
+    {
+        position_type   distance;
+    };
+
     using key_list = std::vector<Key>;
+    using relation_list = std::vector<Relation>;
 public:
     using value_type = key_list::value_type;
     using reference = key_list::const_reference;
@@ -83,6 +91,8 @@ public:
     size_type       size() const noexcept { return m_keys.size(); }
 
     Key::Rect       bounds() const { return m_bounds; }
+    KEYLEDSD_EXPORT position_type   distance(const Key &, const Key &) const;
+    KEYLEDSD_EXPORT double          angle(const Key &, const Key &) const;
 
     /// Builds a KeyGroup with given name; first and last define a sequence of
     /// string defining key names for the group. Invalid names are ignored.
@@ -91,10 +101,12 @@ public:
 private:
     /// Computes m_bounds, invoked once at initialization
     static Key::Rect computeBounds(const key_list &);
+    static relation_list computeRelations(const key_list &);
 
 private:
-    const key_list  m_keys;     ///< Vector of all keys known for a device
-    const Key::Rect m_bounds;   ///< Bounds of m_keys' positions
+    const key_list      m_keys;         ///< Vector of all keys known for a device
+    const Key::Rect     m_bounds;       ///< Bounds of m_keys' positions
+    const relation_list m_relations;    ///< Pre-computed relation array
 };
 
 /****************************************************************************/

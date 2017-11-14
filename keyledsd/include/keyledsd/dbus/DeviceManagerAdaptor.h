@@ -30,7 +30,7 @@ namespace keyleds { class DeviceManager; }
  */
 struct DBusDeviceKeyInfo final
 {
-    struct Rect { uint x0, y0, x1, y1; };
+    struct Rect { int x0, y0, x1, y1; };
 
     int         keyCode;
     QString     name;

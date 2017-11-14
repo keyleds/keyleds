@@ -28,6 +28,24 @@ namespace keyleds { namespace lua {
 
 /****************************************************************************/
 
+static int angle(lua_State * lua)
+{
+    const auto * db = lua_check<const KeyDatabase *>(lua, 1);
+    const auto * keyA = lua_check<const KeyDatabase::Key *>(lua, 2);
+    const auto * keyB = lua_check<const KeyDatabase::Key *>(lua, 3);
+    lua_pushnumber(lua, db->angle(*keyA, *keyB));
+    return 1;
+}
+
+static int distance(lua_State * lua)
+{
+    const auto * db = lua_check<const KeyDatabase *>(lua, 1);
+    const auto * keyA = lua_check<const KeyDatabase::Key *>(lua, 2);
+    const auto * keyB = lua_check<const KeyDatabase::Key *>(lua, 3);
+    lua_pushnumber(lua, db->distance(*keyA, *keyB));
+    return 1;
+}
+
 static int findKeyCode(lua_State * lua)
 {
     const auto * db = lua_check<const KeyDatabase *>(lua, 1);
@@ -55,6 +73,8 @@ static int findName(lua_State * lua)
 }
 
 static const luaL_Reg methods[] = {
+    { "angle",          angle },
+    { "distance",       distance },
     { "findKeyCode",    findKeyCode },
     { "findName",       findName },
     { nullptr,          nullptr }
