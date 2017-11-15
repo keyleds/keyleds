@@ -17,12 +17,11 @@
 #include "keyledsd/device/KeyDatabase.h"
 
 #include <algorithm>
+#include <cmath>
 #include "keyledsd/device/Device.h"
 #include "keyledsd/device/LayoutDescription.h"
 
 using keyleds::device::KeyDatabase;
-
-static constexpr double pi = 3.14159265358979323846;
 
 /****************************************************************************/
 

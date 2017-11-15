@@ -3,7 +3,23 @@ Release Notes
 #############
 
 *****************************
-0.7.0 - current release
+0.7.1 - current release
+*****************************
+
+Released on November 15th, 2017
+
+Features:
+
+- Plugin API now exposes distance and angle between keys, both in LUA and C++.
+
+Bugfixes:
+
+- Multimedia keys are now properly detected on G810 — see #13.
+- Keys that devices fail to report are now read from layout file. This fixes
+  unrecognized modifier keys on G810. — see #13.
+
+*****************************
+0.7.0
 *****************************
 
 Released on October 27th, 2017
