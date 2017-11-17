@@ -46,6 +46,7 @@ set(keyledsd_SRCS
     src/keyledsd/device/KeyDatabase.cxx
     src/keyledsd/device/LayoutDescription.cxx
     src/keyledsd/device/RenderLoop.cxx
+    src/keyledsd/device/RenderTarget.cxx
     src/keyledsd/effect/EffectManager.cxx
     src/keyledsd/effect/EffectService.cxx
     src/keyledsd/effect/StaticModuleRegistry.cxx

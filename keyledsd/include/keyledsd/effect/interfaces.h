@@ -21,6 +21,7 @@
 #include <vector>
 #include "keyledsd/device/KeyDatabase.h"
 #include "keyledsd/device/RenderLoop.h"
+#include "keyledsd/device/RenderTarget.h"
 
 namespace keyleds { struct RGBAColor; }
 
