@@ -69,7 +69,7 @@ private:
         EffectGroup &       operator=(EffectGroup &&) = default;
 
         const std::string & name() const noexcept { return m_name; }
-        std::vector<Renderer *> effects() const;
+        const effect_list & effects() const { return m_effects; }
     private:
         std::string         m_name;
         effect_list         m_effects;
@@ -113,7 +113,7 @@ private:
     static KeyDatabase      setupKeyDatabase(Device &);
 
     /// Loads the list of effects to activate for the given context
-    std::vector<Renderer *> loadEffects(const string_map & context);
+    std::vector<Effect *>   loadEffects(const string_map & context);
 
     /// Instanciates an effect, combining its configuration with this device's info
     EffectGroup &           getEffectGroup(const Configuration::EffectGroup &);
@@ -133,6 +133,7 @@ private:
 
     effect_group_list       m_effectGroups;     ///< Loaded effect group instances
     RenderLoop              m_renderLoop;       ///< The RenderLoop in charge of the device
+    std::vector<Effect *>   m_activeEffects;    ///< Effects currently active on m_renderLoop
 };
 
 /****************************************************************************/

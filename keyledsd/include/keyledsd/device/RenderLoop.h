@@ -27,25 +27,6 @@ namespace keyleds { namespace device {
 
 /****************************************************************************/
 
-/** Renderer interface
- *
- * The interface an object must expose should it want to draw within a
- * RenderLoop
- */
-class Renderer
-{
-protected:
-    using RenderTarget = keyleds::device::RenderTarget;
-public:
-    /// Modifies the target to reflect effect's display once the specified time has elapsed
-    virtual void    render(unsigned long nanosec, RenderTarget & target) = 0;
-protected:
-    // Protect the destructor so we can leave it non-virtual
-    ~Renderer() {}
-};
-
-/****************************************************************************/
-
 /** Device render loop
  *
  * An AnimationLoop that runs a set of Renderers and sends the resulting

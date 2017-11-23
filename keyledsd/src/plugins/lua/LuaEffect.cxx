@@ -17,6 +17,7 @@
 #include "plugins/lua/LuaEffect.h"
 
 #include <lua.hpp>
+#include <algorithm>
 #include <cassert>
 #include <cstring>
 #include <sstream>

@@ -20,7 +20,6 @@
 #include <string>
 #include <vector>
 #include "keyledsd/device/KeyDatabase.h"
-#include "keyledsd/device/RenderLoop.h"
 #include "keyledsd/device/RenderTarget.h"
 
 namespace keyleds { struct RGBAColor; }
@@ -33,10 +32,11 @@ class EffectService;
 // IMPLEMENTED BY PLUGIN
 
 /// Core object used by DeviceManager and RenderLoop
-class Effect : public device::Renderer
+class Effect
 {
 protected:
     using KeyDatabase = device::KeyDatabase;
+    using Renderer = device::Renderer;
     using string_map = std::vector<std::pair<std::string, std::string>>;
 public:
     /// Invoked whenever the context of the service has changed while the plugin is active.
@@ -50,6 +50,9 @@ public:
 
     /// Invoked whenever the user presses or releases a key while the plugin is active.
     virtual void    handleKeyEvent(const KeyDatabase::Key &, bool press) = 0;
+
+    /// Return a Renderer interface that can draw the effect into a RenderTarget
+    virtual Renderer * renderer() = 0;
 };
 
 /// Manages communication with engine

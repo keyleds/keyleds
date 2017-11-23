@@ -27,7 +27,6 @@
 
 LOGGING("render-loop");
 
-using keyleds::device::Renderer;
 using keyleds::device::RenderLoop;
 
 /****************************************************************************/

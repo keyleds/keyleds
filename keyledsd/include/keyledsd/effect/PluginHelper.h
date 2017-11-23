@@ -17,6 +17,7 @@
 #ifndef KEYLEDSD_EFFECT_PLUGIN_HELPER_H_41D603AB
 #define KEYLEDSD_EFFECT_PLUGIN_HELPER_H_41D603AB
 
+#include "keyledsd/device/RenderTarget.h"
 #include "keyledsd/effect/interfaces.h"
 #include "keyledsd/effect/module.h"
 
@@ -24,7 +25,7 @@ namespace plugin {
 
 /****************************************************************************/
 
-class Effect : public keyleds::effect::interface::Effect
+class Effect : public keyleds::effect::interface::Effect, public keyleds::device::Renderer
 {
 protected:
     using EffectService = keyleds::effect::interface::EffectService;
@@ -33,6 +34,8 @@ public:
     void    handleContextChange(const string_map &) override {}
     void    handleGenericEvent(const string_map &) override {}
     void    handleKeyEvent(const KeyDatabase::Key &, bool) override {}
+
+    keyleds::device::Renderer * renderer() override { return this; }
 };
 
 template <typename T>

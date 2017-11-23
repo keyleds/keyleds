@@ -85,6 +85,7 @@ void DeviceManager::setConfiguration(const Configuration * conf)
     assert(conf != nullptr);
     auto lock = m_renderLoop.lock();
 
+    m_activeEffects.clear();
     m_renderLoop.renderers().clear();
     m_effectGroups.clear();
 
@@ -95,15 +96,19 @@ void DeviceManager::setConfiguration(const Configuration * conf)
 
 void DeviceManager::setContext(const string_map & context)
 {
-    auto effects = loadEffects(context);
-    DEBUG("enabling ", effects.size(), " effects for loop ", &m_renderLoop);
+    m_activeEffects = loadEffects(context);
+    DEBUG("enabling ", m_activeEffects.size(), " effects for loop ", &m_renderLoop);
 
     // Notify newly-active effects of context change
     auto lock = m_renderLoop.lock();
-    for (auto * effect : effects) {
-        static_cast<Effect *>(effect)->handleContextChange(context);
+    for (auto * effect : m_activeEffects) {
+        effect->handleContextChange(context);
     }
-    m_renderLoop.renderers() = std::move(effects);
+
+    std::vector<Renderer *> renderers(m_activeEffects.size());
+    std::transform(m_activeEffects.begin(), m_activeEffects.end(), renderers.begin(),
+                   [](const auto & effect) { return effect->renderer(); });
+    m_renderLoop.renderers() = std::move(renderers);
 }
 
 void DeviceManager::handleFileEvent(FileWatcher::event, uint32_t, std::string)
@@ -115,9 +120,7 @@ void DeviceManager::handleFileEvent(FileWatcher::event, uint32_t, std::string)
 void DeviceManager::handleGenericEvent(const string_map & context)
 {
     auto lock = m_renderLoop.lock();
-    for (auto * effect : m_renderLoop.renderers()) {
-        static_cast<Effect *>(effect)->handleGenericEvent(context);
-    }
+    for (auto * effect : m_activeEffects) { effect->handleGenericEvent(context); }
 }
 
 void DeviceManager::handleKeyEvent(int keyCode, bool press)
@@ -131,9 +134,7 @@ void DeviceManager::handleKeyEvent(int keyCode, bool press)
 
     // Pass event to active effects
     auto lock = m_renderLoop.lock();
-    for (const auto & effect : m_renderLoop.renderers()) {
-        static_cast<Effect *>(effect)->handleKeyEvent(*it, press);
-    }
+    for (const auto & effect : m_activeEffects) { effect->handleKeyEvent(*it, press); }
     DEBUG("key ", it->name, " ", press ? "pressed" : "released", " on device ", m_serial);
 }
 
@@ -211,7 +212,7 @@ DeviceManager::KeyDatabase DeviceManager::setupKeyDatabase(Device & device)
 /// should be loaded for the context. Returned list references Configuration
 /// entries directly, and are therefore invalidated by any operation that
 /// invalidates configuration's iterators.
-std::vector<DeviceManager::Renderer *> DeviceManager::loadEffects(const string_map & context)
+std::vector<keyleds::effect::interface::Effect *> DeviceManager::loadEffects(const string_map & context)
 {
     // Match context against profile lookups
     const Configuration::Profile * profile = nullptr;
@@ -266,13 +267,14 @@ std::vector<DeviceManager::Renderer *> DeviceManager::loadEffects(const string_m
         }
     }
 
-    std::vector<Renderer *> renderers;
+    std::vector<Effect *> effectPtrs;
     for (const auto & effectGroup : effectGroups) {
         const auto & loadedEffectGroup = getEffectGroup(*effectGroup);
         const auto & effects = loadedEffectGroup.effects();
-        std::copy(effects.begin(), effects.end(), std::back_inserter(renderers));
+        std::transform(effects.begin(), effects.end(), std::back_inserter(effectPtrs),
+                       [](const auto & ptr) { return ptr.get(); });
     }
-    return renderers;
+    return effectPtrs;
 }
 
 DeviceManager::EffectGroup & DeviceManager::getEffectGroup(const Configuration::EffectGroup & conf)
@@ -310,13 +312,4 @@ DeviceManager::EffectGroup & DeviceManager::getEffectGroup(const Configuration::
 
     eit = m_effectGroups.emplace(eit, conf.name(), std::move(effects));
     return *eit;
-}
-
-std::vector<DeviceManager::Renderer *> DeviceManager::EffectGroup::effects() const
-{
-    std::vector<Renderer *> result;
-    result.reserve(m_effects.size());
-    std::transform(m_effects.begin(), m_effects.end(), std::back_inserter(result),
-                   [](auto & ptr) { return ptr.get(); });
-    return result;
 }
