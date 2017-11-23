@@ -22,6 +22,7 @@
 #include <iomanip>
 #include <sstream>
 #include "keyledsd/device/LayoutDescription.h"
+#include "keyledsd/effect/EffectService.h"
 #include "tools/Paths.h"
 #include "config.h"
 #include "logging.h"
@@ -300,7 +301,7 @@ DeviceManager::EffectGroup & DeviceManager::getEffectGroup(const Configuration::
     std::vector<EffectManager::effect_ptr> effects;
     for (const auto & effectConf : conf.effects()) {
         auto effect = m_effectManager.createEffect(
-            effectConf.name(), *this, effectConf, keyGroups
+            effectConf.name(), std::make_unique<effect::EffectService>(*this, effectConf, keyGroups)
         );
         if (!effect) {
             ERROR("plugin for effect ", effectConf.name(), " not found");

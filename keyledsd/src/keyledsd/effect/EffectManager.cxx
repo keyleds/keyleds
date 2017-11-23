@@ -18,7 +18,6 @@
 
 #include <unistd.h>
 #include <algorithm>
-#include "keyledsd/effect/EffectService.h"
 #include "keyledsd/effect/module.h"
 #include "tools/DynamicLibrary.h"
 #include "logging.h"
@@ -82,7 +81,7 @@ EffectManager::effect_deleter::effect_deleter()
 {}
 
 EffectManager::effect_deleter::effect_deleter(EffectManager * manager, PluginTracker * tracker,
-                                              std::unique_ptr<EffectService> service)
+                                              std::unique_ptr<interface::EffectService> service)
  : m_manager(manager),
    m_tracker(tracker),
    m_service(std::move(service))
@@ -207,13 +206,10 @@ std::vector<std::string> EffectManager::pluginNames() const
 }
 
 EffectManager::effect_ptr EffectManager::createEffect(
-    const std::string & name, const DeviceManager & manager,
-    const Configuration::Effect & conf, const std::vector<device::KeyDatabase::KeyGroup> & keyGroups)
+    const std::string & name, std::unique_ptr<interface::EffectService> service)
 {
     interface::Effect * effect = nullptr;
     PluginTracker * tracker = nullptr;
-
-    auto service = std::make_unique<EffectService>(manager, conf, keyGroups);
 
     for (auto & info : m_plugins) {
         effect = info->instance()->createEffect(name, *service);
@@ -241,7 +237,7 @@ EffectManager::effect_ptr EffectManager::createEffect(
     return effect_ptr(effect, {this, tracker, std::move(service)});
 }
 
-void EffectManager::destroyEffect(PluginTracker & tracker, EffectService & service,
+void EffectManager::destroyEffect(PluginTracker & tracker, interface::EffectService & service,
                                   interface::Effect * effect)
 {
     tracker.instance()->destroyEffect(effect, service);

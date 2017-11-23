@@ -78,6 +78,8 @@ protected:
     using RenderTarget = device::RenderTarget;
     using string_map = std::vector<std::pair<std::string, std::string>>;
 public:
+    virtual ~EffectService() {}
+
     virtual const std::string & deviceName() const = 0;     ///< Name, as defined by user
     virtual const std::string & deviceModel() const = 0;    ///< Model string (eg usb product id)
     virtual const std::string & deviceSerial() const = 0;   ///< Unique device identifier
@@ -96,8 +98,6 @@ public:
     virtual const std::string & getFile(const std::string &) = 0;
 
     virtual void                log(unsigned, const char *) = 0;
-protected:
-    ~EffectService() {}
 };
 
 /****************************************************************************/

@@ -20,17 +20,11 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "keyledsd/device/KeyDatabase.h"
 #include "keyledsd/effect/interfaces.h"
-#include "keyledsd/Configuration.h"
 
 struct module_definition;
 
-namespace keyleds { class DeviceManager; }
-
 namespace keyleds { namespace effect {
-
-class EffectService;
 
 /****************************************************************************/
 
@@ -42,11 +36,11 @@ class EffectManager final
     {
         EffectManager * m_manager;
         PluginTracker * m_tracker;
-        std::unique_ptr<EffectService> m_service;
+        std::unique_ptr<interface::EffectService> m_service;
     public:
         effect_deleter();
         effect_deleter(EffectManager * manager, PluginTracker * tracker,
-                       std::unique_ptr<EffectService> service);
+                       std::unique_ptr<interface::EffectService> service);
         effect_deleter(effect_deleter &&) noexcept;
         ~effect_deleter();
         void operator()(interface::Effect * ptr) const;
@@ -75,13 +69,11 @@ public:
     std::vector<std::string> pluginNames() const;
 
     /// Instantiates the effect of given name, using the passed configuration
-    effect_ptr          createEffect(const std::string & name, const DeviceManager &,
-                                     const Configuration::Effect &,
-                                     const std::vector<device::KeyDatabase::KeyGroup> &);
+    effect_ptr          createEffect(const std::string & name, std::unique_ptr<interface::EffectService>);
 
 private:
     void                unload(PluginTracker &);
-    void                destroyEffect(PluginTracker &, EffectService &, interface::Effect *);
+    void                destroyEffect(PluginTracker &, interface::EffectService &, interface::Effect *);
 
 private:
     path_list                                   m_searchPaths;
