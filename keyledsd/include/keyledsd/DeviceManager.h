@@ -81,7 +81,7 @@ public:
 public:
                             DeviceManager(EffectManager &, FileWatcher &,
                                           const ::device::Description &,
-                                          Device &&,
+                                          std::unique_ptr<Device>,
                                           const Configuration *,
                                           QObject *parent = nullptr);
                             ~DeviceManager() override;
@@ -90,10 +90,10 @@ public:
     const std::string &     serial() const noexcept { return m_serial; }
     const std::string &     name() const noexcept { return m_name; }
     const dev_list &        eventDevices() const { return m_eventDevices; }
-    const Device &          device() const { return m_device; }
+    const Device &          device() const { return *m_device; }
     const KeyDatabase &     keyDB() const { return m_keyDB; }
 
-    auto                    getRenderTarget() const { return RenderLoop::renderTargetFor(m_device); }
+    auto                    getRenderTarget() const { return RenderLoop::renderTargetFor(*m_device); }
 
           bool              paused() const { return m_renderLoop.paused(); }
 
@@ -127,7 +127,7 @@ private:
           std::string       m_name;             ///< User-given name
     const dev_list          m_eventDevices;     ///< List of event device paths that the
                                                 ///  physical device can communicate on.
-    Device                  m_device;           ///< The device handled by this manager
+    std::unique_ptr<Device> m_device;           ///< The device handled by this manager
     FileWatcher::subscription m_fileWatcherSub; ///< Ensures we get notifications for devnode events
     const KeyDatabase       m_keyDB;            ///< Fully loaded key descriptions
 

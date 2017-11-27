@@ -198,7 +198,7 @@ void Service::onDeviceAdded(const ::device::Description & description)
 {
     VERBOSE("device added: ", description.devNode());
     try {
-        auto device = Device(description.devNode());
+        auto device = Device::open(description.devNode());
         auto manager = std::make_unique<DeviceManager>(
             m_effectManager, m_fileWatcher,
             description, std::move(device), m_configuration.get()
@@ -218,11 +218,10 @@ void Service::onDeviceAdded(const ::device::Description & description)
 
     } catch (Device::error & error) {
         // Suppress hid version error, it just means it's not the kind of device we want
-        if (error.code() != KEYLEDS_ERROR_HIDNOPP &&
-            error.code() != KEYLEDS_ERROR_HIDVERSION) {
-            ERROR("not opening device ", description.devNode(), ": ", error.what());
-        } else {
+        if (error.expected()) {
             VERBOSE("not opening device ", description.devNode(), ": ", error.what());
+        } else {
+            ERROR("not opening device ", description.devNode(), ": ", error.what());
         }
     }
 }

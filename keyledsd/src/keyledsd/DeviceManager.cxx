@@ -23,6 +23,7 @@
 #include <sstream>
 #include "keyledsd/device/LayoutDescription.h"
 #include "keyledsd/effect/EffectService.h"
+#include "tools/DeviceWatcher.h"
 #include "tools/Paths.h"
 #include "config.h"
 #include "logging.h"
@@ -56,7 +57,7 @@ DeviceManager::EffectGroup::~EffectGroup() {}
 /****************************************************************************/
 
 DeviceManager::DeviceManager(EffectManager & effectManager, FileWatcher & fileWatcher,
-                             const ::device::Description & description, Device && device,
+                             const ::device::Description & description, std::unique_ptr<Device> device,
                              const Configuration * conf, QObject *parent)
     : QObject(parent),
       m_effectManager(effectManager),
@@ -69,8 +70,8 @@ DeviceManager::DeviceManager(EffectManager & effectManager, FileWatcher & fileWa
                                              std::bind(&DeviceManager::handleFileEvent, this,
                                                        std::placeholders::_1, std::placeholders::_2,
                                                        std::placeholders::_3))),
-      m_keyDB(setupKeyDatabase(m_device)),
-      m_renderLoop(m_device, KEYLEDSD_RENDER_FPS)
+      m_keyDB(setupKeyDatabase(*m_device)),
+      m_renderLoop(*m_device, KEYLEDSD_RENDER_FPS)
 {
     setConfiguration(conf);
     m_renderLoop.start();
@@ -114,7 +115,7 @@ void DeviceManager::setContext(const string_map & context)
 
 void DeviceManager::handleFileEvent(FileWatcher::event, uint32_t, std::string)
 {
-    int result = access(m_device.path().c_str(), R_OK | W_OK);
+    int result = access(m_device->path().c_str(), R_OK | W_OK);
     setPaused(result != 0);
 }
 

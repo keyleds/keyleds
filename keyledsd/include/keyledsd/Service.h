@@ -21,7 +21,7 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "keyledsd/device/Device.h"
+#include "keyledsd/device/Logitech.h"
 #include "tools/DeviceWatcher.h"
 #include "tools/FileWatcher.h"
 
@@ -46,8 +46,8 @@ class DisplayManager;
 class Service final : public QObject
 {
     Q_OBJECT
-    using Device = device::Device;
-    using DeviceWatcher = device::DeviceWatcher;
+    using Device = device::LogitechDevice;
+    using DeviceWatcher = device::LogitechDeviceWatcher;
     using EffectManager = effect::EffectManager;
     using FileWatcher = tools::FileWatcher;
     using string_map = std::vector<std::pair<std::string, std::string>>;

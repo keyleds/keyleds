@@ -16,6 +16,7 @@
  */
 #include "keyledsd/device/RenderLoop.h"
 
+#include <algorithm>
 #include <cassert>
 #include <cerrno>
 #include <chrono>
@@ -127,10 +128,7 @@ void RenderLoop::run()
                 break;
             } catch (Device::error & error) {
                 // Something went wrong, we will attempt to recover
-                if (error.code() == KEYLEDS_ERROR_ERRNO
-                    && error.oserror() != EIO && error.oserror() != EINTR) {
-                    throw;  // recovering from system errors is not an option
-                }
+                if (!error.recoverable()) { throw; }
 
                 // Recover from error, giving some delay to the device
                 WARNING("error on device: ", error.what(), " re-syncing device");
@@ -145,10 +143,7 @@ void RenderLoop::run()
             }
         }
     } catch (Device::error & error) {
-        if (!((error.code() == KEYLEDS_ERROR_ERRNO && error.oserror() == ENODEV) ||
-              error.code() == KEYLEDS_ERROR_TIMEDOUT)) {
-            ERROR("device error: ", error.what());
-        }
+        if (!error.expected()) { ERROR("device error: ", error.what()); }
     } catch (std::exception & error) {
         ERROR(error.what());
     }
@@ -159,7 +154,8 @@ void RenderLoop::getDeviceState(RenderTarget & state)
     auto kit = state.begin();
 
     for (const auto & block : m_device.blocks()) {
-        auto colors = m_device.getColors(block);
+        std::vector<Device::ColorDirective> colors(block.keys().size());
+        m_device.getColors(block, colors.data());
 
         assert(block.keys().size() == colors.size());
         for (const auto & color : colors) {
