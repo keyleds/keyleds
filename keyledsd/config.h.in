@@ -1,0 +1,29 @@
+/* Keyleds -- Gaming keyboard tool
+ * Copyright (C) 2017 Julien Hartmann, juli1.hartmann@gmail.com
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+#ifndef KEYLEDS_CONFIG_H_6EB87AE0
+#define KEYLEDS_CONFIG_H_6EB87AE0
+
+#define KEYLEDSD_VERSION_STR    "@PROJECT_VERSION@"
+#define KEYLEDSD_VERSION_MAJOR  @PROJECT_VERSION_MAJOR@u
+#define KEYLEDSD_VERSION_MINOR  @PROJECT_VERSION_MINOR@u
+
+// For now we pass STL containers to plugins, so we check ABI
+#define KEYLEDSD_ABI_VERSION     __GXX_ABI_VERSION
+
+#define KEYLEDSD_EXPORT         __attribute__((visibility("default")))
+
+#endif

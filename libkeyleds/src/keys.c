@@ -81,6 +81,8 @@ KEYLEDS_EXPORT unsigned keyleds_translate_scancode(keyleds_block_id_t block, uin
             case 0xb7: return 166;
             case 0xcd: return 164;
             case 0xe2: return 113;
+            case 0xe9: return 114;
+            case 0xea: return 115;
             default: return 0;
         }
     }
@@ -95,6 +97,8 @@ KEYLEDS_EXPORT bool keyleds_translate_keycode(unsigned keycode, keyleds_block_id
 
     switch (keycode) {
         case 113: scancode = 0xe2, block = KEYLEDS_BLOCK_MULTIMEDIA; break;
+        case 114: scancode = 0xe9, block = KEYLEDS_BLOCK_MULTIMEDIA; break;
+        case 115: scancode = 0xea, block = KEYLEDS_BLOCK_MULTIMEDIA; break;
         case 163: scancode = 0xb5, block = KEYLEDS_BLOCK_MULTIMEDIA; break;
         case 164: scancode = 0xcd, block = KEYLEDS_BLOCK_MULTIMEDIA; break;
         case 165: scancode = 0xb6, block = KEYLEDS_BLOCK_MULTIMEDIA; break;
