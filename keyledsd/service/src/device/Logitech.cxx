@@ -17,6 +17,7 @@
 #include "keyledsd/device/Logitech.h"
 
 #include <algorithm>
+#include <cassert>
 #include <cerrno>
 #include <cstdlib>
 #include <iomanip>
@@ -132,6 +133,7 @@ void Logitech::fillColor(const KeyBlock & block, const RGBColor color)
 
 void Logitech::setColors(const KeyBlock & block, const ColorDirective colors[], size_t size)
 {
+    assert(size > 0);
     struct keyleds_key_color buffer[size];
     std::transform(colors, colors + size, buffer,
                    [](const auto & color) -> struct keyleds_key_color
@@ -145,6 +147,8 @@ void Logitech::setColors(const KeyBlock & block, const ColorDirective colors[], 
 
 void Logitech::getColors(const KeyBlock & block, ColorDirective colors[])
 {
+    if (block.keys().empty()) { return; }
+
     struct keyleds_key_color buffer[block.keys().size()];
 
     if (!keyleds_get_leds(m_device.get(), KEYLEDS_TARGET_DEFAULT, keyleds_block_id_t(block.id()),
@@ -209,17 +213,21 @@ Logitech::block_list Logitech::getBlocks(struct keyleds_device * device)
     block_list blocks;
     for (unsigned i = 0; i < info->length; i += 1) {
         const auto & block = info->blocks[i];
-
-        struct keyleds_key_color keys[block.nb_keys];
-        if (!keyleds_get_leds(device, KEYLEDS_TARGET_DEFAULT, block.block_id,
-                              keys, 0, block.nb_keys)) {
-            throw error(keyleds_get_error_str(), keyleds_get_errno());
-        }
-
         key_list key_ids;
-        key_ids.reserve(block.nb_keys);
-        for (unsigned key_idx = 0; key_idx < block.nb_keys; key_idx += 1) {
-            if (keys[key_idx].id != 0) { key_ids.push_back(keys[key_idx].id); }
+
+        // We still create blocks with no keys so they can be patched from layout file
+        // But we don't attempt to retrieve a list
+        if (block.nb_keys > 0) {
+            struct keyleds_key_color keys[block.nb_keys];
+            if (!keyleds_get_leds(device, KEYLEDS_TARGET_DEFAULT, block.block_id,
+                                keys, 0, block.nb_keys)) {
+                throw error(keyleds_get_error_str(), keyleds_get_errno());
+            }
+
+            key_ids.reserve(block.nb_keys);
+            for (unsigned key_idx = 0; key_idx < block.nb_keys; key_idx += 1) {
+                if (keys[key_idx].id != 0) { key_ids.push_back(keys[key_idx].id); }
+            }
         }
 
         blocks.emplace_back(
