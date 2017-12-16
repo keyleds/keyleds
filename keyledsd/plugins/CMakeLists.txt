@@ -17,6 +17,11 @@
 cmake_minimum_required (VERSION 3.0)
 
 ##############################################################################
+# Settings
+
+option(WITH_LUA "build LUA scripting engine" ON)
+
+##############################################################################
 # Sources
 
 # Look for header files in build directory (for config.h) and include dir
@@ -26,7 +31,10 @@ include_directories("${CMAKE_CURRENT_BINARY_DIR}" "include")
 # Dependencies
 
 find_package(PkgConfig)
-pkg_search_module(LUA luajit lua-5.3 lua-5.2)
+
+if(WITH_LUA)
+    pkg_search_module(LUA REQUIRED luajit lua-5.3 lua-5.2)
+endif(WITH_LUA)
 
 ##############################################################################
 # Targets
@@ -39,7 +47,7 @@ foreach(module breathe feedback fill stars wave)
 endforeach()
 
 
-IF(LUA_FOUND)
+IF(WITH_LUA)
     add_library(fx_lua MODULE
         src/lua/Environment.cxx
         src/lua/LuaEffect.cxx
@@ -59,14 +67,14 @@ IF(LUA_FOUND)
     target_link_libraries(fx_lua common ${LUA_LIBRARIES})
     set_target_properties(fx_lua PROPERTIES PREFIX "")
     set(module_TARGETS ${module_TARGETS} fx_lua)
-ENDIF(LUA_FOUND)
+ENDIF(WITH_LUA)
 
 ##############################################################################
 # Installing stuff
 
 install(TARGETS ${module_TARGETS} DESTINATION ${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME})
-IF(LUA_FOUND)
+IF(WITH_LUA)
     install(DIRECTORY effects/
             DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/effects
             FILES_MATCHING PATTERN "*.lua")
-ENDIF(LUA_FOUND)
+ENDIF(WITH_LUA)
