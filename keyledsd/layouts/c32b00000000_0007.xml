@@ -2,12 +2,12 @@
 <keyboards layout="RUS">
   <keyboard x="54" y="81" width="62" height="62" zone="16">
     <row>
-      <key code="0x01" style="logo" />
+      <key glyph="Logo" code="0x01" style="logo" />
     </row>
   </keyboard>
   <keyboard x="290" y="505" width="158" height="33" zone="16">
     <row>
-      <key code="0x02" style="badge" />
+      <key glyph="Badge" code="0x02" style="badge" />
     </row>
   </keyboard>
   <keyboard x="52" y="160" width="62" height="290" zone="4">
