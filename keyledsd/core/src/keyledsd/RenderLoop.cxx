@@ -16,6 +16,7 @@
  */
 #include "keyledsd/RenderLoop.h"
 
+#include <numeric>
 #include <algorithm>
 #include <cassert>
 #include <cerrno>
