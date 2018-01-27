@@ -1,5 +1,5 @@
 usr/bin
 usr/lib/*/*.so.*
-usr/lib/*/keyledsd/*.so
+usr/lib/*/keyledsd/*
 usr/share/keyledsd
 logitech.rules  usr/share/keyledsd

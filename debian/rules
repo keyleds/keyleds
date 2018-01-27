@@ -6,6 +6,9 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 %:
 	dh $@ 
 
+override_dh_shlibdeps:
+	dh_shlibdeps -l usr/lib/$(DEB_TARGET_MULTIARCH)/keyledsd
+
 override_dh_install:
 	dh_install
 	install -m 644 -D keyledsd/keyledsd.conf.sample debian/keyleds/etc/keyledsd.conf
