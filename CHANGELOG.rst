@@ -3,7 +3,21 @@ Release Notes
 #############
 
 *****************************
-0.7.1 - current release
+0.7.4 - current release
+*****************************
+
+Replaces failed releases 0.7.2 and 0.7.3
+
+Released on January 28th, 2018
+
+Bugfixes:
+
+- Fix crash on keyboards that report an empty key block (most notably G910) — #15.
+- Add missing log and badge names in G910 layout files — #17.
+- No longer silently skip LUA when the dependency is missing.
+
+*****************************
+0.7.1
 *****************************
 
 Released on November 15th, 2017

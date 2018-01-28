@@ -82,4 +82,4 @@ set_target_properties(common PROPERTIES PREFIX "keyleds_")
 set_target_properties(common PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(common PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
 
-install(TARGETS common LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME})
+install(TARGETS common LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})

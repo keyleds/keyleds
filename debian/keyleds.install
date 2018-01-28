@@ -2,4 +2,5 @@ usr/bin
 usr/lib/*/*.so.*
 usr/lib/*/keyledsd/*
 usr/share/keyledsd
+keyledsd/org.etherdream.keyledsd.metainfo.xml usr/share/metainfo
 logitech.rules  usr/share/keyledsd

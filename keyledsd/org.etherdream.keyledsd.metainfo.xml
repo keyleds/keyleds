@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component>
+    <id>org.etherdream.keyledsd</id>
+    <name>keyledsd</name>
+    <summary>Userspace service for Logitech keyboards with per-key RGB LEDs.</summary>
+    <url type="homepage">https://github.com/spectras/keyleds/</url>
+    <url type="bugtracker">https://github.com/spectras/keyleds/issues</url>
+    <url type="help">https://github.com/spectras/keyleds/wiki</url>
+    <metadata_license>CC0-1.0</metadata_license>
+
+    <provides>
+        <binary>keyledsd</binary>
+        <dbus type="user">org.etherdream.KeyledsService</dbus>
+        <modalias>usb:v046D*</modalias>
+    </provides>
+    <developer_name>Julien Hartmann</developer_name>
+</component>
