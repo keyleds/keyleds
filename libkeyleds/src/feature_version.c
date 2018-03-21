@@ -25,18 +25,25 @@
 #include "keyleds/features.h"
 #include "keyleds/logging.h"
 
-enum version_feature_function {
+enum version_feature_function {     /* Function table for KEYLEDS_FEATURE_VERSION */
     F_GET_DEVICE_INFO = 0,
     F_GET_FIRMWARE_INFO = 1
 };
 
-enum devinfo_feature_function {
+enum devinfo_feature_function {     /* Function table for KEYLEDS_FEATURE_NAME */
     F_GET_NAME_LENGTH = 0,
     F_GET_NAME = 1,
     G_GET_TYPE = 2
 };
 
 
+/** Query firmware version.
+ * @param device Open device as returned by keyleds_open().
+ * @param target_id Device's target identifier. See keyleds_open().
+ * @param [out] out A pointer that will hold the version information on success.
+ *                  Must be freed with keyleds_free_device_version().
+ * @return `true` on success, `false` on error.
+ */
 KEYLEDS_EXPORT bool keyleds_get_device_version(Keyleds * device, uint8_t target_id,
                                                struct keyleds_device_version ** out)
 {
@@ -61,6 +68,7 @@ KEYLEDS_EXPORT bool keyleds_get_device_version(Keyleds * device, uint8_t target_
     memcpy(info->model, &data[7], 6);
     info->length = length;
 
+    /* Call F_GET_FIRMWARE_INFO for each firmware slot reported by F_GET_DEVICE_INFO */
     for (idx = 0; idx < length; idx += 1) {
         if (keyleds_call(device, data, (unsigned)sizeof(data),
                          target_id, KEYLEDS_FEATURE_VERSION, F_GET_FIRMWARE_INFO,
@@ -69,7 +77,7 @@ KEYLEDS_EXPORT bool keyleds_get_device_version(Keyleds * device, uint8_t target_
         }
         info->protocols[idx].type = data[0];
         memcpy(info->protocols[idx].prefix, &data[1], 3);
-        info->protocols[idx].prefix[3] = '\0';
+        info->protocols[idx].prefix[3] = '\0';      /* device-provided string is not nul-terminated */
         info->protocols[idx].version_major = 100
                                            +  10 * (unsigned)(data[4] >> 4)
                                            +   1 * (unsigned)(data[4] & 0xf);
@@ -89,11 +97,23 @@ err_get_dev_info_free:
     return false;
 }
 
+
+/** Free version data returned by keyleds_get_device_version().
+ * @param version Version data to free. Can be `NULL`.
+ */
 KEYLEDS_EXPORT void keyleds_free_device_version(struct keyleds_device_version * version)
 {
     free(version);
 }
 
+
+/** Query device name.
+ * @param device Open device as returned by keyleds_open().
+ * @param target_id Device's target identifier. See keyleds_open().
+ * @param [out] out A pointer that will hold the name on success, in UTF8 format.
+ *                  Must be freed with keyleds_free_device_name().
+ * @return `true` on success, `false` on error.
+ */
 KEYLEDS_EXPORT bool keyleds_get_device_name(Keyleds * device, uint8_t target_id, char ** out)
 {
     uint8_t data[1];
@@ -103,6 +123,7 @@ KEYLEDS_EXPORT bool keyleds_get_device_name(Keyleds * device, uint8_t target_id,
     assert(device != NULL);
     assert(out != NULL);
 
+    /* Step 1 - ask device how many bytes are needed to get its name */
     if (keyleds_call(device, data, (unsigned)sizeof(data),
                      target_id, KEYLEDS_FEATURE_NAME, F_GET_NAME_LENGTH, 0, NULL) < 0) {
         return false;
@@ -114,6 +135,7 @@ KEYLEDS_EXPORT bool keyleds_get_device_name(Keyleds * device, uint8_t target_id,
         return false;
     }
 
+    /* Step 2 - retrieve name, chunk by chunk as report size allows */
     done = 0;
     while (done < length) {
         int nread = keyleds_call(device, (uint8_t*)buffer + done, length - done,
@@ -126,18 +148,27 @@ KEYLEDS_EXPORT bool keyleds_get_device_name(Keyleds * device, uint8_t target_id,
 
         done += nread;
     }
-    buffer[length] = '\0';
+    buffer[length] = '\0';  /* device-provided string is not nul-terminated */
 
     *out = buffer;
     return true;
 }
 
+/** Free device name returned by keyleds_get_device_name().
+ * @param name Name to free. Can be `NULL`.
+ */
 KEYLEDS_EXPORT void keyleds_free_device_name(char * name)
 {
     free(name);
 }
 
 
+/** Query device name.
+ * @param device Open device as returned by keyleds_open().
+ * @param target_id Device's target identifier. See keyleds_open().
+ * @param [out] out Returned device type.
+ * @return `true` on success, `false` on error.
+ */
 KEYLEDS_EXPORT bool keyleds_get_device_type(Keyleds * device, uint8_t target_id,
                                             keyleds_device_type_t * out)
 {

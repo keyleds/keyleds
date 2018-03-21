@@ -24,7 +24,7 @@
 #include "keyleds/features.h"
 #include "keyleds/logging.h"
 
-enum leds_feature_function {
+enum leds_feature_function {    /* Function table for KEYLEDS_FEATURE_GAMEMODE */
     F_GET_MAX = 0,
     F_BLOCK_KEYS = 1,
     F_UNBLOCK_KEYS = 2,
@@ -34,6 +34,12 @@ enum leds_feature_function {
 #define KEYS_PER_COMMAND    (16)
 
 
+/** Get the maximum number of blocked keys.
+ * @param device Open device as returned by keyleds_open().
+ * @param target_id Device's target identifier. See keyleds_open().
+ * @param [out] nb Maximum number of keys that can be blocked when game mode is enabled.
+ * @return `true` on success, `false` on error.
+ */
 KEYLEDS_EXPORT bool keyleds_gamemode_max(Keyleds * device, uint8_t target_id, unsigned * nb)
 {
     uint8_t data[1];
@@ -50,6 +56,15 @@ KEYLEDS_EXPORT bool keyleds_gamemode_max(Keyleds * device, uint8_t target_id, un
     return true;
 }
 
+
+/** Send a group of keys to the device.
+ * @param device Open device as returned by keyleds_open().
+ * @param target_id Device's target identifier. See keyleds_open().
+ * @param ids Array of key identifiers to affect.
+ * @param ids_nb Number of keys in `ids`.
+ * @param set `true` to add keys to the list, `false` to remove them.
+ * @return `true` on success, `false` on error.
+ */
 static bool gamemode_send(Keyleds * device, uint8_t target_id,
                           const uint8_t * ids, unsigned ids_nb, bool set)
 {
@@ -68,18 +83,40 @@ static bool gamemode_send(Keyleds * device, uint8_t target_id,
     return true;
 }
 
+
+/** Add a group of keys to blocked list.
+ * @param device Open device as returned by keyleds_open().
+ * @param target_id Device's target identifier. See keyleds_open().
+ * @param ids Array of key identifiers to add.
+ * @param ids_nb Number of keys in `ids`.
+ * @return `true` on success, `false` on error.
+ */
 KEYLEDS_EXPORT bool keyleds_gamemode_set(Keyleds * device, uint8_t target_id,
                                          const uint8_t * ids, unsigned ids_nb)
 {
     return gamemode_send(device, target_id, ids, ids_nb, true);
 }
 
+
+/** Remove a group of keys from blocked list.
+ * @param device Open device as returned by keyleds_open().
+ * @param target_id Device's target identifier. See keyleds_open().
+ * @param ids Array of key identifiers to remove.
+ * @param ids_nb Number of keys in `ids`.
+ * @return `true` on success, `false` on error.
+ */
 KEYLEDS_EXPORT bool keyleds_gamemode_clear(Keyleds * device, uint8_t target_id,
                                            const uint8_t * ids, unsigned ids_nb)
 {
     return gamemode_send(device, target_id, ids, ids_nb, false);
 }
 
+
+/** Clear the blocked keys list.
+ * @param device Open device as returned by keyleds_open().
+ * @param target_id Device's target identifier. See keyleds_open().
+ * @return `true` on success, `false` on error.
+ */
 KEYLEDS_EXPORT bool keyleds_gamemode_reset(Keyleds * device, uint8_t target_id)
 {
     assert(device != NULL);

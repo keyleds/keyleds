@@ -65,19 +65,19 @@ typedef enum hid_tag {
 #define HID_USAGE_INVALID       ((uint32_t)-1)
 #define HID_USAGE_IS_VENDOR(x)  (((x) & 0xff000000) == 0xff000000)
 
-/* Short item description */
+/** Short item description */
 struct hid_item {
     hid_type_t  type;
     hid_tag_t   tag;
-    unsigned    size;       /* How many bytes in data */
-    uint8_t     data[4];    /* Copied as is from report descriptor */
+    unsigned    size;       /**< How many bytes in data */
+    uint8_t     data[4];    /**< Copied as is from report descriptor */
 };
 
-/* Reconstructed main item - only a subset is handled */
+/** Reconstructed main item - only a subset is handled */
 struct hid_main_item {
     hid_tag_t   tag;
     uint32_t    flags;
-    uint32_t    usage;    /* only one usage per item */
+    uint32_t    usage;    /**< only one usage is handled per item */
     int32_t     logical_minimum;
     int32_t     logical_maximum;
     int32_t     physical_minimum;
@@ -85,8 +85,8 @@ struct hid_main_item {
     int32_t     exponent;
     uint32_t    unit;
     uint8_t     report_id;
-    uint32_t    report_size;
-    uint32_t    report_count;
+    uint32_t    report_size;        /**< number of bits per item */
+    uint32_t    report_count;       /**< number of items */
 
     uint32_t    defined;
 };
@@ -132,7 +132,7 @@ static void dump_main_item(FILE * stream, const struct hid_main_item * const ite
 }
 #endif
 
-/* Extract a short item data as an unsigned integer */
+/** Extract a short item data as an unsigned integer */
 static uint32_t get_unsigned_integer(const struct hid_item * state)
 {
     uint32_t val = 0;
@@ -143,7 +143,7 @@ static uint32_t get_unsigned_integer(const struct hid_item * state)
     return val;
 }
 
-/* Extract a short item data as a signed integer */
+/** Extract a short item data as a signed integer */
 static int32_t get_signed_integer(const struct hid_item * state)
 {
     /* Be careful with sign extensions */
@@ -160,6 +160,7 @@ static int32_t get_signed_integer(const struct hid_item * state)
     abort();
 }
 
+/** Gather all collected state items in a single datastructure */
 static bool aggregate_main_item(const struct hid_item * state, unsigned state_items,
                                 /*@out@*/ struct hid_main_item * item)
 {
@@ -234,6 +235,11 @@ static bool aggregate_main_item(const struct hid_item * state, unsigned state_it
     return true;
 }
 
+/** Filter an hid_item table in-place, discarding all non-global items
+ * @param [in|out] state Table to filter.
+ * @param nb_old Number of entries in the table.
+ * @return Number of entries after filtering.
+ */
 static unsigned filter_global_items(struct hid_item * state, unsigned nb_old)
 {
     unsigned idx_old, idx_new = 0;
@@ -261,8 +267,10 @@ static bool build_main_item_table(const uint8_t * data, const unsigned data_size
 
     const uint8_t * current;
 
-    if ((state = malloc(16 * sizeof(struct hid_item))) == NULL) { goto err_free_none; }
-    if ((main_items = malloc(16 * sizeof(struct hid_main_item))) == NULL) { goto err_free_state; }
+    if ((state = malloc(state_capacity * sizeof(struct hid_item))) == NULL)
+        { goto err_free_none; }
+    if ((main_items = malloc(main_capacity * sizeof(struct hid_main_item))) == NULL)
+        { goto err_free_state; }
 
     current = data;
     while (current < data + data_size) {
@@ -325,7 +333,7 @@ static bool build_main_item_table(const uint8_t * data, const unsigned data_size
             if (aggregate_main_item(state, state_nb, &main_items[main_nb])) {
                 main_nb += 1;
             }
-            state_nb = filter_global_items(state, state_nb);
+            state_nb = filter_global_items(state, state_nb);    /* the main item "consumes" local state */
         }
 
         /* Jump to next item, accounting for possible long items */
@@ -353,6 +361,17 @@ static int compare_reports(const struct keyleds_device_reports * a,
     return a->size < b->size ? -1 : a->size > b->size ? +1 : 0;
 }
 
+/** Parse a HID descriptor and find reports used by HIDPP protocol.
+ * @param data Address of the HID descriptor.
+ * @param data_size Size of the HID descriptor in bytes.
+ * @param [out] out Address of a pointer to write the results into. Upon success, it
+ *                  will point at an array of report descriptors, sorted by increasing
+ *                  payload size. Last descriptor has sentinel report id
+ *                  `DEVICE_REPORT_INVALID`.
+ *                   Caller is responsible for calling free() on that pointer.
+ * @param [out] max_size Size of the largest HIDPP report supported by device.
+ * @return `true` on success, `false` on failure.
+ */
 bool keyleds_parse_hid(const uint8_t * data, const unsigned data_size,
                        struct keyleds_device_reports ** out, unsigned * max_size)
 {
@@ -374,11 +393,13 @@ bool keyleds_parse_hid(const uint8_t * data, const unsigned data_size,
     reports_capacity = 4;
 
     for (idx = 0; idx < main_items_nb; idx += 1) {
-        if (main_items[idx].tag == HID_TAG_OUTPUT &&
-            main_items[idx].logical_minimum == 0 &&
-            main_items[idx].logical_maximum == 255 &&
+        if (main_items[idx].tag == HID_TAG_OUTPUT &&    /* we want outbound reports */
+            main_items[idx].logical_minimum == 0 &&     /* we transmit raw bytes, min value is 0 */
+            main_items[idx].logical_maximum == 255 &&   /* we transmit raw byutes, max value is 255 */
             main_items[idx].flags == 0 &&
-            HID_USAGE_IS_VENDOR(main_items[idx].usage)) {
+            HID_USAGE_IS_VENDOR(main_items[idx].usage)) {   /* report usage type must be 'vendor' */
+
+            /* Grow report table as needed */
             if (reports_nb + 1 >= reports_capacity) {
                 struct keyleds_device_reports * oldptr = reports;
                 reports = realloc(reports, 2 * reports_capacity * sizeof(reports[0]));
@@ -388,14 +409,18 @@ bool keyleds_parse_hid(const uint8_t * data, const unsigned data_size,
                 }
                 reports_capacity *= 2;
             }
+
+            /* Create report description */
             reports[reports_nb].id = main_items[idx].report_id;
             reports[reports_nb].size = main_items[idx].report_count
-                                     * main_items[idx].report_size / 8;
+                                     * main_items[idx].report_size / 8; /* bits to bytes */
             KEYLEDS_LOG(DEBUG, "Found report ID %#2x (%d bytes)",
                         reports[reports_nb].id, reports[reports_nb].size);
             reports_nb += 1;
         }
     }
+
+    /* Sort report array, add the trailing sentinel and free unused entries */
     qsort(reports, reports_nb, sizeof(reports[0]),
           (int (*)(const void*, const void*))compare_reports);
     reports[reports_nb].id = DEVICE_REPORT_INVALID;

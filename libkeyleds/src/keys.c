@@ -18,6 +18,9 @@
 #include "config.h"
 #include "keyleds.h"
 
+/** Mapping of key identifier to linux input keycode, for KEYLEDS_BLOCK_KEYS block.
+ * Those values come from USB HID specification for keyboards.
+ */
 static const uint8_t scancode_to_keycode[256] = {
       0,  0,  0,  0, 30, 48, 46, 32, 18, 33, 34, 35, 23, 36, 37, 38,    /* 0x00 */
      50, 49, 24, 25, 16, 19, 31, 20, 22, 47, 17, 45, 21, 44,  2,  3,    /* 0x10 */
@@ -41,6 +44,7 @@ static const uint8_t scancode_to_keycode[256] = {
  *      => Logitech seems to use 0x32, so 0x31 is killed in the table
  */
 
+/** Mapping of linux input keycode to logitech key identifier, for KEYLEDS_BLOCK_KEYS block */
 static const uint8_t keycode_to_scancode[] = {
     0x00, 0x29, 0x1e, 0x1f, 0x20, 0x21, 0x22, 0x23, /* 0x00 */
     0x24, 0x25, 0x26, 0x27, 0x2d, 0x2e, 0x2a, 0x2b, /* 0x08 */
@@ -69,6 +73,13 @@ static const uint8_t keycode_to_scancode[] = {
     0x71, 0x72, 0x73, 0x00, 0x00, 0x00, 0x00, 0x00  /* 0xc0 */
 };
 
+
+/** Convert a device key identifier into Linux input keycode
+ * @param block Device key block.
+ * @param scancode Key identifier.
+ * @return Linux input keycode, or 0 on failure.
+ * @remark Only KEYLEDS_BLOCK_KEYS and KEYLEDS_BLOCK_MULTIMEDIA have matching keycodes.
+ */
 KEYLEDS_EXPORT unsigned keyleds_translate_scancode(keyleds_block_id_t block, uint8_t scancode)
 {
     if (block == KEYLEDS_BLOCK_KEYS) {
@@ -76,19 +87,27 @@ KEYLEDS_EXPORT unsigned keyleds_translate_scancode(keyleds_block_id_t block, uin
     }
     if (block == KEYLEDS_BLOCK_MULTIMEDIA) {
         switch (scancode) {
-            case 0xb5: return 163;
-            case 0xb6: return 165;
-            case 0xb7: return 166;
-            case 0xcd: return 164;
-            case 0xe2: return 113;
-            case 0xe9: return 114;
-            case 0xea: return 115;
+            case 0xb5: return 163;  /* nextsong */
+            case 0xb6: return 165;  /* previoussong */
+            case 0xb7: return 166;  /* stopcd */
+            case 0xcd: return 164;  /* playpause */
+            case 0xe2: return 113;  /* mute */
+            case 0xe9: return 114;  /* volumedown */
+            case 0xea: return 115;  /* volumeup */
             default: return 0;
         }
     }
     return 0;
 }
 
+
+/** Convert a Linux input keycode into device key block and identifier
+ * @param keycode Linux input keycode.
+ * @param [out] blockptr Where to store device key block. Use `NULL` if not interested.
+ * @param [out] scancodeptr Where to store key identifier. Use `NULL` if not interested.
+ * @return `true` on success, `false` on error.
+ * @remark Only KEYLEDS_BLOCK_KEYS and KEYLEDS_BLOCK_MULTIMEDIA have matching keycodes.
+ */
 KEYLEDS_EXPORT bool keyleds_translate_keycode(unsigned keycode, keyleds_block_id_t * blockptr,
                                               uint8_t * scancodeptr)
 {
@@ -96,13 +115,13 @@ KEYLEDS_EXPORT bool keyleds_translate_keycode(unsigned keycode, keyleds_block_id
     uint8_t scancode = 0;
 
     switch (keycode) {
-        case 113: scancode = 0xe2, block = KEYLEDS_BLOCK_MULTIMEDIA; break;
-        case 114: scancode = 0xe9, block = KEYLEDS_BLOCK_MULTIMEDIA; break;
-        case 115: scancode = 0xea, block = KEYLEDS_BLOCK_MULTIMEDIA; break;
-        case 163: scancode = 0xb5, block = KEYLEDS_BLOCK_MULTIMEDIA; break;
-        case 164: scancode = 0xcd, block = KEYLEDS_BLOCK_MULTIMEDIA; break;
-        case 165: scancode = 0xb6, block = KEYLEDS_BLOCK_MULTIMEDIA; break;
-        case 166: scancode = 0xb7, block = KEYLEDS_BLOCK_MULTIMEDIA; break;
+        case 113: scancode = 0xe2, block = KEYLEDS_BLOCK_MULTIMEDIA; break;  /* mute */
+        case 114: scancode = 0xe9, block = KEYLEDS_BLOCK_MULTIMEDIA; break;  /* volumedown */
+        case 115: scancode = 0xea, block = KEYLEDS_BLOCK_MULTIMEDIA; break;  /* volumeup */
+        case 163: scancode = 0xb5, block = KEYLEDS_BLOCK_MULTIMEDIA; break;  /* nextsong */
+        case 164: scancode = 0xcd, block = KEYLEDS_BLOCK_MULTIMEDIA; break;  /* playpause */
+        case 165: scancode = 0xb6, block = KEYLEDS_BLOCK_MULTIMEDIA; break;  /* previoussong */
+        case 166: scancode = 0xb7, block = KEYLEDS_BLOCK_MULTIMEDIA; break;  /* stopcd */
         default:
             if (keycode < sizeof(keycode_to_scancode) / sizeof(keycode_to_scancode[0])) {
                 scancode = keycode_to_scancode[keycode], block = KEYLEDS_BLOCK_KEYS;

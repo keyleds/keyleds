@@ -25,12 +25,21 @@
 #include "keyleds/features.h"
 #include "keyleds/logging.h"
 
-enum reportrate_feature_function {
+enum reportrate_feature_function {      /* Function table for KEYLEDS_FEATURE_REPORTRATE */
     F_GET_SUPPORTED_RATES = 0,
     F_GET_REPORT_RATE = 1,
     F_SET_REPORT_RATE = 2
 };
 
+
+/** Get the list of supported report rates.
+ * @param device Open device as returned by keyleds_open().
+ * @param target_id Device's target identifier. See keyleds_open().
+ * @param [out] out Address of a pointer that will hold the list. Values are the report period
+ *                  in milliseconds, lowest to highest. The list is 0-terminated.
+ *                  Must be freed using keyleds_free_reportrates().
+ * @return `true` on success, `false` on error.
+ */
 KEYLEDS_EXPORT bool keyleds_get_reportrates(Keyleds * device, uint8_t target_id, unsigned ** out)
 {
     uint8_t data[1];
@@ -44,6 +53,8 @@ KEYLEDS_EXPORT bool keyleds_get_reportrates(Keyleds * device, uint8_t target_id,
                      target_id, KEYLEDS_FEATURE_REPORTRATE, F_GET_SUPPORTED_RATES, 0, NULL) < 0) {
         return false;
     }
+
+    /* Returned value is a mask of supported rates */
 
     length = 0;
     for (idx = 0; idx < 8; idx += 1) {
@@ -66,11 +77,22 @@ KEYLEDS_EXPORT bool keyleds_get_reportrates(Keyleds * device, uint8_t target_id,
     return true;
 }
 
+
+/** Free report rate list returned by keyleds_get_reportrates().
+ * @param rates Report rate list to free. Can be `NULL`.
+ */
 KEYLEDS_EXPORT void keyleds_free_reportrates(unsigned * rates)
 {
     free(rates);
 }
 
+
+/** Get current report rate.
+ * @param device Open device as returned by keyleds_open().
+ * @param target_id Device's target identifier. See keyleds_open().
+ * @param [out] rate Current report period in milliseconds.
+ * @return `true` on success, `false` on error.
+ */
 KEYLEDS_EXPORT bool keyleds_get_reportrate(Keyleds * device, uint8_t target_id, unsigned * rate)
 {
     uint8_t data[1];
@@ -86,8 +108,18 @@ KEYLEDS_EXPORT bool keyleds_get_reportrate(Keyleds * device, uint8_t target_id, 
     return true;
 }
 
+
+/** Set report rate.
+ * Change is immediate.
+ * @param device Open device as returned by keyleds_open().
+ * @param target_id Device's target identifier. See keyleds_open().
+ * @param rate Report period to set in milliseconds.
+ * @return `true` on success, `false` on error.
+ */
 KEYLEDS_EXPORT bool keyleds_set_reportrate(Keyleds * device, uint8_t target_id, unsigned rate)
 {
+    assert(device != NULL);
+
     if (keyleds_call(device, NULL, 0,
                      target_id, KEYLEDS_FEATURE_REPORTRATE, F_SET_REPORT_RATE,
                      1, (uint8_t[]){rate}) < 0) {

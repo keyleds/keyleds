@@ -18,7 +18,14 @@
 
 #include "config.h"
 #include "keyleds.h"
+#include "keyleds/features.h"
 
+
+/** Lookup a string by id.
+ * @param strings String group to scan, eg: `keyleds_feature_names`.
+ * @param id Identifier to lookup.
+ * @return A constant string in UTF8 encoding, or `NULL` on failure. It must not be freed.
+ */
 KEYLEDS_EXPORT const char * keyleds_lookup_string(const struct keyleds_indexed_string * strings,
                                                   unsigned id)
 {
@@ -29,6 +36,12 @@ KEYLEDS_EXPORT const char * keyleds_lookup_string(const struct keyleds_indexed_s
     return NULL;
 }
 
+
+/** Lookup a string id by name
+ * @param strings String group to scan, eg: `keyleds_feature_names`.
+ * @param str A string in UTF8 encoding.
+ * @return The string identifier, or `KEYLEDS_STRING_INVALID` on failure.
+ */
 KEYLEDS_EXPORT unsigned keyleds_string_id(const struct keyleds_indexed_string * strings,
                                           const char * str)
 {
@@ -44,15 +57,17 @@ KEYLEDS_EXPORT unsigned keyleds_string_id(const struct keyleds_indexed_string * 
 #define END_LIST            { 0, NULL } };
 
 KEYLEDS_EXPORT START_LIST(feature_names)
-    DEFSTR(0x0000, "root")
-    DEFSTR(0x0001, "feature")
-    DEFSTR(0x0003, "version")
-    DEFSTR(0x0005, "name")
-    DEFSTR(0x1000, "battery")
-    DEFSTR(0x4522, "gamemode")
-    DEFSTR(0x8060, "reportrate")
-    DEFSTR(0x8070, "led-effects")
-    DEFSTR(0x8080, "leds")
+    DEFSTR(KEYLEDS_FEATURE_ROOT, "root")
+    DEFSTR(KEYLEDS_FEATURE_FEATURE, "feature")
+    DEFSTR(KEYLEDS_FEATURE_VERSION, "version")
+    DEFSTR(KEYLEDS_FEATURE_NAME, "name")
+    DEFSTR(KEYLEDS_FEATURE_DFU_CONTROL, "dfu-control")
+    DEFSTR(KEYLEDS_FEATURE_BATTERY, "battery")
+    DEFSTR(KEYLEDS_FEATURE_GAMEMODE, "gamemode")
+    DEFSTR(KEYLEDS_FEATURE_KEYBOARD_LAYOUT_2, "layout2")
+    DEFSTR(KEYLEDS_FEATURE_REPORTRATE, "reportrate")
+    DEFSTR(KEYLEDS_FEATURE_LED_EFFECTS, "led-effects")
+    DEFSTR(KEYLEDS_FEATURE_LEDS, "leds")
 END_LIST
 
 KEYLEDS_EXPORT START_LIST(protocol_types)

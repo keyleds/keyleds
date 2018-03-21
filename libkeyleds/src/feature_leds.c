@@ -25,7 +25,7 @@
 #include "keyleds/features.h"
 #include "keyleds/logging.h"
 
-enum leds_feature_function {
+enum leds_feature_function {    /* Function table for KEYLEDS_FEATURE_LEDS */
     F_GET_KEYBLOCKS = 0,
     F_GET_BLOCK_INFO = 1,
     F_GET_LEDS = 2,
@@ -35,6 +35,13 @@ enum leds_feature_function {
 };
 
 
+/** Get the full description of LED blocks.
+ * @param device Open device as returned by keyleds_open().
+ * @param target_id Device's target identifier. See keyleds_open().
+ * @param [out] out Address of a pointer that will hold the description on success.
+ *                  Must be freed using keyleds_free_block_info().
+ * @return `true` on success, `false` on error.
+ */
 KEYLEDS_EXPORT bool keyleds_get_block_info(Keyleds * device, uint8_t target_id,
                                            struct keyleds_keyblocks_info ** out)
 {
@@ -51,18 +58,22 @@ KEYLEDS_EXPORT bool keyleds_get_block_info(Keyleds * device, uint8_t target_id,
         return false;
     }
 
+    /* mask is a bitfield, each bit tells the presence or absence of a block */
     mask = ((uint16_t)data[0] << 8) | data[1];
 
+    /* count blocks */
     length = 0;
     for (idx = 0; idx < 16; idx += 1) {
         if ((mask & (1 << idx)) != 0) { length += 1; }
     }
     if (length == 0) { return false; }
 
+    /* initialize block info structure with space enough for the blocks */
     info = malloc(sizeof(*info) + length * sizeof(info->blocks[0]));
     if (!info) { keyleds_set_error_errno(); return false; }
     info->length = length;
 
+    /* use the block info query on every block */
     info_idx = 0;
     for (idx = 0; idx < 16; idx += 1) {
         keyleds_block_id_t block_id = (keyleds_block_id_t)(1<<idx);
@@ -84,11 +95,25 @@ KEYLEDS_EXPORT bool keyleds_get_block_info(Keyleds * device, uint8_t target_id,
     return true;
 }
 
+
+/** Free LED block description returned by keyleds_get_block_info().
+ * @param info Description to free. Can be `NULL`.
+ */
 KEYLEDS_EXPORT void keyleds_free_block_info(struct keyleds_keyblocks_info * info)
 {
     free(info);
 }
 
+
+/** Retrieve current LED status for a block.
+ * @param device Open device as returned by keyleds_open().
+ * @param target_id Device's target identifier. See keyleds_open().
+ * @param block_id Block to target.
+ * @param [out] keys Color table with `keys_nb` entries, filled upon success.
+ * @param offset Which key to start at.
+ * @param keys_nb Number of keys to retrieve.
+ * @return `true` on success, `false` on error.
+ */
 KEYLEDS_EXPORT bool keyleds_get_leds(Keyleds * device, uint8_t target_id,
                                      keyleds_block_id_t block_id,
                                      struct keyleds_key_color * keys, uint16_t offset, unsigned keys_nb)
@@ -100,6 +125,7 @@ KEYLEDS_EXPORT bool keyleds_get_leds(Keyleds * device, uint8_t target_id,
     assert(keys != NULL);
     assert(keys_nb + offset <= UINT16_MAX);
 
+    /* retrieve keys in chunks, as big as max_report_size allows */
     while (done < keys_nb) {
         uint8_t data[device->max_report_size];
         int data_size;
@@ -110,7 +136,7 @@ KEYLEDS_EXPORT bool keyleds_get_leds(Keyleds * device, uint8_t target_id,
                                  4, (uint8_t[]){block_id >> 8, block_id,
                                                 offset >> 8, offset});
         if (data_size < 0) { return false; }
-        if (data[2] != (offset >> 8) ||
+        if (data[2] != (offset >> 8) ||     /* validate the offset in the reply is correct */
             data[3] != (offset & 0x00ff)) {
             keyleds_set_error(KEYLEDS_ERROR_RESPONSE);
             return false;
@@ -129,11 +155,22 @@ KEYLEDS_EXPORT bool keyleds_get_leds(Keyleds * device, uint8_t target_id,
     return true;
 }
 
+
+/** Set the color of a set of LEDs.
+ * Updates an internal buffer on the device. Actual lights are not updated until
+ * keyleds_commit_leds() is called.
+ * @param device Open device as returned by keyleds_open().
+ * @param target_id Device's target identifier. See keyleds_open().
+ * @param block_id Block to target, all keys must belong to this block.
+ * @param keys Color table with `keys_nb` entries.
+ * @param keys_nb Number of keys to send.
+ * @return `true` on success, `false` on error.
+ */
 KEYLEDS_EXPORT bool keyleds_set_leds(Keyleds * device, uint8_t target_id,
                                      keyleds_block_id_t block_id,
                                      const struct keyleds_key_color * keys, unsigned keys_nb)
 {
-    uint16_t per_call = (device->max_report_size - 3 - 4) / 4;
+    uint16_t per_call = (device->max_report_size - 3 - 4) / 4;  /* 4 bytes per key, mins headers */
     uint16_t offset, idx;
 
     assert(device != NULL);
@@ -145,6 +182,7 @@ KEYLEDS_EXPORT bool keyleds_set_leds(Keyleds * device, uint8_t target_id,
     data[0] = (uint8_t)(block_id >> 8);
     data[1] = (uint8_t)(block_id >> 0);
 
+    /* Send keys in chunks */
     for (offset = 0; offset < keys_nb; offset += per_call) {
         uint16_t batch_length = offset + per_call > keys_nb ? keys_nb - offset : per_call;
         data[2] = (uint8_t)(batch_length >> 8);
@@ -165,6 +203,18 @@ KEYLEDS_EXPORT bool keyleds_set_leds(Keyleds * device, uint8_t target_id,
     return true;
 }
 
+
+/** Reset a full LED block to uniform color.
+ * Updates an internal buffer on the device. Actual lights are not updated until
+ * keyleds_commit_leds() is called.
+ * @param device Open device as returned by keyleds_open().
+ * @param target_id Device's target identifier. See keyleds_open().
+ * @param block_id Block to target.
+ * @param red Red brightness from 0 (off) to 255 (full power).
+ * @param green Green brightness from 0 (off) to 255 (full power).
+ * @param blue Blue brightness from 0 (off) to 255 (full power).
+ * @return `true` on success, `false` on error.
+ */
 KEYLEDS_EXPORT bool keyleds_set_led_block(Keyleds * device, uint8_t target_id,
                                           keyleds_block_id_t block_id,
                                           uint8_t red, uint8_t green, uint8_t blue)
@@ -175,6 +225,16 @@ KEYLEDS_EXPORT bool keyleds_set_led_block(Keyleds * device, uint8_t target_id,
                         5, (uint8_t[]){block_id >> 8, block_id, red, green, blue}) >= 0;
 }
 
+
+/** Apply LED state changes.
+ * Other functions only update an internal buffer on the device. The actual colors
+ * of the lights are only shown after a commit.
+ * @param device Open device as returned by keyleds_open().
+ * @param target_id Device's target identifier. See keyleds_open().
+ * @return `true` on success, `false` on error.
+ * @note This device function takes relatively longer than most others. Testing on a G410
+ *       showed 10 to 15 milliseconds runtimes.
+ */
 KEYLEDS_EXPORT bool keyleds_commit_leds(Keyleds * device, uint8_t target_id)
 {
     assert(device != NULL);

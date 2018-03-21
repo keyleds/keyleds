@@ -56,6 +56,11 @@ static thread_local int keyleds_saved_errno = 0;
 static thread_local char keyleds_error_buffer[256];
 #endif
 
+
+/** Get user-readable message for last failed libkeyleds call.
+ * @return A pointer to the error message. It does not have to be freed, but
+ *         it is only valid until this function is called again in the same thread.
+ */
 KEYLEDS_EXPORT const char * keyleds_get_error_str()
 {
     if (keyleds_errno == KEYLEDS_ERROR_ERRNO) {
@@ -72,6 +77,11 @@ KEYLEDS_EXPORT const char * keyleds_get_error_str()
     return error_strings[keyleds_errno];
 }
 
+
+/** Get error code for last failed libkeyleds call.
+ * If the error is of type `KEYLEDS_ERROR_ERRNO`, the value of `errno` that was
+ * saved at the time of error is copied back into `errno`.
+ */
 KEYLEDS_EXPORT keyleds_error_t keyleds_get_errno()
 {
     if (keyleds_errno == KEYLEDS_ERROR_ERRNO) {
@@ -81,6 +91,9 @@ KEYLEDS_EXPORT keyleds_error_t keyleds_get_errno()
 }
 
 
+/** Set an error condition initiated by the operating system.
+ * Uses the error code from `errno`.
+ */
 void keyleds_set_error_errno()
 {
     keyleds_errno = KEYLEDS_ERROR_ERRNO;
@@ -88,6 +101,10 @@ void keyleds_set_error_errno()
     KEYLEDS_LOG(DEBUG, "%s", keyleds_get_error_str());
 }
 
+
+/** Set an error condition initiated by the device through an HIDPP error.
+ * @param code Error value received from device.
+ */
 void keyleds_set_error_hidpp(uint8_t code)
 {
     if (code >= sizeof(device_error_strings) / sizeof(device_error_strings[0])) {
@@ -98,9 +115,15 @@ void keyleds_set_error_hidpp(uint8_t code)
     KEYLEDS_LOG(DEBUG, "%s", device_error_strings[code]);
 }
 
+
+/** Set an error condition initiated by libkeyleds.
+ * @param err Error code.
+ */
 void keyleds_set_error(keyleds_error_t err)
 {
     assert(err >= 0);
+    assert(err != KEYLEDS_ERROR_ERRNO);
+    assert(err != KEYLEDS_ERROR_DEVICE);
     assert((unsigned)err < sizeof(error_strings) / sizeof(error_strings[0]));
     keyleds_errno = err;
     KEYLEDS_LOG(DEBUG, "%s", error_strings[err]);
