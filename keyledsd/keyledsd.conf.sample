@@ -120,8 +120,19 @@ effects:
               color: red
               period: 4000
               group: alert-keys
+    idle-dim:
+        plugins:
+            - effect: idle-dim
+              color: 000000a0       # color to dim into (example value is partially opaque black,
+                                    #                    which results in a typical dimming effect)
+              delay: 60             # idle time before dimming kicks in, in seconds
+              fadein: 300           # time for fading in on keypress, in milliseconds
+              fadeout: 5000         # time for fading out after delay ran out, in milliseconds
     feedback:
         plugins:
+            - effect: reactive-hlines
+              color: ffbfbf
+              speed: 0.025
             - effect: feedback      # turn keys on when pressed
               color: ffbfbf         # color when just pressed
               sustain: 500          # how long (in milliseconds) the color is held
@@ -139,7 +150,7 @@ profiles:
     __default__:                    # Special name __default__ is active when no other profile matches
         effect: keyleds-default     # Apply this effect
     __overlay__:
-        effect: feedback
+        effects: [idle-dim, feedback]
     empty:
         lookup: { class: ^$ }       # Empty class: when no window is active or screen is locked
         effect: rainbow
