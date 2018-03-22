@@ -3,7 +3,19 @@ Release Notes
 #############
 
 *****************************
-0.7.4 - current release
+0.7.5 - current release
+*****************************
+
+Released on March 22th, 2018
+
+Features:
+
+- New effect included: idle-dim, that dims keyboard lights when it is not used.
+- [Lua API] RenderTarget now supports a `fill()` and `multiply()` method.
+- [Lua API] RGBAColor now supports addition/substraction/multiplication and divisions.
+
+*****************************
+0.7.4
 *****************************
 
 Replaces failed releases 0.7.2 and 0.7.3

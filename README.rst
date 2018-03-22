@@ -21,11 +21,12 @@ Features
   current webpage in browser or open file extension in editors.
 * Improved, fully configurable animation plugins:
 
+  - **Keypress feedback** effect.
   - **Fixed** colors.
   - **Breathing** effect.
   - **Wave** effect.
   - **Stars** effect.
-  - **Keypress feedback** effect.
+  - **Idle dimming** effect.
 
 * **Create your own effects** with the `LUA engine`_.
 * Several plugins can be active at once, and composited with **alpha blending** to
