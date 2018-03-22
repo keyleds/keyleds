@@ -92,3 +92,13 @@ void keyleds::blend(RenderTarget & lhs, const RenderTarget & rhs)
         reinterpret_cast<const uint8_t*>(rhs.data()), rhs.capacity()
     );
 }
+
+void keyleds::multiply(RenderTarget & lhs, const RenderTarget & rhs)
+{
+    // This must use the full rendertarget capacity, which fulfills alignment constraints
+    assert(lhs.capacity() == rhs.capacity());
+    multiply(
+        reinterpret_cast<uint8_t*>(lhs.data()),
+        reinterpret_cast<const uint8_t*>(rhs.data()), rhs.capacity()
+    );
+}

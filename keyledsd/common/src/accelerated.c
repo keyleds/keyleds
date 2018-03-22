@@ -59,3 +59,41 @@ void blend(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length
 void blend(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
     { blend_plain(dst, src, length); }
 #endif
+
+/****************************************************************************/
+/* multiply */
+
+void multiply_avx2(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length);
+void multiply_sse2(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length);
+void multiply_plain(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length);
+
+#ifdef HAVE_BUILTIN_CPU_SUPPORTS
+static void (*resolve_multiply(void))(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
+{
+#  if defined __GNUC__ && !defined __clang__
+    __builtin_cpu_init();
+#  endif
+#  ifdef KEYLEDSD_USE_AVX2
+    if (__builtin_cpu_supports("avx2")) { return multiply_avx2; }
+#  endif
+#  ifdef KEYLEDSD_USE_SSE2
+    if (__builtin_cpu_supports("sse2")) { return multiply_sse2; }
+#  endif
+    return multiply_plain;
+}
+
+#  ifdef HAVE_IFUNC_ATTRIBUTE
+void multiply(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
+    __attribute__((ifunc("resolve_multiply")));
+#  else
+static void (*resolved_multiply)(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length);
+void multiply(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
+{
+    if (resolved_multiply == 0) { resolved_multiply = resolve_multiply(); }
+    (*resolved_multiply)(dst, src, length);
+}
+#  endif
+#else
+void multiply(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
+    { multiply_plain(dst, src, length); }
+#endif

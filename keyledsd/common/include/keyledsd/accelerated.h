@@ -41,6 +41,21 @@ extern "C" {
  */
 void blend(uint8_t * a, const uint8_t * b, unsigned length);
 
+/** Multiply two R8G8B8A8 color streams
+ *
+ * Performs a simple multiplication.
+ * \f$\begin{align*}
+ * \end{align*}
+ *
+ * The product operation uses SSE2 or MMX if available.
+ *
+ * @param[in|out] a An array of colors used as a destination. Must be 16-byte aligned.
+ * @param b An array of colors used as a source. Must be 16-byte aligned.
+ * @param length The number of colors in the arrays. Must be a multiple of 4.
+ * @note Arrays must not overlap.
+ */
+void multiply(uint8_t * a, const uint8_t * b, unsigned length);
+
 #ifdef __cplusplus
 }
 } // namespace keyleds

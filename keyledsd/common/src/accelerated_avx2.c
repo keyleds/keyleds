@@ -65,3 +65,41 @@ void blend_avx2(uint8_t * restrict dst, const uint8_t * restrict src, unsigned l
         dstv += 1;
     } while (--length > 0);
 }
+
+void multiply_avx2(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
+{
+    assert((uintptr_t)dst % 32 == 0);   // AVX2 requires 32-bytes aligned data
+    assert((uintptr_t)src % 32 == 0);   // AVX2 requires 32-bytes aligned data
+    assert(length != 0);                // allows inverting loop condition, makes gcc generate
+                                        // better loop code
+    assert(length % 8 == 0);            // we'll process entries 8 by 8 and don't want to be
+                                        // slowed by boundary checks
+
+    __m256i * restrict dstv = (__m256i *)__builtin_assume_aligned(dst, 32);
+    const __m256i * restrict srcv = (const __m256i *)__builtin_assume_aligned(src, 32);
+
+    const __m256i zero = _mm256_setzero_si256();
+    const __m256i one = _mm256_set1_epi16(1);
+
+    length /= 8;
+
+    do {
+        __m256i packed_dst = _mm256_load_si256(dstv);
+        __m256i packed_src = _mm256_load_si256(srcv);
+
+        __m256i dst0 = _mm256_unpacklo_epi8(packed_dst, zero); /* A3B3G3R3A2B2G2R2A1B1G1R1A0B0G0R0 */
+        __m256i dst1 = _mm256_unpackhi_epi8(packed_dst, zero); /* A7B7G7R7A6B6G6R6A5B5G5R5A4B4G4R4 */
+        __m256i src0 = _mm256_unpacklo_epi8(packed_src, zero); /* A3B3G3R3A2B2G2R2A1B1G1R1A0B0G0R0 */
+        __m256i src1 = _mm256_unpackhi_epi8(packed_src, zero); /* A7B7G7R7A6B6G6R6A5B5G5R5A4B4G4R4 */
+
+        dst0 = _mm256_mullo_epi16(src0, _mm256_add_epi16(dst0, one));
+        dst1 = _mm256_mullo_epi16(src1, _mm256_add_epi16(dst1, one));
+
+        dst0 = _mm256_srli_epi16(dst0, 8);
+        dst1 = _mm256_srli_epi16(dst1, 8);
+
+        _mm256_store_si256(dstv, _mm256_packus_epi16(dst0, dst1));
+        srcv += 1;
+        dstv += 1;
+    } while (--length > 0);
+}

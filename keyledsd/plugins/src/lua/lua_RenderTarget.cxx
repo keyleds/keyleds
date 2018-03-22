@@ -16,6 +16,7 @@
  */
 #include "lua/lua_RenderTarget.h"
 
+#include <algorithm>
 #include <cassert>
 #include <lua.hpp>
 #include "keyledsd/KeyDatabase.h"
@@ -74,6 +75,38 @@ static int blend(lua_State * lua)
     return 0;
 }
 
+static int copy(lua_State * lua)
+{
+    auto * to = lua_check<RenderTarget *>(lua, 1);
+    if (!to) { return luaL_argerror(lua, 1, noLongerExistsErrorMessage); }
+    auto * from = lua_check<RenderTarget *>(lua, 2);
+    if (!from) { return luaL_argerror(lua, 2, noLongerExistsErrorMessage); }
+
+    std::copy(from->begin(), from->end(), to->begin());
+    return 0;
+}
+
+static int fill(lua_State * lua)
+{
+    auto * to = lua_check<RenderTarget *>(lua, 1);
+    if (!to) { return luaL_argerror(lua, 1, noLongerExistsErrorMessage); }
+
+    std::fill(to->begin(), to->end(), lua_checkcolor(lua, 2));
+    return 0;
+}
+
+static int multiply(lua_State * lua)
+{
+    using keyleds::multiply;
+
+    auto * to = lua_check<RenderTarget *>(lua, 1);
+    if (!to) { return luaL_argerror(lua, 1, noLongerExistsErrorMessage); }
+    auto * from = lua_check<RenderTarget *>(lua, 2);
+    if (!from) { return luaL_argerror(lua, 2, noLongerExistsErrorMessage); }
+
+    multiply(*to, *from);
+    return 0;
+}
 
 static int create(lua_State * lua)
 {
@@ -81,7 +114,7 @@ static int create(lua_State * lua)
     if (!controller) { return luaL_error(lua, noEffectTokenErrorMessage); }
 
     auto * target = controller->createRenderTarget();
-    for (auto & entry : *target) { entry = RGBAColor(0, 0, 0, 0); }
+    std::fill(target->begin(), target->end(), RGBAColor(0, 0, 0, 0));
 
     lua_push(lua, target);
     return 1;
@@ -157,6 +190,9 @@ static int newIndex(lua_State * lua)
 const char * metatable<RenderTarget *>::name = "RenderTarget";
 const struct luaL_Reg metatable<RenderTarget *>::methods[] = {
     { "blend",      blend },
+    { "copy",       copy },
+    { "fill",       fill },
+    { "multiply",   multiply },
     { "new",        create },
     { nullptr,      nullptr }
 };

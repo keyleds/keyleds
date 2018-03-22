@@ -58,16 +58,6 @@ void blend_mmx(uint8_t * restrict dst, const uint8_t * restrict src, unsigned le
         __m64 weighted_src0 = _mm_mullo_pi16(src0, alpha0);
         __m64 weighted_src1 = _mm_mullo_pi16(src1, alpha1);
 
-/*        uint16_t alpha1 = b[idx + 3];
-        uint16_t alpha2 = b[idx + 7];
-        if (alpha1 != 0) { alpha1 += 1; }
-        if (alpha2 != 0) { alpha2 += 1; }
-
-        __m64 weighted_dst0 = _mm_mullo_pi16(dst0, _mm_set1_pi16(256 - alpha1));
-        __m64 weighted_dst1 = _mm_mullo_pi16(dst1, _mm_set1_pi16(256 - alpha2));
-        __m64 weighted_src0 = _mm_mullo_pi16(src0, _mm_set1_pi16(alpha1));
-        __m64 weighted_src1 = _mm_mullo_pi16(src1, _mm_set1_pi16(alpha2));*/
-
         __m64 final_dst0 = _m_psrlwi(_mm_add_pi16(weighted_dst0, weighted_src0), 8);
         __m64 final_dst1 = _m_psrlwi(_mm_add_pi16(weighted_dst1, weighted_src1), 8);
 

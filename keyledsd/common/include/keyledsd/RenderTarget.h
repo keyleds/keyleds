@@ -73,6 +73,7 @@ private:
 
 KEYLEDSD_EXPORT void swap(RenderTarget &, RenderTarget &) noexcept;
 KEYLEDSD_EXPORT void blend(RenderTarget &, const RenderTarget &);
+KEYLEDSD_EXPORT void multiply(RenderTarget &, const RenderTarget &);
 
 /****************************************************************************/
 
