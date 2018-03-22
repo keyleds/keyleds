@@ -43,6 +43,50 @@ static int indexForKey(lua_State * lua, const char * key)
     return luaL_error(lua, badKeyErrorMessage, key);
 }
 
+static int add(lua_State * lua)
+{
+    if (!lua_is<RGBAColor>(lua, 1)) { luaL_argerror(lua, 1, badTypeErrorMessage); }
+    if (!lua_is<RGBAColor>(lua, 2)) { luaL_argerror(lua, 2, badTypeErrorMessage); }
+
+    lua_rawgeti(lua, 2, 4);
+    auto multiplier = lua_tonumber(lua, -1);
+
+    lua_createtable(lua, 4, 0);
+    luaL_getmetatable(lua, metatable<RGBAColor>::name);
+    lua_setmetatable(lua, -2);
+
+    for (unsigned i = 1; i <= 3; ++i) {
+        lua_rawgeti(lua, 1, i);
+        lua_rawgeti(lua, 2, i);
+        lua_pushnumber(lua, lua_tonumber(lua, -2) + multiplier * lua_tonumber(lua, -1));
+        lua_rawseti(lua, -4, i);
+        lua_pop(lua, 2);
+    }
+    lua_rawgeti(lua, 1, 4);
+    lua_rawseti(lua, -2, 4);
+    return 1;
+}
+
+static int div(lua_State * lua)
+{
+    if (!lua_is<RGBAColor>(lua, 1)) { luaL_argerror(lua, 1, badTypeErrorMessage); }
+    auto divisor = luaL_checknumber(lua, 2);
+
+    lua_createtable(lua, 4, 0);
+    luaL_getmetatable(lua, metatable<RGBAColor>::name);
+    lua_setmetatable(lua, -2);
+
+    for (unsigned i = 1; i <= 3; ++i) {
+        lua_rawgeti(lua, 1, i);
+        lua_pushnumber(lua, lua_tonumber(lua, -1) / divisor);
+        lua_rawseti(lua, -3, i);
+        lua_pop(lua, 1);
+    }
+    lua_rawgeti(lua, 1, 4);
+    lua_rawseti(lua, -2, 4);
+    return 1;
+}
+
 static int equal(lua_State * lua)
 {
     for (int i = 1; i <= 4; ++i) {
@@ -64,9 +108,53 @@ static int index(lua_State * lua)
     return 1;
 }
 
+static int mul(lua_State * lua)
+{
+    if (!lua_is<RGBAColor>(lua, 1)) { luaL_argerror(lua, 1, badTypeErrorMessage); }
+    auto multiplier = luaL_checknumber(lua, 2);
+
+    lua_createtable(lua, 4, 0);
+    luaL_getmetatable(lua, metatable<RGBAColor>::name);
+    lua_setmetatable(lua, -2);
+
+    for (unsigned i = 1; i <= 3; ++i) {
+        lua_rawgeti(lua, 1, i);
+        lua_pushnumber(lua, lua_tonumber(lua, -1) * multiplier);
+        lua_rawseti(lua, -3, i);
+        lua_pop(lua, 1);
+    }
+    lua_rawgeti(lua, 1, 4);
+    lua_rawseti(lua, -2, 4);
+    return 1;
+}
+
 static int newIndex(lua_State * lua)
 {
     lua_rawseti(lua, 1, indexForKey(lua, luaL_checkstring(lua, 2)));
+    return 1;
+}
+
+static int sub(lua_State * lua)
+{
+    if (!lua_is<RGBAColor>(lua, 1)) { luaL_argerror(lua, 1, badTypeErrorMessage); }
+    if (!lua_is<RGBAColor>(lua, 2)) { luaL_argerror(lua, 2, badTypeErrorMessage); }
+
+    lua_rawgeti(lua, 2, 4);
+    auto multiplier = lua_tonumber(lua, -1);
+
+    lua_createtable(lua, 4, 0);
+    luaL_getmetatable(lua, metatable<RGBAColor>::name);
+    lua_setmetatable(lua, -2);
+
+    for (unsigned i = 1; i <= 3; ++i) {
+        lua_rawgeti(lua, 1, i);
+        lua_rawgeti(lua, 2, i);
+        lua_pushnumber(lua, lua_tonumber(lua, -2) - multiplier * lua_tonumber(lua, -1));
+        lua_rawseti(lua, -4, i);
+        lua_pop(lua, 2);
+    }
+    lua_rawgeti(lua, 1, 4);
+    lua_rawseti(lua, -2, 4);
     return 1;
 }
 
@@ -140,9 +228,13 @@ RGBAColor lua_checkcolor(lua_State * lua, int index)
 
 const char * metatable<RGBAColor>::name = "LRGBAColor";
 const struct luaL_Reg metatable<RGBAColor>::meta_methods[] = {
+    { "__add",      add },
+    { "__div",      div },
     { "__eq",       equal },
     { "__index",    index },
+    { "__mul",      mul },
     { "__newindex", newIndex },
+    { "__sub",      sub },
     { "__tostring", toString },
     { nullptr,      nullptr}
 };
