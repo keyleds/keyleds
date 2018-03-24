@@ -18,6 +18,12 @@
 
 #include <cstdlib>
 
+/** Parse an unsigned integer.
+ * Simple wrapper around std::strtoul() with a more convenient interface.
+ * @param str String representation of number, is base 10.
+ * @param [out] value Variable to write result into.
+ * @return `true` on success, `false` if `str` does not represent an unsigned integer.
+ */
 bool keyleds::parseNumber(const std::string & str, unsigned * value)
 {
     if (str.empty()) { return false; }

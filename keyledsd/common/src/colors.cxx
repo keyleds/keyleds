@@ -29,7 +29,9 @@
 using keyleds::RGBColor;
 using keyleds::RGBAColor;
 
-//WARNING The following array must be sorted
+/** Table of color names. Must be sorted alphabetically so it can use bisect search.
+ * Those colors are those defined in CSS standard.
+ */
 static constexpr std::array<std::pair<const char *, RGBColor>, 149> predefinedColors = {{
     { "aliceblue", { 0xF0, 0xF8, 0xFF } },
     { "antiquewhite", { 0xFA, 0xEB, 0xD7 } },
@@ -116,7 +118,7 @@ static constexpr std::array<std::pair<const char *, RGBColor>, 149> predefinedCo
     { "lime", { 0x00, 0xFF, 0x00 } },
     { "limegreen", { 0x32, 0xCD, 0x32 } },
     { "linen", { 0xFA, 0xF0, 0xE6 } },
-    { "logitech", { 0x00, 0xCD, 0xFF } },
+    { "logitech", { 0x00, 0xCD, 0xFF } },       // Logitech default keyboard color
     { "magenta", { 0xFF, 0x00, 0xFF } },
     { "maroon", { 0x80, 0x00, 0x00 } },
     { "mediumaquamarine", { 0x66, 0xCD, 0xAA } },
@@ -184,6 +186,13 @@ static constexpr std::array<std::pair<const char *, RGBColor>, 149> predefinedCo
 static_assert(predefinedColors.back().second == RGBColor(0x9A, 0xCD, 0x32),
               "Last predefined color is not the expected one - is length correct?");
 
+
+/** Parse a string into an RGBColor.
+ * @param str Color name or hexadecimal string in RRGGBB format.
+ * @param [out] color Pointer to RGBColor object to fill.
+ * @return `true` on success, `false` on error.
+ * @bug Does not accept print() output. Stripping an optional leading hash would allow that.
+ */
 bool RGBColor::parse(const std::string & str, RGBColor * color)
 {
     // Attempt parsing as hex color
@@ -197,7 +206,7 @@ bool RGBColor::parse(const std::string & str, RGBColor * color)
     }
 
     // Attempt using a predefined color
-    std::string lower;
+    std::string lower;  // to allow case mismatch, make a lowercase version
     lower.reserve(str.size());
     std::transform(str.begin(), str.end(), std::back_inserter(lower), ::tolower);
 
@@ -213,6 +222,9 @@ bool RGBColor::parse(const std::string & str, RGBColor * color)
     return false;
 }
 
+/** Write a human-readable representation of color.
+ * @param out Output stream to write color representation into.
+ */
 void RGBColor::print(std::ostream & out) const
 {
     const auto flags = out.flags(std::ios_base::hex | std::ios_base::left);
@@ -222,6 +234,12 @@ void RGBColor::print(std::ostream & out) const
     out.fill(fillChar);
 }
 
+/** Parse a string into an RGBAColor.
+ * @param str Color name or hexadecimal string in RRGGBBAA or RRGGBB format.
+ * @param [out] color Pointer to RGBAColor object to fill.
+ * @return `true` on success, `false` on error.
+ * @bug Does not accept print() output. Stripping an optional leading hash would allow that.
+ */
 bool RGBAColor::parse(const std::string & str, RGBAColor * color)
 {
     if (str.size() == 8) {
@@ -240,6 +258,9 @@ bool RGBAColor::parse(const std::string & str, RGBAColor * color)
     return false;
 }
 
+/** Write a human-readable representation of color.
+ * @param out Output stream to write color representation into.
+ */
 void RGBAColor::print(std::ostream & out) const
 {
     const auto flags = out.flags(std::ios_base::hex | std::ios_base::left);

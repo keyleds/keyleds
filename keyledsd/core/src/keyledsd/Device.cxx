@@ -34,6 +34,11 @@ Device::Device(std::string path, Type type, std::string name, std::string model,
 
 Device::~Device() {}
 
+/** Patch key declaration with missing keys.
+ * @param block Which block the keys are in.
+ * @param keyIds List of key identifiers to add. They must not already be known.
+ * @warning Accesses `block` in a non-thread-safe way.
+ */
 void Device::patchMissingKeys(const KeyBlock & block, const key_list & keyIds)
 {
     // Note: the intent here is block is used for "indexing".
@@ -57,6 +62,9 @@ Device::KeyBlock::KeyBlock(key_block_id_type id, std::string name, key_list keys
 
 Device::KeyBlock::~KeyBlock() {}
 
+/** Add key identifiers into the block.
+ * @param keyIds List of key identifiers to add. They must not already be known.
+ */
 void Device::KeyBlock::patchMissingKeys(const key_list & keyIds)
 {
     m_keys.reserve(m_keys.size() + keyIds.size());

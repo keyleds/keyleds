@@ -32,6 +32,9 @@ class EffectManager final
 {
     class PluginTracker;
 
+    /** Object that tracks all resources associated to an effect so it can
+     * dispose of them when it deletes the effect itself
+     */
     class effect_deleter final
     {
         EffectManager * m_manager;

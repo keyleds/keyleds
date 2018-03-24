@@ -25,6 +25,8 @@ namespace plugin {
 
 /****************************************************************************/
 
+/** Empty implementation for the Effect and Renderer interface, for simple effects.
+ */
 class Effect : public keyleds::effect::interface::Effect, public keyleds::Renderer
 {
 protected:
@@ -38,6 +40,10 @@ public:
     keyleds::Renderer * renderer() override { return this; }
 };
 
+
+/** Automatic plugin class for simple effects.
+ * @tparam T Effect class, derived from Effect.
+ */
 template <typename T>
 class Plugin final : public keyleds::effect::interface::Plugin
 {

@@ -24,6 +24,9 @@ namespace keyleds { namespace lua {
 
 /****************************************************************************/
 
+/** Color interpolator for animating keys.
+ * This is a lua userdata-based object created using `fade()` from lua.
+ */
 struct Interpolator
 {
     enum {
@@ -46,6 +49,7 @@ struct Interpolator
 
 int luaNewInterpolator(lua_State *);
 
+/// Registration of Interpolator as lua object
 template <> struct metatable<Interpolator>
     { static const char * name; static constexpr struct luaL_Reg * methods = nullptr;
       static const struct luaL_Reg meta_methods[]; struct weak_table : std::false_type{}; };

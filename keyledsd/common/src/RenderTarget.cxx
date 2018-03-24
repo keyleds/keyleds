@@ -31,7 +31,7 @@ static constexpr std::size_t alignColors = alignBytes / sizeof(keyleds::RGBAColo
 using keyleds::RenderTarget;
 
 /// Returns the given value, aligned to upper bound of given aligment
-static std::size_t align(std::size_t value, std::size_t alignment)
+static constexpr std::size_t align(std::size_t value, std::size_t alignment)
 {
     return (value + alignment - 1) & ~(alignment - 1);
 }

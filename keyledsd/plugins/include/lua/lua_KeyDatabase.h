@@ -24,6 +24,7 @@ namespace keyleds { namespace lua {
 
 /****************************************************************************/
 
+/// Registration of key database as lua object
 template <> struct metatable<const KeyDatabase *>
     { static const char * name; static constexpr struct luaL_Reg * methods = nullptr;
       static const struct luaL_Reg meta_methods[]; struct weak_table : std::false_type{}; };

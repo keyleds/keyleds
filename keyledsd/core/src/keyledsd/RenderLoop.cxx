@@ -50,11 +50,18 @@ RenderLoop::RenderLoop(Device & device, unsigned fps)
 RenderLoop::~RenderLoop()
 {}
 
+/** Lock render loop, to synchronize renderer list access.
+ * @return Mutex lock preventing the animation from using renderers until it is destroyed.
+ */
 std::unique_lock<std::mutex> RenderLoop::lock()
 {
     return std::unique_lock<std::mutex>(m_mRenderers);
 }
 
+/** Create render target for a device.
+ * @param device Device to create a render target for.
+ * @return Newly created render target.
+ */
 keyleds::RenderTarget RenderLoop::renderTargetFor(const Device & device)
 {
     return RenderTarget(std::accumulate(
@@ -63,6 +70,11 @@ keyleds::RenderTarget RenderLoop::renderTargetFor(const Device & device)
     ));
 }
 
+/** Rendering method
+ * Invoked on a regular basis as long as the animation is not paused.
+ * @param nanosec Time since last invocation.
+ * @return `true` if animation should be continued, else `false`.
+ */
 bool RenderLoop::render(unsigned long nanosec)
 {
     // Run all renderers
@@ -79,15 +91,16 @@ bool RenderLoop::render(unsigned long nanosec)
         m_device.flush();   // Ensure another program using the device did not fill
                             // The inbound report queue.
 
-        // Compute diff
+        // Compute diff between old LED state and new LED state
         bool hasChanges = false;
         auto oldKeyIt = m_state.cbegin();
         auto newKeyIt = m_buffer.cbegin();
 
         for (const auto & block : m_device.blocks()) {
+
+            // Look for changed lights within current block
             const size_t numBlockKeys = block.keys().size();
             m_directives.clear();
-
             for (size_t kIdx = 0; kIdx < numBlockKeys; ++kIdx) {
                 if (*oldKeyIt != *newKeyIt) {
                     m_directives.push_back({
@@ -97,13 +110,15 @@ bool RenderLoop::render(unsigned long nanosec)
                 ++oldKeyIt;
                 ++newKeyIt;
             }
+
+            // If some lights have changed within current block, send directives to device
             if (!m_directives.empty()) {
                 m_device.setColors(block, m_directives.data(), m_directives.size());
                 hasChanges = true;
             }
         }
 
-        // Commit color changes
+        // Commit color changes, if any
         if (hasChanges) { m_device.commitColors(); }
 
         using std::swap;
@@ -113,6 +128,9 @@ bool RenderLoop::render(unsigned long nanosec)
     return true;
 }
 
+/** Main render loop loop.
+ * Handle error recovery around AnimationLoop::run().
+ */
 void RenderLoop::run()
 {
     try {
@@ -150,6 +168,9 @@ void RenderLoop::run()
     }
 }
 
+/** Read current state of all device lights
+ * @param [out] state Buffer into which color values will be written.
+ */
 void RenderLoop::getDeviceState(RenderTarget & state)
 {
     auto kit = state.begin();

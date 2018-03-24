@@ -23,15 +23,18 @@ namespace keyleds { namespace lua {
 
 /****************************************************************************/
 
+/** Lua coroutine-based thread.
+ */
 struct Thread
 {
-    int         id;
-    bool        running;
-    unsigned    sleepTime;
+    int         id;             ///< unique identifier
+    bool        running;        ///< whether the thread is currently running (schedulable)
+    unsigned    sleepTime;      ///< time in milliseconds until thread should be awoken
 };
 
 int luaNewThread(lua_State *);
 
+/// Registration of thread as a lua object
 template <> struct metatable<Thread>
     { static const char * name; static const struct luaL_Reg methods[];
       static const struct luaL_Reg meta_methods[]; struct weak_table : std::false_type{}; };

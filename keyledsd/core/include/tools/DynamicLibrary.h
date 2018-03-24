@@ -23,6 +23,11 @@ namespace tools {
 
 /****************************************************************************/
 
+/** Simple dynamic library wrapper
+ *
+ * A simple class to use RAII on dynamic libraries and wrap all OS details
+ * of dynamic library handling.
+ */
 class DynamicLibrary final
 {
     using handle_type = void *;
