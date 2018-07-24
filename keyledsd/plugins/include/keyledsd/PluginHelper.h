@@ -45,12 +45,13 @@ public:
  * @tparam T Effect class, derived from Effect.
  */
 template <typename T>
-class Plugin final : public keyleds::effect::interface::Plugin
+class Plugin : public keyleds::effect::interface::Plugin
 {
+protected:
     using EffectService = keyleds::effect::interface::EffectService;
+
 public:
     Plugin(const char * name) : m_name(name) {}
-    ~Plugin() {}
 
     keyleds::effect::interface::Effect *
     createEffect(const std::string & name, EffectService & service) override
@@ -63,6 +64,10 @@ public:
     {
         delete static_cast<T *>(ptr);
     }
+
+protected:
+    ~Plugin() {}
+    const char * name() const { return m_name; }
 
 private:
     const char * m_name;
@@ -84,7 +89,7 @@ private:
     KEYLEDSD_EXPORT_MODULE(name, keyledsd_simple_create, keyledsd_simple_destroy)
 
 #define KEYLEDSD_SIMPLE_EFFECT(name, Klass) \
-    using Klass##Plugin = plugin::Plugin<Klass>; \
+    class Klass##Plugin final : public plugin::Plugin<Klass> { using Plugin::Plugin; }; \
     KEYLEDSD_EXPORT_PLUGIN(name, Klass##Plugin)
 
 /****************************************************************************/
