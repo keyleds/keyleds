@@ -60,7 +60,7 @@ public:
         }
         m_presses.erase(
             std::remove_if(m_presses.begin(), m_presses.end(),
-                           [this, lifetime](const auto & keyPress){ return keyPress.age >= lifetime; }),
+                           [lifetime](const auto & keyPress){ return keyPress.age >= lifetime; }),
             m_presses.end()
         );
         blend(target, *m_buffer);
