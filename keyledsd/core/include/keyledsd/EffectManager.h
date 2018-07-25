@@ -76,6 +76,7 @@ public:
                                      std::unique_ptr<effect::interface::EffectService>);
 
 private:
+    std::string         locatePlugin(const std::string & name) const;
     void                unload(PluginTracker &);
     void                destroyEffect(PluginTracker &, effect::interface::EffectService &,
                                       effect::interface::Effect *);

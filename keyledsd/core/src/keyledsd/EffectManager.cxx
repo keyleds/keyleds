@@ -143,23 +143,17 @@ bool EffectManager::add(const std::string & name, const module_definition * defi
  */
 bool EffectManager::load(const std::string & name, std::string * error)
 {
-    DynamicLibrary library;
-
-    // Load first library that matches plugin name
-    std::string fileName = "fx_" + name + ".so";
-    for (const auto & path : m_searchPaths) {
-        std::string fullPath = path + '/' + fileName;
-        if (access(fullPath.c_str(), F_OK) < 0) { continue; }
-        VERBOSE("loading ", name, " from ", fullPath);
-
-        library = DynamicLibrary::load(fullPath, error);
-        if (!library) { return false; }
-    }
-
-    if (!library) {
-        if (error) { *error = "no module <" + fileName + "> in search paths"; }
+    // Locate library and open it
+    auto fullPath = locatePlugin(name);
+    if (fullPath.empty())  {
+        if (error) { *error = "no module <" + name + "> in search paths"; }
         return false;
     }
+
+    VERBOSE("loading ", name, " from ", fullPath);
+
+    auto library = DynamicLibrary::load(fullPath, error);
+    if (!library) { return false; }
 
     // Lookup plugin definition structure
     auto definition = static_cast<module_definition *>(library.getSymbol(moduleEntry));
@@ -205,6 +199,27 @@ bool EffectManager::load(const std::string & name, std::string * error)
     }
     INFO("loaded plugin <", name, ">");
     return true;
+}
+
+/** Get full path of named plugin
+ * Be careful of race conditions, do not assume path is still valid when returned.
+ * @return Full path, or empty string if none was found.
+ */
+std::string EffectManager::locatePlugin(const std::string & name) const
+{
+    // Load first library that matches plugin name
+    const auto fileName = "fx_" + name + ".so";
+
+    for (const auto & path : m_searchPaths) {
+        auto fullPath = path;
+        if (fullPath.back() != '/') { fullPath += '/'; }
+        fullPath += fileName;
+
+        if (access(fullPath.c_str(), F_OK) == 0) {
+            return fullPath;
+        }
+    }
+    return {};
 }
 
 /** Unload a plugin.
