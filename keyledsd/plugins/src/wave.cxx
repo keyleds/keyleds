@@ -164,4 +164,24 @@ private:
     unsigned            m_direction;    ///< wave propagation direction, compass style (0 for North).
 };
 
-KEYLEDSD_SIMPLE_EFFECT("wave", WaveEffect);
+/****************************************************************************/
+
+class WaveEffectPlugin final : public plugin::Plugin<WaveEffect> {
+public:
+    WaveEffectPlugin(const char * name) : Plugin(name) {}
+
+    keyleds::effect::interface::Effect *
+    createEffect(const std::string & name, EffectService & service) override
+    {
+        if (name != this->name()) { return nullptr; }
+
+        const auto & bounds = service.keyDB().bounds();
+        if (!(bounds.x0 < bounds.x1 && bounds.y0 < bounds.y1)) {
+            service.log(1, "effect requires a valid layout");
+            return nullptr;
+        }
+        return plugin::Plugin<WaveEffect>::createEffect(name, service);
+    }
+};
+
+KEYLEDSD_EXPORT_PLUGIN("wave", WaveEffectPlugin);
