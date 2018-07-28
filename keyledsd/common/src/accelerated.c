@@ -23,7 +23,6 @@
 
 void blend_avx2(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length);
 void blend_sse2(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length);
-void blend_mmx(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length);
 void blend_plain(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length);
 
 #ifdef HAVE_BUILTIN_CPU_SUPPORTS
@@ -37,9 +36,6 @@ static void (*resolve_blend(void))(uint8_t * restrict dst, const uint8_t * restr
 #  endif
 #  ifdef KEYLEDSD_USE_SSE2
     if (__builtin_cpu_supports("sse2")) { return blend_sse2; }
-#  endif
-#  ifdef KEYLEDSD_USE_MMX
-    if (__builtin_cpu_supports("mmx")) { return blend_mmx; }
 #  endif
     return blend_plain;
 }

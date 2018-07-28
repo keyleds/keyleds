@@ -21,7 +21,6 @@ include(CheckCSourceCompiles)
 # Options
 
 if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL x86_64 OR ${CMAKE_SYSTEM_PROCESSOR} STREQUAL i686)
-    set(KEYLEDSD_USE_MMX 1)
     set(KEYLEDSD_USE_SSE2 1)
     set(KEYLEDSD_USE_AVX2 1)
 endif()
@@ -39,11 +38,6 @@ set(common_SRCS
     src/colors.cxx
     src/utils.cxx
 )
-if(KEYLEDSD_USE_MMX)
-    set(common_SRCS ${common_SRCS} src/accelerated_mmx.c)
-    set_source_files_properties("src/accelerated_mmx.c"
-                                PROPERTIES COMPILE_FLAGS "-mmmx")
-endif()
 if(KEYLEDSD_USE_SSE2)
     set(common_SRCS ${common_SRCS} src/accelerated_sse2.c)
     set_source_files_properties("src/accelerated_sse2.c"

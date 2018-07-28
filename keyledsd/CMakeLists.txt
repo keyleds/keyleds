@@ -20,7 +20,7 @@ project(keyledsd VERSION 0.7.5 LANGUAGES CXX)
 ##############################################################################
 # Options
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -std=c++14 -fPIC -fno-rtti -fstrict-enums -fvisibility=hidden")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -std=c++14 -fPIC -fno-rtti -fvisibility=hidden -fstrict-enums -ffast-math")
 
 ##############################################################################
 # Subtargets and data files
