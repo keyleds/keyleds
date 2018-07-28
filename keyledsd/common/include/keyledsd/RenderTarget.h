@@ -17,6 +17,10 @@
 #ifndef KEYLEDS_RENDER_TARGET_H_7E2781C6
 #define KEYLEDS_RENDER_TARGET_H_7E2781C6
 
+#include <cassert>
+#include <cstdint>
+#include <utility>
+#include "keyledsd/accelerated.h"
 #include "keyledsd/colors.h"
 #include "keyledsd_config.h"
 
@@ -45,7 +49,8 @@ public:
     using const_iterator = const value_type *;
 public:
                                 RenderTarget(size_type);
-                                RenderTarget(RenderTarget &&) noexcept;
+                                RenderTarget(RenderTarget && other) noexcept
+                                 : m_colors(nullptr), m_size(0u), m_capacity(0u) { swap(*this, other); }
     RenderTarget &              operator=(RenderTarget &&) noexcept;
                                 ~RenderTarget();
 
@@ -71,9 +76,9 @@ private:
     friend void swap(RenderTarget &, RenderTarget &) noexcept;
 };
 
-KEYLEDSD_EXPORT void swap(RenderTarget &, RenderTarget &) noexcept;
-KEYLEDSD_EXPORT void blend(RenderTarget &, const RenderTarget &);
-KEYLEDSD_EXPORT void multiply(RenderTarget &, const RenderTarget &);
+void swap(RenderTarget &, RenderTarget &) noexcept;
+void blend(RenderTarget &, const RenderTarget &) noexcept;
+void multiply(RenderTarget &, const RenderTarget &) noexcept;
 
 /****************************************************************************/
 
@@ -95,6 +100,28 @@ protected:
 };
 
 /****************************************************************************/
+
+inline void swap(RenderTarget & lhs, RenderTarget & rhs) noexcept
+{
+    using std::swap;
+    swap(lhs.m_colors, rhs.m_colors);
+    swap(lhs.m_size, rhs.m_size);
+    swap(lhs.m_capacity, rhs.m_capacity);
+}
+
+inline void blend(RenderTarget & lhs, const RenderTarget & rhs) noexcept
+{
+    assert(lhs.capacity() == rhs.capacity());
+    blend(reinterpret_cast<uint8_t*>(lhs.data()),
+          reinterpret_cast<const uint8_t*>(rhs.data()), rhs.capacity());
+}
+
+inline void multiply(RenderTarget & lhs, const RenderTarget & rhs) noexcept
+{
+    assert(lhs.capacity() == rhs.capacity());
+    multiply(reinterpret_cast<uint8_t*>(lhs.data()),
+             reinterpret_cast<const uint8_t*>(rhs.data()), rhs.capacity());
+}
 
 } // keyleds
 

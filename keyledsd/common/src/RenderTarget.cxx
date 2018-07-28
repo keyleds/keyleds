@@ -16,11 +16,9 @@
  */
 #include "keyledsd/RenderTarget.h"
 
-#include <algorithm>
-#include <cassert>
 #include <cstddef>
 #include <type_traits>
-#include "keyledsd/accelerated.h"
+#include <utility>
 
 static_assert(std::is_pod<keyleds::RGBAColor>::value, "RGBAColor must be a POD type");
 static_assert(sizeof(keyleds::RGBAColor) == 4, "RGBAColor must be tightly packed");
@@ -49,15 +47,6 @@ RenderTarget::RenderTarget(size_type size)
     }
 }
 
-RenderTarget::RenderTarget(RenderTarget && other) noexcept
- : m_colors(nullptr),
-   m_size(0u),
-   m_capacity(0u)
-{
-    using std::swap;
-    swap(*this, other);
-}
-
 RenderTarget & RenderTarget::operator=(RenderTarget && other) noexcept
 {
     free(m_colors);
@@ -73,32 +62,4 @@ RenderTarget & RenderTarget::operator=(RenderTarget && other) noexcept
 RenderTarget::~RenderTarget()
 {
     free(m_colors);
-}
-
-void keyleds::swap(RenderTarget & lhs, RenderTarget & rhs) noexcept
-{
-    using std::swap;
-    swap(lhs.m_colors, rhs.m_colors);
-    swap(lhs.m_size, rhs.m_size);
-    swap(lhs.m_capacity, rhs.m_capacity);
-}
-
-void keyleds::blend(RenderTarget & lhs, const RenderTarget & rhs)
-{
-    // This must use the full rendertarget capacity, which fulfills alignment constraints
-    assert(lhs.capacity() == rhs.capacity());
-    blend(
-        reinterpret_cast<uint8_t*>(lhs.data()),
-        reinterpret_cast<const uint8_t*>(rhs.data()), rhs.capacity()
-    );
-}
-
-void keyleds::multiply(RenderTarget & lhs, const RenderTarget & rhs)
-{
-    // This must use the full rendertarget capacity, which fulfills alignment constraints
-    assert(lhs.capacity() == rhs.capacity());
-    multiply(
-        reinterpret_cast<uint8_t*>(lhs.data()),
-        reinterpret_cast<const uint8_t*>(rhs.data()), rhs.capacity()
-    );
 }
