@@ -1,4 +1,10 @@
-keyleds (0.7.5-1) unstable; urgency=medium
+keyleds (0.7.6-1) unstable; urgency=medium
+
+  * Updated upstream to v0.7.6.
+
+ -- Julien Hartmann <juli1.hartmann@gmail.com>  Sat, 28 Jul 2018 13:25:12 +0000
+
+ keyleds (0.7.5-1) unstable; urgency=medium
 
   * Updated upstream to v0.7.5.
 

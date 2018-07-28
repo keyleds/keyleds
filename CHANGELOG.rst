@@ -3,7 +3,29 @@ Release Notes
 #############
 
 *****************************
-0.7.5 - current release
+0.7.6 - current release
+*****************************
+
+Released on July 28th, 2018
+
+Features:
+
+- New demo effect included: whack-a-mole game. In default config, will start whenever
+  current window includes the “mole” word.
+
+Bugfixes:
+
+- Fix crash of wave effect occuring when no layout is loaded.
+- Provide aliases for GPro keyboards layout. Fixes #22.
+
+Misc:
+
+- Drop support for MMX instructions. SSE2 and AVX2 are enough.
+- Compile with `-ffast-math` by default.
+
+
+*****************************
+0.7.5
 *****************************
 
 Released on March 22th, 2018

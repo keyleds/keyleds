@@ -2,7 +2,7 @@
 # See debhelper(7) (uncomment to enable)
 # output every command that modifies files on the build system.
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
-LUA_ARCHS = amd64 armhf x86
+LUA_ARCHS = amd64 arm64 armhf x86
 
 %:
 	dh $@ 

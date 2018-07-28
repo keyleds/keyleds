@@ -3,11 +3,11 @@ Upstream-Name: keyleds
 Source: https://github.com/spectras/keyleds
 
 Files: *
-Copyright: 2017 Julien Hartmann <juli1.hartmann@gmail.com>
+Copyright: 2017-2018 Julien Hartmann <juli1.hartmann@gmail.com>
 License: GPL-3.0+
 
 Files: debian/*
-Copyright: 2017 Julien Hartmann <juli1.hartmann@gmail.com>
+Copyright: 2017-2018 Julien Hartmann <juli1.hartmann@gmail.com>
 License: GPL-3.0+
 
 License: GPL-3.0+
