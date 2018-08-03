@@ -67,7 +67,7 @@ public:
     void addScalarAlias(std::string anchor, std::string value);
     const std::string & getScalarAlias(const std::string & anchor);
     void addGroupAlias(std::string anchor, Configuration::KeyGroup::key_list);
-    const Configuration::KeyGroup::key_list & getGroupAlias(std::string anchor);
+    const Configuration::KeyGroup::key_list & getGroupAlias(const std::string & anchor);
 
     void streamStart() override {}
     void streamEnd() override {}
@@ -148,7 +148,7 @@ std::ostream & operator<<(std::ostream & out, ConfigurationBuilder::BuildState &
 class MappingBuildState : public ConfigurationBuilder::BuildState
 {
 public:
-    MappingBuildState(state_type type) : BuildState(type) {}
+    explicit MappingBuildState(state_type type) : BuildState(type) {}
 
     virtual state_ptr sequenceEntry(ConfigurationBuilder & builder, const std::string &, const std::string &)
         { throw builder.makeError("unexpected sequence"); }
@@ -210,7 +210,7 @@ class StringSequenceBuildState final : public ConfigurationBuilder::BuildState
 public:
     using value_type = std::vector<std::string>;
 public:
-    StringSequenceBuildState(state_type type = 0) : BuildState(type) {}
+    explicit StringSequenceBuildState(state_type type = 0) : BuildState(type) {}
     void print(std::ostream & out) const override { out <<"string-sequence"; }
 
     void alias(ConfigurationBuilder & builder, const std::string & anchor) override
@@ -236,7 +236,7 @@ class StringMappingBuildState final : public MappingBuildState
 public:
     using value_type = std::vector<std::pair<std::string, std::string>>;
 public:
-    StringMappingBuildState(state_type type = 0) : MappingBuildState(type) {}
+    explicit StringMappingBuildState(state_type type = 0) : MappingBuildState(type) {}
     void print(std::ostream & out) const override { out <<"string-mapping"; }
 
     void aliasEntry(ConfigurationBuilder & builder, const std::string & key,
@@ -269,7 +269,7 @@ class KeyGroupListState final : public MappingBuildState
 public:
     using value_type = Configuration::key_group_list;
 public:
-    KeyGroupListState(state_type type) : MappingBuildState(type) {}
+    explicit KeyGroupListState(state_type type) : MappingBuildState(type) {}
     void print(std::ostream & out) const override { out <<"group-list"; }
 
     state_ptr sequenceEntry(ConfigurationBuilder &, const std::string &,
@@ -311,7 +311,7 @@ class EffectListState final : public ConfigurationBuilder::BuildState
 public:
     using value_type = Configuration::EffectGroup::effect_list;
 public:
-    EffectListState(state_type type) : BuildState(type) {}
+    explicit EffectListState(state_type type) : BuildState(type) {}
     void print(std::ostream & out) const override { out <<"plugin-list"; }
 
     state_ptr mappingStart(ConfigurationBuilder &, const std::string &) override
@@ -346,7 +346,7 @@ class EffectGroupState final: public MappingBuildState
     enum SubState : state_type { KeyGroupList, EffectList };
 public:
     EffectGroupState(std::string name, state_type type = 0)
-      : MappingBuildState(type), m_name(name) {}
+      : MappingBuildState(type), m_name(std::move(name)) {}
     void print(std::ostream & out) const override { out <<"effect(" <<m_name <<')'; }
 
     state_ptr sequenceEntry(ConfigurationBuilder & builder, const std::string & key,
@@ -395,7 +395,7 @@ class EffectGroupListState final: public MappingBuildState
 public:
     using value_type = Configuration::effect_group_list;
 public:
-    EffectGroupListState(state_type type) : MappingBuildState(type) {}
+    explicit EffectGroupListState(state_type type) : MappingBuildState(type) {}
     void print(std::ostream & out) const override { out <<"effect-map"; }
 
     state_ptr mappingEntry(ConfigurationBuilder &, const std::string & key, const std::string &) override
@@ -422,7 +422,7 @@ class ProfileState final: public MappingBuildState
     enum SubState : state_type { Lookup, DeviceList, EffectGroupList };
 public:
     ProfileState(std::string name, state_type type = 0)
-      : MappingBuildState(type), m_name(name) {}
+      : MappingBuildState(type), m_name(std::move(name)) {}
     void print(std::ostream & out) const override { out <<"profile(" <<m_name <<')'; }
 
     state_ptr sequenceEntry(ConfigurationBuilder & builder, const std::string & key,
@@ -492,7 +492,7 @@ class ProfileListState final : public MappingBuildState
 public:
     using value_type = std::vector<Configuration::Profile>;
 public:
-    ProfileListState(state_type type) : MappingBuildState(type) {}
+    explicit ProfileListState(state_type type) : MappingBuildState(type) {}
     void print(std::ostream & out) const override { out <<"profile-map"; }
 
     state_ptr mappingEntry(ConfigurationBuilder &, const std::string & key, const std::string &) override
@@ -613,9 +613,9 @@ void ConfigurationBuilder::addGroupAlias(std::string anchor, Configuration::KeyG
     m_groupAliases.emplace_back(std::move(anchor), std::move(value));
 }
 
-const Configuration::KeyGroup::key_list & ConfigurationBuilder::getGroupAlias(std::string anchor) {
+const Configuration::KeyGroup::key_list & ConfigurationBuilder::getGroupAlias(const std::string & anchor) {
     auto it = std::find_if(m_groupAliases.begin(), m_groupAliases.end(),
-                           [anchor](const auto & alias) { return alias.first == anchor; });
+                           [&anchor](const auto & alias) { return alias.first == anchor; });
     if (it == m_groupAliases.end()) {
         throw makeError("unknown anchor or anchor is not a key group");
     }

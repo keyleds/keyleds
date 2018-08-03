@@ -1,6 +1,6 @@
-==============
-|logo| keyleds
-==============
+=======================
+|logo| keyleds |codacy|
+=======================
 
 Userspace service for Logitech keyboards with per-key RGB LEDs.
 
@@ -57,3 +57,5 @@ Feedback, feature ideas, pull requests are welcome!
    :height: 80px
    :align: middle
    :alt:
+.. |codacy| image:: https://api.codacy.com/project/badge/Grade/c0737da40c404e9d9b675197a3567048
+   :target: https://www.codacy.com/project/spectras/keyleds/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=spectras/keyleds&amp;utm_campaign=Badge_Grade_Dashboard

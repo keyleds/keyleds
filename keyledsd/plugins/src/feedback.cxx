@@ -30,7 +30,7 @@ class FeedbackEffect final : public plugin::Effect
     };
 
 public:
-    FeedbackEffect(EffectService & service)
+    explicit FeedbackEffect(EffectService & service)
      : m_buffer(service.createRenderTarget()),
        m_color(255, 255, 255, 255),
        m_sustain(750),

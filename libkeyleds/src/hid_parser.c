@@ -114,8 +114,8 @@ static void dump_main_item(FILE * stream, const struct hid_main_item * const ite
         item->tag == HID_TAG_OUTPUT ||
         item->tag == HID_TAG_FEATURE) {
         fprintf(stream, "    Report ID:          %02x\n", item->report_id);
-        fprintf(stream, "    Report size:      %4d\n", item->report_size);
-        fprintf(stream, "    Report count:     %4d\n", item->report_count);
+        fprintf(stream, "    Report size:      %4u\n", item->report_size);
+        fprintf(stream, "    Report count:     %4u\n", item->report_count);
         if (item->defined & HID_DEFINED_LOGICAL_MINIMUM) {
             fprintf(stream, "    Logical minimum:  %4d\n", item->logical_minimum);
         }

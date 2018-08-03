@@ -93,6 +93,7 @@ void FileWatcher::onNotifyReady(int)
     // We use a union to allocate the buffer on the stack
     union {
         struct inotify_event    event;
+        // cppcheck-suppress unusedStructMember
         char                    reserve[sizeof(struct inotify_event) + NAME_MAX + 1];
     } buffer;
 

@@ -34,7 +34,7 @@ class WaveEffect final : public plugin::Effect
 {
     using KeyGroup = KeyDatabase::KeyGroup;
 public:
-    WaveEffect(EffectService & service)
+    explicit WaveEffect(EffectService & service)
      : m_buffer(service.createRenderTarget()),
        m_keys(nullptr),
        m_time(0),
@@ -168,7 +168,7 @@ private:
 
 class WaveEffectPlugin final : public plugin::Plugin<WaveEffect> {
 public:
-    WaveEffectPlugin(const char * name) : Plugin(name) {}
+    explicit WaveEffectPlugin(const char * name) : Plugin(name) {}
 
     keyleds::effect::interface::Effect *
     createEffect(const std::string & name, EffectService & service) override

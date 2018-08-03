@@ -34,7 +34,7 @@ class StarsEffect final : public plugin::Effect
     };
 
 public:
-    StarsEffect(EffectService & service)
+    explicit StarsEffect(EffectService & service)
      : m_service(service),
        m_buffer(service.createRenderTarget()),
        m_duration(1000),

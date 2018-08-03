@@ -42,7 +42,7 @@ using tools::YAMLParser;
 class Parser final
 {
 public:
-    Parser(std::istream & stream)
+    explicit Parser(std::istream & stream)
      : m_done(false),
        m_hasEvent(false)
     {

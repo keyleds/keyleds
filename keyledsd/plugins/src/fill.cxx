@@ -38,7 +38,7 @@ class FillEffect final : public plugin::Effect
     };
 
 public:
-    FillEffect(EffectService & service)
+    explicit FillEffect(EffectService & service)
      : m_fill(0, 0, 0, 0)
     {
         RGBAColor::parse(service.getConfig("color"), &m_fill);

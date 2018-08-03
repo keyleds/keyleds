@@ -27,7 +27,7 @@ class BreateEffect final : public plugin::Effect
 {
     using KeyGroup = KeyDatabase::KeyGroup;
 public:
-    BreateEffect(EffectService & service)
+    explicit BreateEffect(EffectService & service)
      : m_buffer(service.createRenderTarget()),
        m_keys(nullptr),
        m_time(0), m_period(10000)

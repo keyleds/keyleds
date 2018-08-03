@@ -170,13 +170,13 @@ KEYLEDS_EXPORT bool keyleds_set_leds(Keyleds * device, uint8_t target_id,
                                      keyleds_block_id_t block_id,
                                      const struct keyleds_key_color * keys, unsigned keys_nb)
 {
-    uint16_t per_call = (device->max_report_size - 3 - 4) / 4;  /* 4 bytes per key, mins headers */
-    uint16_t offset, idx;
-
     assert(device != NULL);
     assert((unsigned)block_id <= UINT16_MAX);
     assert(keys != NULL);
     assert(keys_nb <= UINT16_MAX);
+
+    uint16_t per_call = (device->max_report_size - 3 - 4) / 4;  /* 4 bytes per key, mins headers */
+    uint16_t offset, idx;
 
     uint8_t data[4 + per_call * 4];
     data[0] = (uint8_t)(block_id >> 8);

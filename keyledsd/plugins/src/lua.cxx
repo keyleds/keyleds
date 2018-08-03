@@ -34,7 +34,7 @@ class LuaPlugin final : public keyleds::effect::interface::Plugin
     using state_list = std::vector<StateInfo>;
 
 public:
-    LuaPlugin(const char *) {}
+    explicit LuaPlugin(const char *) {}
 
     ~LuaPlugin() {}
 
