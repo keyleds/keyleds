@@ -115,6 +115,9 @@ class LogitechWatcher : public ::device::FilteredDeviceWatcher
 public:
             LogitechWatcher(struct udev * udev = nullptr, QObject *parent = nullptr);
     bool    isVisible(const ::device::Description & dev) const override;
+private:
+    bool    checkInterface(const ::device::Description & dev) const;
+    bool    checkDevice(const ::device::Description & dev) const;
 };
 
 /****************************************************************************/

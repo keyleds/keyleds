@@ -45,6 +45,10 @@ namespace std {
     };
 }
 
+static constexpr char InterfaceProtocolAttr[] = "bInterfaceProtocol";
+static constexpr unsigned ApplicationInterfaceProtocol = 0;
+static constexpr char DeviceVendorAttr[] = "idVendor";
+
 /****************************************************************************/
 
 Logitech::Logitech(std::unique_ptr<struct keyleds_device> device,
@@ -329,29 +333,47 @@ LogitechWatcher::LogitechWatcher(struct udev * udev, QObject *parent)
 
 bool LogitechWatcher::isVisible(const ::device::Description & dev) const
 {
-    // Filter interface protocol
-    const auto & iface = dev.parentWithType("usb", "usb_interface");
-    auto it = std::find_if(
-        iface.attributes().begin(), iface.attributes().end(),
-        [](const auto & attr) { return attr.first == "bInterfaceProtocol"; }
-    );
-    if (it == iface.attributes().end()) {
-        ERROR("Device ", iface.sysPath(), " has not interface protocol attribute");
+    return checkInterface(dev) && checkDevice(dev);
+}
+
+bool LogitechWatcher::checkInterface(const ::device::Description & dev) const
+{
+    try {
+        const auto & iface = dev.parentWithType("usb", "usb_interface");
+        const auto & it = std::find_if(
+            iface.attributes().begin(), iface.attributes().end(),
+            [](const auto & attr) { return attr.first == InterfaceProtocolAttr; }
+        );
+        if (it == iface.attributes().end()) {
+            ERROR("Device ", iface.sysPath(), " has not interface protocol attribute");
+            return false;
+        }
+        if (std::stoul(it->second, nullptr, 16) != ApplicationInterfaceProtocol) { return false; }
+
+    } catch (const ::device::Error & err) {
+        DEBUG("Cannot check ", dev.sysPath(), " usb interface: ", err.what());
         return false;
     }
-    if (std::stoul(it->second, nullptr, 16) != 0) { return false; }
+    return true;
+}
 
-    // Filter device id
-    const auto & usbdev = dev.parentWithType("usb", "usb_device");
-    it = std::find_if(
-        usbdev.attributes().begin(), usbdev.attributes().end(),
-        [](const auto & attr) { return attr.first == "idVendor"; }
-    );
-    if (it == usbdev.attributes().end()) {
-        ERROR("Device ", usbdev.sysPath(), " has not vendor id attribute");
+bool LogitechWatcher::checkDevice(const ::device::Description & dev) const
+{
+    try {
+        const auto & usbdev = dev.parentWithType("usb", "usb_device");
+        const auto & it = std::find_if(
+            usbdev.attributes().begin(), usbdev.attributes().end(),
+            [](const auto & attr) { return attr.first == DeviceVendorAttr; }
+        );
+        if (it == usbdev.attributes().end()) {
+            ERROR("Device ", usbdev.sysPath(), " has not vendor id attribute");
+            return false;
+        }
+        if (std::stoul(it->second, nullptr, 16) != LOGITECH_VENDOR_ID) { return false; }
+
+    } catch (const ::device::Error & err) {
+        DEBUG("Cannot check ", dev.sysPath(), " usb device: ", err.what());
         return false;
     }
-    if (std::stoul(it->second, nullptr, 16) != LOGITECH_VENDOR_ID) { return false; }
-
     return true;
 }

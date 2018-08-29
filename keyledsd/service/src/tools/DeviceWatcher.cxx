@@ -83,7 +83,7 @@ Description Description::parent() const
 {
     auto dev = udev_device_get_parent(m_device.get());  // unowned
     if (dev == nullptr) {
-        throw std::logic_error("Device " + sysPath() + " has no parent");
+        throw Error("Device " + sysPath() + " has no parent");
     }
     return Description(dev);
 }
@@ -97,7 +97,7 @@ Description Description::parentWithType(const std::string & subsystem,
         devtype.empty() ? nullptr : devtype.c_str()
     );
     if (dev == nullptr) {
-        throw std::logic_error("No parent with specified type for device " + sysPath());
+        throw Error("No parent with specified type for device " + sysPath());
     }
     return Description(dev);
 }
