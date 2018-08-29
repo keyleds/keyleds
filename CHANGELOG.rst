@@ -3,7 +3,17 @@ Release Notes
 #############
 
 *****************************
-0.7.6 - current release
+0.7.7 - current release
+*****************************
+
+Released on August 29th, 2018
+
+Bugfixes:
+
+- Fix crash in device detection when encountering non-usb hid devices. Fixes #24.
+
+*****************************
+0.7.6
 *****************************
 
 Released on July 28th, 2018
