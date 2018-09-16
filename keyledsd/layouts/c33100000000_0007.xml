@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <keyboards layout="RUS">
-  <spurious code="0x31"/>
+  <spurious zone="1" code="0x31"/>
   <keyboard x="12" y="41" width="46" height="46" zone="16">
     <row>
       <key code="0x01" />
