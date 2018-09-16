@@ -3,7 +3,19 @@ Release Notes
 #############
 
 *****************************
-0.7.7 - current release
+0.7.8 - current release
+*****************************
+
+Released on September 16th, 2018
+
+Bugfixes:
+
+- Skip Qt cross-compilation workaround when not building the service — #25.
+- Loading an empty effect list no longer causes flicker.
+- Layout files now blacklist spurious keys, which should fix US backslash issues — #22.
+
+*****************************
+0.7.7
 *****************************
 
 Released on August 29th, 2018
