@@ -37,6 +37,7 @@ using keyleds::LayoutDescription;
 
 using xmlString = std::unique_ptr<xmlChar, void(*)(void *)>;
 
+static constexpr xmlChar SPURIOUS_TAG[] = "spurious";
 static constexpr xmlChar KEYBOARD_TAG[] = "keyboard";
 static constexpr xmlChar ROW_TAG[] = "row";
 static constexpr xmlChar KEY_TAG[] = "key";
@@ -155,9 +156,10 @@ static void parseKeyboard(const xmlNode * keyboard, LayoutDescription::key_list 
 
 /****************************************************************************/
 
-LayoutDescription::LayoutDescription(std::string name, key_list keys)
+LayoutDescription::LayoutDescription(std::string name, key_list keys, pos_list spurious)
  : m_name(std::move(name)),
-   m_keys(std::move(keys))
+   m_keys(std::move(keys)),
+   m_spurious(std::move(spurious))
 {}
 
 LayoutDescription::~LayoutDescription() {}
@@ -190,21 +192,29 @@ LayoutDescription LayoutDescription::parse(std::istream & stream)
         throw ParseError(errMsg, error->line);
     }
 
-    // Search for keyboard nodes
+    // Scan top-level nodes
     const xmlNode * const root = xmlDocGetRootElement(document.get());
     auto name = xmlString(xmlGetProp(const_cast<xmlNode *>(root), ROOT_ATTR_NAME), xmlFree);
 
     key_list keys;
+    pos_list spurious;
     for (const xmlNode * node = root->children; node != nullptr; node = node->next) {
         if (node->type == XML_ELEMENT_NODE && xmlStrcmp(node->name, KEYBOARD_TAG) == 0) {
             parseKeyboard(node, keys);
+        } else if (node->type == XML_ELEMENT_NODE && xmlStrcmp(node->name, SPURIOUS_TAG) == 0) {
+            unsigned kbZone = parseUInt(node, KEYBOARD_ATTR_ZONE, 0);
+            unsigned codeVal = parseUInt(node, KEY_ATTR_CODE, 0);
+            if (codeVal > 0) {
+                spurious.push_back({kbZone, codeVal});
+            }
         }
     }
 
     // Finalize
     return LayoutDescription(
         std::string(reinterpret_cast<std::string::const_pointer>(name.get())),
-        std::move(keys)
+        std::move(keys),
+        std::move(spurious)
     );
 }
 
@@ -230,7 +240,7 @@ LayoutDescription LayoutDescription::loadFile(const std::string & name)
             ERROR("layout ", fullName, ": ", error.what());
         }
     }
-    return LayoutDescription(std::string(), {});
+    return LayoutDescription();
 }
 
 /****************************************************************************/

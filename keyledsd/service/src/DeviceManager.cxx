@@ -220,6 +220,16 @@ keyleds::KeyDatabase DeviceManager::buildKeyDatabase(const Device & device, cons
             std::string name;
             auto position = KeyDatabase::Key::Rect{0, 0, 0, 0};
 
+            auto it = std::find_if(
+                layout.spurious().cbegin(), layout.spurious().cend(),
+                [&](const auto & pos) { return pos.block == block.id() && pos.code == keyId; }
+            );
+            if (it != layout.spurious().cend()) {
+                DEBUG("omitting <", (int)block.id(), ", ", (int)keyId, ">");
+                ++keyIndex;
+                continue;
+            }
+
             for (const auto & key : layout.keys()) {
                 if (key.block == block.id() && key.code == keyId) {
                     name = key.name;

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <keyboards layout="UK">
+  <spurious code="0x31"/>
   <keyboard x="54" y="81" width="62" height="62" zone="16">
     <row>
       <key glyph="Logo" code="0x01" style="logo" />

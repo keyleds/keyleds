@@ -35,7 +35,8 @@ class WaveEffect final : public plugin::Effect
     using KeyGroup = KeyDatabase::KeyGroup;
 public:
     explicit WaveEffect(EffectService & service)
-     : m_buffer(service.createRenderTarget()),
+     : m_service(service),
+       m_buffer(service.createRenderTarget()),
        m_keys(nullptr),
        m_time(0),
        m_period(10000),
@@ -86,12 +87,13 @@ public:
                 (*m_buffer)[(*m_keys)[idx].index] = m_colors[tphi];
             }
         } else {
-            assert(m_buffer->size() == m_phases.size());
-            for (std::size_t idx = 0; idx < m_buffer->size(); ++idx) {
+            const auto & keyDB = m_service.keyDB();
+            assert(keyDB.size() == m_phases.size());
+            for (std::size_t idx = 0; idx < keyDB.size(); ++idx) {
                 int tphi = t - m_phases[idx];
                 if (tphi < 0) { tphi += accuracy; }
 
-                (*m_buffer)[idx] = m_colors[tphi];
+                (*m_buffer)[keyDB[idx].index] = m_colors[tphi];
             }
         }
         blend(target, *m_buffer);
@@ -152,6 +154,7 @@ private:
     }
 
 private:
+    const EffectService &   m_service;
     RenderTarget *          m_buffer;   ///< this plugin's rendered state
     const KeyGroup *        m_keys;     ///< what keys the effect applies to. Empty for whole keyboard.
     std::vector<unsigned>   m_phases;   ///< one per key in m_keys or one per key in m_buffer.

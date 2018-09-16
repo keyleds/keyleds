@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <keyboards layout="CHT">
+  <spurious code="0x32"/>
   <keyboard x="12" y="41" width="46" height="46" zone="16">
     <row>
       <key code="0x01" />

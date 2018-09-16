@@ -33,18 +33,23 @@ namespace keyleds {
  */
 class LayoutDescription final
 {
+    using block_type = unsigned int;
+    using code_type = unsigned int;
+    struct position { block_type block; code_type code; };
 public:
     struct Rect { unsigned x0, y0, x1, y1; };
     class Key;
     class ParseError;
     using key_list = std::vector<Key>;
+    using pos_list = std::vector<position>;
 public:
                         LayoutDescription() = default;
-                        LayoutDescription(std::string name, key_list keys);
+                        LayoutDescription(std::string name, key_list, pos_list spurious);
                         ~LayoutDescription();
 
     const std::string & name() const { return m_name; }
     const key_list &    keys() const { return m_keys; }
+    const pos_list &    spurious() const { return m_spurious; }
 
     static LayoutDescription parse(std::istream &);
     static LayoutDescription loadFile(const std::string & path);
@@ -52,6 +57,7 @@ public:
 private:
     std::string         m_name;     ///< Layout name, indicating its country code
     key_list            m_keys;     ///< All keys from all blocks
+    pos_list            m_spurious; ///< Position of blacklisted keys
 };
 
 /****************************************************************************/
@@ -62,8 +68,6 @@ private:
  */
 class LayoutDescription::Key final
 {
-    using block_type = unsigned int;
-    using code_type = unsigned int;
 public:
                 Key(block_type block, code_type code, Rect position, std::string name);
                 ~Key();
