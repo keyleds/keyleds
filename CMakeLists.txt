@@ -32,7 +32,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
 ##############################################################################
 # Work around Qt script selecting wrong tools while cross-compiling
 
-IF(CMAKE_CROSSCOMPILING)
+IF(WITH_KEYLEDSD AND CMAKE_CROSSCOMPILING)
     execute_process(COMMAND qtchooser -qt=5 -print-env
                     COMMAND grep ^QTTOOLDIR=
                     COMMAND sed s/^QTTOOLDIR=\"\\\(.*\\\)\"$/\\1/
@@ -47,7 +47,7 @@ IF(CMAKE_CROSSCOMPILING)
     set_property(TARGET Qt5::qdbuscpp2xml PROPERTY IMPORTED_LOCATION ${NATIVE_QT_BINDIR}/qdbuscpp2xml)
     add_executable(Qt5::qdbusxml2cpp IMPORTED)
     set_property(TARGET Qt5::qdbuscpp2xml PROPERTY IMPORTED_LOCATION ${NATIVE_QT_BINDIR}/qdbusxml2cpp)
-ENDIF(CMAKE_CROSSCOMPILING)
+ENDIF(WITH_KEYLEDSD AND CMAKE_CROSSCOMPILING)
 
 ##############################################################################
 # Include subprojects
