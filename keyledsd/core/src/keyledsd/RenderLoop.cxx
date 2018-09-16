@@ -139,6 +139,7 @@ void RenderLoop::run()
         ERROR("device error: ", error.what());
         return;
     }
+    std::copy(m_state.cbegin(), m_state.cend(), m_buffer.begin());
 
     try {
         for (;;) {
