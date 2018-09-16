@@ -3,6 +3,16 @@ Release Notes
 #############
 
 *****************************
+0.7.8.1 - current release
+*****************************
+
+Released on September 16th, 2018
+
+Bugfixes:
+
+- Fix invalid layout files.
+
+*****************************
 0.7.8 - current release
 *****************************
 
