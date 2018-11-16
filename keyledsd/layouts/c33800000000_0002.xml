@@ -3,17 +3,17 @@
   <spurious zone="1" code="0x31"/>
   <keyboard x="11" y="42" width="44" height="44" zone="16">
     <row>
-      <key code="0x01" />
+      <key glyph="Logo" code="0x01" style="logo" />
     </row>
   </keyboard>
   <keyboard x="521" y="56" width="110" height="18" zone="64">
     <row>
       <key style="blank" width=".1" />
-      <key glyph="NumLock" code="0x05" width=".2" />
+      <key glyph="NumLockLed" code="0x05" width=".2" />
       <key style="blank" width=".8" />
-      <key glyph="CapsLock" code="0x03" width=".2" />
+      <key glyph="CapsLockLed" code="0x03" width=".2" />
       <key style="blank" width=".8" />
-      <key glyph="ScrollLock" code="0x04" width=".2" />
+      <key glyph="ScrollLockLed" code="0x04" width=".2" />
       <key style="blank" width=".1" />
     </row>
   </keyboard>
