@@ -3,7 +3,17 @@ Release Notes
 #############
 
 *****************************
-0.7.8.1 - current release
+0.7.9 - current release
+*****************************
+
+Released on November 17th, 2018
+
+Bufixes:
+
+- Add names for logo and status leds for G610, G810 and GPro — #22, #26.
+
+*****************************
+0.7.8.1
 *****************************
 
 Released on September 16th, 2018
@@ -13,7 +23,7 @@ Bugfixes:
 - Fix invalid layout files.
 
 *****************************
-0.7.8 - current release
+0.7.8
 *****************************
 
 Released on September 16th, 2018
