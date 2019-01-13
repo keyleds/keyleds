@@ -82,7 +82,8 @@ void EffectService::destroyRenderTarget(RenderTarget * ptr)
     auto it = std::find_if(m_renderTargets.begin(), m_renderTargets.end(),
                            [ptr](const auto & item) { return item.get() == ptr; });
     assert(it != m_renderTargets.end());
-    std::iter_swap(it, m_renderTargets.end() - 1);
+
+    if (it != m_renderTargets.end() - 1) { *it = std::move(m_renderTargets.back()); }
     m_renderTargets.pop_back();
 }
 

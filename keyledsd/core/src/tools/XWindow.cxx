@@ -74,18 +74,13 @@ int xlib::Display::connection() const
 
 Atom xlib::Display::atom(const std::string & name) const
 {
-    // Atoms are kept sorted, so we can use bisect algorithm here
-    const auto it = std::lower_bound(
-        m_atomCache.cbegin(), m_atomCache.cend(), name,
-        [](const auto & entry, const auto & name) { return entry.first < name; }
-    );
-    if (it != m_atomCache.cend() && it->first == name) {
-        return it->second;
-    }
+    const auto it = std::find_if(m_atomCache.cbegin(), m_atomCache.cend(),
+                                 [&name](const auto & entry) { return entry.first == name; });
+    if (it != m_atomCache.cend()) { return it->second; }
 
-    // Not in cache, run the query and insert it at correct spot, keeping cache sorted
+    // Not in cache, run the query
     Atom atom = XInternAtom(m_display.get(), name.c_str(), True);
-    m_atomCache.emplace(it, name, atom);
+    m_atomCache.emplace_back(name, atom);
     return atom;
 }
 
@@ -135,7 +130,8 @@ void xlib::Display::unregisterHandler(subscription_id_type id)
     auto it = std::find_if(m_handlers.begin(), m_handlers.end(),
                            [id](const auto & item){ return item.id == id; });
     assert(it != m_handlers.end());
-    std::iter_swap(it, m_handlers.end() - 1);
+
+    if (it != m_handlers.end() - 1) { *it = std::move(m_handlers.back()); }
     m_handlers.pop_back();
     DEBUG("unsubscribed from events => ", id);
 }

@@ -66,11 +66,7 @@ FileWatcher::subscription FileWatcher::subscribe(const std::string & path, event
     if (wd < 0) {
         throw std::system_error(errno, std::generic_category());
     }
-    m_listeners.insert(
-        std::upper_bound(m_listeners.begin(), m_listeners.end(), wd,
-                         [](watch_id id, const auto & listener) { return id < listener.id; }),
-        {wd, listener}
-    );
+    m_listeners.push_back({wd, listener});
     DEBUG("subscribed to events on ", path, " => ", wd);
     return subscription(*this, wd);
 }
@@ -79,11 +75,11 @@ void FileWatcher::unsubscribe(watch_id wd)
 {
     auto it = std::find_if(m_listeners.begin(), m_listeners.end(),
                            [wd](const auto & listener) { return listener.id == wd; });
-    if (it == m_listeners.end()) {
-        throw std::invalid_argument("Unknown subscription");
-    }
+    assert(it != m_listeners.end());
+
     inotify_rm_watch(m_fd, wd);
-    std::iter_swap(it, m_listeners.end() - 1);
+
+    if (it != m_listeners.end() - 1) { *it = std::move(m_listeners.back()); }
     m_listeners.pop_back();
     DEBUG("unsubscribed from events => ", wd);
 }
@@ -99,12 +95,11 @@ void FileWatcher::onNotifyReady(int)
 
     ssize_t nread;
     while ((nread = read(m_fd, &buffer, sizeof(buffer))) >= 0) {
-        auto it = std::lower_bound(
-            m_listeners.begin(), m_listeners.end(), buffer.event.wd,
-            [](const auto & listener, watch_id id) { return listener.id < id; }
+        auto it = std::find_if(
+            m_listeners.begin(), m_listeners.end(),
+            [&](const auto & listener) { return listener.id == buffer.event.wd; }
         );
         if (it == m_listeners.end()) { continue; }
-        if (it->id != buffer.event.wd) { continue; }
         INFO("Got event for ", it->id, ": ", std::string(buffer.event.name, buffer.event.len));
         it->callback(static_cast<enum event>(buffer.event.mask),
                      buffer.event.cookie,

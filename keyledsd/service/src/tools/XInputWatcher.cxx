@@ -95,11 +95,11 @@ void XInputWatcher::handleEvent(const XEvent & event)
         DEBUG("key ", data->detail - MIN_KEYCODE, " ",
               event.xcookie.evtype == XI_RawKeyPress ? "pressed" : "released",
               " on device ", data->deviceid);
-        auto it = std::lower_bound(
-            m_devices.begin(), m_devices.end(), data->deviceid,
-            [](const auto & device, auto id) { return device.handle() < id; }
+        auto it = std::find_if(
+            m_devices.begin(), m_devices.end(),
+            [&](const auto & device) { return device.handle() == data->deviceid; }
         );
-        if (it != m_devices.end() && it->handle() == data->deviceid) {
+        if (it != m_devices.end()) {
             emit keyEventReceived(it->devNode(), data->detail - MIN_KEYCODE,
                                   event.xcookie.evtype == XI_RawKeyPress);
         }
@@ -110,11 +110,11 @@ void XInputWatcher::handleEvent(const XEvent & event)
 void XInputWatcher::onInputEnabled(int deviceId, int type)
 {
     if (type != XISlaveKeyboard) { return; }
-    auto it = std::lower_bound(
-        m_devices.begin(), m_devices.end(), deviceId,
-        [](const auto & device, auto id) { return device.handle() < id; }
+    auto it = std::find_if(
+        m_devices.begin(), m_devices.end(),
+        [&](const auto & device) { return device.handle() == deviceId; }
     );
-    if (it != m_devices.end() && it->handle() == deviceId) { return; }
+    if (it != m_devices.end()) { return; }
 
     auto device = Device(m_display, deviceId);
     if (device.devNode().empty()) { return; }
@@ -128,21 +128,22 @@ void XInputWatcher::onInputEnabled(int deviceId, int type)
               errors.errors().size(), " errors");
     } else {
         VERBOSE("xinput keyboard ", deviceId, " enabled for device ", device.devNode());
-        m_devices.emplace(it, std::move(device));
+        m_devices.emplace_back(std::move(device));
     }
 }
 
 void XInputWatcher::onInputDisabled(int deviceId, int type)
 {
     if (type != XISlaveKeyboard) { return; }
-    auto it = std::lower_bound(
-        m_devices.begin(), m_devices.end(), deviceId,
-        [](const auto & device, auto id) { return device.handle() < id; }
+    auto it = std::find_if(
+        m_devices.begin(), m_devices.end(),
+        [&](const auto & device) { return device.handle() == deviceId; }
     );
-    if (it == m_devices.end() || it->handle() != deviceId) { return; }
+    if (it == m_devices.end()) { return; }
 
     ErrorCatcher errors;
-    m_devices.erase(it);
+    if (it != m_devices.end() - 1) { *it = std::move(m_devices.back()); }
+    m_devices.pop_back();
     VERBOSE("xinput keyboard ", deviceId, " disabled");
 
     errors.synchronize(m_display);

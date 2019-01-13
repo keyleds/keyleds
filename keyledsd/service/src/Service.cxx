@@ -46,7 +46,7 @@ static void merge(std::vector<std::pair<std::string, std::string>> & lhs,
             // Key exists
             if (newItem.second.empty()) {
                 // Value is empty, destroy key
-                std::iter_swap(it, lhs.end() - 1);
+                if (it != lhs.end() - 1) { *it = std::move(lhs.back()); }
                 lhs.pop_back();
             } else {
                 // Update with new value
@@ -233,8 +233,8 @@ void Service::onDeviceRemoved(const ::device::Description & description)
                                return device->sysPath() == description.sysPath();
                            });
     if (it != m_devices.end()) {
-        std::unique_ptr<DeviceManager> manager = std::move(*it);
-        std::iter_swap(it, m_devices.end() - 1);
+        auto manager = std::move(*it);
+        if (it != m_devices.end() - 1) { *it = std::move(m_devices.back()); }
         m_devices.pop_back();
 
         INFO("removing device ", manager->serial());

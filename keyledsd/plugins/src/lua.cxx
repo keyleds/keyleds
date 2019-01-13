@@ -66,7 +66,7 @@ public:
                                [ptr](const auto & state) { return state.effect.get() == ptr; });
         assert(it != m_states.end());
 
-        std::iter_swap(it, m_states.end() - 1);
+        if (it != m_states.end() - 1) { *it = std::move(m_states.back()); }
         m_states.pop_back();
     }
 

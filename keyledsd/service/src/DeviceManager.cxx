@@ -328,11 +328,9 @@ std::vector<keyleds::effect::interface::Effect *> DeviceManager::loadEffects(con
 
 DeviceManager::EffectGroup & DeviceManager::getEffectGroup(const Configuration::EffectGroup & conf)
 {
-    auto eit = std::lower_bound(
-        m_effectGroups.begin(), m_effectGroups.end(), conf.name(),
-        [](const auto & group, const auto & name) { return group.name() < name; }
-    );
-    if (eit != m_effectGroups.end() && eit->name() == conf.name()) { return *eit; }
+    auto eit = std::find_if(m_effectGroups.begin(), m_effectGroups.end(),
+                            [&](const auto & group) { return group.name() == conf.name(); });
+    if (eit != m_effectGroups.end()) { return *eit; }
 
     // Load key groups
     std::vector<KeyDatabase::KeyGroup> keyGroups;
@@ -359,7 +357,7 @@ DeviceManager::EffectGroup & DeviceManager::getEffectGroup(const Configuration::
         effects.emplace_back(std::move(effect));
     }
 
-    eit = m_effectGroups.emplace(eit, conf.name(), std::move(effects));
-    return *eit;
+    m_effectGroups.emplace_back(conf.name(), std::move(effects));
+    return m_effectGroups.back();
 }
 

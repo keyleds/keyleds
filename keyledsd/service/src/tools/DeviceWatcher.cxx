@@ -189,7 +189,7 @@ void DeviceWatcher::scan()
         if (it != m_known.end()) {
             result.emplace_back(std::move(*it));
             // Remove empty device description
-            std::iter_swap(it, m_known.end() - 1);
+            if (it != m_known.end() - 1) { *it = std::move(m_known.back()); }
             m_known.pop_back();
         } else {
             auto device = std::unique_ptr<struct udev_device>(
@@ -259,7 +259,7 @@ void DeviceWatcher::onMonitorReady(int)
     } else if (action == "remove") {
         if (kit != m_known.end()) {
             emit deviceRemoved(*kit);
-            std::iter_swap(kit, m_known.end() - 1);
+            if (kit != m_known.end() - 1) { *kit = std::move(m_known.back()); }
             m_known.pop_back();
         }
     }
