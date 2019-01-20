@@ -256,7 +256,7 @@ LayoutDescription::Key::~Key() {}
 
 /****************************************************************************/
 
-LayoutDescription::ParseError::ParseError(const std::string & what, int line)
+LayoutDescription::ParseError::ParseError(const std::string & what, long line)
  : std::runtime_error(what), m_line(line)
 {}
 

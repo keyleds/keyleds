@@ -43,8 +43,8 @@ namespace tools {
 class YAMLParser
 {
 public:
-    using line_t = unsigned int;
-    using col_t = unsigned int;
+    using line_t = std::size_t;
+    using col_t = std::size_t;
 
     class ParseError : public std::runtime_error
     {

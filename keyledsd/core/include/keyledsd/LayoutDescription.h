@@ -83,12 +83,12 @@ public:
 class LayoutDescription::ParseError : public std::runtime_error
 {
 public:
-                ParseError(const std::string & what, int line);
+                ParseError(const std::string & what, long line);
                 ~ParseError();
 
-    int         line() const noexcept { return m_line; }
+    long        line() const noexcept { return m_line; }
 private:
-    int         m_line; ///< Line of the parsing error, as reported by xml lib
+    long        m_line; ///< Line of the parsing error, as reported by xml lib
 };
 
 /****************************************************************************/
