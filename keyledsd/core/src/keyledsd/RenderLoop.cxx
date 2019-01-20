@@ -113,7 +113,8 @@ bool RenderLoop::render(milliseconds elapsed)
 
             // If some lights have changed within current block, send directives to device
             if (!m_directives.empty()) {
-                m_device.setColors(block, m_directives.data(), m_directives.size());
+                m_device.setColors(block, m_directives.data(),
+                                   static_cast<Device::size_type>(m_directives.size()));
                 hasChanges = true;
             }
         }

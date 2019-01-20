@@ -135,7 +135,7 @@ void Logitech::fillColor(const KeyBlock & block, const RGBColor color)
     }
 }
 
-void Logitech::setColors(const KeyBlock & block, const ColorDirective colors[], size_t size)
+void Logitech::setColors(const KeyBlock & block, const ColorDirective colors[], size_type size)
 {
     assert(size > 0);
     struct keyleds_key_color buffer[size];

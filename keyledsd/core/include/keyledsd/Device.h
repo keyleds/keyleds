@@ -56,6 +56,7 @@ public:
 
     using key_block_id_type = uint8_t;
     using key_id_type = uint8_t;
+    using size_type = unsigned;
 
 protected:
     using block_list = std::vector<KeyBlock>;
@@ -86,7 +87,7 @@ public:
     virtual void        flush() = 0;
     virtual bool        resync() noexcept = 0;
     virtual void        fillColor(const KeyBlock & block, const RGBColor) = 0;
-    virtual void        setColors(const KeyBlock & block, const ColorDirective[], size_t size) = 0;
+    virtual void        setColors(const KeyBlock & block, const ColorDirective[], size_type size) = 0;
     virtual void        getColors(const KeyBlock & block, ColorDirective[]) = 0;
     virtual void        commitColors() = 0;
 

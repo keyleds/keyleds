@@ -87,7 +87,7 @@ public:
     void            flush() override;
     bool            resync() noexcept override;
     void            fillColor(const KeyBlock & block, const RGBColor) override;
-    void            setColors(const KeyBlock & block, const ColorDirective[], size_t size) override;
+    void            setColors(const KeyBlock & block, const ColorDirective[], size_type size) override;
     void            getColors(const KeyBlock & block, ColorDirective[]) override;
     void            commitColors() override;
 
