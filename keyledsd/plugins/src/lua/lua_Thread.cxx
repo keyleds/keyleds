@@ -57,7 +57,7 @@ static int index(lua_State * lua)
 
 /****************************************************************************/
 
-const char * metatable<Thread>::name = "Thread";
+const char * const metatable<Thread>::name = "Thread";
 const struct luaL_Reg metatable<Thread>::methods[] = {
     { "new",        luaNewThread },
     { "pause",      pause },

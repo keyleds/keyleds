@@ -69,7 +69,7 @@ public:
         for (std::size_t idx = 0; idx < m_stars.size(); ++idx) {
             auto & star = m_stars[idx];
             rebirth(star);
-            star.age = idx * m_duration / m_stars.size();
+            star.age = idx * m_duration / static_cast<decltype(number)>(m_stars.size());
         }
     }
 
@@ -82,7 +82,7 @@ public:
                 star.color.red,
                 star.color.green,
                 star.color.blue,
-                star.color.alpha * (m_duration - star.age) / m_duration
+                RGBAColor::channel_type(star.color.alpha * (m_duration - star.age) / m_duration)
             );
         }
 
@@ -91,24 +91,26 @@ public:
 
     void rebirth(Star & star)
     {
-        using distribution = std::uniform_int_distribution<>;
-
         if (star.key != nullptr) {
             (*m_buffer)[star.key->index] = RGBAColor{0, 0, 0, 0};
         }
         if (m_keys) {
+            using distribution = std::uniform_int_distribution<KeyGroup::size_type>;
             star.key = &(*m_keys)[distribution(0, m_keys->size() - 1)(m_random)];
         } else {
+            using distribution = std::uniform_int_distribution<KeyDatabase::size_type>;
             star.key = &m_service.keyDB()[distribution(0, m_service.keyDB().size() - 1)(m_random)];
         }
         if (m_colors.empty()) {
+            using distribution = std::uniform_int_distribution<unsigned int>;
             auto colordist = distribution(std::numeric_limits<RGBAColor::channel_type>::min(),
                                           std::numeric_limits<RGBAColor::channel_type>::max());
-            star.color.red = colordist(m_random);
-            star.color.green = colordist(m_random);
-            star.color.blue = colordist(m_random);
-            star.color.alpha = 255;
+            star.color.red = RGBAColor::channel_type(colordist(m_random));
+            star.color.green = RGBAColor::channel_type(colordist(m_random));
+            star.color.blue = RGBAColor::channel_type(colordist(m_random));
+            star.color.alpha = 255u;
         } else {
+            using distribution = std::uniform_int_distribution<std::size_t>;
             star.color = m_colors[distribution(0, m_colors.size() - 1)(m_random)];
         }
         star.age = milliseconds::zero();

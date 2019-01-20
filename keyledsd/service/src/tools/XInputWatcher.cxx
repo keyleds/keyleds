@@ -63,8 +63,9 @@ void XInputWatcher::scan()
         XIFreeDeviceInfo
     );
     assert(info != nullptr);
+    assert(nInfo >= 0);
 
-    for (int i = 0; i < nInfo; ++i) {
+    for (std::size_t i = 0; i < static_cast<unsigned>(nInfo); ++i) {
         if (info[i].enabled) {
             onInputEnabled(info[i].deviceid, info[i].use);
         } else {

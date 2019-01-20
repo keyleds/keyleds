@@ -122,7 +122,7 @@ static void sigHandler(int sig)
 }
 
 /// Returns a socket that get an int everytime sigHandler catches a signal
-static int openSignalSocket(std::vector<int> sigs)
+static int openSignalSocket(const std::vector<int> & sigs)
 {
     int signalSockets[2];
     if (socketpair(AF_UNIX, SOCK_STREAM, 0, signalSockets) < 0) { return -1; }
@@ -140,7 +140,7 @@ static int openSignalSocket(std::vector<int> sigs)
 static void handleSignalEvent(const Options & options, keyleds::Service * service, int fd)
 {
     int sig;
-    while (read(fd, &sig, sizeof(sig)) == sizeof(sig)) {
+    while (read(fd, &sig, sizeof(sig)) == static_cast<ssize_t>(sizeof(sig))) {
         switch(sig) {
             case SIGINT:
             case SIGQUIT:
@@ -150,8 +150,7 @@ static void handleSignalEvent(const Options & options, keyleds::Service * servic
             case SIGHUP:
                 INFO("reloading ", options.configPath);
                 try {
-                    auto conf = Configuration::loadFile(options.configPath);
-                    service->setConfiguration(std::move(conf));
+                    service->setConfiguration(Configuration::loadFile(options.configPath));
                 } catch (std::exception & error) {
                     CRITICAL("reloading failed: ", error.what());
                 }

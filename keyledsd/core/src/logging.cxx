@@ -121,10 +121,10 @@ void logging::FilePolicy::write(level_t level, const std::string & name, const s
     std::size_t done = 0;
 
     while (todo > 0) {
-        ssize_t written = ::write(m_fd, data.c_str() + done, todo);
+        auto written = ::write(m_fd, data.c_str() + done, todo);
         if (written < 0) { break; } // Do not handle the error
-        todo -= written;
-        done += written;
+        todo -= static_cast<std::size_t>(written);
+        done += static_cast<std::size_t>(written);;
     }
 }
 

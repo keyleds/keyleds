@@ -54,7 +54,7 @@ int luaNewInterpolator(lua_State *);
 
 /// Registration of Interpolator as lua object
 template <> struct metatable<Interpolator>
-    { static const char * name; static constexpr struct luaL_Reg * methods = nullptr;
+    { static const char * const name; static constexpr struct luaL_Reg * methods = nullptr;
       static const struct luaL_Reg meta_methods[]; struct weak_table : std::false_type{}; };
 
 /****************************************************************************/

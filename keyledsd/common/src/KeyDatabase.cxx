@@ -113,11 +113,11 @@ KeyDatabase::relation_list KeyDatabase::computeRelations(const key_list & keys)
 
 /****************************************************************************/
 
-KeyDatabase::Key::Key(index_type index, int keyCode, std::string name, Rect position)
- : index(index),
-   keyCode(keyCode),
-   name(std::move(name)),
-   position(position)
+KeyDatabase::Key::Key(index_type indexv, int keyCodev, std::string namev, Rect positionv)
+ : index(indexv),
+   keyCode(keyCodev),
+   name(std::move(namev)),
+   position(positionv)
 {}
 
 KeyDatabase::Key::~Key() {}

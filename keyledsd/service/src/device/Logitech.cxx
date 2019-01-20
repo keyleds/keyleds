@@ -101,7 +101,7 @@ std::string Logitech::resolveKey(key_block_id_type blockId, key_id_type keyId) c
 
 int Logitech::decodeKeyId(key_block_id_type blockId, key_id_type keyId) const
 {
-    return keyleds_translate_scancode(keyleds_block_id_t(blockId), keyId);
+    return static_cast<int>(keyleds_translate_scancode(keyleds_block_id_t(blockId), keyId));
 }
 
 /****************************************************************************/
@@ -156,7 +156,7 @@ void Logitech::getColors(const KeyBlock & block, ColorDirective colors[])
     struct keyleds_key_color buffer[block.keys().size()];
 
     if (!keyleds_get_leds(m_device.get(), KEYLEDS_TARGET_DEFAULT, keyleds_block_id_t(block.id()),
-                          buffer, 0, block.keys().size())) {
+                          buffer, 0, static_cast<unsigned>(block.keys().size()))) {
         throw error(keyleds_get_error_str(), keyleds_get_errno());
     }
     std::transform(buffer, buffer + block.keys().size(), colors,
@@ -234,9 +234,10 @@ Logitech::block_list Logitech::getBlocks(struct keyleds_device * device)
             }
         }
 
+        assert(block.block_id >= 0);
         blocks.emplace_back(
             block.block_id,
-            keyleds_lookup_string(keyleds_block_id_names, block.block_id),
+            keyleds_lookup_string(keyleds_block_id_names, static_cast<unsigned>(block.block_id)),
             std::move(key_ids),
             RGBColor{block.red, block.green, block.blue}
         );

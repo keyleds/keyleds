@@ -83,10 +83,10 @@ private:
     {
         auto & stream = *static_cast<std::istream*>(stream_ptr);
         if (!stream.eof()) {
-            stream.read(reinterpret_cast<std::istream::char_type*>(buffer), size);
-            *size_read = stream.gcount();
+            stream.read(reinterpret_cast<std::istream::char_type*>(buffer), std::streamsize(size));
+            *size_read = static_cast<std::size_t>(stream.gcount());
         } else {
-            *size_read = 0;
+            *size_read = 0u;
         }
         return stream.bad() ? 0 : 1;
     }

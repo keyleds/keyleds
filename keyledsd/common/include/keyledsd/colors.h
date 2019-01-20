@@ -65,7 +65,7 @@ inline std::ostream & operator<<(std::ostream & out, RGBColor obj)
  * Holds a single R8G8B8A8 value. Should not generate any padding, but remember
  * to static_assert sizeof(RGBAColor) == 4 if using that fact.
  */
-struct RGBAColor final {
+struct alignas(4) RGBAColor final {
     using channel_type = unsigned char;
 
     channel_type red;

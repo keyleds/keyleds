@@ -23,7 +23,7 @@
 #include "keyledsd/utils.h"
 
 static constexpr float pi = 3.14159265358979f;
-static constexpr int accuracy = 1024;
+static constexpr unsigned int accuracy = 1024;
 
 static_assert(accuracy && ((accuracy & (accuracy - 1)) == 0),
               "accuracy must be a power of two");

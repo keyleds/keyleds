@@ -27,7 +27,7 @@ namespace keyleds { namespace lua {
 
 /// Registration of RenderTarget as a lua object
 template <> struct metatable<RenderTarget *>
-    { static const char * name; static const struct luaL_Reg methods[];
+    { static const char * const name; static const struct luaL_Reg methods[];
       static const struct luaL_Reg meta_methods[]; struct weak_table : std::false_type{}; };
 
 /****************************************************************************/

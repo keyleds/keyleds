@@ -20,6 +20,7 @@
 #include <cassert>
 #include <cstring>
 #include <iomanip>
+#include <limits>
 #include <sstream>
 #include <lua.hpp>
 #include "keyledsd/colors.h"
@@ -55,7 +56,7 @@ static int add(lua_State * lua)
     luaL_getmetatable(lua, metatable<RGBAColor>::name);
     lua_setmetatable(lua, -2);
 
-    for (unsigned i = 1; i <= 3; ++i) {
+    for (int i = 1; i <= 3; ++i) {
         lua_rawgeti(lua, 1, i);
         lua_rawgeti(lua, 2, i);
         lua_pushnumber(lua, lua_tonumber(lua, -2) + multiplier * lua_tonumber(lua, -1));
@@ -76,7 +77,7 @@ static int div(lua_State * lua)
     luaL_getmetatable(lua, metatable<RGBAColor>::name);
     lua_setmetatable(lua, -2);
 
-    for (unsigned i = 1; i <= 3; ++i) {
+    for (int i = 1; i <= 3; ++i) {
         lua_rawgeti(lua, 1, i);
         lua_pushnumber(lua, lua_tonumber(lua, -1) / divisor);
         lua_rawseti(lua, -3, i);
@@ -117,7 +118,7 @@ static int mul(lua_State * lua)
     luaL_getmetatable(lua, metatable<RGBAColor>::name);
     lua_setmetatable(lua, -2);
 
-    for (unsigned i = 1; i <= 3; ++i) {
+    for (int i = 1; i <= 3; ++i) {
         lua_rawgeti(lua, 1, i);
         lua_pushnumber(lua, lua_tonumber(lua, -1) * multiplier);
         lua_rawseti(lua, -3, i);
@@ -146,7 +147,7 @@ static int sub(lua_State * lua)
     luaL_getmetatable(lua, metatable<RGBAColor>::name);
     lua_setmetatable(lua, -2);
 
-    for (unsigned i = 1; i <= 3; ++i) {
+    for (int i = 1; i <= 3; ++i) {
         lua_rawgeti(lua, 1, i);
         lua_rawgeti(lua, 2, i);
         lua_pushnumber(lua, lua_tonumber(lua, -2) - multiplier * lua_tonumber(lua, -1));
@@ -203,11 +204,12 @@ RGBAColor lua_tocolor(lua_State * lua, int index)
         luaL_argerror(lua, 2, badTypeErrorMessage);
     }
 
+    static constexpr unsigned channel_max = std::numeric_limits<RGBAColor::channel_type>::max();
     auto result = RGBAColor(
-        std::min(255, int(256.0 * lua_tonumber(lua, -4))),
-        std::min(255, int(256.0 * lua_tonumber(lua, -3))),
-        std::min(255, int(256.0 * lua_tonumber(lua, -2))),
-        std::min(255, int(256.0 * lua_tonumber(lua, -1)))
+        RGBAColor::channel_type(std::min(channel_max, unsigned(256.0 * lua_tonumber(lua, -4)))),
+        RGBAColor::channel_type(std::min(channel_max, unsigned(256.0 * lua_tonumber(lua, -3)))),
+        RGBAColor::channel_type(std::min(channel_max, unsigned(256.0 * lua_tonumber(lua, -2)))),
+        RGBAColor::channel_type(std::min(channel_max, unsigned(256.0 * lua_tonumber(lua, -1))))
     );
     lua_pop(lua, 4);
     CHECK_TOP(lua, 0);
@@ -226,7 +228,7 @@ RGBAColor lua_checkcolor(lua_State * lua, int index)
 
 /****************************************************************************/
 
-const char * metatable<RGBAColor>::name = "LRGBAColor";
+const char * const metatable<RGBAColor>::name = "LRGBAColor";
 const struct luaL_Reg metatable<RGBAColor>::meta_methods[] = {
     { "__add",      add },
     { "__div",      div },

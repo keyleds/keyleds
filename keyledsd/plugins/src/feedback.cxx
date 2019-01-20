@@ -55,7 +55,9 @@ public:
                 m_color.red,
                 m_color.green,
                 m_color.blue,
-                m_color.alpha * std::min(lifetime - keyPress.age, m_decay) / m_decay
+                RGBAColor::channel_type(
+                    m_color.alpha * std::min(lifetime - keyPress.age, m_decay) / m_decay
+                )
             );
         }
         m_presses.erase(

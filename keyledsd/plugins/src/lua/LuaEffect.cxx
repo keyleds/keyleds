@@ -51,7 +51,7 @@ static constexpr std::array<const char *, 25> globalWhitelist = {{
     "_G", "_VERSION"
 }};
 
-static const void * const threadToken = &threadToken;
+static void * const threadToken = const_cast<void **>(&threadToken);
 
 /****************************************************************************/
 // Helper functions
@@ -140,7 +140,7 @@ void LuaEffect::setupState()
     }
 
     // Insert thread list
-    lua_pushlightuserdata(lua, const_cast<void *>(threadToken));
+    lua_pushlightuserdata(lua, threadToken);
     lua_newtable(lua);
     lua_rawset(lua, LUA_REGISTRYINDEX);
 
@@ -157,7 +157,7 @@ void LuaEffect::setupState()
         lua_setfield(lua, -2, "deviceSerial");
 
         auto & config = m_service.configuration();
-        lua_createtable(lua, 0, config.size());
+        lua_createtable(lua, 0, static_cast<int>(config.size()));
         for (const auto & item : config) {
             lua_pushlstring(lua, item.first.data(), item.first.size());
             lua_pushlstring(lua, item.second.data(), item.second.size());
@@ -166,7 +166,7 @@ void LuaEffect::setupState()
         lua_setfield(lua, -2, "config");
 
         auto & groups = m_service.keyGroups();
-        lua_createtable(lua, 0, groups.size());
+        lua_createtable(lua, 0, static_cast<int>(groups.size()));
         for (const auto & group : groups) {
             lua_pushlstring(lua, group.name().data(), group.name().size());
             lua_push(lua, &group);
@@ -237,7 +237,7 @@ void LuaEffect::handleContextChange(const string_map & data)
     SAVE_TOP(lua);
     lua_pushcfunction(lua, luaErrorHandler);        // push(errhandler)
     if (pushHook(lua, "onContextChange")) {         // push(hook)
-        lua_createtable(lua, 0, data.size());       // push table
+        lua_createtable(lua, 0, static_cast<int>(data.size())); // push table
         for (const auto & item : data) {
             lua_pushlstring(lua, item.first.c_str(), item.first.size());
             lua_pushlstring(lua, item.second.c_str(), item.second.size());
@@ -259,7 +259,7 @@ void LuaEffect::handleGenericEvent(const string_map & data)
     SAVE_TOP(lua);
     lua_pushcfunction(lua, luaErrorHandler);        // push(errhandler)
     if (pushHook(lua, "onGenericEvent")) {          // push(hook)
-        lua_createtable(lua, 0, data.size());       // push table
+        lua_createtable(lua, 0, static_cast<int>(data.size())); // push table
         for (const auto & item : data) {
             lua_pushlstring(lua, item.first.c_str(), item.first.size());
             lua_pushlstring(lua, item.second.c_str(), item.second.size());
@@ -327,7 +327,7 @@ int LuaEffect::createThread(lua_State * lua, int nargs)
     lua_setfield(lua, -2, "thread");                // pop(thread)
     lua_setfenv(lua, -2);                           // pop(fenv)
 
-    lua_pushlightuserdata(lua, const_cast<void *>(threadToken)); // push(token)
+    lua_pushlightuserdata(lua, threadToken); // push(token)
     lua_rawget(lua, LUA_REGISTRYINDEX);             // pop(token) push(threadlist)
     lua_pushvalue(lua, -2);                         // push(thread)
     auto id = luaL_ref(lua, -2);                    // pop(thread)
@@ -346,7 +346,7 @@ int LuaEffect::createThread(lua_State * lua, int nargs)
 void LuaEffect::destroyThread(lua_State * lua, Thread & thread)
 {
     SAVE_TOP(lua);
-    lua_pushlightuserdata(lua, const_cast<void *>(threadToken));
+    lua_pushlightuserdata(lua, threadToken);
     lua_rawget(lua, LUA_REGISTRYINDEX);
 
     luaL_unref(lua, -1, thread.id);
@@ -359,7 +359,7 @@ void LuaEffect::stepThreads(milliseconds elapsed)
 {
     auto * lua = m_state.get();
     SAVE_TOP(lua);
-    lua_pushlightuserdata(lua, const_cast<void *>(threadToken));
+    lua_pushlightuserdata(lua, threadToken);
     lua_rawget(lua, LUA_REGISTRYINDEX);
 
     size_t size = lua_objlen(lua, -1);

@@ -66,7 +66,7 @@ static int toString(lua_State * lua)
 
 /****************************************************************************/
 
-const char * metatable<const KeyDatabase::KeyGroup *>::name = "LKeyGroup";
+const char * const metatable<const KeyDatabase::KeyGroup *>::name = "LKeyGroup";
 const struct luaL_Reg metatable<const KeyDatabase::KeyGroup *>::meta_methods[] = {
     { "__index",    index},
     { "__len",      len},

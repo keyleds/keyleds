@@ -49,7 +49,7 @@ public:
     using iterator = value_type *;
     using const_iterator = const value_type *;
 public:
-                                RenderTarget(size_type);
+    explicit                    RenderTarget(size_type);
                                 RenderTarget(RenderTarget && other) noexcept
                                  : m_colors(nullptr), m_size(0u), m_capacity(0u) { swap(*this, other); }
     RenderTarget &              operator=(RenderTarget &&) noexcept;

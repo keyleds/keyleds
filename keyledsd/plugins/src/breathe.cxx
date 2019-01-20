@@ -57,7 +57,7 @@ public:
 
         float t = float(m_time.count()) / float(m_period.count());
         float alphaf = -std::cos(2.0f * pi * t);
-        uint8_t alpha = m_alpha * (unsigned(128.0f * alphaf) + 128) / 256;
+        auto alpha = RGBAColor::channel_type(m_alpha * (unsigned(128.0f * alphaf) + 128) / 256);
 
         if (m_keys) {
             for (const auto & key : *m_keys) { (*m_buffer)[key.index].alpha = alpha; }

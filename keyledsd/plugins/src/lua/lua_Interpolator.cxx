@@ -29,7 +29,7 @@ using milliseconds = Interpolator::milliseconds;
 
 static constexpr milliseconds maximumDuration = 1h;  // One hour
 
-static const void * const interpolatorToken = &interpolatorToken;
+static void * const interpolatorToken = const_cast<void **>(&interpolatorToken);
 static const char targetLink[] = "target";
 
 /****************************************************************************/
@@ -37,12 +37,12 @@ static const char targetLink[] = "target";
 static void pushRegistry(lua_State * lua)
 {
     SAVE_TOP(lua);
-    lua_pushlightuserdata(lua, const_cast<void *>(interpolatorToken));
+    lua_pushlightuserdata(lua, interpolatorToken);
     lua_rawget(lua, LUA_REGISTRYINDEX);
     if (!lua_istable(lua, -1)) {
         lua_pop(lua, 1);
         lua_createtable(lua, 1, 1);
-        lua_pushlightuserdata(lua, const_cast<void *>(interpolatorToken));
+        lua_pushlightuserdata(lua, interpolatorToken);
         lua_pushvalue(lua, -2);
         lua_rawset(lua, LUA_REGISTRYINDEX);
     }
@@ -242,7 +242,7 @@ RGBAColor Interpolator::value() const
 
 /****************************************************************************/
 
-const char * metatable<Interpolator>::name = "Interpolator";
+const char * const metatable<Interpolator>::name = "Interpolator";
 const struct luaL_Reg metatable<Interpolator>::meta_methods[] = {
     { "__index",        index },
     { nullptr,          nullptr}

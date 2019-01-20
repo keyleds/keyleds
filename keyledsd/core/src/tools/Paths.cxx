@@ -61,7 +61,7 @@ static std::string expandVars(const std::string & value)
     static const std::regex varRe("\\$\\{([^}]+)\\}");
 
     auto it = std::sregex_iterator(value.begin(), value.end(), varRe);
-    auto endIt = std::sregex_iterator();
+    const auto endIt = std::sregex_iterator();
     auto result = value;
 
     std::ptrdiff_t offset = 0;

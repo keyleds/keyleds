@@ -335,8 +335,8 @@ DeviceManager::EffectGroup & DeviceManager::getEffectGroup(const Configuration::
     // Load key groups
     std::vector<KeyDatabase::KeyGroup> keyGroups;
 
-    auto group_from_conf = [this](const auto & conf) {
-        return m_keyDB.makeGroup(conf.name(), conf.keys().begin(), conf.keys().end());
+    auto group_from_conf = [this](const auto & gconf) {
+        return m_keyDB.makeGroup(gconf.name(), gconf.keys().begin(), gconf.keys().end());
     };
     std::transform(conf.keyGroups().begin(), conf.keyGroups().end(),
                    std::back_inserter(keyGroups), group_from_conf);

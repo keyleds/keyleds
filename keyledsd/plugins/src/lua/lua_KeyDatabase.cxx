@@ -108,7 +108,7 @@ static int len(lua_State * lua)
 
 /****************************************************************************/
 
-const char * metatable<const KeyDatabase *>::name = "LKeyDatabase";
+const char * const metatable<const KeyDatabase *>::name = "LKeyDatabase";
 const struct luaL_Reg metatable<const KeyDatabase *>::meta_methods[] = {
     { "__index",        index },
     { "__len",          len },

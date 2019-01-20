@@ -23,6 +23,7 @@
 #include <cstring>
 #include <fstream>
 #include <istream>
+#include <limits>
 #include <sstream>
 #include <memory>
 #include "tools/Paths.h"
@@ -100,7 +101,7 @@ static void parseKeyboard(const xmlNode * keyboard, LayoutDescription::key_list 
             if (key->type != XML_ELEMENT_NODE || xmlStrcmp(key->name, KEY_TAG) != 0) { continue; }
             xmlString keyWidthStr(xmlGetProp(const_cast<xmlNode *>(key), KEY_ATTR_WIDTH), xmlFree);
             if (keyWidthStr != nullptr) {
-                auto keyWidthFloat = ::strtof((char*)keyWidthStr.get(), &strEnd);
+                auto keyWidthFloat = ::strtof(reinterpret_cast<char *>(keyWidthStr.get()), &strEnd);
                 if (*strEnd != '\0') {
                     std::ostringstream errMsg;
                     errMsg <<"Value '" <<keyWidthStr.get() <<"' in attribute '"
@@ -108,7 +109,7 @@ static void parseKeyboard(const xmlNode * keyboard, LayoutDescription::key_list 
                            <<"' element cannot be parsed as a float";
                     throw LayoutDescription::ParseError(errMsg.str(), xmlGetLineNo(const_cast<xmlNode *>(key)));
                 }
-                totalWidth += (unsigned int)(keyWidthFloat * 1000);
+                totalWidth += static_cast<unsigned int>(keyWidthFloat * 1000);
             } else {
                 totalWidth += 1000;
             }
@@ -123,8 +124,9 @@ static void parseKeyboard(const xmlNode * keyboard, LayoutDescription::key_list 
 
             unsigned keyWidth;
             if (keyWidthStr != nullptr) {
+                auto keyWidthFloat = ::strtof(reinterpret_cast<char*>(keyWidthStr.get()), &strEnd);
                 keyWidth = kbWidth
-                         * (unsigned int)(::strtof((char*)keyWidthStr.get(), &strEnd) * 1000)
+                         * static_cast<unsigned int>(keyWidthFloat * 1000)
                          / totalWidth;
             } else {
                 keyWidth = kbWidth * 1000 / totalWidth;
@@ -180,7 +182,7 @@ LayoutDescription LayoutDescription::parse(std::istream & stream)
     bufferStream << stream.rdbuf();
     std::string buffer = bufferStream.str();
     std::unique_ptr<xmlDoc, void(*)(xmlDocPtr)> document(
-        xmlCtxtReadMemory(context.get(), buffer.data(), buffer.size(),
+        xmlCtxtReadMemory(context.get(), buffer.data(), static_cast<int>(buffer.size()),
                           nullptr, nullptr, XML_PARSE_NOWARNING | XML_PARSE_NONET),
         xmlFreeDoc
     );
@@ -245,8 +247,9 @@ LayoutDescription LayoutDescription::loadFile(const std::string & name)
 
 /****************************************************************************/
 
-LayoutDescription::Key::Key(block_type block, code_type code, Rect position, std::string name)
- : block(block), code(code), position(position), name(std::move(name))
+LayoutDescription::Key::Key(block_type blockv, code_type codev,
+                            Rect positionv, std::string namev)
+ : block(blockv), code(codev), position(positionv), name(std::move(namev))
 {}
 
 LayoutDescription::Key::~Key() {}

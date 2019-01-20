@@ -92,18 +92,18 @@ void FileWatcher::onNotifyReady(int)
         // cppcheck-suppress unusedStructMember
         char                    reserve[sizeof(struct inotify_event) + NAME_MAX + 1];
     } buffer;
+    auto * eventptr = &buffer.event;   // must be pointer to capture in lambda
 
     ssize_t nread;
     while ((nread = read(m_fd, &buffer, sizeof(buffer))) >= 0) {
         auto it = std::find_if(
             m_listeners.begin(), m_listeners.end(),
-            [&](const auto & listener) { return listener.id == buffer.event.wd; }
+            [&](const auto & listener) { return listener.id == eventptr->wd; }
         );
         if (it == m_listeners.end()) { continue; }
-        INFO("Got event for ", it->id, ": ", std::string(buffer.event.name, buffer.event.len));
-        it->callback(static_cast<enum event>(buffer.event.mask),
-                     buffer.event.cookie,
-                     std::string(buffer.event.name, buffer.event.len));
+        INFO("Got event for ", it->id, ": ", std::string(eventptr->name, eventptr->len));
+        it->callback(static_cast<enum event>(eventptr->mask), eventptr->cookie,
+                     std::string(eventptr->name, eventptr->len));
         //NOTE at that point `it` is invalid, because callback is allowed to unsubscribe
     }
 

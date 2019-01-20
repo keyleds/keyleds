@@ -24,7 +24,7 @@
 
 namespace keyleds { namespace lua {
 
-static const void * const controllerToken = &controllerToken;
+static void * const controllerToken = const_cast<void **>(&controllerToken);
 
 /****************************************************************************/
 // Global scope
@@ -115,7 +115,7 @@ void Environment::openKeyleds(Controller * controller)
     SAVE_TOP(m_lua);
 
     // Save controller pointer
-    lua_pushlightuserdata(m_lua, const_cast<void *>(controllerToken));
+    lua_pushlightuserdata(m_lua, controllerToken);
     lua_pushlightuserdata(m_lua, static_cast<void *>(controller));
     lua_rawset(m_lua, LUA_GLOBALSINDEX);
 
@@ -140,7 +140,7 @@ Environment::Controller * Environment::controller() const
 {
     SAVE_TOP(m_lua);
 
-    lua_pushlightuserdata(m_lua, const_cast<void *>(controllerToken));
+    lua_pushlightuserdata(m_lua, controllerToken);
     lua_rawget(m_lua, LUA_GLOBALSINDEX);
     auto * controller = static_cast<Controller *>(const_cast<void *>(lua_topointer(m_lua, -1)));
     lua_pop(m_lua, 1);

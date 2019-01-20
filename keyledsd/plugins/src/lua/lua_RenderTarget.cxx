@@ -33,10 +33,10 @@ namespace keyleds { namespace lua {
 static int toTargetIndex(lua_State * lua, int idx) // 0-based
 {
     if (lua_is<const KeyDatabase::Key *>(lua, idx)) {
-        return lua_to<const KeyDatabase::Key *>(lua, idx)->index;
+        return static_cast<int>(lua_to<const KeyDatabase::Key *>(lua, idx)->index);
     }
     if (lua_isnumber(lua, idx)) {
-        return lua_tointeger(lua, idx) - 1;
+        return static_cast<int>(lua_tointeger(lua, idx) - 1);
     }
     if (lua_isstring(lua, idx)) {
         size_t size;
@@ -53,7 +53,7 @@ static int toTargetIndex(lua_State * lua, int idx) // 0-based
 
         auto it = db->findName(std::string(keyName, size));
         if (it != db->end()) {
-            return it->index;
+            return static_cast<int>(it->index);
         }
         return -1;
     }
@@ -146,13 +146,13 @@ static int index(lua_State * lua)
 
     // Handle table-like access
     int index = toTargetIndex(lua, 2);
-    if (index < 0 || unsigned(index) >= target->size()) {
+    if (index < 0 || static_cast<unsigned>(index) >= target->size()) {
         lua_pushnil(lua);
         return 1;
     }
 
     // Extract color data
-    lua_push(lua, (*target)[index]);
+    lua_push(lua, (*target)[static_cast<unsigned>(index)]);
     return 1;
 }
 
@@ -170,7 +170,7 @@ static int newIndex(lua_State * lua)
     if (!target) { return luaL_error(lua, noLongerExistsErrorMessage); }
 
     int index = toTargetIndex(lua, 2);
-    if (index < 0 || unsigned(index) >= target->size()) {
+    if (index < 0 || static_cast<unsigned>(index) >= target->size()) {
         return 0;   /// invalid indices and key names are silently ignored, to allow
                     /// generic code that works on different keyboards
     }
@@ -178,16 +178,16 @@ static int newIndex(lua_State * lua)
     if (lua_is<Interpolator>(lua, 3)) {
         lua_pushvalue(lua, 3);
         lua_pushvalue(lua, 1);
-        Interpolator::start(lua, index);
+        Interpolator::start(lua, static_cast<unsigned>(index));
         return 0;
     }
-    (*target)[index] = lua_checkcolor(lua, 3);
+    (*target)[static_cast<unsigned>(index)] = lua_checkcolor(lua, 3);
     return 0;
 }
 
 /****************************************************************************/
 
-const char * metatable<RenderTarget *>::name = "RenderTarget";
+const char * const metatable<RenderTarget *>::name = "RenderTarget";
 const struct luaL_Reg metatable<RenderTarget *>::methods[] = {
     { "blend",      blend },
     { "copy",       copy },

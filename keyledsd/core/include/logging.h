@@ -28,7 +28,7 @@ namespace logging {
 
 class Policy;
 class Logger;
-using level_t = int;
+using level_t = unsigned int;
 
 /****************************************************************************/
 
@@ -167,12 +167,12 @@ template <level_t L> template <typename...Args> void level<L>::print(Logger & lo
 }
 
 // Must start from 0 and have no gaps
-using critical = level<0>;
-using error = level<1>;
-using warning = level<2>;
-using info = level<3>;
-using verbose = level<4>;
-using debug = level<5>;
+using critical = level<0u>;
+using error = level<1u>;
+using warning = level<2u>;
+using info = level<3u>;
+using verbose = level<4u>;
+using debug = level<5u>;
 
 #ifdef NDEBUG
 template <> template<typename...Args> void debug::print(Logger &, Args &&...) {}

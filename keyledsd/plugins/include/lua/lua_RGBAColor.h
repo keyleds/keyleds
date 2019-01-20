@@ -27,7 +27,7 @@ namespace keyleds { namespace lua {
 
 /// Registration of RGBAColor as a lua object
 template <> struct metatable<keyleds::RGBAColor>
-    { static const char * name; static constexpr struct luaL_Reg * methods = nullptr;
+    { static const char * const name; static constexpr struct luaL_Reg * methods = nullptr;
       static const struct luaL_Reg meta_methods[]; struct weak_table : std::false_type{}; };
 
 void lua_push(lua_State * lua, keyleds::RGBAColor);
