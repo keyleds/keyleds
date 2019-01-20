@@ -55,7 +55,7 @@ public:
     static RenderTarget renderTargetFor(const Device &);
 
 private:
-    bool                render(unsigned long) override;
+    bool                render(milliseconds) override;
     void                run() override;
 
     /// Reads current device led state into the render target

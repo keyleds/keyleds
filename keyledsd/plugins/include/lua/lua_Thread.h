@@ -17,6 +17,7 @@
 #ifndef KEYLEDS_PLUGINS_LUA_LUA_THREAD_H_761E3512
 #define KEYLEDS_PLUGINS_LUA_LUA_THREAD_H_761E3512
 
+#include <chrono>
 #include "lua/lua_types.h"
 
 namespace keyleds { namespace lua {
@@ -27,9 +28,11 @@ namespace keyleds { namespace lua {
  */
 struct Thread
 {
-    int         id;             ///< unique identifier
-    bool        running;        ///< whether the thread is currently running (schedulable)
-    unsigned    sleepTime;      ///< time in milliseconds until thread should be awoken
+    using milliseconds = std::chrono::duration<unsigned, std::milli>;
+
+    int             id;         ///< unique identifier
+    bool            running;    ///< whether the thread is currently running (schedulable)
+    milliseconds    sleepTime;  ///< time until thread should be awoken
 };
 
 int luaNewThread(lua_State *);

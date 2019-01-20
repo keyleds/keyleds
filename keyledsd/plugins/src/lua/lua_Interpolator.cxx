@@ -21,9 +21,13 @@
 #include "lua/Environment.h"
 #include "lua/lua_common.h"
 
-static constexpr lua_Number maximumDuration = 3600000;  // One hour
+using namespace std::chrono_literals;
 
 namespace keyleds { namespace lua {
+
+using milliseconds = Interpolator::milliseconds;
+
+static constexpr milliseconds maximumDuration = 1h;  // One hour
 
 static const void * const interpolatorToken = &interpolatorToken;
 static const char targetLink[] = "target";
@@ -54,8 +58,8 @@ int luaNewInterpolator(lua_State * lua)
 
     int flags = 0;
 
-    auto duration = luaL_checknumber(lua, 1) * 1000.0;
-    if (duration <= 0.0 || duration > maximumDuration) {
+    auto duration = std::chrono::duration<lua_Number>(luaL_checknumber(lua, 1));
+    if (duration <= decltype(duration)::zero() || duration > maximumDuration) {
         return luaL_argerror(lua, 1, "invalid duration");
     }
 
@@ -70,7 +74,10 @@ int luaNewInterpolator(lua_State * lua)
 
     // Create object
     lua_push(lua, Interpolator{
-        LUA_NOREF, flags, 0, unsigned(duration), 0, startValue, finishValue
+        LUA_NOREF, flags, 0,
+        std::chrono::duration_cast<Interpolator::milliseconds>(duration),
+        Interpolator::milliseconds::zero(),
+        startValue, finishValue
     });                                                         // push(interpol)
     lua_createtable(lua, 0, 1);                                 // push(fenv)
     lua_setfenv(lua, -2);                                       // pop(fenv)
@@ -142,7 +149,7 @@ void Interpolator::start(lua_State * lua, unsigned keyIndex)
 
     // fill in missing values
     interpolator.index = keyIndex;
-    interpolator.elapsed = 0;
+    interpolator.elapsed = Interpolator::milliseconds::zero();
     if ((interpolator.flags & Interpolator::hasStartValueFlag) == 0) {
         interpolator.startValue = (*lua_to<RenderTarget *>(lua, -2))[keyIndex];
     } else {
@@ -181,7 +188,7 @@ void Interpolator::stop(lua_State * lua)
     CHECK_TOP(lua, -1);
 }
 
-void Interpolator::stepAll(lua_State * lua, unsigned ms)
+void Interpolator::stepAll(lua_State * lua, milliseconds elapsed)
 {
     SAVE_TOP(lua);
     pushRegistry(lua);                                              // push(registry)
@@ -198,7 +205,7 @@ void Interpolator::stepAll(lua_State * lua, unsigned ms)
             assert(target);
             lua_pop(lua, 2);                                        // pop(fenv, target)
 
-            interpolator.elapsed += ms;
+            interpolator.elapsed += elapsed;
             if (interpolator.elapsed >= interpolator.duration) {
                 (*target)[interpolator.index] = interpolator.finishValue;
                 Interpolator::stop(lua);                            // pop(interpolator)
@@ -219,13 +226,17 @@ RGBAColor Interpolator::value() const
     using ct = RGBAColor::channel_type;
     return {
         ct(int(startValue.red) +
-           (int(finishValue.red) - int(startValue.red)) * int(elapsed) / int(duration)),
+           (int(finishValue.red) - int(startValue.red))
+           * int(elapsed.count()) / int(duration.count())),
         ct(int(startValue.green) +
-           (int(finishValue.green) - int(startValue.green)) * int(elapsed) / int(duration)),
+           (int(finishValue.green) - int(startValue.green))
+           * int(elapsed.count()) / int(duration.count())),
         ct(int(startValue.blue) +
-           (int(finishValue.blue) - int(startValue.blue)) * int(elapsed) / int(duration)),
+           (int(finishValue.blue) - int(startValue.blue))
+           * int(elapsed.count()) / int(duration.count())),
         ct(int(startValue.alpha) +
-           (int(finishValue.alpha) - int(startValue.alpha)) * int(elapsed) / int(duration))
+           (int(finishValue.alpha) - int(startValue.alpha))
+           * int(elapsed.count()) / int(duration.count()))
     };
 }
 

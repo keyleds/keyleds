@@ -26,7 +26,7 @@ class FeedbackEffect final : public plugin::Effect
     struct KeyPress
     {
         const KeyDatabase::Key *    key;    ///< Entry in the database
-        unsigned                    age;    ///< How long ago the press happened in ms
+        milliseconds                age;    ///< How long ago the press happened
     };
 
 public:
@@ -37,19 +37,19 @@ public:
        m_decay(500)
     {
         RGBAColor::parse(service.getConfig("color"), &m_color);
-        keyleds::parseNumber(service.getConfig("sustain"), &m_sustain);
-        keyleds::parseNumber(service.getConfig("decay"), &m_decay);
+        keyleds::parseDuration(service.getConfig("sustain"), &m_sustain);
+        keyleds::parseDuration(service.getConfig("decay"), &m_decay);
 
         // Get ready
         std::fill(m_buffer->begin(), m_buffer->end(), RGBAColor{0, 0, 0, 0});
     }
 
-    void render(unsigned long ms, RenderTarget & target) override
+    void render(milliseconds elapsed, RenderTarget & target) override
     {
         const auto lifetime = m_sustain + m_decay;
 
         for (auto & keyPress : m_presses) {
-            keyPress.age += ms;
+            keyPress.age += elapsed;
             if (keyPress.age > lifetime) { keyPress.age = lifetime; }
             (*m_buffer)[keyPress.key->index] = RGBAColor(
                 m_color.red,
@@ -70,19 +70,19 @@ public:
     {
         for (auto & keyPress : m_presses) {
             if (keyPress.key == &key) {
-                keyPress.age = 0;
+                keyPress.age = milliseconds::zero();
                 return;
             }
         }
-        m_presses.push_back({ &key, 0 });
+        m_presses.push_back({ &key, milliseconds::zero() });
     }
 
 private:
     RenderTarget *      m_buffer;       ///< this plugin's rendered state
 
     RGBAColor           m_color;        ///< color taken by keys on keypress
-    unsigned            m_sustain;      ///< how long key remains at full color in ms
-    unsigned            m_decay;        ///< how long it takes for keys to fade out in ms
+    milliseconds        m_sustain;      ///< how long key remains at full color
+    milliseconds        m_decay;        ///< how long it takes for keys to fade out
     std::vector<KeyPress> m_presses;    ///< list of recent keypresses still drawn
 };
 

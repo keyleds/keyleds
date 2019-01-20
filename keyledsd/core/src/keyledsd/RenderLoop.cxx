@@ -72,10 +72,10 @@ keyleds::RenderTarget RenderLoop::renderTargetFor(const Device & device)
 
 /** Rendering method
  * Invoked on a regular basis as long as the animation is not paused.
- * @param nanosec Time since last invocation.
+ * @param elapsed Time since last invocation.
  * @return `true` if animation should be continued, else `false`.
  */
-bool RenderLoop::render(unsigned long nanosec)
+bool RenderLoop::render(milliseconds elapsed)
 {
     // Run all renderers
     bool hasRenderers;
@@ -83,7 +83,7 @@ bool RenderLoop::render(unsigned long nanosec)
         std::lock_guard<std::mutex> lock(m_mRenderers);
         hasRenderers = !m_renderers.empty();
         for (const auto & effect : m_renderers) {
-            effect->render(nanosec, m_buffer);
+            effect->render(elapsed, m_buffer);
         }
     }
 

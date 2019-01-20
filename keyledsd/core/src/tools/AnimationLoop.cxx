@@ -83,7 +83,6 @@ void AnimationLoop::run()
     DEBUG("AnimationLoop(", this, ") started");
     auto now = std::chrono::steady_clock::now();
     auto nextDraw = now;
-    const auto period = std::chrono::milliseconds(m_period);
 
     std::unique_lock<std::mutex> lock(m_mRunStatus);
     for (;;) {
@@ -112,8 +111,8 @@ void AnimationLoop::run()
         if (!render(m_period)) { break; }
         lock.lock();
 
-        nextDraw += period;
-        if (nextDraw <= now) { nextDraw = now + period; }
+        nextDraw += m_period;
+        if (nextDraw <= now) { nextDraw = now + m_period; }
     }
     DEBUG("AnimationLoop(", this, ") exiting");
 }

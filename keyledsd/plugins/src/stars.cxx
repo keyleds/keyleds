@@ -30,7 +30,7 @@ class StarsEffect final : public plugin::Effect
     {
         const KeyDatabase::Key *    key;
         RGBAColor                   color;
-        unsigned                    age;
+        milliseconds                age;
     };
 
 public:
@@ -40,7 +40,7 @@ public:
        m_duration(1000),
        m_keys(nullptr)
     {
-        keyleds::parseNumber(service.getConfig("duration"), &m_duration);
+        keyleds::parseDuration(service.getConfig("duration"), &m_duration);
 
         unsigned number = 8;
         keyleds::parseNumber(service.getConfig("number"), &number);
@@ -73,10 +73,10 @@ public:
         }
     }
 
-    void render(unsigned long ms, RenderTarget & target) override
+    void render(milliseconds elapsed, RenderTarget & target) override
     {
         for (auto & star : m_stars) {
-            star.age += ms;
+            star.age += elapsed;
             if (star.age >= m_duration) { rebirth(star); }
             (*m_buffer)[star.key->index] = RGBAColor(
                 star.color.red,
@@ -111,7 +111,7 @@ public:
         } else {
             star.color = m_colors[distribution(0, m_colors.size() - 1)(m_random)];
         }
-        star.age = 0;
+        star.age = milliseconds::zero();
     }
 
 
@@ -120,7 +120,7 @@ private:
     RenderTarget *          m_buffer;       ///< this plugin's rendered state
     std::minstd_rand        m_random;       ///< picks stars when they are reborn
 
-    unsigned                m_duration;     ///< how long stars stay alive, in milliseconds
+    milliseconds            m_duration;     ///< how long stars stay alive
     std::vector<RGBAColor>  m_colors;       ///< list of colors to choose from
     const KeyGroup *        m_keys;         ///< what keys the effect applies to. Empty for whole keyboard.
 

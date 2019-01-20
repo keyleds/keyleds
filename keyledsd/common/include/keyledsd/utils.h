@@ -17,12 +17,22 @@
 #ifndef KEYLEDSD_UTILS_H_9ADABC7C
 #define KEYLEDSD_UTILS_H_9ADABC7C
 
+#include <chrono>
 #include <string>
 #include "keyledsd_config.h"
 
 namespace keyleds {
 
 KEYLEDSD_EXPORT bool parseNumber(const std::string & str, unsigned * value);
+
+template <typename T>
+bool parseDuration(const std::string & str, T * value)
+{
+    unsigned rawValue;
+    if (!parseNumber(str, &rawValue)) { return false; }
+    *value = std::chrono::milliseconds(rawValue);
+    return true;
+}
 
 }
 

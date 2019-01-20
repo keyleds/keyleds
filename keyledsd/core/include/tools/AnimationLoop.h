@@ -17,6 +17,7 @@
 #ifndef TOOLS_ANIM_LOOP_H_A32C4648
 #define TOOLS_ANIM_LOOP_H_A32C4648
 
+#include <chrono>
 #include <condition_variable>
 #include <mutex>
 #include <thread>
@@ -38,6 +39,8 @@ namespace tools {
  */
 class AnimationLoop
 {
+protected:
+    using milliseconds = std::chrono::duration<unsigned, std::milli>;
 public:
                     AnimationLoop(unsigned fps);
     virtual         ~AnimationLoop();
@@ -51,7 +54,7 @@ public:
 
 protected:
     virtual void    run();
-    virtual bool    render(unsigned long) = 0;
+    virtual bool    render(milliseconds) = 0;
 
 private:
     /// Simply calls the animation loop's run method
@@ -61,7 +64,7 @@ private:
     std::mutex      m_mRunStatus;           ///< Controls access to m_cRunStats, m_paused and m_abort
     std::condition_variable m_cRunStatus;   ///< Used to wait on m_paused and m_abort changes
 
-    unsigned        m_period;               ///< Animation period in milliseconds
+    milliseconds    m_period;               ///< Animation period
     bool            m_paused;               ///< If set, the animation loop thread goes into sleep
     bool            m_abort;                ///< If set, the animation loop thread exits
     int             m_error;                ///< Error code from animation loop thread, errno-style

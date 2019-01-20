@@ -63,7 +63,8 @@ public:
     void            openKeyleds(Controller *);
     Controller *    controller() const;
 
-    void            stepInterpolators(unsigned ms) { Interpolator::stepAll(m_lua, ms); }
+    void            stepInterpolators(Interpolator::milliseconds elapsed)
+        { Interpolator::stepAll(m_lua, elapsed); }
 
     static const void * const waitToken;
 private:

@@ -202,20 +202,20 @@ void LuaEffect::init()
     CHECK_TOP(lua, 0);
 }
 
-void LuaEffect::render(unsigned long ms, RenderTarget & target)
+void LuaEffect::render(milliseconds elapsed, RenderTarget & target)
 {
     if (!m_enabled) { return; }
     auto lua = m_state.get();
 
-    Environment(lua).stepInterpolators(ms);
-    stepThreads(ms);
+    Environment(lua).stepInterpolators(elapsed);
+    stepThreads(elapsed);
 
     SAVE_TOP(lua);
     lua_push(lua, &target);                         // push(rendertarget)
 
     lua_pushcfunction(lua, luaErrorHandler);        // push(errhandler)
     if (pushHook(lua, "render")) {                  // push(render)
-        lua_pushinteger(lua, ms);                   // push(arg1)
+        lua_pushinteger(lua, lua_Integer(elapsed.count())); // push(arg1)
         lua_pushvalue(lua, -4);                     // push(arg2)
         if (!handleError(lua, m_service,
                          lua_pcall(lua, 2, 0, -4))) {// pop(errhandler, render, arg1, arg2)
@@ -320,7 +320,7 @@ void LuaEffect::destroyRenderTarget(RenderTarget * target)
 int LuaEffect::createThread(lua_State * lua, int nargs)
 {
     SAVE_TOP(lua);
-    lua_push(lua, Thread{0, true, 0});              // push(thread)
+    lua_push(lua, Thread{0, true, Thread::milliseconds::zero()});   // push(thread)
 
     lua_createtable(lua, 0, 1);                     // push(fenv)
     auto * thread = lua_newthread(m_state.get());   // push(thread)
@@ -355,7 +355,7 @@ void LuaEffect::destroyThread(lua_State * lua, Thread & thread)
     CHECK_TOP(lua, 0);
 }
 
-void LuaEffect::stepThreads(unsigned ms)
+void LuaEffect::stepThreads(milliseconds elapsed)
 {
     auto * lua = m_state.get();
     SAVE_TOP(lua);
@@ -373,21 +373,21 @@ void LuaEffect::stepThreads(unsigned ms)
         auto & threadInfo = lua_to<Thread>(lua, -1);
 
         if (threadInfo.running) {
-            if (threadInfo.sleepTime <= ms) {
+            if (threadInfo.sleepTime <= elapsed) {
                 lua_getfenv(lua, -1);                   // push(fenv)
                 lua_getfield(lua, -1, "thread");        // push(thread)
                 auto * thread = static_cast<lua_State *>(const_cast<void *>(lua_topointer(lua, -1)));
 
-                while (threadInfo.running && threadInfo.sleepTime <= ms) {
+                while (threadInfo.running && threadInfo.sleepTime <= elapsed) {
                     runThread(threadInfo, thread, 0);
                 }
 
                 lua_pop(lua, 2);                        // pop(fenv, thread)
             }
-            if (threadInfo.sleepTime > ms) {
-                threadInfo.sleepTime -= ms;
+            if (threadInfo.sleepTime > elapsed) {
+                threadInfo.sleepTime -= elapsed;
             } else {
-                threadInfo.sleepTime = 0;
+                threadInfo.sleepTime = Thread::milliseconds::zero();
             }
         }
         lua_pop(lua, 1);                                // pop(threadInfo)
@@ -412,7 +412,7 @@ void LuaEffect::runThread(Thread & threadInfo, lua_State * thread, int nargs)
                 lua_pop(lua, 1);
                 break;
             }
-            threadInfo.sleepTime += int(1000.0 * lua_tonumber(thread, 2));
+            threadInfo.sleepTime += Thread::milliseconds(unsigned(1000.0 * lua_tonumber(thread, 2)));
             terminate = false;
             break;
         case LUA_ERRRUN:

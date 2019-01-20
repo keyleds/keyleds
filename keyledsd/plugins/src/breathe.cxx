@@ -45,17 +45,17 @@ public:
             if (git != service.keyGroups().end()) { m_keys = &*git; }
         }
 
-        keyleds::parseNumber(service.getConfig("period"), &m_period);
+        keyleds::parseDuration(service.getConfig("period"), &m_period);
 
         std::fill(m_buffer->begin(), m_buffer->end(), color);
     }
 
-    void render(unsigned long ms, RenderTarget & target) override
+    void render(milliseconds elapsed, RenderTarget & target) override
     {
-        m_time += ms;
+        m_time += elapsed;
         if (m_time >= m_period) { m_time -= m_period; }
 
-        float t = float(m_time) / float(m_period);
+        float t = float(m_time.count()) / float(m_period.count());
         float alphaf = -std::cos(2.0f * pi * t);
         uint8_t alpha = m_alpha * (unsigned(128.0f * alphaf) + 128) / 256;
 
@@ -72,8 +72,8 @@ private:
     const KeyGroup* m_keys;         ///< what keys the effect applies to. Empty for whole keyboard.
     uint8_t         m_alpha;        ///< peak alpha value through the breathing cycle
 
-    unsigned        m_time;         ///< time in milliseconds since beginning of current cycle
-    unsigned        m_period;       ///< total duration of a cycle in milliseconds
+    milliseconds    m_time;         ///< time since beginning of current cycle
+    milliseconds    m_period;       ///< total duration of a cycle
 };
 
 KEYLEDSD_SIMPLE_EFFECT("breathe", BreateEffect);

@@ -43,7 +43,7 @@ public:
        m_length(1000),
        m_direction(0)
     {
-        keyleds::parseNumber(service.getConfig("period"), &m_period);
+        keyleds::parseDuration(service.getConfig("period"), &m_period);
         keyleds::parseNumber(service.getConfig("length"), &m_length);
         keyleds::parseNumber(service.getConfig("direction"), &m_direction);
 
@@ -71,9 +71,9 @@ public:
         std::fill(m_buffer->begin(), m_buffer->end(), RGBAColor{0, 0, 0, 0});
     }
 
-    void render(unsigned long ms, RenderTarget & target) override
+    void render(milliseconds elapsed, RenderTarget & target) override
     {
-        m_time += ms;
+        m_time += elapsed;
         if (m_time >= m_period) { m_time -= m_period; }
 
         int t = accuracy * m_time / m_period;
@@ -161,8 +161,8 @@ private:
                                         ///< From 0 (no phase shift) to 1000 (2*pi shift)
     std::vector<RGBAColor>  m_colors;   ///< pre-computed color samples, build by generateColorTable.
 
-    unsigned            m_time;         ///< time in milliseconds since beginning of current cycle.
-    unsigned            m_period;       ///< total duration of a cycle in milliseconds.
+    milliseconds        m_time;         ///< time since beginning of current cycle.
+    milliseconds        m_period;       ///< total duration of a cycle.
     unsigned            m_length;       ///< wave length, in keyboard 1000th.
     unsigned            m_direction;    ///< wave propagation direction, compass style (0 for North).
 };

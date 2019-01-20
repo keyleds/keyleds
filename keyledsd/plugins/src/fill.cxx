@@ -57,7 +57,7 @@ public:
         }
     }
 
-    void render(unsigned long, RenderTarget & target) override
+    void render(milliseconds, RenderTarget & target) override
     {
         if (m_fill.alpha > 0) {
             std::fill(target.begin(), target.end(), m_fill);

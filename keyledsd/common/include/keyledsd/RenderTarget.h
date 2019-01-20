@@ -18,6 +18,7 @@
 #define KEYLEDS_RENDER_TARGET_H_7E2781C6
 
 #include <cassert>
+#include <chrono>
 #include <cstdint>
 #include <utility>
 #include "keyledsd/accelerated.h"
@@ -91,9 +92,10 @@ class Renderer
 {
 protected:
     using RenderTarget = keyleds::RenderTarget;
+    using milliseconds = std::chrono::duration<unsigned, std::milli>;
 public:
     /// Modifies the target to reflect effect's display once the specified time has elapsed
-    virtual void    render(unsigned long nanosec, RenderTarget & target) = 0;
+    virtual void    render(milliseconds, RenderTarget & target) = 0;
 protected:
     // Protect the destructor so we can leave it non-virtual
     ~Renderer() {}
