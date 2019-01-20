@@ -36,7 +36,7 @@ namespace keyleds {
 class KEYLEDSD_EXPORT KeyDatabase final
 {
 public:
-    using position_type = int;
+    using position_type = unsigned int;
 
     class Key final
     {
@@ -68,8 +68,8 @@ public:
     using reference = key_list::const_reference;
     using iterator = key_list::const_iterator;
     using const_iterator = key_list::const_iterator;
-    using difference_type = key_list::difference_type;
-    using size_type = key_list::size_type;
+    using difference_type = signed int;     // narrow down vector's size
+    using size_type = unsigned int;         // narrow down vector's size
 public:
                     KeyDatabase(key_list keys);
     explicit        KeyDatabase(const KeyDatabase &) = default;
@@ -81,8 +81,8 @@ public:
 
     const_iterator  begin() const { return m_keys.cbegin(); }
     const_iterator  end() const { return m_keys.cend(); }
-    const Key &     operator[](int idx) const { return m_keys[idx]; }
-    size_type       size() const noexcept { return m_keys.size(); }
+    const Key &     operator[](size_type idx) const { return m_keys[idx]; }
+    size_type       size() const noexcept { return size_type(m_keys.size()); }
 
     Key::Rect       bounds() const { return m_bounds; }
     position_type   distance(const Key &, const Key &) const;
@@ -121,8 +121,8 @@ public:
     using value_type = KeyDatabase::iterator;
     using reference = value_type &;
     using const_reference = const value_type &;
-    using size_type = std::size_t;
-    using difference_type = std::ptrdiff_t;
+    using size_type = unsigned int;
+    using difference_type = signed int;
 
     class iterator : public std::iterator<std::bidirectional_iterator_tag,
                                           const KeyDatabase::Key>
@@ -159,11 +159,10 @@ public:
     const_iterator  cbegin() const { return const_iterator(m_keys.cbegin()); }
     const_iterator  end() const { return cend(); }
     const_iterator  cend() const { return const_iterator(m_keys.cend()); }
-    const Key &     operator[](int idx) const { return *m_keys[idx]; }
+    const Key &     operator[](size_type idx) const { return *m_keys[idx]; }
 
     bool            empty() const noexcept { return m_keys.empty(); }
-    size_type       size() const noexcept { return m_keys.size(); }
-    size_type       max_size() const { return m_keys.max_size(); }
+    size_type       size() const noexcept { return size_type(m_keys.size()); }
 
     void            clear() { m_keys.clear(); }
     const_iterator  erase(const_iterator it)

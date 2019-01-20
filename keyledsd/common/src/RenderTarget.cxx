@@ -20,16 +20,17 @@
 #include <type_traits>
 #include <utility>
 
+using keyleds::RenderTarget;
+
 static_assert(std::is_pod<keyleds::RGBAColor>::value, "RGBAColor must be a POD type");
 static_assert(sizeof(keyleds::RGBAColor) == 4, "RGBAColor must be tightly packed");
 
-static constexpr std::size_t alignBytes = 32;  // 16 is minimum for SSE2, 32 for AVX2
-static constexpr std::size_t alignColors = alignBytes / sizeof(keyleds::RGBAColor);
+static constexpr RenderTarget::size_type alignBytes = 32;  // 16 is minimum for SSE2, 32 for AVX2
+static constexpr RenderTarget::size_type alignColors = alignBytes / sizeof(keyleds::RGBAColor);
 
-using keyleds::RenderTarget;
 
 /// Returns the given value, aligned to upper bound of given aligment
-static constexpr std::size_t align(std::size_t value, std::size_t alignment)
+template <typename T> constexpr T align(T value, T alignment)
 {
     return (value + alignment - 1) & ~(alignment - 1);
 }

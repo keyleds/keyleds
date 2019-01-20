@@ -23,8 +23,10 @@ using keyleds::KeyDatabase;
 
 /****************************************************************************/
 
+template <class T> T abs_difference(T a, T b) { return a > b ? a - b : b - a; }
+
 // Return index in relation table for key pair, given a.index < b.index
-static unsigned relationIndex(const KeyDatabase::Key & a, const KeyDatabase::Key & b, unsigned N)
+static unsigned relationIndex(const KeyDatabase::Key & a, const KeyDatabase::Key & b, KeyDatabase::size_type N)
 {
     // Relations are stored in pyramidal array
     return a.index * (2 * N - 1 - a.index) / 2 + b.index - a.index - 1;
@@ -44,29 +46,29 @@ KeyDatabase::~KeyDatabase() {}
 KeyDatabase::const_iterator KeyDatabase::findKeyCode(int keyCode) const
 {
     return std::find_if(m_keys.cbegin(), m_keys.cend(),
-                        [keyCode](const auto & key) { return key.keyCode == keyCode; });
+                        [&](const auto & key) { return key.keyCode == keyCode; });
 }
 
 KeyDatabase::const_iterator KeyDatabase::findName(const std::string & name) const
 {
     return std::find_if(m_keys.cbegin(), m_keys.cend(),
-                        [name](const auto & key) { return key.name == name; });
+                        [&](const auto & key) { return key.name == name; });
 }
 
 KeyDatabase::position_type KeyDatabase::distance(const Key & a, const Key & b) const
 {
     if (a.index == b.index) { return 0; }
-    return m_relations[a.index < b.index ? relationIndex(a, b, m_keys.size())
-                                         : relationIndex(b, a, m_keys.size())].distance;
+    return m_relations[a.index < b.index ? relationIndex(a, b, size())
+                                         : relationIndex(b, a, size())].distance;
 }
 
 double KeyDatabase::angle(const Key & a, const Key & b) const
 {
     if (a.index == b.index) { return 0.0; }
-    auto xa = (a.position.x1 + a.position.x0) / 2;
-    auto ya = (a.position.y1 + a.position.y0) / 2;
-    auto xb = (b.position.x1 + b.position.x0) / 2;
-    auto yb = (b.position.y1 + b.position.y0) / 2;
+    auto xa = double((a.position.x1 + a.position.x0) / 2);
+    auto ya = double((a.position.y1 + a.position.y0) / 2);
+    auto xb = double((b.position.x1 + b.position.x0) / 2);
+    auto yb = double((b.position.y1 + b.position.y0) / 2);
     return std::atan2(ya - yb, xb - xa);    // note: y axis is inverted
 }
 
@@ -98,8 +100,8 @@ KeyDatabase::relation_list KeyDatabase::computeRelations(const key_list & keys)
             auto ya = (it->position.y1 + it->position.y0) / 2;
             auto xb = (other->position.x1 + other->position.x0) / 2;
             auto yb = (other->position.y1 + other->position.y0) / 2;
-            auto dx = xb - xa;
-            auto dy = yb - ya;
+            auto dx = abs_difference(xa, xb);
+            auto dy = abs_difference(ya, yb);
 
             result.push_back(Relation{
                 position_type(std::sqrt(dx * dx + dy * dy))

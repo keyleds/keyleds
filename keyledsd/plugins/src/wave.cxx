@@ -76,22 +76,20 @@ public:
         m_time += elapsed;
         if (m_time >= m_period) { m_time -= m_period; }
 
-        int t = accuracy * m_time / m_period;
+        auto t = accuracy * m_time / m_period;
 
         if (m_keys) {
             assert(m_keys->size() == m_phases.size());
-            for (std::size_t idx = 0; idx < m_keys->size(); ++idx) {
-                int tphi = t - m_phases[idx];
-                if (tphi < 0) { tphi += accuracy; }
+            for (KeyGroup::size_type idx = 0; idx < m_keys->size(); ++idx) {
+                auto tphi = (t >= m_phases[idx] ? 0 : accuracy) + t - m_phases[idx];
 
                 (*m_buffer)[(*m_keys)[idx].index] = m_colors[tphi];
             }
         } else {
             const auto & keyDB = m_service.keyDB();
             assert(keyDB.size() == m_phases.size());
-            for (std::size_t idx = 0; idx < keyDB.size(); ++idx) {
-                int tphi = t - m_phases[idx];
-                if (tphi < 0) { tphi += accuracy; }
+            for (KeyDatabase::size_type idx = 0; idx < keyDB.size(); ++idx) {
+                auto tphi = (t >= m_phases[idx] ? 0 : accuracy) + t - m_phases[idx];
 
                 (*m_buffer)[keyDB[idx].index] = m_colors[tphi];
             }
@@ -102,22 +100,24 @@ public:
 private:
     void computePhases(const KeyDatabase & keyDB)
     {
-        float frequency = float(accuracy) * 1000.0f / float(m_length);
-        int freqX = int(frequency * std::sin(2.0f * pi / 360.0f * float(m_direction)));
-        int freqY = int(frequency * std::cos(2.0f * pi / 360.0f * float(m_direction)));
+        auto frequency = 1000.0f / float(m_length);
+        auto freqX = frequency * std::sin(2.0f * pi / 360.0f * float(m_direction));
+        auto freqY = frequency * std::cos(2.0f * pi / 360.0f * float(m_direction));
         auto bounds = keyDB.bounds();
 
         m_phases.clear();
 
-        auto keyPhase = [&bounds, freqX, freqY](const auto & key) {
-            int x = (key.position.x0 + key.position.x1) / 2;
-            int y = (key.position.y0 + key.position.y1) / 2;
+        auto keyPhase = [&](const auto & key) {
+            auto x = (key.position.x0 + key.position.x1) / 2u;
+            auto y = (key.position.y0 + key.position.y1) / 2u;
+
             // Reverse Y axis as keyboard layout uses top<down
-            x = accuracy * (x - bounds.x0) / (bounds.x1 - bounds.x0);
-            y = accuracy - accuracy * (y - bounds.x0) / (bounds.x1 - bounds.x0);
-            auto val = (freqX * x + freqY * y) / accuracy % accuracy;
-            if (val < 0) { val += accuracy; }
-            return val;
+            auto xpos = float(x - bounds.x0) / float(bounds.x1 - bounds.x0);
+            auto ypos = 1.0f - float(y - bounds.x0) / float(bounds.x1 - bounds.x0);
+
+            auto phase = std::fmod(freqX * xpos + freqY * ypos, 1.0f);
+            if (phase < 0.0f) { phase += 1.0f; }
+            return unsigned(phase * accuracy);
         };
 
         if (m_keys) {
