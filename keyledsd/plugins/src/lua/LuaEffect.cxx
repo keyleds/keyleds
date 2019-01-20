@@ -362,8 +362,9 @@ void LuaEffect::stepThreads(milliseconds elapsed)
     lua_pushlightuserdata(lua, threadToken);
     lua_rawget(lua, LUA_REGISTRYINDEX);
 
-    size_t size = lua_objlen(lua, -1);
-    for (size_t index = 1; index <= size; ++index) {
+    auto size = lua_objlen(lua, -1);
+    assert(size <= std::numeric_limits<int>::max());
+    for (int index = 1; index <= int(size); ++index) {
         lua_rawgeti(lua, -1, index);                    // push(threadInfo)
         if (!lua_is<Thread>(lua, -1)) {
             lua_pop(lua, 1);                            // (pop(threadInfo))

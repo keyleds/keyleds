@@ -255,9 +255,12 @@ Device::~Device()
 void Device::setEventMask(const std::vector<int> & events)
 {
     std::vector<unsigned char> mask(XIMaskLen(XI_LASTEVENT), 0);
-    XIEventMask eventMask = { m_device, (int)mask.size(), mask.data() };
+    XIEventMask eventMask = { m_device, static_cast<int>(mask.size()), mask.data() };
     for (auto event : events) {
-        XISetMask(mask.data(), event);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
+        XISetMask(mask.data(), event);  // this is actually a macro in a system header
+#pragma GCC diagnostic pop
     }
     XISelectEvents(m_display.handle(), m_display.root().handle(), &eventMask, 1);
 }

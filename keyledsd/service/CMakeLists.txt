@@ -56,7 +56,7 @@ IF(NOT NO_DBUS)
 ENDIF()
 
 find_package(Qt5 COMPONENTS ${QT_MODULES} REQUIRED)
-include_directories(${Qt5Core_INCLUDE_DIRS})
+include_directories(SYSTEM ${Qt5Core_INCLUDE_DIRS})
 set(service_DEPS ${service_DEPS} Qt5Core)
 qt5_wrap_cpp(moc_sources
     include/keyledsd/device/Logitech.h

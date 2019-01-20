@@ -64,14 +64,20 @@ static std::string expandVars(const std::string & value)
     const auto endIt = std::sregex_iterator();
     auto result = value;
 
-    std::ptrdiff_t offset = 0;
-    for (; it != endIt; ++it) {
-        auto creplacement = std::getenv(it->str(1).c_str());
-        auto sreplacement = std::string(creplacement != nullptr ? creplacement : "");
+    auto deleted = std::size_t{0};  // characters deleted from result so far
+    auto inserted = std::size_t{0}; // characters inserted in result so far
 
-        result.replace(it->position() + offset, it->length(), sreplacement);
-        offset += sreplacement.size();
-        offset -= it->length();
+    for (; it != endIt; ++it) {
+        const auto creplacement = std::getenv(it->str(1).c_str());
+        const auto sreplacement = std::string(creplacement != nullptr ? creplacement : "");
+
+        result.replace(
+            static_cast<std::size_t>(it->position()) + inserted - deleted,
+            static_cast<std::size_t>(it->length()),
+            sreplacement
+        );
+        deleted += static_cast<std::size_t>(it->length());
+        inserted += sreplacement.size();
     }
     return result;
 }

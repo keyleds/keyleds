@@ -35,15 +35,15 @@ static int index(lua_State * lua)
     if (static_cast<size_t>(std::abs(idx)) > group->size()) {
         return luaL_error(lua, badIndexErrorMessage, idx);
     }
-    idx = idx > 0 ? idx - 1 : group->size() + idx;
-    lua_push(lua, &(*group)[idx]);
+    auto decoded = idx > 0 ? unsigned(idx) - 1u : group->size() - unsigned(-idx);
+    lua_push(lua, &(*group)[decoded]);
     return 1;
 }
 
 static int len(lua_State * lua)
 {
     const auto * group = lua_to<const KeyDatabase::KeyGroup *>(lua, 1);
-    lua_pushinteger(lua, group->size());
+    lua_pushinteger(lua, lua_Integer(group->size()));
     return 1;
 }
 

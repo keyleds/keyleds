@@ -16,6 +16,7 @@
  */
 #include "lua/lua_RGBAColor.h"
 
+#include <algorithm>
 #include <array>
 #include <cassert>
 #include <cstring>
@@ -36,10 +37,11 @@ static constexpr std::array<const char *, 4> keys = {{ "red", "green", "blue", "
 
 static int indexForKey(lua_State * lua, const char * key)
 {
-    for (unsigned idx = 0; idx < keys.size(); ++idx) {
-        if (std::strcmp(keys[idx], key) == 0) {
-            return idx + 1;
-        }
+    static_assert(keys.size() < std::numeric_limits<int>::max(), "key number must fit an int");
+    auto it = std::find_if(keys.begin(), keys.end(),
+                           [&](auto item) { return std::strcmp(item, key) == 0; });
+    if (it != keys.end()) {
+        return static_cast<int>(it - keys.begin() + 1);
     }
     return luaL_error(lua, badKeyErrorMessage, key);
 }

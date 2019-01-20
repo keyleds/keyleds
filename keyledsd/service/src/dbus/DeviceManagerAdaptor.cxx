@@ -18,6 +18,7 @@
 
 #include <QDBusArgument>
 #include <QDBusMetaType>
+#include <limits>
 #include "keyledsd/DeviceManager.h"
 
 using keyleds::dbus::DeviceManagerAdaptor;
@@ -90,7 +91,8 @@ QString DeviceManagerAdaptor::devNode() const
 QStringList DeviceManagerAdaptor::eventDevices() const
 {
     QStringList result;
-    result.reserve(parent()->eventDevices().size());
+    assert(parent()->eventDevices().size() <= std::numeric_limits<int>::max());
+    result.reserve(static_cast<int>(parent()->eventDevices().size()));
     std::transform(parent()->eventDevices().cbegin(),
                     parent()->eventDevices().cend(),
                     std::back_inserter(result),
@@ -116,7 +118,8 @@ QString DeviceManagerAdaptor::firmware() const
 DBusDeviceKeyInfoList DeviceManagerAdaptor::keys() const
 {
     DBusDeviceKeyInfoList result;
-    result.reserve(parent()->keyDB().size());
+    assert(parent()->keyDB().size() <= std::numeric_limits<int>::max());
+    result.reserve(static_cast<int>(parent()->keyDB().size()));
     std::transform(parent()->keyDB().begin(),
                     parent()->keyDB().end(),
                     std::back_inserter(result),

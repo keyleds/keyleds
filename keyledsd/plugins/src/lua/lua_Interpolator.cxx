@@ -17,6 +17,7 @@
 #include "lua/lua_Interpolator.h"
 
 #include <cassert>
+#include <limits>
 #include <lua.hpp>
 #include "lua/Environment.h"
 #include "lua/lua_common.h"
@@ -125,10 +126,11 @@ void Interpolator::start(lua_State * lua, unsigned keyIndex)
     pushRegistry(lua);                                              // push(registry)
 
     // see whether another interpolator already runs on this key
-    size_t size = lua_objlen(lua, -1);
-    for (size_t index = 1; index <= size; ++index) {
-        lua_rawgeti(lua, -1, index);                                // push(otherinter)
-        if (lua_is<Interpolator>(lua, -1)) {
+    auto size = lua_objlen(lua, -1);
+    assert(size <= std::numeric_limits<int>::max());
+    for (decltype(size) index = 1; index <= size; ++index) {
+        lua_rawgeti(lua, -1, static_cast<int>(index));              // push(otherinter)
+        if (lua_isuserdata(lua, -1)) {      // any user data is an Interpolator
             auto & other = lua_to<Interpolator>(lua, -1);
             if (other.index == keyIndex) {
                 lua_getfenv(lua, -1);                               // push(otherfenv)
@@ -192,11 +194,12 @@ void Interpolator::stepAll(lua_State * lua, milliseconds elapsed)
 {
     SAVE_TOP(lua);
     pushRegistry(lua);                                              // push(registry)
-    size_t size = lua_objlen(lua, -1);
 
-    for (size_t index = 1; index <= size; ++index) {
-        lua_rawgeti(lua, -1, index);                                // push(interpolator)
-        if (lua_is<Interpolator>(lua, -1)) {
+    auto size = lua_objlen(lua, -1);
+    assert(size <= std::numeric_limits<int>::max());
+    for (decltype(size) index = 1; index <= size; ++index) {
+        lua_rawgeti(lua, -1, static_cast<int>(index));              // push(interpolator)
+        if (lua_isuserdata(lua, -1)) {      // any user data is an Interpolator
             auto & interpolator = lua_to<Interpolator>(lua, -1);
 
             lua_getfenv(lua, -1);                                   // push(fenv)

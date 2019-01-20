@@ -66,14 +66,20 @@ static unsigned parseUInt(const xmlNode * node, const xmlChar * name, int base)
         throw LayoutDescription::ParseError(errMsg.str(), xmlGetLineNo(const_cast<xmlNode *>(node)));
     }
     char * strEnd;
-    unsigned valueUInt = std::strtoul((char*)valueStr.get(), &strEnd, base);
+    auto valueUInt = std::strtoul(reinterpret_cast<char*>(valueStr.get()), &strEnd, base);
     if (*strEnd != '\0') {
         std::ostringstream errMsg;
         errMsg <<"Value '" <<valueStr.get() <<"' in attribute '" <<name <<"' of '"
                <<node->name <<"' element cannot be parsed as an integer";
         throw LayoutDescription::ParseError(errMsg.str(), xmlGetLineNo(const_cast<xmlNode *>(node)));
     }
-    return valueUInt;
+    if (valueUInt > std::numeric_limits<unsigned>::max()) {
+        std::ostringstream errMsg;
+        errMsg <<"Value '" <<valueStr.get() <<"' in attribute '" <<name <<"' of '"
+               <<node->name <<"' is too large";
+        throw LayoutDescription::ParseError(errMsg.str(), xmlGetLineNo(const_cast<xmlNode *>(node)));
+    }
+    return static_cast<unsigned>(valueUInt);
 }
 
 /****************************************************************************/
@@ -111,7 +117,7 @@ static void parseKeyboard(const xmlNode * keyboard, LayoutDescription::key_list 
                 }
                 totalWidth += static_cast<unsigned int>(keyWidthFloat * 1000);
             } else {
-                totalWidth += 1000;
+                totalWidth += 1000u;
             }
         }
 
@@ -180,7 +186,11 @@ LayoutDescription LayoutDescription::parse(std::istream & stream)
     // Document
     std::ostringstream bufferStream;
     bufferStream << stream.rdbuf();
-    std::string buffer = bufferStream.str();
+
+    auto buffer = bufferStream.str();
+    if (buffer.size() > std::numeric_limits<int>::max()) {
+        throw std::runtime_error("Description file too large");
+    }
     std::unique_ptr<xmlDoc, void(*)(xmlDocPtr)> document(
         xmlCtxtReadMemory(context.get(), buffer.data(), static_cast<int>(buffer.size()),
                           nullptr, nullptr, XML_PARSE_NOWARNING | XML_PARSE_NONET),

@@ -197,8 +197,12 @@ keyleds::KeyDatabase DeviceManager::setupKeyDatabase(Device & device)
 
         for (const auto & key : layout.keys()) {
             if (key.block != block.id()) { continue; }
+            if (key.code > std::numeric_limits<Device::key_id_type>::max()) {
+                WARNING("invalid key code ", key.code, " in layout");
+                continue;
+            }
             if (std::find(block.keys().begin(), block.keys().end(), key.code) == block.keys().end()) {
-                keyIds.push_back(key.code);
+                keyIds.push_back(static_cast<Device::key_id_type>(key.code));
             }
         }
         if (!keyIds.empty()) {

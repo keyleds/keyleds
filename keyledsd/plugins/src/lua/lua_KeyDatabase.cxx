@@ -49,8 +49,14 @@ static int distance(lua_State * lua)
 static int findKeyCode(lua_State * lua)
 {
     const auto * db = lua_check<const KeyDatabase *>(lua, 1);
+    const auto code = luaL_checkinteger(lua, 2);
 
-    auto it = db->findKeyCode(luaL_checkinteger(lua, 2));
+    if (code > std::numeric_limits<int>::max()) {
+        lua_pushnil(lua);
+        return 1;
+    }
+
+    auto it = db->findKeyCode(static_cast<int>(code));
     if (it != db->end()) {
         lua_push(lua, &*it);
     } else {
@@ -91,8 +97,10 @@ static int index(lua_State * lua)
         if (static_cast<size_t>(std::abs(idx)) > db->size()) {
             return luaL_error(lua, badIndexErrorMessage, idx);
         }
-        idx = idx > 0 ? idx - 1 : db->size() + idx;
-        lua_push(lua, &(*db)[idx]);
+        auto decoded = idx > 0
+                     ? static_cast<unsigned>(idx) - 1u
+                     : db->size() - static_cast<unsigned>(-idx);
+        lua_push(lua, &(*db)[decoded]);
         return 1;
     }
     if (lua_handleMethodIndex(lua, 2, methods)) { return 1; }
@@ -102,7 +110,7 @@ static int index(lua_State * lua)
 static int len(lua_State * lua)
 {
     const auto * db = lua_to<const KeyDatabase *>(lua, 1);
-    lua_pushinteger(lua, db->size());
+    lua_pushinteger(lua, static_cast<lua_Integer>(db->size()));
     return 1;
 }
 

@@ -19,6 +19,7 @@
 #include <QDBusConnection>
 #include <QDBusMetaType>
 #include <algorithm>
+#include <limits>
 #include <string>
 #include "keyledsd/dbus/DeviceManagerAdaptor.h"
 #include "keyledsd/Configuration.h"
@@ -101,7 +102,8 @@ QStringList ServiceAdaptor::plugins() const
     const auto & names = parent()->effectManager().pluginNames();
 
     QStringList plugins;
-    plugins.reserve(names.size());
+    assert(names.size() <= std::numeric_limits<int>::max());
+    plugins.reserve(static_cast<int>(names.size()));
     std::transform(names.begin(), names.end(), std::back_inserter(plugins),
                    [](const auto & name) { return name.c_str(); });
     return plugins;
