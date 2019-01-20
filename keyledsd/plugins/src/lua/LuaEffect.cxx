@@ -301,7 +301,7 @@ void LuaEffect::print(const std::string & msg) const
     m_service.log(4, msg.c_str());
 }
 
-bool LuaEffect::parseColor(const std::string & str, RGBAColor * color) const
+bool LuaEffect::parseColor(const std::string & str, RGBAColor & color) const
 {
     return RGBAColor::parse(str, color);
 }

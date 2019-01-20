@@ -193,14 +193,16 @@ static_assert(predefinedColors.back().second == RGBColor(0x9A, 0xCD, 0x32),
  * @return `true` on success, `false` on error.
  * @bug Does not accept print() output. Stripping an optional leading hash would allow that.
  */
-bool RGBColor::parse(const std::string & str, RGBColor * color)
+bool RGBColor::parse(const std::string & str, RGBColor & color)
 {
     // Attempt parsing as hex color
     if (str.size() == 6) {
         char * endptr;
         auto code = uint32_t(::strtoul(str.c_str(), &endptr, 16));
         if (*endptr == '\0') {
-            *color = RGBColor(code >> 16, code >> 8, code >> 0);
+            color = RGBColor(channel_type(code >> 16),
+                             channel_type(code >> 8),
+                             channel_type(code >> 0));
             return true;
         }
     }
@@ -215,7 +217,7 @@ bool RGBColor::parse(const std::string & str, RGBColor * color)
         lower, [](const auto & item, const auto & name) { return item.first < name; }
     );
     if (it != predefinedColors.end() && it->first == lower) {
-        *color = it->second;
+        color = it->second;
         return true;
     }
 
@@ -240,19 +242,22 @@ void RGBColor::print(std::ostream & out) const
  * @return `true` on success, `false` on error.
  * @bug Does not accept print() output. Stripping an optional leading hash would allow that.
  */
-bool RGBAColor::parse(const std::string & str, RGBAColor * color)
+bool RGBAColor::parse(const std::string & str, RGBAColor & color)
 {
     if (str.size() == 8) {
         char * endptr;
         auto code = uint32_t(::strtoul(str.c_str(), &endptr, 16));
         if (*endptr == '\0') {
-            *color = RGBAColor(code >> 24, code >> 16, code >> 8, code >> 0);
+            color = RGBAColor(channel_type(code >> 24),
+                              channel_type(code >> 16),
+                              channel_type(code >> 8),
+                              channel_type(code >> 0));
             return true;
         }
     }
     RGBColor opaque;
-    if (RGBColor::parse(str, &opaque)) {
-        *color = RGBAColor(opaque);
+    if (RGBColor::parse(str, opaque)) {
+        color = RGBAColor(opaque);
         return true;
     }
     return false;

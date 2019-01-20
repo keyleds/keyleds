@@ -45,7 +45,7 @@ public:
     const std::vector<KeyGroup> & keyGroups() const override;
 
     const string_map &  configuration() const override;
-    const std::string & getConfig(const std::string &) const override;
+    const std::string & getConfig(const char *) const override;
 
     RenderTarget *      createRenderTarget() override;
     void                destroyRenderTarget(RenderTarget *) override;

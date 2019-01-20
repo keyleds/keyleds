@@ -53,7 +53,7 @@ public: // Effect interface for keyleds & lua init hook
 
 public: // Environment::Controller interface for lua
     void            print(const std::string &) const override;
-    bool            parseColor(const std::string &, RGBAColor *) const override;
+    bool            parseColor(const std::string &, RGBAColor &) const override;
     RenderTarget *  createRenderTarget() override;
     void            destroyRenderTarget(RenderTarget *) override;
     int             createThread(lua_State * lua, int nargs) override;

@@ -40,16 +40,16 @@ public:
        m_duration(1000),
        m_keys(nullptr)
     {
-        keyleds::parseDuration(service.getConfig("duration"), &m_duration);
+        keyleds::parseDuration(service.getConfig("duration"), m_duration);
 
         unsigned number = 8;
-        keyleds::parseNumber(service.getConfig("number"), &number);
+        keyleds::parseNumber(service.getConfig("number"), number);
         m_stars.resize(number);
 
         // Load color list
         for (const auto & item : service.configuration()) {
             RGBAColor color;
-            if (item.first.rfind("color", 0) == 0 && RGBAColor::parse(item.second, &color)) {
+            if (item.first.rfind("color", 0) == 0 && RGBAColor::parse(item.second, color)) {
                 m_colors.push_back(color);
             }
         }

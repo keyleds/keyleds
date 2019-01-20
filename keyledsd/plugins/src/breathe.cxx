@@ -33,7 +33,7 @@ public:
        m_time(0), m_period(10000)
     {
         auto color = RGBAColor(255, 255, 255, 255);
-        RGBAColor::parse(service.getConfig("color"), &color);
+        RGBAColor::parse(service.getConfig("color"), color);
         m_alpha = color.alpha;
         color.alpha = 0;
 
@@ -45,7 +45,7 @@ public:
             if (git != service.keyGroups().end()) { m_keys = &*git; }
         }
 
-        keyleds::parseDuration(service.getConfig("period"), &m_period);
+        keyleds::parseDuration(service.getConfig("period"), m_period);
 
         std::fill(m_buffer->begin(), m_buffer->end(), color);
     }

@@ -36,9 +36,9 @@ public:
        m_sustain(750),
        m_decay(500)
     {
-        RGBAColor::parse(service.getConfig("color"), &m_color);
-        keyleds::parseDuration(service.getConfig("sustain"), &m_sustain);
-        keyleds::parseDuration(service.getConfig("decay"), &m_decay);
+        RGBAColor::parse(service.getConfig("color"), m_color);
+        keyleds::parseDuration(service.getConfig("sustain"), m_sustain);
+        keyleds::parseDuration(service.getConfig("decay"), m_decay);
 
         // Get ready
         std::fill(m_buffer->begin(), m_buffer->end(), RGBAColor{0, 0, 0, 0});

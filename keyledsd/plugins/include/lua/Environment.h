@@ -46,7 +46,7 @@ public:
         using Thread = keyleds::lua::Thread;
     public:
         virtual void            print(const std::string &) const = 0;
-        virtual bool            parseColor(const std::string &, RGBAColor *) const = 0;
+        virtual bool            parseColor(const std::string &, RGBAColor &) const = 0;
 
         virtual RenderTarget *  createRenderTarget() = 0;
         virtual void            destroyRenderTarget(RenderTarget *) = 0;

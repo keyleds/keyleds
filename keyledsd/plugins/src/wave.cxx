@@ -43,15 +43,15 @@ public:
        m_length(1000),
        m_direction(0)
     {
-        keyleds::parseDuration(service.getConfig("period"), &m_period);
-        keyleds::parseNumber(service.getConfig("length"), &m_length);
-        keyleds::parseNumber(service.getConfig("direction"), &m_direction);
+        keyleds::parseDuration(service.getConfig("period"), m_period);
+        keyleds::parseNumber(service.getConfig("length"), m_length);
+        keyleds::parseNumber(service.getConfig("direction"), m_direction);
 
         // Load color list
         std::vector<RGBAColor> colors;
         for (const auto & item : service.configuration()) {
             RGBAColor color;
-            if (item.first.rfind("color", 0) == 0 && RGBAColor::parse(item.second, &color)) {
+            if (item.first.rfind("color", 0) == 0 && RGBAColor::parse(item.second, color)) {
                 colors.push_back(color);
             }
         }

@@ -62,7 +62,7 @@ static int luaToColor(lua_State * lua)      // (any) => (table)
             size_t size;
             const char * string = lua_tolstring(lua, 1, &size);
             RGBAColor color;
-            if (controller->parseColor(std::string(string, size), &color)) {
+            if (controller->parseColor(std::string(string, size), color)) {
                 lua_push(lua, color);
                 return 1;
             }

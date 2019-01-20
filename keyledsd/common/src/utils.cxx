@@ -17,6 +17,7 @@
 #include "keyledsd/utils.h"
 
 #include <cstdlib>
+#include <limits>
 
 /** Parse an unsigned integer.
  * Simple wrapper around std::strtoul() with a more convenient interface.
@@ -24,12 +25,13 @@
  * @param [out] value Variable to write result into.
  * @return `true` on success, `false` if `str` does not represent an unsigned integer.
  */
-bool keyleds::parseNumber(const std::string & str, unsigned * value)
+bool keyleds::parseNumber(const std::string & str, unsigned & value)
 {
     if (str.empty()) { return false; }
     char * end;
     auto result = std::strtoul(str.c_str(), &end, 10);
     if (*end != '\0') { return false; }
-    *value = result;
+    if (result > std::numeric_limits<unsigned>::max()) { return false; }
+    value = unsigned(result);
     return true;
 }

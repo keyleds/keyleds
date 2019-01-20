@@ -23,14 +23,14 @@
 
 namespace keyleds {
 
-KEYLEDSD_EXPORT bool parseNumber(const std::string & str, unsigned * value);
+KEYLEDSD_EXPORT bool parseNumber(const std::string & str, unsigned & value);
 
 template <typename T>
-bool parseDuration(const std::string & str, T * value)
+bool parseDuration(const std::string & str, T & value)
 {
     unsigned rawValue;
-    if (!parseNumber(str, &rawValue)) { return false; }
-    *value = std::chrono::milliseconds(rawValue);
+    if (!parseNumber(str, rawValue)) { return false; }
+    value = std::chrono::milliseconds(rawValue);
     return true;
 }
 

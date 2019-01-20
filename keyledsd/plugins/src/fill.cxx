@@ -41,7 +41,7 @@ public:
     explicit FillEffect(EffectService & service)
      : m_fill(0, 0, 0, 0)
     {
-        RGBAColor::parse(service.getConfig("color"), &m_fill);
+        RGBAColor::parse(service.getConfig("color"), m_fill);
 
         for (const auto & item : service.configuration()) {
             if (item.first == "color") { continue; }
@@ -51,7 +51,7 @@ public:
             );
             if (git == service.keyGroups().end()) { continue; }
             RGBAColor color;
-            if (RGBAColor::parse(item.second, &color)) {
+            if (RGBAColor::parse(item.second, color)) {
                 m_rules.emplace_back(*git, color);
             }
         }

@@ -60,7 +60,7 @@ const std::vector<EffectService::KeyGroup> & EffectService::keyGroups() const
 const EffectService::string_map & EffectService::configuration() const
     { return m_configuration.items(); }
 
-const std::string & EffectService::getConfig(const std::string & key) const
+const std::string & EffectService::getConfig(const char * key) const
 {
     static const std::string empty;
     auto it = std::find_if(m_configuration.items().begin(), m_configuration.items().end(),

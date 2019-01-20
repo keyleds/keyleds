@@ -41,7 +41,7 @@ struct RGBColor final {
     constexpr RGBColor(channel_type r, channel_type g, channel_type b)
      : red(r), green(g), blue(b) {}
 
-    KEYLEDSD_EXPORT static bool parse(const std::string &, RGBColor *);
+    KEYLEDSD_EXPORT static bool parse(const std::string &, RGBColor &);
     KEYLEDSD_EXPORT void print(std::ostream &) const;
 };
 
@@ -79,7 +79,7 @@ struct RGBAColor final {
     explicit RGBAColor(RGBColor c, channel_type a = std::numeric_limits<channel_type>::max())
      : red(c.red), green(c.green), blue(c.blue), alpha(a) {}
 
-    KEYLEDSD_EXPORT static bool parse(const std::string &, RGBAColor *);
+    KEYLEDSD_EXPORT static bool parse(const std::string &, RGBAColor &);
     KEYLEDSD_EXPORT void print(std::ostream &) const;
 };
 

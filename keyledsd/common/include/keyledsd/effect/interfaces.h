@@ -86,7 +86,7 @@ public:
     virtual const std::vector<KeyGroup> & keyGroups() const = 0;    ///< Seen from effect scope
 
     virtual const string_map &  configuration() const = 0;
-    virtual const std::string & getConfig(const std::string &) const = 0;
+    virtual const std::string & getConfig(const char *) const = 0;
 
     virtual RenderTarget *      createRenderTarget() = 0;
     virtual void                destroyRenderTarget(RenderTarget *) = 0;
