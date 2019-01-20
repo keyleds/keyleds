@@ -82,7 +82,7 @@ KEYLEDS_EXPORT bool keyleds_ping(Keyleds * device, uint8_t target_id)
 {
     /* Increment ping sequence number, wrapping within range [1..255] */
     uint8_t payload = device->ping_seq;
-    device->ping_seq = payload == UINT8_MAX ? (uint8_t)1 : payload + 1;
+    device->ping_seq = (uint8_t)(payload == UINT8_MAX ? 1 : payload + 1);
 
     if (!keyleds_send(device, target_id, KEYLEDS_FEATURE_IDX_ROOT, F_PING,
                       3, (uint8_t[]){0, 0, payload})) {
@@ -153,7 +153,7 @@ KEYLEDS_EXPORT uint16_t keyleds_get_feature_id(struct keyleds_device * device,
     }
 
     /* Add it to the cache for next time */
-    feature_id = (data[0] << 8) | data[1];
+    feature_id = (uint8_t)((data[0] << 8) | data[1]);
     device->features = realloc(device->features, (idx + 2) * sizeof(device->features[0]));
     device->features[idx].target_id = target_id;
     device->features[idx].id = feature_id;
@@ -199,7 +199,7 @@ KEYLEDS_EXPORT uint8_t keyleds_get_feature_index(struct keyleds_device * device,
     /* Nope, request it */
     if (keyleds_call(device, data, sizeof(data),
                      target_id, KEYLEDS_FEATURE_ROOT, F_GET_FEATURE,
-                     2, (uint8_t[]){feature_id >> 8, feature_id}) < 0) {
+                     2, (uint8_t[]){(uint8_t)(feature_id >> 8), (uint8_t)feature_id}) < 0) {
         KEYLEDS_LOG(ERROR, "get_feature_index failed");
         return 0;
     }

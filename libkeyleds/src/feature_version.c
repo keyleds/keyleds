@@ -64,7 +64,7 @@ KEYLEDS_EXPORT bool keyleds_get_device_version(Keyleds * device, uint8_t target_
     info = malloc(sizeof(*info) + length * sizeof(info->protocols[0]));
     if (info == NULL) { keyleds_set_error_errno(); return false;}
     memcpy(info->serial, &data[1], 4);
-    info->transport = data[5] << 8 | data[6];
+    info->transport = (uint16_t)(data[5] << 8 | data[6]);
     memcpy(info->model, &data[7], 6);
     info->length = length;
 
@@ -72,7 +72,7 @@ KEYLEDS_EXPORT bool keyleds_get_device_version(Keyleds * device, uint8_t target_
     for (idx = 0; idx < length; idx += 1) {
         if (keyleds_call(device, data, (unsigned)sizeof(data),
                          target_id, KEYLEDS_FEATURE_VERSION, F_GET_FIRMWARE_INFO,
-                         1, (uint8_t[]){idx}) < 0) {
+                         1, (uint8_t[]){(uint8_t)idx}) < 0) {
             goto err_get_dev_info_free;
         }
         info->protocols[idx].type = data[0];
@@ -83,9 +83,9 @@ KEYLEDS_EXPORT bool keyleds_get_device_version(Keyleds * device, uint8_t target_
                                            +   1 * (unsigned)(data[4] & 0xf);
         info->protocols[idx].version_minor =  10 * (unsigned)(data[5] >> 4)
                                            +   1 * (unsigned)(data[5] & 0xf);
-        info->protocols[idx].build = ((unsigned)data[6] << 8) | data[7];
+        info->protocols[idx].build = (unsigned)((data[6] << 8) | data[7]);
         info->protocols[idx].is_active = (data[8] & (1<<0)) != 0;
-        info->protocols[idx].product_id = ((uint16_t)data[9] << 8) | data[10];
+        info->protocols[idx].product_id = (uint16_t)((data[9] << 8) | data[10]);
         memcpy(info->protocols[idx].misc, &data[11], 5);
     }
 
@@ -138,15 +138,15 @@ KEYLEDS_EXPORT bool keyleds_get_device_name(Keyleds * device, uint8_t target_id,
     /* Step 2 - retrieve name, chunk by chunk as report size allows */
     done = 0;
     while (done < length) {
-        int nread = keyleds_call(device, (uint8_t*)buffer + done, length - done,
-                                 target_id, KEYLEDS_FEATURE_NAME, F_GET_NAME,
-                                 1, (uint8_t[]){done});
+        ssize_t nread = keyleds_call(device, (uint8_t*)buffer + done, length - done,
+                                     target_id, KEYLEDS_FEATURE_NAME, F_GET_NAME,
+                                     1, (uint8_t[]){(uint8_t)done});
         if (nread < 0) {
             free(buffer);
             return false;
         }
 
-        done += nread;
+        done += (unsigned)nread;
     }
     buffer[length] = '\0';  /* device-provided string is not nul-terminated */
 

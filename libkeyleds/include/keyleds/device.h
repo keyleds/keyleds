@@ -18,6 +18,7 @@
 #define KEYLEDS_DEVICE_H
 
 #include <stdint.h>
+#include <sys/types.h>
 
 struct keyleds_device_reports {
     uint8_t     id;
@@ -53,9 +54,9 @@ bool keyleds_send(Keyleds * device, uint8_t target_id, uint8_t feature_idx,
                   uint8_t function, size_t length, const uint8_t * data);
 bool keyleds_receive(Keyleds * device, uint8_t target_id, uint8_t feature_idx,
                      uint8_t * message, size_t * size);
-int keyleds_call(Keyleds * device, /*@null@*/ /*@out@*/ uint8_t * result, size_t result_len,
-                 uint8_t target_id, uint16_t feature_id, uint8_t function,
-                 size_t length, const uint8_t * data);
+ssize_t keyleds_call(Keyleds * device, /*@null@*/ /*@out@*/ uint8_t * result, size_t result_len,
+                     uint8_t target_id, uint16_t feature_id, uint8_t function,
+                     size_t length, const uint8_t * data);
 
 /****************************************************************************/
 /* Helpers */

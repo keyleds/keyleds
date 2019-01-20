@@ -22,6 +22,7 @@
 #include "config.h"
 #include "keyleds.h"
 #include "keyleds/device.h"
+#include "keyleds/hid_parser.h"
 #include "keyleds/logging.h"
 
 /****************************************************************************/
@@ -209,7 +210,7 @@ static bool aggregate_main_item(const struct hid_item * state, unsigned state_it
             item->report_size = get_unsigned_integer(&state[idx]);
             break;
         case HID_TAG_REPORT_ID:
-            item->report_id = get_unsigned_integer(&state[idx]);
+            item->report_id = (uint8_t)get_unsigned_integer(&state[idx]);
             break;
         case HID_TAG_REPORT_COUNT:
             item->report_count = get_unsigned_integer(&state[idx]);
@@ -285,7 +286,7 @@ static bool build_main_item_table(const uint8_t * data, const unsigned data_size
         /* Check for overflow bad usb descriptor */
         if (current + size >= data + data_size) {
             KEYLEDS_LOG(WARNING, "REPORT descriptor item at offset 0x%zx overflows",
-                        (current - data) / sizeof(*current));
+                        (size_t)(current - data) / sizeof(*current));
             break;
         }
 
@@ -395,9 +396,16 @@ bool keyleds_parse_hid(const uint8_t * data, const unsigned data_size,
     for (idx = 0; idx < main_items_nb; idx += 1) {
         if (main_items[idx].tag == HID_TAG_OUTPUT &&    /* we want outbound reports */
             main_items[idx].logical_minimum == 0 &&     /* we transmit raw bytes, min value is 0 */
-            main_items[idx].logical_maximum == 255 &&   /* we transmit raw byutes, max value is 255 */
+            main_items[idx].logical_maximum == 255 &&   /* we transmit raw bytes, max value is 255 */
+            main_items[idx].report_size == 8 &&         /* we transmit raw bytes, size is 8 bits */
             main_items[idx].flags == 0 &&
             HID_USAGE_IS_VENDOR(main_items[idx].usage)) {   /* report usage type must be 'vendor' */
+
+            if (main_items[idx].report_count > UINT8_MAX) {
+                KEYLEDS_LOG(WARNING, "Discarding oversized report ID %#2x (%u bytes)",
+                            main_items[idx].report_id, main_items[idx].report_count);
+                continue;
+            }
 
             /* Grow report table as needed */
             if (reports_nb + 1 >= reports_capacity) {
@@ -412,8 +420,8 @@ bool keyleds_parse_hid(const uint8_t * data, const unsigned data_size,
 
             /* Create report description */
             reports[reports_nb].id = main_items[idx].report_id;
-            reports[reports_nb].size = main_items[idx].report_count
-                                     * main_items[idx].report_size / 8; /* bits to bytes */
+            reports[reports_nb].size = (uint8_t)(main_items[idx].report_count
+                                                 * main_items[idx].report_size / 8); /* bits to bytes */
             KEYLEDS_LOG(DEBUG, "Found report ID %#2x (%d bytes)",
                         reports[reports_nb].id, reports[reports_nb].size);
             reports_nb += 1;

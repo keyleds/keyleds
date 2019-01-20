@@ -33,7 +33,8 @@ static const char * const error_strings[] = {
     "invalid device (hid++ v1)",
     "feature not found on device",
     "synchronization with device failed",
-    "invalid response from device"
+    "invalid response from device",
+    "invalid argument"
 };
 
 static const char * const device_error_strings[] = {

@@ -54,7 +54,7 @@ KEYLEDS_EXPORT Keyleds * keyleds_open(const char * path, uint8_t app_id)
     unsigned version;
 
     dev->app_id = app_id;
-    do { dev->ping_seq = rand(); } while (dev->ping_seq == 0);
+    do { dev->ping_seq = (uint8_t)rand(); } while (dev->ping_seq == 0);
     dev->timeout = KEYLEDS_CALL_TIMEOUT_US;
 
     /* Open device */
@@ -177,9 +177,9 @@ KEYLEDS_EXPORT bool keyleds_flush_fd(Keyleds * device)
 /****************************************************************************/
 
 #ifndef NDEBUG
-static void format_buffer(const uint8_t * data, unsigned size, char * buffer)
+static void format_buffer(const uint8_t * data, size_t size, char * buffer)
 {
-    for (unsigned idx = 0; idx < size; idx += 1) {
+    for (size_t idx = 0; idx < size; idx += 1) {
         sprintf(buffer + 3 * idx, "%02x ", data[idx]);
     }
     buffer[3 * size - 1] = '\0';
@@ -218,7 +218,7 @@ bool keyleds_send(Keyleds * device, uint8_t target_id, uint8_t feature_idx,
     buffer[0] = device->reports[idx].id;
     buffer[1] = target_id;
     buffer[2] = feature_idx;
-    buffer[3] = function << 4 | device->app_id;
+    buffer[3] = (uint8_t)(function << 4 | device->app_id);
     memcpy(&buffer[4], data, length);
     memset(&buffer[4 + length], 0, report_size - 3 - length);
 
@@ -296,7 +296,7 @@ bool keyleds_receive(Keyleds * device, uint8_t target_id, uint8_t feature_idx,
 #ifndef NDEBUG
         if (g_keyleds_debug_level >= KEYLEDS_LOG_DEBUG) {
             char debug_buffer[3 * nread + 1];
-            format_buffer(message, nread, debug_buffer);
+            format_buffer(message, (size_t)nread, debug_buffer);
             KEYLEDS_LOG(DEBUG, "Recv [%s]", debug_buffer);
         }
 #endif
@@ -337,7 +337,7 @@ bool keyleds_receive(Keyleds * device, uint8_t target_id, uint8_t feature_idx,
         return false;
     }
 
-    if (size) { *size = nread; }
+    if (size) { *size = (size_t)nread; }
     return true;
 }
 
@@ -359,9 +359,9 @@ bool keyleds_receive(Keyleds * device, uint8_t target_id, uint8_t feature_idx,
  * @return The actual number of bytes of the received payload. May be greater than
  *         `result_len` if the result was truncated. On error, -1 is returned instead.
  */
-int keyleds_call(Keyleds * device, uint8_t * result, size_t result_len,
-    uint8_t target_id, uint16_t feature_id, uint8_t function,
-    size_t length, const uint8_t * data)
+ssize_t keyleds_call(Keyleds * device, uint8_t * result, size_t result_len,
+                     uint8_t target_id, uint16_t feature_id, uint8_t function,
+                     size_t length, const uint8_t * data)
 {
     assert(device != NULL);
     assert(result != NULL || result_len == 0);
@@ -386,9 +386,9 @@ int keyleds_call(Keyleds * device, uint8_t * result, size_t result_len,
 
     /* Copy payload, truncating to protect from buffer overflows */
     const uint8_t * res_data = keyleds_response_data(device, buffer);
-    size_t ret = nread - (res_data - buffer);
+    size_t ret = nread - (size_t)(res_data - buffer);
     if (result_len < ret) { ret = result_len; }
     if (result != NULL) { memcpy(result, res_data, ret); }
 
-    return ret;
+    return (ssize_t)ret;
 }

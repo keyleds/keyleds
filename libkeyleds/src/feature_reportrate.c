@@ -66,7 +66,7 @@ KEYLEDS_EXPORT bool keyleds_get_reportrates(Keyleds * device, uint8_t target_id,
 
     rate_idx = 0;
     for (idx = 0; idx < 8; idx += 1) {
-        unsigned rate = 1 << idx;
+        unsigned rate = 1u << idx;
         if ((data[0] & rate) != 0) {
             rates[rate_idx] = idx + 1;
             rate_idx += 1;
@@ -119,10 +119,14 @@ KEYLEDS_EXPORT bool keyleds_get_reportrate(Keyleds * device, uint8_t target_id, 
 KEYLEDS_EXPORT bool keyleds_set_reportrate(Keyleds * device, uint8_t target_id, unsigned rate)
 {
     assert(device != NULL);
+    if (rate > UINT8_MAX) {
+        keyleds_set_error(KEYLEDS_ERROR_INVAL);
+        return false;
+    }
 
     if (keyleds_call(device, NULL, 0,
                      target_id, KEYLEDS_FEATURE_REPORTRATE, F_SET_REPORT_RATE,
-                     1, (uint8_t[]){rate}) < 0) {
+                     1, (uint8_t[]){(uint8_t)rate}) < 0) {
         return false;
     }
     return true;

@@ -183,11 +183,12 @@ typedef enum {
     KEYLEDS_ERROR_HIDVERSION,
     KEYLEDS_ERROR_FEATURE_NOT_FOUND,
     KEYLEDS_ERROR_TIMEDOUT,
-    KEYLEDS_ERROR_RESPONSE
+    KEYLEDS_ERROR_RESPONSE,
+    KEYLEDS_ERROR_INVAL
 } keyleds_error_t;
 
-/*@observer@*/ const char * keyleds_get_error_str();
-keyleds_error_t             keyleds_get_errno();
+/*@observer@*/ const char * keyleds_get_error_str(void);
+keyleds_error_t             keyleds_get_errno(void);
 
 extern /*@null@*/ FILE * g_keyleds_debug_stream;
 extern int g_keyleds_debug_level;

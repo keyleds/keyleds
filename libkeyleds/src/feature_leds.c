@@ -59,7 +59,7 @@ KEYLEDS_EXPORT bool keyleds_get_block_info(Keyleds * device, uint8_t target_id,
     }
 
     /* mask is a bitfield, each bit tells the presence or absence of a block */
-    mask = ((uint16_t)data[0] << 8) | data[1];
+    mask = (uint16_t)((data[0] << 8) | data[1]);
 
     /* count blocks */
     length = 0;
@@ -81,10 +81,10 @@ KEYLEDS_EXPORT bool keyleds_get_block_info(Keyleds * device, uint8_t target_id,
 
         if (keyleds_call(device, data, (unsigned)sizeof(data),
                          target_id, KEYLEDS_FEATURE_LEDS, F_GET_BLOCK_INFO,
-                         2, (uint8_t[]){block_id >> 8, block_id}) < 0) { continue; }
+                         2, (uint8_t[]){(uint8_t)(block_id >> 8), (uint8_t)block_id}) < 0) { continue; }
 
         info->blocks[info_idx].block_id = block_id;
-        info->blocks[info_idx].nb_keys = (uint16_t)data[0] << 8 | data[1];
+        info->blocks[info_idx].nb_keys = (uint16_t)(data[0] << 8 | data[1]);
         info->blocks[info_idx].red = data[2];
         info->blocks[info_idx].green = data[3];
         info->blocks[info_idx].blue = data[4];
@@ -128,13 +128,13 @@ KEYLEDS_EXPORT bool keyleds_get_leds(Keyleds * device, uint8_t target_id,
     /* retrieve keys in chunks, as big as max_report_size allows */
     while (done < keys_nb) {
         uint8_t data[device->max_report_size];
-        int data_size;
+        ssize_t data_size;
         unsigned data_offset;
 
         data_size = keyleds_call(device, data, sizeof(data),
                                  target_id, KEYLEDS_FEATURE_LEDS, F_GET_LEDS,
-                                 4, (uint8_t[]){block_id >> 8, block_id,
-                                                offset >> 8, offset});
+                                 4, (uint8_t[]){(uint8_t)(block_id >> 8), (uint8_t)block_id,
+                                                (uint8_t)(offset >> 8), (uint8_t)offset});
         if (data_size < 0) { return false; }
         if (data[2] != (offset >> 8) ||     /* validate the offset in the reply is correct */
             data[3] != (offset & 0x00ff)) {
@@ -148,7 +148,7 @@ KEYLEDS_EXPORT bool keyleds_get_leds(Keyleds * device, uint8_t target_id,
             keys[done].green = data[data_offset + 2];
             keys[done].blue = data[data_offset + 3];
             done += 1;
-            offset += 1;
+            offset = (uint16_t)(offset + 1);
             if (done >= keys_nb) { break; }
         }
     }
@@ -175,8 +175,8 @@ KEYLEDS_EXPORT bool keyleds_set_leds(Keyleds * device, uint8_t target_id,
     assert(keys != NULL);
     assert(keys_nb <= UINT16_MAX);
 
-    uint16_t per_call = (device->max_report_size - 3 - 4) / 4;  /* 4 bytes per key, mins headers */
-    uint16_t offset, idx;
+    unsigned per_call = (device->max_report_size - 3 - 4) / 4;  /* 4 bytes per key, mins headers */
+    unsigned offset, idx;
 
     uint8_t data[4 + per_call * 4];
     data[0] = (uint8_t)(block_id >> 8);
@@ -184,7 +184,7 @@ KEYLEDS_EXPORT bool keyleds_set_leds(Keyleds * device, uint8_t target_id,
 
     /* Send keys in chunks */
     for (offset = 0; offset < keys_nb; offset += per_call) {
-        uint16_t batch_length = offset + per_call > keys_nb ? keys_nb - offset : per_call;
+        unsigned batch_length = offset + per_call > keys_nb ? keys_nb - offset : per_call;
         data[2] = (uint8_t)(batch_length >> 8);
         data[3] = (uint8_t)(batch_length >> 0);
         for (idx = 0; idx < batch_length; idx += 1) {
@@ -222,7 +222,8 @@ KEYLEDS_EXPORT bool keyleds_set_led_block(Keyleds * device, uint8_t target_id,
     assert(device != NULL);
     assert((unsigned)block_id <= UINT16_MAX);
     return keyleds_call(device, NULL, 0, target_id, KEYLEDS_FEATURE_LEDS, F_SET_BLOCK_LEDS,
-                        5, (uint8_t[]){block_id >> 8, block_id, red, green, blue}) >= 0;
+                        5, (uint8_t[]){(uint8_t)(block_id >> 8), (uint8_t)block_id,
+                                       red, green, blue}) >= 0;
 }
 
 

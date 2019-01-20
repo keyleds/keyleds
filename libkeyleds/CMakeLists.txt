@@ -19,7 +19,8 @@ project(libkeyleds VERSION 1.0 LANGUAGES C)
 include(CheckCSourceCompiles)
 include(CheckIncludeFile)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Werror -std=c99 -D_POSIX_C_SOURCE=200112L -fvisibility=internal")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -D_POSIX_C_SOURCE=200112L -fvisibility=internal")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wall -Wextra -Wconversion -Wsign-conversion -Wcast-qual -Wstrict-prototypes -Wmissing-prototypes -Wshadow -Wpointer-arith")
 
 ##############################################################################
 # Sources

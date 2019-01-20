@@ -17,9 +17,9 @@
 #ifndef KEYLEDS_ERROR_H
 #define KEYLEDS_ERROR_H
 
-const char * keyleds_get_error_str();
+const char * keyleds_get_error_str(void);
 
-void keyleds_set_error_errno();
+void keyleds_set_error_errno(void);
 void keyleds_set_error_hidpp(uint8_t code);
 void keyleds_set_error(keyleds_error_t err);
 
