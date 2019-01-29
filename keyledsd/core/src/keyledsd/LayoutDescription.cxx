@@ -144,7 +144,7 @@ static void parseKeyboard(const xmlNode * keyboard, LayoutDescription::key_list 
                                                     : std::string();
                 std::transform(codeNameStr.begin(), codeNameStr.end(), codeNameStr.begin(), ::toupper);
 
-                keys.emplace_back(
+                keys.push_back({
                     kbZone,
                     codeVal,
                     LayoutDescription::Rect {
@@ -154,7 +154,7 @@ static void parseKeyboard(const xmlNode * keyboard, LayoutDescription::key_list 
                         kbY + (rowIdx + 1) * (kbHeight / nbRows) - 1
                     },
                     codeNameStr
-                );
+                });
             }
             xOffset += keyWidth;
         }
@@ -163,14 +163,6 @@ static void parseKeyboard(const xmlNode * keyboard, LayoutDescription::key_list 
 }
 
 /****************************************************************************/
-
-LayoutDescription::LayoutDescription(std::string name, key_list keys, pos_list spurious)
- : m_name(std::move(name)),
-   m_keys(std::move(keys)),
-   m_spurious(std::move(spurious))
-{}
-
-LayoutDescription::~LayoutDescription() {}
 
 LayoutDescription LayoutDescription::parse(std::istream & stream)
 {
@@ -223,11 +215,11 @@ LayoutDescription LayoutDescription::parse(std::istream & stream)
     }
 
     // Finalize
-    return LayoutDescription(
+    return LayoutDescription{
         std::string(reinterpret_cast<std::string::const_pointer>(name.get())),
         std::move(keys),
         std::move(spurious)
-    );
+    };
 }
 
 LayoutDescription LayoutDescription::loadFile(const std::string & name)
@@ -252,17 +244,8 @@ LayoutDescription LayoutDescription::loadFile(const std::string & name)
             ERROR("layout ", fullName, ": ", error.what());
         }
     }
-    return LayoutDescription();
+    return {};
 }
-
-/****************************************************************************/
-
-LayoutDescription::Key::Key(block_type blockv, code_type codev,
-                            Rect positionv, std::string namev)
- : block(blockv), code(codev), position(positionv), name(std::move(namev))
-{}
-
-LayoutDescription::Key::~Key() {}
 
 /****************************************************************************/
 

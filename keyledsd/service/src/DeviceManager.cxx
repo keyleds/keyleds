@@ -186,16 +186,15 @@ DeviceManager::dev_list DeviceManager::findEventDevices(const ::device::Descript
 keyleds::KeyDatabase DeviceManager::setupKeyDatabase(Device & device)
 {
     // Load layout description file from disk
-    LayoutDescription layout;
-    if (device.hasLayout()) {
-        layout = LayoutDescription::loadFile(layoutName(device));
-    }
+    const auto layout = device.hasLayout()
+                      ? LayoutDescription::loadFile(layoutName(device))
+                      : LayoutDescription{};
 
     // Some keyboards do not report all keys, look for missing keys and patch device
     for (const auto & block : device.blocks()) {
         std::vector<Device::key_id_type> keyIds;
 
-        for (const auto & key : layout.keys()) {
+        for (const auto & key : layout.keys) {
             if (key.block != block.id()) { continue; }
             if (key.code > std::numeric_limits<Device::key_id_type>::max()) {
                 WARNING("invalid key code ", key.code, " in layout");
@@ -225,16 +224,16 @@ keyleds::KeyDatabase DeviceManager::buildKeyDatabase(const Device & device, cons
             auto position = KeyDatabase::Key::Rect{0, 0, 0, 0};
 
             auto it = std::find_if(
-                layout.spurious().cbegin(), layout.spurious().cend(),
-                [&](const auto & pos) { return pos.block == block.id() && pos.code == keyId; }
+                layout.spurious.cbegin(), layout.spurious.cend(),
+                [&](const auto & pos) { return pos.first == block.id() && pos.second == keyId; }
             );
-            if (it != layout.spurious().cend()) {
+            if (it != layout.spurious.cend()) {
                 DEBUG("omitting <", (int)block.id(), ", ", (int)keyId, ">");
                 ++keyIndex;
                 continue;
             }
 
-            for (const auto & key : layout.keys()) {
+            for (const auto & key : layout.keys) {
                 if (key.block == block.id() && key.code == keyId) {
                     name = key.name;
                     position = {

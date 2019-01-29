@@ -31,51 +31,32 @@ namespace keyleds {
  * Describes the physical layout of a keyboard: which keys are available, where
  * exactly they are on the keyboard, and what size the whole keyboard is.
  */
-class LayoutDescription final
+struct LayoutDescription final
 {
     using block_type = unsigned int;
     using code_type = unsigned int;
-    struct position { block_type block; code_type code; };
-public:
+
     struct Rect { unsigned x0, y0, x1, y1; };
-    class Key;
+
+    struct Key
+    {
+        block_type  block;      ///< Block identifier, eg: normal keys, game/light keys, ...
+        code_type   code;       ///< Key identifier within block
+        Rect        position;   ///< Physical key bounds. [0, 0] is upper left corner.
+        std::string name;       ///< User-readable key name
+    };
+
     class ParseError;
     using key_list = std::vector<Key>;
-    using pos_list = std::vector<position>;
+    using pos_list = std::vector<std::pair<block_type, code_type>>;
+
 public:
-                        LayoutDescription() = default;
-                        LayoutDescription(std::string name, key_list, pos_list spurious);
-                        ~LayoutDescription();
-
-    const std::string & name() const { return m_name; }
-    const key_list &    keys() const { return m_keys; }
-    const pos_list &    spurious() const { return m_spurious; }
-
     static LayoutDescription parse(std::istream &);
     static LayoutDescription loadFile(const std::string & path);
 
-private:
-    std::string         m_name;     ///< Layout name, indicating its country code
-    key_list            m_keys;     ///< All keys from all blocks
-    pos_list            m_spurious; ///< Position of blacklisted keys
-};
-
-/****************************************************************************/
-
-/** Key layout description
- *
- * Describes the physical characteristics of a single key.
- */
-class LayoutDescription::Key final
-{
-public:
-                Key(block_type block, code_type code, Rect position, std::string name);
-                ~Key();
-public:
-    block_type  block;          ///< Block identifier, eg: 0 for normal keys, 64 for game/light keys, ...
-    code_type   code;           ///< Key identifier within block
-    Rect        position;       ///< Physical key bounds. [0, 0] is upper left corner.
-    std::string name;           ///< User-readable key name
+    std::string name;       ///< Layout name, indicating its country code
+    key_list    keys;       ///< All keys from all blocks
+    pos_list    spurious;   ///< Position of blacklisted keys
 };
 
 /****************************************************************************/
