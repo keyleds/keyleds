@@ -75,11 +75,11 @@ static std::string to_string(const std::vector<std::pair<std::string, std::strin
 
 /****************************************************************************/
 
-Service::Service(EffectManager & effectManager,
-                 std::unique_ptr<Configuration> configuration, QObject * parent)
+Service::Service(EffectManager & effectManager, tools::FileWatcher & fileWatcher,
+                 Configuration configuration, QObject * parent)
     : QObject(parent),
       m_effectManager(effectManager),
-      m_configuration(nullptr),
+      m_fileWatcher(fileWatcher),
       m_autoQuit(false),
       m_active(false),
       m_deviceWatcher(nullptr)
@@ -113,7 +113,7 @@ void Service::init()
 
 /****************************************************************************/
 
-void Service::setConfiguration(std::unique_ptr<Configuration> config)
+void Service::setConfiguration(Configuration config)
 {
     using std::swap;
     m_fileWatcherSub = FileWatcher::subscription(); // destroy it so it isn't reused
@@ -122,13 +122,13 @@ void Service::setConfiguration(std::unique_ptr<Configuration> config)
     swap(m_configuration, config);
 
     // Propagate configuration
-    for (auto & device : m_devices) { device->setConfiguration(m_configuration.get()); }
+    for (auto & device : m_devices) { device->setConfiguration(&m_configuration); }
     setContext({}); // force context reloading without changing it
 
     // Setup configuration file watch
-    if (!m_configuration->path().empty()) {
+    if (!m_configuration.path.empty()) {
         m_fileWatcherSub = m_fileWatcher.subscribe(
-            m_configuration->path(), FileWatcher::event::CloseWrite,
+            m_configuration.path, FileWatcher::event::CloseWrite,
             std::bind(&Service::onConfigurationFileChanged, this, std::placeholders::_1)
         );
     }
@@ -173,15 +173,15 @@ void Service::handleKeyEvent(const std::string & devNode, int key, bool press)
 
 void Service::onConfigurationFileChanged(FileWatcher::event event)
 {
-    INFO("reloading ", m_configuration->path());
+    INFO("reloading ", m_configuration.path);
 
-    std::unique_ptr<Configuration> conf;
+    auto conf = Configuration();
     try {
-        conf = Configuration::loadFile(m_configuration->path());
+        conf = Configuration::loadFile(m_configuration.path);
     } catch (std::exception & error) {
         CRITICAL("reloading failed: ", error.what());
     }
-    if (conf != nullptr) {
+    if (!conf.path.empty()) {
         setConfiguration(std::move(conf));
         return; // setConfiguration reloads the watch unconditionally
     }
@@ -189,7 +189,7 @@ void Service::onConfigurationFileChanged(FileWatcher::event event)
     if ((event & FileWatcher::event::Ignored) != 0) {
         // Happens when editors swap in the configuration file instead of rewriting it
         m_fileWatcherSub = m_fileWatcher.subscribe(
-            m_configuration->path(), FileWatcher::event::CloseWrite,
+            m_configuration.path, FileWatcher::event::CloseWrite,
             std::bind(&Service::onConfigurationFileChanged, this, std::placeholders::_1)
         );
     }
@@ -202,7 +202,7 @@ void Service::onDeviceAdded(const ::device::Description & description)
         auto device = device::Logitech::open(description.devNode());
         auto manager = std::make_unique<DeviceManager>(
             m_effectManager, m_fileWatcher,
-            description, std::move(device), m_configuration.get()
+            description, std::move(device), &m_configuration
         );
         manager->setContext(m_context);
 

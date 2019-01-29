@@ -81,13 +81,8 @@ public:
     void scalar(const std::string & value, const std::string &, const std::string & anchor) override;
 
     ParseError makeError(const std::string & what);
-public:
-    Configuration::string_list          m_plugins;
-    Configuration::path_list            m_pluginPaths;
-    Configuration::device_map           m_devices;
-    Configuration::key_group_list       m_keyGroups;
-    Configuration::effect_group_list    m_effectGroups;
-    Configuration::profile_list         m_profiles;
+
+    auto && result();
 
 private:
     std::stack<state_ptr, std::vector<state_ptr>>                m_state;
@@ -287,14 +282,14 @@ public:
         }
 
         if (!m_currentAnchor.empty()) { builder.addGroupAlias(m_currentAnchor, keys); }
-        m_value.emplace_back(currentKey(), std::move(keys));
+        m_value.push_back({currentKey(), std::move(keys)});
         MappingBuildState::subStateEnd(builder, state);
     }
 
     void aliasEntry(ConfigurationBuilder & builder, const std::string & key,
                     const std::string & anchor) override
     {
-        m_value.emplace_back(key, builder.getGroupAlias(anchor));
+        m_value.push_back({key, builder.getGroupAlias(anchor)});
     }
 
     value_type && result() { return std::move(m_value); }
@@ -330,7 +325,7 @@ public:
         auto name = it_name->second;
         conf.erase(it_name);
 
-        m_value.emplace_back(std::move(name), std::move(conf));
+        m_value.push_back({std::move(name), std::move(conf)});
     }
 
     value_type && result() { return std::move(m_value); }
@@ -520,6 +515,8 @@ class RootState final : public MappingBuildState
         Plugins, PluginPaths, Layouts, Devices, KeyGroups, EffectGroups, Profiles
     };
 public:
+    using value_type = Configuration;
+public:
     RootState() : MappingBuildState(0) {}
     void print(std::ostream & out) const override { out <<"root"; }
 
@@ -546,7 +543,7 @@ public:
     void scalarEntry(ConfigurationBuilder & builder, const std::string & key,
                      const std::string & value, const std::string & anchor) override
     {
-        if (key == "plugin-path")  { builder.m_pluginPaths = { value }; }
+        if (key == "plugin-path")  { m_value.pluginPaths = { value }; }
         else MappingBuildState::scalarEntry(builder, key, value, anchor);
     }
 
@@ -554,32 +551,38 @@ public:
     {
         switch (state.type()) {
         case SubState::Plugins:
-            builder.m_plugins = state.as<StringSequenceBuildState>().result();
+            m_value.plugins = state.as<StringSequenceBuildState>().result();
             break;
         case SubState::PluginPaths:
-            builder.m_pluginPaths = state.as<StringSequenceBuildState>().result();
+            m_value.pluginPaths = state.as<StringSequenceBuildState>().result();
             break;
         case SubState::Devices:
-            builder.m_devices = state.as<StringMappingBuildState>().result();
+            m_value.devices = state.as<StringMappingBuildState>().result();
             break;
         case SubState::KeyGroups:
-            builder.m_keyGroups = state.as<KeyGroupListState>().result();
+            m_value.keyGroups = state.as<KeyGroupListState>().result();
             break;
         case SubState::EffectGroups:
-            builder.m_effectGroups = state.as<EffectGroupListState>().result();
+            m_value.effectGroups = state.as<EffectGroupListState>().result();
             break;
         case SubState::Profiles:
-            builder.m_profiles = state.as<ProfileListState>().result();
+            m_value.profiles = state.as<ProfileListState>().result();
             break;
         }
         MappingBuildState::subStateEnd(builder, state);
     }
+
+    value_type && result() { return std::move(m_value); }
+
+private:
+    value_type  m_value;
 };
 
 
 /// Configuration builder state: parsing just started
 class InitialState final : public ConfigurationBuilder::BuildState
 {
+    using value_type = Configuration;
 public:
     void print(std::ostream &) const override { }
 
@@ -587,6 +590,16 @@ public:
     {
         return std::make_unique<RootState>();
     }
+
+    void subStateEnd(ConfigurationBuilder &, BuildState & state) override
+    {
+        m_value = state.as<RootState>().result();
+    }
+
+    value_type && result() { return std::move(m_value); }
+
+private:
+    value_type  m_value;
 };
 
 /****************************************************************************/
@@ -665,33 +678,17 @@ ConfigurationBuilder::ParseError ConfigurationBuilder::makeError(const std::stri
     return YAMLParser::makeError(msg.str());
 }
 
+auto && ConfigurationBuilder::result()
+{
+    assert(m_state.size() == 1);
+    return m_state.top()->as<InitialState>().result();
+}
+
 /****************************************************************************/
 
-Configuration::Configuration(std::string path,
-                             string_list plugins,
-                             path_list pluginPaths,
-                             device_map devices,
-                             key_group_list keyGroups,
-                             effect_group_list effectGroups,
-                             profile_list profiles)
- : m_path(std::move(path)),
-   m_plugins(std::move(plugins)),
-   m_pluginPaths(std::move(pluginPaths)),
-   m_devices(std::move(devices)),
-   m_keyGroups(std::move(keyGroups)),
-   m_effectGroups(std::move(effectGroups)),
-   m_profiles(std::move(profiles))
-{}
-
-Configuration::~Configuration() {}
-
-std::unique_ptr<Configuration> Configuration::loadFile(const std::string & path)
+Configuration Configuration::loadFile(const std::string & path)
 {
     using tools::paths::XDG;
-
-    if (path.empty()) {
-        throw std::runtime_error("Empty configuration file path");
-    }
 
     std::ifstream file;
     std::string actualPath;
@@ -702,51 +699,10 @@ std::unique_ptr<Configuration> Configuration::loadFile(const std::string & path)
 
     auto builder = ConfigurationBuilder();
     builder.parse(file);
-    return std::make_unique<Configuration>(Configuration(
-        actualPath,
-        std::move(builder.m_plugins),
-        std::move(builder.m_pluginPaths),
-        std::move(builder.m_devices),
-        std::move(builder.m_keyGroups),
-        std::move(builder.m_effectGroups),
-        std::move(builder.m_profiles)
-    ));
+    auto result = builder.result();
+    result.path = actualPath;
+    return result;
 }
-
-/****************************************************************************/
-
-Configuration::EffectGroup::EffectGroup(std::string name,
-                                        key_group_list keyGroups,
-                                        effect_list effects)
- : m_name(std::move(name)),
-   m_keyGroups(std::move(keyGroups)),
-   m_effects(std::move(effects))
-{}
-
-Configuration::EffectGroup::~EffectGroup() {}
-
-/****************************************************************************/
-
-Configuration::KeyGroup::KeyGroup(std::string name, key_list keys)
- : m_name(std::move(name)),
-   m_keys(std::move(keys))
-{}
-
-Configuration::KeyGroup::~KeyGroup() {}
-
-/****************************************************************************/
-
-Configuration::Profile::Profile(std::string name,
-                                Lookup lookup,
-                                device_list devices,
-                                effect_group_list effectGroups)
- : m_name(std::move(name)),
-   m_lookup(std::move(lookup)),
-   m_devices(std::move(devices)),
-   m_effectGroups(std::move(effectGroups))
-{}
-
-Configuration::Profile::~Profile() {}
 
 /****************************************************************************/
 
@@ -788,11 +744,3 @@ Configuration::Profile::Lookup::buildRegexps(string_map filters)
                    });
     return result;
 }
-
-/****************************************************************************/
-
-Configuration::Effect::Effect(std::string name, string_map items)
- : m_name(std::move(name)), m_items(std::move(items))
-{}
-
-Configuration::Effect::~Effect() {}

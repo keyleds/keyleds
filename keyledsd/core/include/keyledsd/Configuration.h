@@ -33,13 +33,12 @@ namespace keyleds {
  * along with helper methods to load it from a file or program
  * arguments.
  */
-class Configuration final
+struct Configuration final
 {
-public:
-    class EffectGroup;
-    class Effect;
-    class KeyGroup;
-    class Profile;
+    struct EffectGroup;
+    struct Effect;
+    struct KeyGroup;
+    struct Profile;
 
     using string_list = std::vector<std::string>;
     using path_list = std::vector<std::string>;
@@ -47,82 +46,42 @@ public:
     using key_group_list = std::vector<KeyGroup>;
     using effect_group_list = std::vector<EffectGroup>;
     using profile_list = std::vector<Profile>;
-private:
-                            Configuration(std::string path,
-                                          string_list plugins,
-                                          path_list pluginPaths,
-                                          device_map devices,
-                                          key_group_list groups,
-                                          effect_group_list effectGroups,
-                                          profile_list profiles);
-public:
-                            Configuration() = default;
-                            ~Configuration();
 
-    const std::string &     path() const { return m_path; }
-    const string_list       plugins() const { return m_plugins; }
-    const path_list &       pluginPaths() const { return m_pluginPaths; }
-    const device_map &      devices() const { return m_devices; }
-    const key_group_list &  keyGroups() const { return m_keyGroups; }
-    const effect_group_list & effectGroups() const { return m_effectGroups; }
-    const profile_list&     profiles() const { return m_profiles; }
+    static Configuration loadFile(const std::string & path);
 
-public:
-    static std::unique_ptr<Configuration>   loadFile(const std::string & path);
-
-private:
-    std::string             m_path;         ///< Configuration file path, if loaded from disk
-    string_list             m_plugins;      ///< List of plugins to load on startup
-    path_list               m_pluginPaths;  ///< List of directories to search for plugins
-    device_map              m_devices;      ///< Map of device serials to device names
-    key_group_list          m_keyGroups;    ///< Map of key group names to lists of key names
-    effect_group_list       m_effectGroups; ///< Map of effect group names to configurations
-    profile_list            m_profiles;     ///< List of profile configurations
+    std::string         path;           ///< Path of configuration on disk
+    string_list         plugins;        ///< List of plugins to load on startup
+    path_list           pluginPaths;    ///< List of directories to search for plugins
+    device_map          devices;        ///< Map of device serials to device names
+    key_group_list      keyGroups;      ///< Map of key group names to lists of key names
+    effect_group_list   effectGroups;   ///< Map of effect group names to configurations
+    profile_list        profiles;       ///< List of profile configurations
 };
 
 /****************************************************************************/
 
 /** EffectGroup configuration
  */
-class Configuration::EffectGroup final
+struct Configuration::EffectGroup final
 {
-public:
     using key_group_list = Configuration::key_group_list;
     using effect_list = std::vector<Effect>;
-public:
-                            EffectGroup(std::string name,
-                                        key_group_list keyGroups,
-                                        effect_list effects);
-                            ~EffectGroup();
 
-    const std::string &     name() const { return m_name; }
-    const key_group_list &  keyGroups() const { return m_keyGroups; }
-    const effect_list &     effects() const { return m_effects; }
-
-private:
-    std::string             m_name;         ///< User-readable name
-    key_group_list          m_keyGroups;    ///< Map of key group names to lists of key names
-    effect_list             m_effects;      ///< List of effect configurations for this group
+    std::string     name;         ///< User-readable name
+    key_group_list  keyGroups;    ///< Map of key group names to lists of key names
+    effect_list     effects;      ///< List of effect configurations for this group
 };
 
 /****************************************************************************/
 
 /** KeyGroup configuration
  */
-class Configuration::KeyGroup final
+struct Configuration::KeyGroup final
 {
-public:
     using key_list = std::vector<std::string>;
-public:
-                            KeyGroup(std::string name, key_list keys);
-                            ~KeyGroup();
 
-    const std::string &     name() const { return m_name; }
-    const key_list &        keys() const { return m_keys; }
-
-private:
-    std::string             m_name;         ///< User-readable name
-    key_list                m_keys;         ///< List of key names
+    std::string name;         ///< User-readable name
+    key_list    keys;         ///< List of key names
 };
 
 /****************************************************************************/
@@ -134,7 +93,7 @@ private:
  * effect groups to apply when a context matches. The set of conditions is known
  * as a Lookup.
  */
-class Configuration::Profile final
+struct Configuration::Profile final
 {
 public:
     /// Filters a context to determine whether a profile should be enabled
@@ -145,7 +104,7 @@ public:
         using string_map = std::vector<std::pair<std::string, std::string>>;
     public:
                             Lookup() = default;
-                            Lookup(string_map filters);
+        explicit            Lookup(string_map filters);
                             ~Lookup();
 
         bool                match(const string_map &) const;
@@ -157,23 +116,12 @@ public:
 
     using device_list = std::vector<std::string>;
     using effect_group_list = std::vector<std::string>;
+
 public:
-                            Profile(std::string name,
-                                    Lookup lookup,
-                                    device_list devices,
-                                    effect_group_list effectGroups);
-                            ~Profile();
-
-    const std::string &     name() const { return m_name; }
-    const Lookup &          lookup() const { return m_lookup; }
-    const device_list &     devices() const { return m_devices; }
-    const effect_group_list & effectGroups() const { return m_effectGroups; }
-
-private:
-    std::string             m_name;         ///< User-readable name
-    Lookup                  m_lookup;       ///< Determines when to apply the profile
-    device_list             m_devices;      ///< List of device names this profile is restricted to
-    effect_group_list       m_effectGroups; ///< List of effect group names this profile activates
+    std::string         name;         ///< User-readable name
+    Lookup              lookup;       ///< Determines when to apply the profile
+    device_list         devices;      ///< List of device names this profile is restricted to
+    effect_group_list   effectGroups; ///< List of effect group names this profile activates
 };
 
 /****************************************************************************/
@@ -183,17 +131,12 @@ private:
  * Holds the configuration of a single rendering effect. It is a simple string
  * map, and a effect name used to look it up in the effect manager.
  */
-class Configuration::Effect final
+struct Configuration::Effect final
 {
     using string_map = std::vector<std::pair<std::string, std::string>>;
-public:
-                        Effect(std::string name, string_map items);
-                        ~Effect();
-    const std::string & name() const { return m_name; }
-    const string_map &  items() const { return m_items; }
-private:
-    std::string         m_name;         ///< Effect name as registered in effect manager
-    string_map          m_items;        ///< Flat string map passed through to effect
+
+    std::string name;       ///< Effect name as registered in effect manager
+    string_map  items;      ///< Flat string map passed through to effect
 };
 
 /****************************************************************************/

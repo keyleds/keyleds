@@ -162,9 +162,9 @@ std::string DeviceManager::getSerial(const ::device::Description & description)
 
 std::string DeviceManager::getName(const Configuration & config, const std::string & serial)
 {
-    auto dit = std::find_if(config.devices().begin(), config.devices().end(),
+    auto dit = std::find_if(config.devices.begin(), config.devices.end(),
                             [&serial](auto & item) { return item.second == serial; });
-    return dit != config.devices().end() ? dit->first : serial;
+    return dit != config.devices.end() ? dit->first : serial;
 }
 
 DeviceManager::dev_list DeviceManager::findEventDevices(const ::device::Description & description)
@@ -271,16 +271,16 @@ std::vector<keyleds::effect::interface::Effect *> DeviceManager::loadEffects(con
     const Configuration::Profile * defaultProfile = nullptr;
     const Configuration::Profile * overlayProfile = nullptr;
 
-    for (const auto & profileEntry : m_configuration->profiles()) {
-        const auto & devices = profileEntry.devices();
+    for (const auto & profileEntry : m_configuration->profiles) {
+        const auto & devices = profileEntry.devices;
         if (!devices.empty() && std::find(devices.begin(), devices.end(), m_name) == devices.end())
             continue;
-        if (profileEntry.name() == defaultProfileName) {
+        if (profileEntry.name == defaultProfileName) {
             defaultProfile = &profileEntry;
-        } else if (profileEntry.name() == overlayProfileName) {
+        } else if (profileEntry.name == overlayProfileName) {
             overlayProfile = &profileEntry;
-        } else if (profileEntry.lookup().match(context)) {
-            DEBUG("profile matches: ", profileEntry.name());
+        } else if (profileEntry.lookup.match(context)) {
+            DEBUG("profile matches: ", profileEntry.name);
             profile = &profileEntry;
         }
     }
@@ -291,28 +291,28 @@ std::vector<keyleds::effect::interface::Effect *> DeviceManager::loadEffects(con
         }
         profile = defaultProfile;
     }
-    VERBOSE("selected profile <", profile->name(), ">");
+    VERBOSE("selected profile <", profile->name, ">");
 
     // Collect effect names from selected profile and resolve them
     std::vector<const Configuration::EffectGroup *> effectGroups;
 
-    for (const auto & name : profile->effectGroups()) {
-        auto eit = std::find_if(m_configuration->effectGroups().begin(),
-                                m_configuration->effectGroups().end(),
-                                [&name](auto & group) { return group.name() == name; });
-        if (eit == m_configuration->effectGroups().end()) {
-            ERROR("profile <", profile->name(), "> references unknown effect group <", name, ">");
+    for (const auto & name : profile->effectGroups) {
+        auto eit = std::find_if(m_configuration->effectGroups.begin(),
+                                m_configuration->effectGroups.end(),
+                                [&name](auto & group) { return group.name == name; });
+        if (eit == m_configuration->effectGroups.end()) {
+            ERROR("profile <", profile->name, "> references unknown effect group <", name, ">");
             continue;
         }
         effectGroups.push_back(&*eit);
     }
     if (overlayProfile != nullptr) {
-        for (const auto & name : overlayProfile->effectGroups()) {
-            auto eit = std::find_if(m_configuration->effectGroups().begin(),
-                                    m_configuration->effectGroups().end(),
-                                    [&name](auto & group) { return group.name() == name; });
-            if (eit == m_configuration->effectGroups().end()) {
-                ERROR("profile <", profile->name(), "> references unknown effect group <", name, ">");
+        for (const auto & name : overlayProfile->effectGroups) {
+            auto eit = std::find_if(m_configuration->effectGroups.begin(),
+                                    m_configuration->effectGroups.end(),
+                                    [&name](auto & group) { return group.name == name; });
+            if (eit == m_configuration->effectGroups.end()) {
+                ERROR("profile <", profile->name, "> references unknown effect group <", name, ">");
                 continue;
             }
             effectGroups.push_back(&*eit);
@@ -332,35 +332,35 @@ std::vector<keyleds::effect::interface::Effect *> DeviceManager::loadEffects(con
 DeviceManager::EffectGroup & DeviceManager::getEffectGroup(const Configuration::EffectGroup & conf)
 {
     auto eit = std::find_if(m_effectGroups.begin(), m_effectGroups.end(),
-                            [&](const auto & group) { return group.name() == conf.name(); });
+                            [&](const auto & group) { return group.name() == conf.name; });
     if (eit != m_effectGroups.end()) { return *eit; }
 
     // Load key groups
     std::vector<KeyDatabase::KeyGroup> keyGroups;
 
     auto group_from_conf = [this](const auto & gconf) {
-        return m_keyDB.makeGroup(gconf.name(), gconf.keys().begin(), gconf.keys().end());
+        return m_keyDB.makeGroup(gconf.name, gconf.keys.begin(), gconf.keys.end());
     };
-    std::transform(conf.keyGroups().begin(), conf.keyGroups().end(),
+    std::transform(conf.keyGroups.begin(), conf.keyGroups.end(),
                    std::back_inserter(keyGroups), group_from_conf);
-    std::transform(m_configuration->keyGroups().begin(), m_configuration->keyGroups().end(),
+    std::transform(m_configuration->keyGroups.begin(), m_configuration->keyGroups.end(),
                    std::back_inserter(keyGroups), group_from_conf);
 
     // Load effects
     std::vector<EffectManager::effect_ptr> effects;
-    for (const auto & effectConf : conf.effects()) {
+    for (const auto & effectConf : conf.effects) {
         auto effect = m_effectManager.createEffect(
-            effectConf.name(), std::make_unique<effect::EffectService>(*this, effectConf, keyGroups)
+            effectConf.name, std::make_unique<effect::EffectService>(*this, effectConf, keyGroups)
         );
         if (!effect) {
-            ERROR("plugin for effect ", effectConf.name(), " not found");
+            ERROR("plugin for effect ", effectConf.name, " not found");
             continue;
         }
-        VERBOSE("loaded plugin effect ", effectConf.name());
+        VERBOSE("loaded plugin effect ", effectConf.name);
         effects.emplace_back(std::move(effect));
     }
 
-    m_effectGroups.emplace_back(conf.name(), std::move(effects));
+    m_effectGroups.emplace_back(conf.name, std::move(effects));
     return m_effectGroups.back();
 }
 

@@ -58,14 +58,14 @@ const std::vector<EffectService::KeyGroup> & EffectService::keyGroups() const
     { return m_keyGroups; }
 
 const EffectService::string_map & EffectService::configuration() const
-    { return m_configuration.items(); }
+    { return m_configuration.items; }
 
 const std::string & EffectService::getConfig(const char * key) const
 {
     static const std::string empty;
-    auto it = std::find_if(m_configuration.items().begin(), m_configuration.items().end(),
+    auto it = std::find_if(m_configuration.items.begin(), m_configuration.items.end(),
                            [key](const auto & item) { return item.first == key; });
-    return it != m_configuration.items().end() ? it->second : empty;
+    return it != m_configuration.items.end() ? it->second : empty;
 }
 
 keyleds::RenderTarget * EffectService::createRenderTarget()
@@ -105,5 +105,5 @@ const std::string & EffectService::getFile(const std::string & name)
 
 void EffectService::log(unsigned level, const char * msg)
 {
-    l_logger.print(level, m_configuration.name() + ": " + msg);
+    l_logger.print(level, m_configuration.name + ": " + msg);
 }

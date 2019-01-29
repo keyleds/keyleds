@@ -37,6 +37,7 @@
 #include "keyledsd/effect/StaticModuleRegistry.h"
 #include "keyledsd/Configuration.h"
 #include "keyledsd/Service.h"
+#include "tools/FileWatcher.h"
 #include "config.h"
 #include "logging.h"
 
@@ -182,10 +183,10 @@ int main(int argc, char * argv[])
     INFO("keyledsd v" KEYLEDSD_VERSION_STR " starting up");
 
     // Load configuration
-    std::unique_ptr<Configuration> configuration;
+    auto configuration = Configuration();
     try {
         configuration = Configuration::loadFile(options.configPath);
-        VERBOSE("using ", configuration->path());
+        VERBOSE("using ", configuration.path);
     } catch (std::exception & error) {
         CRITICAL("Could not load configuration: ", error.what());
         return 1;
@@ -194,7 +195,7 @@ int main(int argc, char * argv[])
     // Register modules
     std::copy(options.modulePaths.cbegin(), options.modulePaths.cend(),
               std::back_inserter(effectManager.searchPaths()));
-    std::copy(configuration->pluginPaths().begin(), configuration->pluginPaths().end(),
+    std::copy(configuration.pluginPaths.begin(), configuration.pluginPaths.end(),
               std::back_inserter(effectManager.searchPaths()));
     effectManager.searchPaths().push_back(SYS_CONFIG_LIBDIR "/" KEYLEDSD_MODULE_PREFIX);
 
@@ -205,7 +206,7 @@ int main(int argc, char * argv[])
                 ERROR("static module <", module.first, ">: ", error);
             }
         }
-        for (const auto & name : configuration->plugins()) {
+        for (const auto & name : configuration.plugins) {
             if (!effectManager.load(name, &error)) {
                 WARNING("loading module <", name, ">: ", error);
             }
@@ -213,15 +214,18 @@ int main(int argc, char * argv[])
     }
 
     // Setup application components
-    auto service = new keyleds::Service(effectManager, std::move(configuration), &app);
+    auto watcher = tools::FileWatcher();
+    auto service = std::make_unique<keyleds::Service>(
+        effectManager, watcher, std::move(configuration)
+    );
     service->setAutoQuit(options.autoQuit);
-    QTimer::singleShot(0, service, &keyleds::Service::init);
+    QTimer::singleShot(0, service.get(), &keyleds::Service::init);
 
 #ifndef NO_DBUS
     if (!options.noDBus) {
         auto connection = QDBusConnection::sessionBus();
-        new keyleds::dbus::ServiceAdaptor(service);   // service takes ownership
-        if (!connection.registerObject("/Service", service) ||
+        new keyleds::dbus::ServiceAdaptor(service.get());   // service takes ownership
+        if (!connection.registerObject("/Service", service.get()) ||
             !connection.registerService("org.etherdream.KeyledsService")) {
             CRITICAL("DBus registration failed");
             return 2;
@@ -232,9 +236,9 @@ int main(int argc, char * argv[])
     // Register signals and go
     int sigFd = openSignalSocket({SIGINT, SIGTERM, SIGQUIT, SIGHUP});
     if (sigFd >= 0) {
-        auto * notifier = new QSocketNotifier(sigFd, QSocketNotifier::Read, service);
+        auto * notifier = new QSocketNotifier(sigFd, QSocketNotifier::Read, service.get());
         QObject::connect(notifier, &QSocketNotifier::activated,
-                         [options, service](int fd){ handleSignalEvent(options, service, fd); });
+                         [&](int fd){ handleSignalEvent(options, service.get(), fd); });
     }
 
     return app.exec();

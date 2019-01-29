@@ -53,7 +53,7 @@ inline keyleds::Service * ServiceAdaptor::parent() const
 
 QString ServiceAdaptor::configurationPath() const
 {
-    return QString(parent()->configuration().path().c_str());
+    return QString(parent()->configuration().path.c_str());
 }
 
 ServiceContextValues ServiceAdaptor::context() const

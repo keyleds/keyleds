@@ -21,6 +21,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "keyledsd/Configuration.h"
 #include "keyledsd/Device.h"
 #include "keyledsd/device/Logitech.h"
 #include "tools/DeviceWatcher.h"
@@ -30,7 +31,6 @@ namespace xlib { class Display; }
 
 namespace keyleds {
 
-class Configuration;
 class DeviceManager;
 class DisplayManager;
 class EffectManager;
@@ -53,13 +53,13 @@ class Service final : public QObject
     using device_list = std::vector<std::unique_ptr<DeviceManager>>;
     using display_list = std::vector<std::unique_ptr<DisplayManager>>;
 public:
-                        Service(EffectManager &,
-                                std::unique_ptr<Configuration>, QObject *parent = nullptr);
+                        Service(EffectManager &, FileWatcher &,
+                                Configuration, QObject *parent = nullptr);
                         Service(const Service &) = delete;
                         ~Service() override;
 
     const EffectManager & effectManager() const { return m_effectManager; }
-    const Configuration & configuration() const { return *m_configuration; }
+    const Configuration & configuration() const { return m_configuration; }
     bool                autoQuit() const { return m_autoQuit; }
     const string_map &  context() const { return m_context; }
     bool                active() const { return m_active; }
@@ -67,7 +67,7 @@ public:
 
     void                init();             ///< Invoked once to complete event-loop-depenent setup
 
-    void                setConfiguration(std::unique_ptr<Configuration>);
+    void                setConfiguration(Configuration);
     void                setAutoQuit(bool);
     void                setActive(bool val);
     void                setContext(const string_map &);
@@ -89,7 +89,8 @@ private:
     void                onDisplayRemoved();
 private:
     EffectManager &     m_effectManager;    ///< Controls lifecycle of effects (injected)
-    std::unique_ptr<Configuration> m_configuration;
+    FileWatcher &       m_fileWatcher;     ///< Connection to inotify
+    Configuration       m_configuration;
     bool                m_autoQuit;         ///< Quit when last device is removed?
 
     string_map          m_context;          ///< Current context. Used when instanciating new managers
@@ -98,7 +99,6 @@ private:
     display_list        m_displays;         ///< Connections to X displays
 
     DeviceWatcher       m_deviceWatcher;    ///< Connection to libudev
-    FileWatcher         m_fileWatcher;      ///< Connection to inotify
     FileWatcher::subscription m_fileWatcherSub; ///< Notifications for conf change
 };
 
