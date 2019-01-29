@@ -221,7 +221,7 @@ keyleds::KeyDatabase DeviceManager::buildKeyDatabase(const Device & device, cons
         for (unsigned kidx = 0; kidx < block.keys().size(); ++kidx) {
             const auto keyId = block.keys()[kidx];
             std::string name;
-            auto position = KeyDatabase::Key::Rect{0, 0, 0, 0};
+            auto position = KeyDatabase::Rect{0, 0, 0, 0};
 
             auto it = std::find_if(
                 layout.spurious.cbegin(), layout.spurious.cend(),
@@ -247,12 +247,12 @@ keyleds::KeyDatabase DeviceManager::buildKeyDatabase(const Device & device, cons
             }
             if (name.empty()) { name = device.resolveKey(block.id(), keyId); }
 
-            db.emplace_back(
+            db.push_back({
                 keyIndex,
                 device.decodeKeyId(block.id(), keyId),
                 std::move(name),
                 position
-            );
+            });
             ++keyIndex;
         }
     }

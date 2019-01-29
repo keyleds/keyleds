@@ -51,7 +51,7 @@ static int toTargetIndex(lua_State * lua, int idx) // 0-based
         auto * db = lua_to<const KeyDatabase *>(lua, -1);
         lua_pop(lua, 2);
 
-        auto it = db->findName(std::string(keyName, size));
+        auto it = db->findName(keyName);
         if (it != db->end()) {
             return static_cast<int>(it->index);
         }

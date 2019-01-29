@@ -37,16 +37,12 @@ class KEYLEDSD_EXPORT KeyDatabase final
 {
 public:
     using position_type = unsigned int;
+    struct Rect { position_type x0, y0, x1, y1; };
 
-    class Key final
+    struct Key final
     {
         using index_type = RenderTarget::size_type;
-    public:
-        struct Rect { position_type x0, y0, x1, y1; };
-    public:
-        Key(index_type, int keyCode, std::string name, Rect position);
-        ~Key();
-    public:
+
         index_type      index;      ///< index in render targets
         int             keyCode;    ///< linux input event code
         std::string     name;       ///< user-readable name
@@ -72,21 +68,19 @@ public:
     using size_type = unsigned int;         // narrow down vector's size
 public:
                     KeyDatabase(key_list keys);
-    explicit        KeyDatabase(const KeyDatabase &) = default;
-                    KeyDatabase(KeyDatabase &&) = default;
                     ~KeyDatabase();
 
     const_iterator  findKeyCode(int keyCode) const;
-    const_iterator  findName(const std::string & name) const;
+    const_iterator  findName(const char * name) const;
 
     const_iterator  begin() const { return m_keys.cbegin(); }
     const_iterator  end() const { return m_keys.cend(); }
     const Key &     operator[](size_type idx) const { return m_keys[idx]; }
     size_type       size() const noexcept { return size_type(m_keys.size()); }
 
-    Key::Rect       bounds() const { return m_bounds; }
-    position_type   distance(const Key &, const Key &) const;
-    double          angle(const Key &, const Key &) const;
+    Rect            bounds() const noexcept { return m_bounds; }
+    position_type   distance(const Key &, const Key &) const noexcept;
+    double          angle(const Key &, const Key &) const noexcept;
 
     /// Builds a KeyGroup with given name; first and last define a sequence of
     /// string defining key names for the group. Invalid names are ignored.
@@ -94,13 +88,13 @@ public:
 
 private:
     /// Computes m_bounds, invoked once at initialization
-    static Key::Rect computeBounds(const key_list &);
+    static Rect computeBounds(const key_list &);
     static relation_list computeRelations(const key_list &);
 
 private:
-    const key_list      m_keys;         ///< Vector of all keys known for a device
-    const Key::Rect     m_bounds;       ///< Bounds of m_keys' positions
-    const relation_list m_relations;    ///< Pre-computed relation array
+    key_list        m_keys;         ///< Vector of all keys known for a device
+    Rect            m_bounds;       ///< Bounds of m_keys' positions
+    relation_list   m_relations;    ///< Pre-computed relation array
 };
 
 /****************************************************************************/
@@ -141,7 +135,6 @@ public:
         void        swap(iterator & o) noexcept { std::swap(m_it, o.m_it); }
 
         key_list::const_iterator get() const { return m_it; }
-        friend bool operator==(const iterator &, const iterator &);
     };
     using const_iterator = iterator;
 public:
@@ -192,7 +185,7 @@ inline bool operator!=(const KeyDatabase::KeyGroup & a, const KeyDatabase::KeyGr
 
 inline bool operator==(const KeyDatabase::KeyGroup::iterator & a,
                        const KeyDatabase::KeyGroup::iterator & b)
- { return a.m_it == b.m_it; }
+ { return a.get() == b.get(); }
 inline bool operator!=(const KeyDatabase::KeyGroup::iterator & a,
                        const KeyDatabase::KeyGroup::iterator & b)
  { return !(a == b); }
@@ -200,9 +193,10 @@ inline bool operator!=(const KeyDatabase::KeyGroup::iterator & a,
 template<typename It>
 KeyDatabase::KeyGroup KeyDatabase::makeGroup(std::string name, It first, It last) const
 {
+    static_assert(std::is_convertible_v<typename It::value_type, std::string>);
     std::vector<iterator> result;
     for (auto it = first; it != last; ++it) {
-        auto kit = findName(*it);
+        auto kit = findName(it->c_str());
         if (kit != end()) { result.push_back(kit); }
     }
     return KeyGroup(std::move(name), std::move(result));

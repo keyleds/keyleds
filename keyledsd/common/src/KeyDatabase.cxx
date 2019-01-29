@@ -49,20 +49,20 @@ KeyDatabase::const_iterator KeyDatabase::findKeyCode(int keyCode) const
                         [&](const auto & key) { return key.keyCode == keyCode; });
 }
 
-KeyDatabase::const_iterator KeyDatabase::findName(const std::string & name) const
+KeyDatabase::const_iterator KeyDatabase::findName(const char * name) const
 {
     return std::find_if(m_keys.cbegin(), m_keys.cend(),
                         [&](const auto & key) { return key.name == name; });
 }
 
-KeyDatabase::position_type KeyDatabase::distance(const Key & a, const Key & b) const
+KeyDatabase::position_type KeyDatabase::distance(const Key & a, const Key & b) const noexcept
 {
     if (a.index == b.index) { return 0; }
     return m_relations[a.index < b.index ? relationIndex(a, b, size())
                                          : relationIndex(b, a, size())].distance;
 }
 
-double KeyDatabase::angle(const Key & a, const Key & b) const
+double KeyDatabase::angle(const Key & a, const Key & b) const noexcept
 {
     if (a.index == b.index) { return 0.0; }
     auto xa = double((a.position.x1 + a.position.x0) / 2);
@@ -72,9 +72,9 @@ double KeyDatabase::angle(const Key & a, const Key & b) const
     return std::atan2(ya - yb, xb - xa);    // note: y axis is inverted
 }
 
-KeyDatabase::Key::Rect KeyDatabase::computeBounds(const key_list & keys)
+KeyDatabase::Rect KeyDatabase::computeBounds(const key_list & keys)
 {
-    auto result = Key::Rect{
+    auto result = Rect{
         keys.front().position.x0,
         keys.front().position.y0,
         keys.front().position.x1,
@@ -110,17 +110,6 @@ KeyDatabase::relation_list KeyDatabase::computeRelations(const key_list & keys)
     }
     return result;
 }
-
-/****************************************************************************/
-
-KeyDatabase::Key::Key(index_type indexv, int keyCodev, std::string namev, Rect positionv)
- : index(indexv),
-   keyCode(keyCodev),
-   name(std::move(namev)),
-   position(positionv)
-{}
-
-KeyDatabase::Key::~Key() {}
 
 /****************************************************************************/
 
