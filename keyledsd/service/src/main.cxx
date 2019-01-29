@@ -29,6 +29,7 @@
 #include <csignal>
 #include <exception>
 #include <iostream>
+#include <optional>
 #include "config.h"
 #ifndef NO_DBUS
 #include "keyledsd/dbus/ServiceAdaptor.h"
@@ -48,41 +49,32 @@ using keyleds::Configuration;
 /****************************************************************************/
 // Command line parsing
 
-#ifdef _GNU_SOURCE
-static const struct option optionDescriptions[] = {
-    {"config",      1, nullptr, 'c' },
-    {"help",        0, nullptr, 'h' },
-    {"module-path", 1, nullptr, 'm' },
-    {"quiet",       0, nullptr, 'q' },
-    {"single",      0, nullptr, 's' },
-    {"verbose",     0, nullptr, 'v' },
-    {"no-dbus",     0, nullptr, 'D' },
-    {nullptr, 0, nullptr, 0}
-};
-#endif
-
 class Options final
 {
 public:
-    const char *                configPath;
+    const char *                configPath = KEYLEDSD_CONFIG_FILE;
     std::vector<std::string>    modulePaths;
-    logging::level_t            logLevel;
-    bool                        autoQuit;
-    bool                        noDBus;
+    logging::level_t            logLevel = logging::warning::value;
+    bool                        autoQuit = false;
+    bool                        noDBus = false;
 
 public:
-    Options() : configPath(KEYLEDSD_CONFIG_FILE),
-                logLevel(logging::warning::value),
-                autoQuit(false),
-                noDBus(false) {}
-
-    static Options parse(int & argc, char * argv[])
+    static std::optional<Options> parse(int & argc, char * argv[])
     {
         Options options;
         int opt;
-        std::ostringstream msgBuf;
         ::opterr = 0;
 #ifdef _GNU_SOURCE
+        static constexpr struct option optionDescriptions[] = {
+            {"config",      1, nullptr, 'c' },
+            {"help",        0, nullptr, 'h' },
+            {"module-path", 1, nullptr, 'm' },
+            {"quiet",       0, nullptr, 'q' },
+            {"single",      0, nullptr, 's' },
+            {"verbose",     0, nullptr, 'v' },
+            {"no-dbus",     0, nullptr, 'D' },
+            {nullptr, 0, nullptr, 0}
+        };
         while ((opt = ::getopt_long(argc, argv, ":c:hm:qsvD", optionDescriptions, nullptr)) >= 0) {
 #else
         while ((opt = ::getopt(argc, argv, ":c:hm:qsvD")) >= 0) {
@@ -95,20 +87,19 @@ public:
             case 'v': options.logLevel += 1; break;
             case 'D': options.noDBus = true; break;
             case 'h':
-                std::cout <<"Usage: " <<argv[0] <<" [-c path] [-h] [-q] [-s] [-v] [-D]" <<std::endl;
-                ::exit(EXIT_SUCCESS);
+                std::cout <<"Usage: " <<argv[0] <<" [-c path] [-h] [-m path] [-q] [-s] [-v] [-D]\n";
+                return std::nullopt;
             case ':':
-                msgBuf <<argv[0] <<": option -- '" <<(char)::optopt <<"' requires an argument";
-                throw std::runtime_error(msgBuf.str());
+                std::cerr <<argv[0] <<": option -- '" <<(char)::optopt <<"' requires an argument\n";
+                return std::nullopt;
             default:
-                msgBuf <<argv[0] <<": invalid option -- '" <<(char)::optopt <<"'";
-                throw std::runtime_error(msgBuf.str());
+                std::cerr <<argv[0] <<": invalid option -- '" <<(char)::optopt <<"'\n";
+                return std::nullopt;
             }
         }
         return options;
     }
 };
-
 
 /****************************************************************************/
 // POSIX signal management
@@ -164,20 +155,13 @@ static void handleSignalEvent(const Options & options, keyleds::Service * servic
 
 int main(int argc, char * argv[])
 {
-    // Must be before app, so its destructor runs after, since Service holds a ref
-    keyleds::EffectManager effectManager;
-
-    // Create event loop
-    QCoreApplication app(argc, argv);
-    app.setOrganizationDomain("etherdream.org");
-    app.setApplicationName("keyledsd");
-    app.setApplicationVersion(KEYLEDSD_VERSION_STR);
     ::setlocale(LC_NUMERIC, "C"); // we deal with system stuff and config files
 
     // Parse command line
-    auto options = Options::parse(argc, argv);
+    const auto options = Options::parse(argc, argv);
+    if (!options) { return 1; }
     logging::Configuration::instance().setPolicy(
-        new logging::FilePolicy(STDERR_FILENO, options.logLevel)
+        new logging::FilePolicy(STDERR_FILENO, options->logLevel)
     );
 
     INFO("keyledsd v" KEYLEDSD_VERSION_STR " starting up");
@@ -185,7 +169,7 @@ int main(int argc, char * argv[])
     // Load configuration
     auto configuration = Configuration();
     try {
-        configuration = Configuration::loadFile(options.configPath);
+        configuration = Configuration::loadFile(options->configPath);
         VERBOSE("using ", configuration.path);
     } catch (std::exception & error) {
         CRITICAL("Could not load configuration: ", error.what());
@@ -193,13 +177,14 @@ int main(int argc, char * argv[])
     }
 
     // Register modules
-    std::copy(options.modulePaths.cbegin(), options.modulePaths.cend(),
-              std::back_inserter(effectManager.searchPaths()));
-    std::copy(configuration.pluginPaths.begin(), configuration.pluginPaths.end(),
-              std::back_inserter(effectManager.searchPaths()));
-    effectManager.searchPaths().push_back(SYS_CONFIG_LIBDIR "/" KEYLEDSD_MODULE_PREFIX);
-
+    auto effectManager = keyleds::EffectManager();
     {
+        std::copy(options->modulePaths.cbegin(), options->modulePaths.cend(),
+                std::back_inserter(effectManager.searchPaths()));
+        std::copy(configuration.pluginPaths.begin(), configuration.pluginPaths.end(),
+                std::back_inserter(effectManager.searchPaths()));
+        effectManager.searchPaths().push_back(SYS_CONFIG_LIBDIR "/" KEYLEDSD_MODULE_PREFIX);
+
         std::string error;
         for (const auto & module : keyleds::effect::StaticModuleRegistry::instance().modules()) {
             if (!effectManager.add(module.first, module.second, &error)) {
@@ -213,16 +198,22 @@ int main(int argc, char * argv[])
         }
     }
 
+    // Create event loop
+    QCoreApplication app(argc, argv);
+    app.setOrganizationDomain("etherdream.org");
+    app.setApplicationName("keyledsd");
+    app.setApplicationVersion(KEYLEDSD_VERSION_STR);
+
     // Setup application components
     auto watcher = tools::FileWatcher();
     auto service = std::make_unique<keyleds::Service>(
         effectManager, watcher, std::move(configuration)
     );
-    service->setAutoQuit(options.autoQuit);
+    service->setAutoQuit(options->autoQuit);
     QTimer::singleShot(0, service.get(), &keyleds::Service::init);
 
 #ifndef NO_DBUS
-    if (!options.noDBus) {
+    if (!options->noDBus) {
         auto connection = QDBusConnection::sessionBus();
         new keyleds::dbus::ServiceAdaptor(service.get());   // service takes ownership
         if (!connection.registerObject("/Service", service.get()) ||
@@ -238,7 +229,7 @@ int main(int argc, char * argv[])
     if (sigFd >= 0) {
         auto * notifier = new QSocketNotifier(sigFd, QSocketNotifier::Read, service.get());
         QObject::connect(notifier, &QSocketNotifier::activated,
-                         [&](int fd){ handleSignalEvent(options, service.get(), fd); });
+                         [&](int fd){ handleSignalEvent(*options, service.get(), fd); });
     }
 
     return app.exec();
