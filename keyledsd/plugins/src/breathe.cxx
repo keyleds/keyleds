@@ -19,6 +19,9 @@
 #include "keyledsd/PluginHelper.h"
 #include "keyledsd/utils.h"
 
+using namespace std::literals::chrono_literals;
+using keyleds::parseDuration;
+
 static constexpr float pi = 3.14159265358979f;
 
 /****************************************************************************/
@@ -28,12 +31,10 @@ class BreateEffect final : public plugin::Effect
     using KeyGroup = KeyDatabase::KeyGroup;
 public:
     explicit BreateEffect(EffectService & service)
-     : m_buffer(service.createRenderTarget()),
-       m_keys(nullptr),
-       m_time(0), m_period(10000)
+     : m_buffer(service.createRenderTarget())
     {
-        auto color = RGBAColor(255, 255, 255, 255);
-        RGBAColor::parse(service.getConfig("color"), color);
+        auto color = RGBAColor::parse(service.getConfig("color"))
+                               .value_or(RGBAColor{255, 255, 255, 255});
         m_alpha = color.alpha;
         color.alpha = 0;
 
@@ -45,7 +46,7 @@ public:
             if (git != service.keyGroups().end()) { m_keys = &*git; }
         }
 
-        keyleds::parseDuration(service.getConfig("period"), m_period);
+        m_period = parseDuration<milliseconds>(service.getConfig("period")).value_or(m_period);
 
         std::fill(m_buffer->begin(), m_buffer->end(), color);
     }
@@ -68,12 +69,12 @@ public:
     }
 
 private:
-    RenderTarget *  m_buffer;       ///< this plugin's rendered state
-    const KeyGroup* m_keys;         ///< what keys the effect applies to. Empty for whole keyboard.
-    uint8_t         m_alpha;        ///< peak alpha value through the breathing cycle
+    RenderTarget *  m_buffer = nullptr; ///< this plugin's rendered state
+    const KeyGroup* m_keys = nullptr;   ///< what keys the effect applies to. Empty for whole keyboard.
+    uint8_t         m_alpha = 255;      ///< peak alpha value through the breathing cycle
 
-    milliseconds    m_time;         ///< time since beginning of current cycle
-    milliseconds    m_period;       ///< total duration of a cycle
+    milliseconds    m_time = 0ms;       ///< time since beginning of current cycle
+    milliseconds    m_period = 10000ms; ///< total duration of a cycle
 };
 
 KEYLEDSD_SIMPLE_EFFECT("breathe", BreateEffect);

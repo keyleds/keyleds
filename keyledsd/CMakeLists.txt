@@ -20,7 +20,7 @@ project(keyledsd VERSION 0.7.9 LANGUAGES CXX)
 ##############################################################################
 # Options
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -fPIC -fno-rtti -fvisibility=hidden -fstrict-enums -ffast-math")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -fPIC -fno-rtti -fvisibility=hidden -fstrict-enums -ffast-math")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -Wextra -Wcast-align -Wcast-qual -Wconversion -Wsign-conversion -Wshadow -Wstrict-overflow=3")
 
 ##############################################################################

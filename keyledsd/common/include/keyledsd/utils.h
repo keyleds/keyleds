@@ -18,20 +18,20 @@
 #define KEYLEDSD_UTILS_H_9ADABC7C
 
 #include <chrono>
+#include <optional>
 #include <string>
 #include "keyledsd_config.h"
 
 namespace keyleds {
 
-KEYLEDSD_EXPORT bool parseNumber(const std::string & str, unsigned & value);
+KEYLEDSD_EXPORT std::optional<unsigned long> parseNumber(const std::string & str);
 
 template <typename T>
-bool parseDuration(const std::string & str, T & value)
+std::optional<T> parseDuration(const std::string & str)
 {
-    unsigned rawValue;
-    if (!parseNumber(str, rawValue)) { return false; }
-    value = std::chrono::milliseconds(rawValue);
-    return true;
+    auto value = parseNumber(str);
+    if (!value) { return {}; }
+    return std::chrono::duration_cast<T>(std::chrono::milliseconds(*value));
 }
 
 }

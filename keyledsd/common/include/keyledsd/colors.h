@@ -19,6 +19,7 @@
 
 #include <iosfwd>
 #include <limits>
+#include <optional>
 #include <string>
 #include "keyledsd_config.h"
 
@@ -41,7 +42,7 @@ struct RGBColor final {
     constexpr RGBColor(channel_type r, channel_type g, channel_type b)
      : red(r), green(g), blue(b) {}
 
-    KEYLEDSD_EXPORT static bool parse(const std::string &, RGBColor &);
+    KEYLEDSD_EXPORT static std::optional<RGBColor> parse(const std::string &);
     KEYLEDSD_EXPORT void print(std::ostream &) const;
 };
 
@@ -79,7 +80,7 @@ struct alignas(4) RGBAColor final {
     explicit RGBAColor(RGBColor c, channel_type a = std::numeric_limits<channel_type>::max())
      : red(c.red), green(c.green), blue(c.blue), alpha(a) {}
 
-    KEYLEDSD_EXPORT static bool parse(const std::string &, RGBAColor &);
+    KEYLEDSD_EXPORT static std::optional<RGBAColor> parse(const std::string &);
     KEYLEDSD_EXPORT void print(std::ostream &) const;
 };
 

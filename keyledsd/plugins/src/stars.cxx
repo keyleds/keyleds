@@ -20,6 +20,9 @@
 #include "keyledsd/PluginHelper.h"
 #include "keyledsd/utils.h"
 
+using namespace std::literals::chrono_literals;
+using keyleds::parseDuration;
+
 /****************************************************************************/
 
 class StarsEffect final : public plugin::Effect
@@ -36,21 +39,18 @@ class StarsEffect final : public plugin::Effect
 public:
     explicit StarsEffect(EffectService & service)
      : m_service(service),
-       m_buffer(service.createRenderTarget()),
-       m_duration(1000),
-       m_keys(nullptr)
+       m_buffer(service.createRenderTarget())
     {
-        keyleds::parseDuration(service.getConfig("duration"), m_duration);
+        m_duration = parseDuration<milliseconds>(service.getConfig("duration")).value_or(m_duration);
 
-        unsigned number = 8;
-        keyleds::parseNumber(service.getConfig("number"), number);
+        auto number = keyleds::parseNumber(service.getConfig("number")).value_or(8);
         m_stars.resize(number);
 
         // Load color list
         for (const auto & item : service.configuration()) {
-            RGBAColor color;
-            if (item.first.rfind("color", 0) == 0 && RGBAColor::parse(item.second, color)) {
-                m_colors.push_back(color);
+            if (item.first.rfind("color", 0) == 0) {
+                auto color = RGBAColor::parse(item.second);
+                if (color) { m_colors.push_back(*color); }
             }
         }
 
@@ -69,7 +69,7 @@ public:
         for (std::size_t idx = 0; idx < m_stars.size(); ++idx) {
             auto & star = m_stars[idx];
             rebirth(star);
-            star.age = idx * m_duration / static_cast<decltype(number)>(m_stars.size());
+            star.age = idx * m_duration / m_stars.size();
         }
     }
 
@@ -119,14 +119,14 @@ public:
 
 private:
     const EffectService &   m_service;
-    RenderTarget *          m_buffer;       ///< this plugin's rendered state
-    std::minstd_rand        m_random;       ///< picks stars when they are reborn
+    RenderTarget *          m_buffer = nullptr; ///< this plugin's rendered state
+    std::minstd_rand        m_random;           ///< picks stars when they are reborn
 
-    milliseconds            m_duration;     ///< how long stars stay alive
-    std::vector<RGBAColor>  m_colors;       ///< list of colors to choose from
-    const KeyGroup *        m_keys;         ///< what keys the effect applies to. Empty for whole keyboard.
+    milliseconds            m_duration = 1000ms;///< how long stars stay alive
+    std::vector<RGBAColor>  m_colors;           ///< list of colors to choose from
+    const KeyGroup *        m_keys = nullptr;   ///< what keys the effect applies to.
 
-    std::vector<Star>       m_stars;        ///< all the star objects
+    std::vector<Star>       m_stars;            ///< all the star objects
 };
 
 KEYLEDSD_SIMPLE_EFFECT("stars", StarsEffect);

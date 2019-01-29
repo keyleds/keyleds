@@ -17,6 +17,7 @@
 #ifndef KEYLEDS_PLUGINS_LUA_LUA_KEYLEDS_H_3EAF7EA0
 #define KEYLEDS_PLUGINS_LUA_LUA_KEYLEDS_H_3EAF7EA0
 
+#include <optional>
 #include <string>
 #include "lua/lua_Interpolator.h"
 #include "lua/lua_Key.h"
@@ -46,7 +47,7 @@ public:
         using Thread = keyleds::lua::Thread;
     public:
         virtual void            print(const std::string &) const = 0;
-        virtual bool            parseColor(const std::string &, RGBAColor &) const = 0;
+        virtual std::optional<RGBAColor> parseColor(const std::string &) const = 0;
 
         virtual RenderTarget *  createRenderTarget() = 0;
         virtual void            destroyRenderTarget(RenderTarget *) = 0;

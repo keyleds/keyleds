@@ -22,6 +22,9 @@
 #include "keyledsd/PluginHelper.h"
 #include "keyledsd/utils.h"
 
+using namespace std::literals::chrono_literals;
+using keyleds::parseDuration;
+
 static constexpr float pi = 3.14159265358979f;
 static constexpr unsigned int accuracy = 1024;
 
@@ -36,23 +39,22 @@ class WaveEffect final : public plugin::Effect
 public:
     explicit WaveEffect(EffectService & service)
      : m_service(service),
-       m_buffer(service.createRenderTarget()),
-       m_keys(nullptr),
-       m_time(0),
-       m_period(10000),
-       m_length(1000),
-       m_direction(0)
+       m_buffer(service.createRenderTarget())
     {
-        keyleds::parseDuration(service.getConfig("period"), m_period);
-        keyleds::parseNumber(service.getConfig("length"), m_length);
-        keyleds::parseNumber(service.getConfig("direction"), m_direction);
+        m_period = parseDuration<milliseconds>(service.getConfig("period")).value_or(m_period);
+        m_length = static_cast<unsigned>(
+            keyleds::parseNumber(service.getConfig("length")).value_or(m_length)
+        );
+        m_direction = static_cast<unsigned>(
+            keyleds::parseNumber(service.getConfig("direction")).value_or(m_direction)
+        );
 
         // Load color list
         std::vector<RGBAColor> colors;
         for (const auto & item : service.configuration()) {
-            RGBAColor color;
-            if (item.first.rfind("color", 0) == 0 && RGBAColor::parse(item.second, color)) {
-                colors.push_back(color);
+            if (item.first.rfind("color", 0) == 0) {
+                auto color = RGBAColor::parse(item.second);
+                if (color) { colors.push_back(*color); }
             }
         }
         m_colors = generateColorTable(colors);
@@ -155,16 +157,16 @@ private:
 
 private:
     const EffectService &   m_service;
-    RenderTarget *          m_buffer;   ///< this plugin's rendered state
-    const KeyGroup *        m_keys;     ///< what keys the effect applies to. Empty for whole keyboard.
-    std::vector<unsigned>   m_phases;   ///< one per key in m_keys or one per key in m_buffer.
-                                        ///< From 0 (no phase shift) to 1000 (2*pi shift)
-    std::vector<RGBAColor>  m_colors;   ///< pre-computed color samples, build by generateColorTable.
+    RenderTarget *          m_buffer = nullptr; ///< this plugin's rendered state
+    const KeyGroup *        m_keys = nullptr;   ///< what keys the effect applies to.
+    std::vector<unsigned>   m_phases;           ///< one per key in m_keys or one per key in m_buffer.
+                                                ///< From 0 (no phase shift) to 1000 (2*pi shift)
+    std::vector<RGBAColor>  m_colors;           ///< pre-computed color samples.
 
-    milliseconds        m_time;         ///< time since beginning of current cycle.
-    milliseconds        m_period;       ///< total duration of a cycle.
-    unsigned            m_length;       ///< wave length, in keyboard 1000th.
-    unsigned            m_direction;    ///< wave propagation direction, compass style (0 for North).
+    milliseconds        m_time = 0ms;           ///< time since beginning of current cycle.
+    milliseconds        m_period = 10000ms;     ///< total duration of a cycle.
+    unsigned            m_length = 1000;        ///< wave length, in keyboard 1000th.
+    unsigned            m_direction = 0;        ///< wave propagation direction (0 for North).
 };
 
 /****************************************************************************/

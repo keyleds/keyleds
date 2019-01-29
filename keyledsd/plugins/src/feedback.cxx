@@ -19,6 +19,9 @@
 #include "keyledsd/PluginHelper.h"
 #include "keyledsd/utils.h"
 
+using namespace std::literals::chrono_literals;
+using keyleds::parseDuration;
+
 /****************************************************************************/
 
 class FeedbackEffect final : public plugin::Effect
@@ -31,14 +34,11 @@ class FeedbackEffect final : public plugin::Effect
 
 public:
     explicit FeedbackEffect(EffectService & service)
-     : m_buffer(service.createRenderTarget()),
-       m_color(255, 255, 255, 255),
-       m_sustain(750),
-       m_decay(500)
+     : m_buffer(service.createRenderTarget())
     {
-        RGBAColor::parse(service.getConfig("color"), m_color);
-        keyleds::parseDuration(service.getConfig("sustain"), m_sustain);
-        keyleds::parseDuration(service.getConfig("decay"), m_decay);
+        m_color = RGBAColor::parse(service.getConfig("color")).value_or(m_color);
+        m_sustain = parseDuration<milliseconds>(service.getConfig("sustain")).value_or(m_sustain);
+        m_decay = parseDuration<milliseconds>(service.getConfig("decay")).value_or(m_decay);
 
         // Get ready
         std::fill(m_buffer->begin(), m_buffer->end(), RGBAColor{0, 0, 0, 0});
@@ -80,12 +80,12 @@ public:
     }
 
 private:
-    RenderTarget *      m_buffer;       ///< this plugin's rendered state
+    RenderTarget *      m_buffer = nullptr; ///< this plugin's rendered state
 
-    RGBAColor           m_color;        ///< color taken by keys on keypress
-    milliseconds        m_sustain;      ///< how long key remains at full color
-    milliseconds        m_decay;        ///< how long it takes for keys to fade out
-    std::vector<KeyPress> m_presses;    ///< list of recent keypresses still drawn
+    RGBAColor           m_color = {255, 255, 255, 255}; ///< color taken by keys on keypress
+    milliseconds        m_sustain = 750ms;  ///< how long key remains at full color
+    milliseconds        m_decay = 500ms;    ///< how long it takes for keys to fade out
+    std::vector<KeyPress> m_presses;        ///< list of recent keypresses still drawn
 };
 
 KEYLEDSD_SIMPLE_EFFECT("feedback", FeedbackEffect);

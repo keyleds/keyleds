@@ -193,17 +193,16 @@ static_assert(predefinedColors.back().second == RGBColor(0x9A, 0xCD, 0x32),
  * @return `true` on success, `false` on error.
  * @bug Does not accept print() output. Stripping an optional leading hash would allow that.
  */
-bool RGBColor::parse(const std::string & str, RGBColor & color)
+std::optional<RGBColor> RGBColor::parse(const std::string & str)
 {
     // Attempt parsing as hex color
     if (str.size() == 6) {
         char * endptr;
         auto code = uint32_t(::strtoul(str.c_str(), &endptr, 16));
         if (*endptr == '\0') {
-            color = RGBColor(channel_type(code >> 16),
-                             channel_type(code >> 8),
-                             channel_type(code >> 0));
-            return true;
+            return RGBColor(channel_type(code >> 16),
+                            channel_type(code >> 8),
+                            channel_type(code >> 0));
         }
     }
 
@@ -217,11 +216,10 @@ bool RGBColor::parse(const std::string & str, RGBColor & color)
         lower, [](const auto & item, const auto & name) { return item.first < name; }
     );
     if (it != predefinedColors.end() && it->first == lower) {
-        color = it->second;
-        return true;
+        return it->second;
     }
 
-    return false;
+    return {};
 }
 
 /** Write a human-readable representation of color.
@@ -242,25 +240,22 @@ void RGBColor::print(std::ostream & out) const
  * @return `true` on success, `false` on error.
  * @bug Does not accept print() output. Stripping an optional leading hash would allow that.
  */
-bool RGBAColor::parse(const std::string & str, RGBAColor & color)
+std::optional<RGBAColor> RGBAColor::parse(const std::string & str)
 {
     if (str.size() == 8) {
         char * endptr;
         auto code = uint32_t(::strtoul(str.c_str(), &endptr, 16));
         if (*endptr == '\0') {
-            color = RGBAColor(channel_type(code >> 24),
-                              channel_type(code >> 16),
-                              channel_type(code >> 8),
-                              channel_type(code >> 0));
-            return true;
+            return RGBAColor(channel_type(code >> 24),
+                             channel_type(code >> 16),
+                             channel_type(code >> 8),
+                             channel_type(code >> 0));
         }
     }
-    RGBColor opaque;
-    if (RGBColor::parse(str, opaque)) {
-        color = RGBAColor(opaque);
-        return true;
-    }
-    return false;
+
+    auto color = RGBColor::parse(str);
+    if (color) { return RGBAColor(*color); }
+    return {};
 }
 
 /** Write a human-readable representation of color.

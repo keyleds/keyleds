@@ -301,9 +301,9 @@ void LuaEffect::print(const std::string & msg) const
     m_service.log(4, msg.c_str());
 }
 
-bool LuaEffect::parseColor(const std::string & str, RGBAColor & color) const
+std::optional<LuaEffect::RGBAColor> LuaEffect::parseColor(const std::string & str) const
 {
-    return RGBAColor::parse(str, color);
+    return RGBAColor::parse(str);
 }
 
 keyleds::RenderTarget * LuaEffect::createRenderTarget()

@@ -39,9 +39,8 @@ class FillEffect final : public plugin::Effect
 
 public:
     explicit FillEffect(EffectService & service)
-     : m_fill(0, 0, 0, 0)
     {
-        RGBAColor::parse(service.getConfig("color"), m_fill);
+        m_fill = RGBAColor::parse(service.getConfig("color")).value_or(m_fill);
 
         for (const auto & item : service.configuration()) {
             if (item.first == "color") { continue; }
@@ -50,10 +49,9 @@ public:
                 [item](const auto & group) { return group.name() == item.first; }
             );
             if (git == service.keyGroups().end()) { continue; }
-            RGBAColor color;
-            if (RGBAColor::parse(item.second, color)) {
-                m_rules.emplace_back(*git, color);
-            }
+
+            auto color = RGBAColor::parse(item.second);
+            if (color) { m_rules.emplace_back(*git, *color); }
         }
     }
 
@@ -70,8 +68,8 @@ public:
     }
 
 private:
-    RGBAColor           m_fill;         ///< color to fill whole target with before applying rules
-    std::vector<Rule>   m_rules;        ///< each rule maps a key group to a color
+    RGBAColor           m_fill = {0, 0, 0, 0};  ///< fill whole target before applying rules
+    std::vector<Rule>   m_rules;                ///< each rule maps a key group to a color
 };
 
 KEYLEDSD_SIMPLE_EFFECT("fill", FillEffect);
