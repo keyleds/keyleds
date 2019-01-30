@@ -24,29 +24,15 @@
 #define TOOLS_PATH_H_B703CD61
 
 #include <ios>
+#include <optional>
 #include <string>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
-namespace tools { namespace paths {
+namespace tools::paths {
 
 /****************************************************************************/
-
-/// Represents a file use type, typically associated to one or more system-dependent
-/// locations.
-enum class XDG { Cache, Config, Data, Runtime };
-
-/// Attempts to open the specified file of given type in the passed filbuf
-/// If path is absolute or starths with a dot, it is used as is. Otherwise,
-/// system-dependent locations are searched depenting on file type and open mode.
-/// Errors leave filebuf in a bad state.
-void open_filebuf(std::filebuf &, XDG type, const std::string & path, std::ios::openmode,
-                  std::string * actualPath = nullptr);
-
-/// Returns the list of system-dependent locations that would be searched for
-/// files of the given type. Those may differ depending on open mode, thus the read flag.
-std::vector<std::string> getPaths(XDG type, bool read);
-
 
 namespace detail {
     /// SFINAE-defined structure giving default openmode for a stream depending on its base type
@@ -56,41 +42,61 @@ namespace detail {
     };
 
     template <typename T>
-    struct stream_traits<T, typename std::enable_if<std::is_convertible<T *, std::fstream *>::value>::type> {
+    struct stream_traits<T, typename std::enable_if_t<std::is_base_of_v<std::fstream, T>>> {
         static constexpr bool is_file = true;
         static constexpr typename T::openmode default_mode = std::ios::in | std::ios::out;
     };
     template <typename T>
-    struct stream_traits<T, typename std::enable_if<std::is_convertible<T *, std::ifstream *>::value>::type> {
+    struct stream_traits<T, typename std::enable_if_t<std::is_base_of_v<std::ifstream, T>>> {
         static constexpr bool is_file = true;
         static constexpr typename T::openmode default_mode = std::ios::in;
     };
     template <typename T>
-    struct stream_traits<T, typename std::enable_if<std::is_convertible<T *, std::ofstream *>::value>::type>
-    {
+    struct stream_traits<T, typename std::enable_if_t<std::is_base_of_v<std::ofstream, T>>> {
         static constexpr bool is_file = true;
         static constexpr typename T::openmode default_mode = std::ios::out;
     };
+
+    template <typename T> struct open_file_return {
+        std::remove_cv_t<T> stream;
+        std::string         path;
+    };
 } // namespace detail
 
-/// Opens the given file object, using the file described by given path and XDG type.
-/// This is a simple wrapper that extracts the filebuf, feeds it to open_filebuf
-/// and updates the file object's state flags to reflect the outcome.
-//  @TODO: Changed for a rvalue-returning function, legacy workaround for gcc4 is
-//  no longer useful.
-template <typename T>
-void open(T & file, XDG type, const std::string & path, typename T::openmode mode,
-          std::string * actualPath = nullptr)
-{
-    static_assert(detail::stream_traits<T>::is_file, "open must be passed a file stream");
-    mode |= detail::stream_traits<T>::default_mode;
-    open_filebuf(*file.rdbuf(), type, path, mode, actualPath);
-    if (!file.rdbuf()->is_open()) { file.setstate(std::ios::failbit); }
-}
+/// Represents a file use type, typically associated to one or more system-dependent
+/// locations.
+enum class XDG { Cache, Config, Data, Runtime };
 
+/// Attempts to open the specified file of given type
+/// If path is absolute or starts with a dot, it is used as is. Otherwise,
+/// system-dependent locations are searched depenting on file type and open mode.
+/// On error, returns closed filebuf and empty path
+std::optional<std::pair<std::filebuf, std::string>>
+open_filebuf(XDG type, const std::string &, std::ios::openmode);
+
+/// Returns the list of system-dependent locations that would be searched for
+/// files of the given type. Those may differ depending on open mode, thus the read flag.
+std::vector<std::string> getPaths(XDG type, bool read);
+
+
+/// Opens the given file, using the file described by given path and XDG type.
+template <typename T> std::optional<detail::open_file_return<T>>
+open(XDG type, const std::string & path, typename T::openmode mode)
+{
+    static_assert(detail::stream_traits<T>::is_file);
+    mode |= detail::stream_traits<T>::default_mode;
+
+    auto filebuf = open_filebuf(type, path, mode);
+    if (!filebuf) { return std::nullopt; }
+
+    auto result = std::optional<detail::open_file_return<T>>{{ {}, std::move(filebuf->second) }};
+    *result->stream.rdbuf() = std::move(filebuf->first);
+
+    return result;
+}
 
 /****************************************************************************/
 
-} } // namespace tools::paths
+} // namespace tools::paths
 
 #endif

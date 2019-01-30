@@ -17,6 +17,7 @@
 #include "tools/Paths.h"
 
 #include <algorithm>
+#include <cassert>
 #include <cstdlib>
 #include <fstream>
 #include <regex>
@@ -136,17 +137,18 @@ std::vector<std::string> tools::paths::getPaths(XDG type, bool extra)
     return paths;
 }
 
-void tools::paths::open_filebuf(std::filebuf & buf, XDG type, const std::string & path,
-                                std::ios::openmode mode, std::string * actualPath)
+std::optional<std::pair<std::filebuf, std::string>>
+tools::paths::open_filebuf(XDG type, const std::string & path, std::ios::openmode mode)
 {
-    if (path.empty()) { throw std::runtime_error("empty path"); }
+    assert(!path.empty());
+
+    auto buf = std::filebuf();
 
     // Handle simple cases not using dynamic lookup
     if (path[0] == '/' || path[0] == '.') {
-        if (buf.open(path, mode) != nullptr) {
-            if (actualPath != nullptr) { *actualPath = path; }
+        if (buf.open(path, mode)) {
+            return std::make_pair(std::move(buf), std::move(path));
         }
-        return;
     }
 
     auto dirs = getPaths(type, (mode & std::ios::out) == 0);
@@ -155,8 +157,8 @@ void tools::paths::open_filebuf(std::filebuf & buf, XDG type, const std::string 
     for (const auto & dir : dirs) {
         auto fullPath = canonicalPath(dir + "/" + path);
         if (!fullPath.empty() && buf.open(fullPath, mode)) {
-            if (actualPath) { *actualPath = fullPath; }
-            return;
+            return std::make_pair(std::move(buf), std::move(fullPath));
         }
     }
+    return std::nullopt;
 }

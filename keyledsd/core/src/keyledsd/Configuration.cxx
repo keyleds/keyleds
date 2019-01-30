@@ -688,19 +688,15 @@ auto && ConfigurationBuilder::result()
 
 Configuration Configuration::loadFile(const std::string & path)
 {
-    using tools::paths::XDG;
-
-    std::ifstream file;
-    std::string actualPath;
-    tools::paths::open(file, XDG::Config, path, std::ios::binary, &actualPath);
-    if (!file) {
-        throw std::system_error(errno, std::generic_category());
-    }
+    auto file = tools::paths::open<std::ifstream>(
+        tools::paths::XDG::Config, path, std::ios::binary
+    );
+    if (!file) { throw std::system_error(errno, std::generic_category()); }
 
     auto builder = ConfigurationBuilder();
-    builder.parse(file);
+    builder.parse(file->stream);
     auto result = builder.result();
-    result.path = actualPath;
+    result.path = file->path;
     return result;
 }
 

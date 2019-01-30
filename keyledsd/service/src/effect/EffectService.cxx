@@ -91,12 +91,11 @@ const std::string & EffectService::getFile(const std::string & name)
 {
     m_fileData.clear();
     if (!name.empty()) {
-        std::ifstream file;
-        std::string actualPath;
-        tools::paths::open(file, tools::paths::XDG::Data, KEYLEDSD_DATA_PREFIX "/" + name,
-                           std::ios::binary, &actualPath);
+        auto file = tools::paths::open<std::ifstream>(
+            tools::paths::XDG::Data, KEYLEDSD_DATA_PREFIX "/" + name, std::ios::binary
+        );
         if (file) {
-            m_fileData.assign(std::istreambuf_iterator<char>(file),
+            m_fileData.assign(std::istreambuf_iterator<char>(file->stream),
                               std::istreambuf_iterator<char>());
         }
     }
