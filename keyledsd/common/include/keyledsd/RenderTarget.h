@@ -19,7 +19,7 @@
 
 #include <cassert>
 #include <chrono>
-#include <cstdint>
+#include <memory>
 #include <utility>
 #include "keyledsd/accelerated.h"
 #include "keyledsd/colors.h"
@@ -50,9 +50,8 @@ public:
     using const_iterator = const value_type *;
 public:
     explicit                    RenderTarget(size_type);
-                                RenderTarget(RenderTarget && other) noexcept
-                                 : m_colors(nullptr), m_size(0u), m_capacity(0u) { swap(*this, other); }
-    RenderTarget &              operator=(RenderTarget &&) noexcept;
+                                RenderTarget(RenderTarget && other) noexcept = default;
+    RenderTarget &              operator=(RenderTarget &&) noexcept = default;
                                 ~RenderTarget();
 
     iterator                    begin() { return &m_colors[0]; }
@@ -64,15 +63,15 @@ public:
     bool                        empty() const noexcept { return false; }
     size_type                   size() const noexcept { return m_size; }
     size_type                   capacity() const noexcept { return m_capacity; }
-    value_type *                data() { return m_colors; }
-    const value_type *          data() const { return m_colors; }
+    value_type *                data() { return m_colors.get(); }
+    const value_type *          data() const { return m_colors.get(); }
     reference                   operator[](size_type idx) { return m_colors[idx]; }
     const_reference             operator[](size_type idx) const { return m_colors[idx]; }
 
 private:
-    RGBAColor *                 m_colors;       ///< Color buffer. RGBAColor is a POD type
-    size_type                   m_size;         ///< Number of color entries
-    size_type                   m_capacity;     ///< Number of allocated color entries
+    size_type                   m_size = 0;         ///< Number of color entries
+    size_type                   m_capacity = 0;     ///< Number of allocated color entries
+    std::unique_ptr<RGBAColor[]> m_colors;          ///< Color buffer. RGBAColor is a POD type
 
     friend void swap(RenderTarget &, RenderTarget &) noexcept;
 };
@@ -106,9 +105,9 @@ protected:
 inline void swap(RenderTarget & lhs, RenderTarget & rhs) noexcept
 {
     using std::swap;
-    swap(lhs.m_colors, rhs.m_colors);
     swap(lhs.m_size, rhs.m_size);
     swap(lhs.m_capacity, rhs.m_capacity);
+    swap(lhs.m_colors, rhs.m_colors);
 }
 
 inline void blend(RenderTarget & lhs, const RenderTarget & rhs) noexcept

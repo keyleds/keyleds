@@ -16,17 +16,18 @@
  */
 #include "keyledsd/RenderTarget.h"
 
-#include <cstddef>
 #include <type_traits>
-#include <utility>
 
 using keyleds::RenderTarget;
 
 static_assert(std::is_pod<keyleds::RGBAColor>::value, "RGBAColor must be a POD type");
 static_assert(sizeof(keyleds::RGBAColor) == 4, "RGBAColor must be tightly packed");
 
-static constexpr RenderTarget::size_type alignBytes = 32;  // 16 is minimum for SSE2, 32 for AVX2
-static constexpr RenderTarget::size_type alignColors = alignBytes / sizeof(keyleds::RGBAColor);
+// 16 is minimum for SSE2, 32 for AVX2
+static constexpr auto alignBytes = static_cast<std::align_val_t>(32);
+static constexpr auto alignColors = static_cast<RenderTarget::size_type>(
+    static_cast<unsigned>(alignBytes) / sizeof(keyleds::RGBAColor)
+);
 
 
 /// Returns the given value, aligned to upper bound of given aligment
@@ -38,29 +39,9 @@ template <typename T> constexpr T align(T value, T alignment)
 /****************************************************************************/
 
 RenderTarget::RenderTarget(size_type size)
- : m_colors(nullptr),
-   m_size(size),                            // m_size tracks actual number of keys
-   m_capacity(align(size, alignColors))    // m_capacity tracks actual buffer size
-{
-    if (::posix_memalign(reinterpret_cast<void**>(&m_colors), alignBytes,
-                         m_capacity * sizeof(m_colors[0])) != 0) {
-        throw std::bad_alloc();
-    }
-}
+ : m_size(size),                            // m_size tracks actual number of keys
+   m_capacity(align(size, alignColors)),    // m_capacity tracks actual buffer size
+   m_colors(new (alignBytes) RGBAColor[m_capacity])
+{}
 
-RenderTarget & RenderTarget::operator=(RenderTarget && other) noexcept
-{
-    free(m_colors);
-    m_colors = nullptr;
-    m_size = 0u;
-    m_capacity = 0u;
-
-    using std::swap;
-    swap(*this, other);
-    return *this;
-}
-
-RenderTarget::~RenderTarget()
-{
-    free(m_colors);
-}
+RenderTarget::~RenderTarget() = default;
