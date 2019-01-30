@@ -21,7 +21,7 @@
 #include "lua/lua_types.h"
 #include "keyledsd/PluginHelper.h"
 
-namespace keyleds { namespace lua {
+namespace keyleds::lua {
 
 /****************************************************************************/
 
@@ -36,15 +36,15 @@ struct Interpolator
     using milliseconds = std::chrono::duration<unsigned, std::milli>;
 
     int             id;             ///< luaL_ref id in registry
-    int             flags;          ///< See flags_type above
+    unsigned        flags;          ///< See flags_type above
     unsigned        index;          ///< Key index withing render target
     milliseconds    duration;       ///< Animation duration in ms
     milliseconds    elapsed;        ///< Elapsed time in ms
     RGBAColor       startValue;     ///< Color when elapsed == 0
     RGBAColor       finishValue;    ///< Color when elapsed >= duration
 
-    static void start(lua_State *, unsigned index); // on stack: (interpolator, rendertarget) [-2, 0]
-    static void stop(lua_State *);                  // on stack: (interpolator) [-1, 0]
+    static void start(lua_State *, unsigned keyIndex); // on stack: (interpolator, rendertarget) [-2, 0]
+    static void stop(lua_State *);                     // on stack: (interpolator) [-1, 0]
     static void stepAll(lua_State *, milliseconds);
 
     RGBAColor   value() const;
@@ -59,6 +59,6 @@ template <> struct metatable<Interpolator>
 
 /****************************************************************************/
 
-} } // namespace keyleds::lua
+} // namespace keyleds::lua
 
 #endif

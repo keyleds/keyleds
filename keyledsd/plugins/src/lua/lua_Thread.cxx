@@ -19,7 +19,7 @@
 #include "lua/Environment.h"
 #include "lua/lua_common.h"
 
-namespace keyleds { namespace lua {
+namespace keyleds::lua {
 
 /****************************************************************************/
 
@@ -70,4 +70,4 @@ const struct luaL_Reg metatable<Thread>::meta_methods[] = {
     { nullptr,          nullptr}
 };
 
-} } // namespace keyleds::lua
+} // namespace keyleds::lua

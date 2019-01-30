@@ -19,7 +19,7 @@
 #include <cstring>
 #include <lua.hpp>
 
-namespace keyleds { namespace lua {
+namespace keyleds::lua {
 
 /****************************************************************************/
 
@@ -56,4 +56,4 @@ int lua_keyError(lua_State * lua, int index)
 
 /****************************************************************************/
 
-} }
+} // namespace keyleds::lua

@@ -24,7 +24,7 @@
 
 namespace keyleds { struct RGBAColor; }
 
-namespace keyleds { namespace effect { namespace interface {
+namespace keyleds::effect::interface {
 
 class EffectService;
 
@@ -39,6 +39,9 @@ protected:
     using Renderer = keyleds::Renderer;
     using string_map = std::vector<std::pair<std::string, std::string>>;
 public:
+                    Effect(const Effect &) = delete;
+    Effect &        operator=(const Effect &) = delete;
+
     /// Invoked whenever the context of the service has changed while the plugin is active.
     /// Since plugins are loaded on context changes, this means this is always called
     /// once before periodic calls to render start.
@@ -52,17 +55,27 @@ public:
     virtual void    handleKeyEvent(const KeyDatabase::Key &, bool press) = 0;
 
     /// Return a Renderer interface that can draw the effect into a RenderTarget
+    [[nodiscard]]
     virtual Renderer * renderer() = 0;
+
+protected:
+    Effect() = default;
+    ~Effect() {}
 };
 
 /// Manages communication with engine
 class Plugin
 {
 public:
+                        Plugin(const Plugin &) = delete;
+    Plugin &            operator=(const Plugin &) = delete;
+
+    [[nodiscard]]
     virtual Effect *    createEffect(const std::string & name, EffectService &) = 0;
     virtual void        destroyEffect(Effect *, EffectService &) = 0;
 
 protected:
+    Plugin() = default;
     ~Plugin() {}
 };
 
@@ -75,7 +88,11 @@ class EffectService
 protected:
     using KeyGroup = KeyDatabase::KeyGroup;
     using string_map = std::vector<std::pair<std::string, std::string>>;
+
+            EffectService() = default;
 public:
+            EffectService(const EffectService &) = delete;
+    EffectService & operator=(const EffectService &) = delete;
     virtual ~EffectService() {}
 
     virtual const std::string & deviceName() const = 0;     ///< Name, as defined by user
@@ -88,6 +105,7 @@ public:
     virtual const string_map &  configuration() const = 0;
     virtual const std::string & getConfig(const char *) const = 0;
 
+    [[nodiscard]]
     virtual RenderTarget *      createRenderTarget() = 0;
     virtual void                destroyRenderTarget(RenderTarget *) = 0;
 
@@ -98,6 +116,6 @@ public:
 
 /****************************************************************************/
 
-} } } // namespace keyleds::effect::interface
+} // namespace keyleds::effect::interface
 
 #endif

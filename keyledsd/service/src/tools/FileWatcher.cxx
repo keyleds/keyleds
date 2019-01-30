@@ -16,13 +16,13 @@
  */
 #include "tools/FileWatcher.h"
 
-#include <unistd.h>
+#include "logging.h"
 #include <QSocketNotifier>
 #include <algorithm>
 #include <cassert>
 #include <cerrno>
 #include <system_error>
-#include "logging.h"
+#include <unistd.h>
 
 LOGGING("filewatcher");
 
@@ -38,11 +38,8 @@ struct FileWatcher::Watch final
 
 /****************************************************************************/
 
-constexpr FileWatcher::watch_id FileWatcher::invalid_watch;
-
 FileWatcher::FileWatcher(QObject * parent)
- : QObject(parent),
-   m_fd(-1)
+ : QObject(parent)
 {
     if ((m_fd = inotify_init1(IN_NONBLOCK | IN_CLOEXEC)) < 0) {
         throw std::system_error(errno, std::generic_category());
@@ -60,13 +57,14 @@ FileWatcher::~FileWatcher()
 }
 
 
-FileWatcher::subscription FileWatcher::subscribe(const std::string & path, event events, Listener listener)
+FileWatcher::subscription FileWatcher::subscribe(const std::string & path,
+                                                 Event events, Listener listener)
 {
     watch_id wd = inotify_add_watch(m_fd, path.c_str(), static_cast<uint32_t>(events));
     if (wd < 0) {
         throw std::system_error(errno, std::generic_category());
     }
-    m_listeners.push_back({wd, listener});
+    m_listeners.push_back({wd, std::move(listener)});
     DEBUG("subscribed to events on ", path, " => ", wd);
     return subscription(*this, wd);
 }
@@ -92,17 +90,18 @@ void FileWatcher::onNotifyReady(int)
         // cppcheck-suppress unusedStructMember
         char                    reserve[sizeof(struct inotify_event) + NAME_MAX + 1];
     } buffer;
+    auto & event = buffer.event;
 
     ssize_t nread;
-    while ((nread = read(m_fd, &buffer, sizeof(buffer))) >= 0) {
+    while ((nread = read(m_fd, &event, sizeof(buffer))) >= 0) {
         auto it = std::find_if(
             m_listeners.begin(), m_listeners.end(),
-            [&ev=buffer.event](const auto & listener) { return listener.id == ev.wd; }
+            [&event](const auto & listener) { return listener.id == event.wd; }
         );
         if (it == m_listeners.end()) { continue; }
-        INFO("Got event for ", it->id, ": ", std::string(buffer.event.name, buffer.event.len));
-        it->callback(static_cast<enum event>(buffer.event.mask), buffer.event.cookie,
-                     std::string(buffer.event.name, buffer.event.len));
+        INFO("Got event for ", it->id, ": ", std::string(event.name, event.len));
+        it->callback(static_cast<Event>(event.mask), event.cookie,
+                     std::string(event.name, event.len));
         //NOTE at that point `it` is invalid, because callback is allowed to unsubscribe
     }
 
@@ -111,7 +110,7 @@ void FileWatcher::onNotifyReady(int)
     }
 }
 
-FileWatcher::subscription & FileWatcher::subscription::operator=(subscription && other)
+FileWatcher::subscription & FileWatcher::subscription::operator=(subscription && other) noexcept
 {
     if (m_id != invalid_watch) { m_watcher->unsubscribe(m_id); }
     m_watcher = other.m_watcher;

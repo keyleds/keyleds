@@ -30,7 +30,7 @@ class FileWatcher final : public QObject
 {
     Q_OBJECT
 public:
-    enum event : uint32_t {
+    enum Event : uint32_t {
         Access = IN_ACCESS,
         Attrib = IN_ATTRIB,
         CloseWrite = IN_CLOSE_WRITE,
@@ -52,7 +52,7 @@ public:
 
 private:
     using watch_id = int;
-    using Listener = std::function<void(event mask, uint32_t cookie, std::string path)>;
+    using Listener = std::function<void(Event mask, uint32_t cookie, std::string path)>;
     static constexpr watch_id invalid_watch = -1;
 
     struct Watch;
@@ -60,26 +60,26 @@ private:
 public:
     class subscription final
     {
-        FileWatcher *   m_watcher;
-        watch_id        m_id;
+        FileWatcher *   m_watcher = nullptr;
+        watch_id        m_id = invalid_watch;
     public:
-                    subscription()
-                     : m_watcher(nullptr), m_id(invalid_watch) {}
+                    subscription() = default;
                     subscription(FileWatcher & watcher, watch_id id)
                      : m_watcher(&watcher), m_id(id) {}
                     subscription(subscription && other) noexcept
-                     : m_watcher(other.m_watcher), m_id(invalid_watch)
+                     : m_watcher(other.m_watcher)
                      { std::swap(m_id, other.m_id); }
-        subscription& operator=(subscription &&);
+        subscription& operator=(subscription &&) noexcept;
                     ~subscription();
     };
 
 public:
-                        FileWatcher(QObject *parent = nullptr);
-                        ~FileWatcher() override;
+    explicit            FileWatcher(QObject *parent = nullptr);
                         FileWatcher(const FileWatcher &) = delete;
+    FileWatcher &       operator=(const FileWatcher &) = delete;
+                        ~FileWatcher() override;
 
-    subscription        subscribe(const std::string & path, event events, Listener);
+    subscription        subscribe(const std::string & path, Event events, Listener);
 
 private:
     /// Invoked whenever system notifications from udev become available
@@ -87,7 +87,7 @@ private:
     /// Invoked by subscription destructors
     void                unsubscribe(watch_id);
 private:
-    int                 m_fd;           ///< file descriptor of inotify device
+    int                 m_fd = -1;      ///< file descriptor of inotify device
     listener_list       m_listeners;    ///< list of registered watches
 };
 

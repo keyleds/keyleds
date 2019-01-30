@@ -16,17 +16,17 @@
  */
 #include "lua/lua_RenderTarget.h"
 
-#include <algorithm>
-#include <cassert>
-#include <lua.hpp>
 #include "keyledsd/KeyDatabase.h"
 #include "lua/Environment.h"
 #include "lua/lua_common.h"
+#include <algorithm>
+#include <cassert>
+#include <lua.hpp>
 
 using keyleds::KeyDatabase;
 using keyleds::RenderTarget;
 
-namespace keyleds { namespace lua {
+namespace keyleds::lua {
 
 /****************************************************************************/
 
@@ -204,4 +204,4 @@ const struct luaL_Reg metatable<RenderTarget *>::meta_methods[] = {
     { nullptr,      nullptr}
 };
 
-} } // namespace keyleds::lua
+} // namespace keyleds::lua

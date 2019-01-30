@@ -16,10 +16,10 @@
  */
 #include "tools/AnimationLoop.h"
 
+#include "logging.h"
 #include <cerrno>
 #include <chrono>
 #include <functional>
-#include "logging.h"
 
 LOGGING("anim-loop");
 
@@ -28,15 +28,11 @@ using tools::AnimationLoop;
 /****************************************************************************/
 
 AnimationLoop::AnimationLoop(unsigned fps)
-    : m_period(1000 / fps),
-      m_paused(true),
-      m_abort(false),
-      m_error(0)
+    : m_period(1000 / fps)
 {
 }
 
-AnimationLoop::~AnimationLoop()
-{}
+AnimationLoop::~AnimationLoop() = default;
 
 void AnimationLoop::start()
 {

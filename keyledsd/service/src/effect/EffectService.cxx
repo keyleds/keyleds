@@ -16,14 +16,14 @@
  */
 #include "keyledsd/effect/EffectService.h"
 
+#include "config.h"
+#include "keyledsd/DeviceManager.h"
+#include "keyledsd/colors.h"
+#include "logging.h"
+#include "tools/Paths.h"
 #include <algorithm>
 #include <cassert>
 #include <fstream>
-#include "keyledsd/DeviceManager.h"
-#include "keyledsd/colors.h"
-#include "tools/Paths.h"
-#include "logging.h"
-#include "config.h"
 
 LOGGING("effect-service");
 
@@ -39,8 +39,7 @@ EffectService::EffectService(const DeviceManager & manager,
    m_keyGroups(std::move(keyGroups))
 {}
 
-EffectService::~EffectService()
-{}
+EffectService::~EffectService() = default;
 
 const std::string & EffectService::deviceName() const
     { return m_manager.name(); }

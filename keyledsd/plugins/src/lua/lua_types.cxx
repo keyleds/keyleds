@@ -16,11 +16,11 @@
  */
 #include "lua/lua_types.h"
 
-#include <lua.hpp>
-#include <cassert>
 #include "lua/lua_common.h"
+#include <cassert>
+#include <lua.hpp>
 
-namespace keyleds { namespace lua {
+namespace keyleds::lua {
 
 /****************************************************************************/
 
@@ -83,7 +83,7 @@ void detail::lua_pushref(lua_State * lua, const void * value, const char * name,
     lua_pushlightuserdata(lua, const_cast<void *>(value));
     lua_rawget(lua, -2);
 
-    const void ** ptr = const_cast<const void **>(static_cast<const void * const *>(lua_topointer(lua, -1)));
+    auto ptr = const_cast<const void **>(static_cast<const void * const *>(lua_topointer(lua, -1)));
     if (!ptr) {
         lua_pop(lua, 1);
 
@@ -100,4 +100,4 @@ void detail::lua_pushref(lua_State * lua, const void * value, const char * name,
     CHECK_TOP(lua, +1);
 }
 
-} } // namespace keyleds::lua
+} // namespace keyleds::lua

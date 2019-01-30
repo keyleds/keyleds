@@ -37,8 +37,8 @@ class EffectManager final
      */
     class effect_deleter final
     {
-        EffectManager * m_manager;
-        PluginTracker * m_tracker;
+        EffectManager * m_manager = nullptr;
+        PluginTracker * m_tracker = nullptr;
         std::unique_ptr<effect::interface::EffectService> m_service;
     public:
         effect_deleter();
@@ -57,6 +57,7 @@ public:
                         EffectManager();
                         ~EffectManager();
                         EffectManager(const EffectManager &) = delete;
+    EffectManager &     operator=(const EffectManager &) = delete;
 
     path_list &         searchPaths() { return m_searchPaths; }
     const path_list &   searchPaths() const { return m_searchPaths; }

@@ -16,15 +16,15 @@
  */
 #include "lua/lua_Interpolator.h"
 
+#include "lua/Environment.h"
+#include "lua/lua_common.h"
 #include <cassert>
 #include <limits>
 #include <lua.hpp>
-#include "lua/Environment.h"
-#include "lua/lua_common.h"
 
 using namespace std::chrono_literals;
 
-namespace keyleds { namespace lua {
+namespace keyleds::lua {
 
 using milliseconds = Interpolator::milliseconds;
 
@@ -57,14 +57,14 @@ int luaNewInterpolator(lua_State * lua)
     // Analyze arguments
     if (lua_gettop(lua) > 3) { return luaL_error(lua, tooManyArgumentsErrorMessage); }
 
-    int flags = 0;
+    unsigned flags = 0;
 
     auto duration = std::chrono::duration<lua_Number>(luaL_checknumber(lua, 1));
     if (duration <= decltype(duration)::zero() || duration > maximumDuration) {
         return luaL_argerror(lua, 1, "invalid duration");
     }
 
-    RGBAColor startValue, finishValue;
+    RGBAColor startValue = {}, finishValue = {};
     if (lua_gettop(lua) == 3) {
         startValue = lua_checkcolor(lua, 2);
         finishValue = lua_checkcolor(lua, 3);
@@ -251,4 +251,4 @@ const struct luaL_Reg metatable<Interpolator>::meta_methods[] = {
     { nullptr,          nullptr}
 };
 
-} } // namespace keyleds::lua
+} // namespace keyleds::lua

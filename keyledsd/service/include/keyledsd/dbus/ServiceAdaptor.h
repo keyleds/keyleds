@@ -32,7 +32,7 @@ namespace keyleds {
     class Service;
 }
 
-namespace keyleds { namespace dbus {
+namespace keyleds::dbus {
 
 /****************************************************************************/
 
@@ -67,10 +67,10 @@ public:         // Simple pass-through methods acessing the Service
     QStringList plugins() const;
 
 public slots:   // Simple pass-through methods acessing the Service
-    Q_NOREPLY void    setContextValues(ServiceContextValues);
-    Q_NOREPLY void    setContextValue(QString, QString);
-    Q_NOREPLY void    sendGenericEvent(ServiceContextValues);
-    Q_NOREPLY void    sendKeyEvent(QString serial, int key);  ///< serial is that of target device
+    Q_NOREPLY void    setContextValues(const ServiceContextValues &);
+    Q_NOREPLY void    setContextValue(const QString &, const QString &);
+    Q_NOREPLY void    sendGenericEvent(const ServiceContextValues &);
+    Q_NOREPLY void    sendKeyEvent(const QString & serial, int key);  ///< serial is that of device
 
 private:
     void        onDeviceManagerAdded(DeviceManager &);
@@ -83,6 +83,6 @@ private:
 
 /****************************************************************************/
 
-} } // namespace keyleds::dbus
+} // namespace keyleds::dbus
 
 #endif

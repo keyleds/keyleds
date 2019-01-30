@@ -16,10 +16,10 @@
  */
 #include "tools/DeviceWatcher.h"
 
-#include <libudev.h>
 #include <QSocketNotifier>
 #include <algorithm>
 #include <cassert>
+#include <libudev.h>
 #include <stdexcept>
 #include <string>
 
@@ -77,7 +77,7 @@ Description::Description(const Description & other)
     m_attributes = other.m_attributes;
 }
 
-Description::~Description() {}
+Description::~Description() = default;
 
 Description Description::parent() const
 {
@@ -152,7 +152,6 @@ unsigned long long Description::usecSinceInitialized() const
 
 DeviceWatcher::DeviceWatcher(struct udev * udev, QObject *parent)
     : QObject(parent),
-      m_active(false),
       m_udev(udev == nullptr ? udev_new() : udev_ref(udev))
 {
     if (m_udev == nullptr) {
@@ -160,10 +159,7 @@ DeviceWatcher::DeviceWatcher(struct udev * udev, QObject *parent)
     }
 }
 
-DeviceWatcher::~DeviceWatcher()
-{
-    /* empty */
-}
+DeviceWatcher::~DeviceWatcher() = default;
 
 void DeviceWatcher::scan()
 {
@@ -223,7 +219,7 @@ void DeviceWatcher::setActive(bool active)
 
         udev_monitor_enable_receiving(m_monitor.get());
         int fd = udev_monitor_get_fd(m_monitor.get());
-        m_udevNotifier.reset(new QSocketNotifier(fd, QSocketNotifier::Read));
+        m_udevNotifier = std::make_unique<QSocketNotifier>(fd, QSocketNotifier::Read);
 
         QObject::connect(m_udevNotifier.get(), &decltype(m_udevNotifier)::element_type::activated,
                          this, &DeviceWatcher::onMonitorReady);
@@ -265,8 +261,8 @@ void DeviceWatcher::onMonitorReady(int)
     }
 }
 
-void DeviceWatcher::setupEnumerator(struct udev_enumerate &) const { return; }
-void DeviceWatcher::setupMonitor(struct udev_monitor &) const { return; }
+void DeviceWatcher::setupEnumerator(struct udev_enumerate &) const { /* empty */ }
+void DeviceWatcher::setupMonitor(struct udev_monitor &) const { /* empty */ }
 bool DeviceWatcher::isVisible(const Description &) const { return true; }
 
 /****************************************************************************/

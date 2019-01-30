@@ -16,18 +16,13 @@
  */
 #include "tools/DynamicLibrary.h"
 
-#include <dlfcn.h>
 #include <algorithm>
+#include <dlfcn.h>
 #include <stdexcept>
 
 using tools::DynamicLibrary;
 
 /****************************************************************************/
-
-constexpr DynamicLibrary::handle_type DynamicLibrary::invalid_handle;
-
-DynamicLibrary::DynamicLibrary()
- : m_handle(invalid_handle) {}
 
 DynamicLibrary::DynamicLibrary(handle_type handle)
  : m_handle(handle) {}
@@ -38,13 +33,12 @@ DynamicLibrary::~DynamicLibrary()
 }
 
 DynamicLibrary::DynamicLibrary(DynamicLibrary && other) noexcept
- : m_handle(invalid_handle)
 {
     using std::swap;
     swap(m_handle, other.m_handle);
 }
 
-DynamicLibrary & DynamicLibrary::operator=(DynamicLibrary && other)
+DynamicLibrary & DynamicLibrary::operator=(DynamicLibrary && other) noexcept
 {
     if (m_handle != nullptr) { dlclose(m_handle); }
     m_handle = other.m_handle;
@@ -52,9 +46,9 @@ DynamicLibrary & DynamicLibrary::operator=(DynamicLibrary && other)
     return *this;
 }
 
-void * DynamicLibrary::getSymbol(const std::string & name)
+const void * DynamicLibrary::getSymbol(const char * name)
 {
-    return dlsym(m_handle, name.c_str());
+    return dlsym(m_handle, name);
 }
 
 DynamicLibrary DynamicLibrary::load(const std::string & name, std::string * error)

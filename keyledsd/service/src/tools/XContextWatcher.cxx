@@ -16,10 +16,10 @@
  */
 #include "tools/XContextWatcher.h"
 
+#include "logging.h"
 #include <X11/Xlib.h>
 #include <functional>
 #include <string>
-#include "logging.h"
 
 LOGGING("context-watcher");
 

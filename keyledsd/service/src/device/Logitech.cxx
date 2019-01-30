@@ -16,6 +16,9 @@
  */
 #include "keyledsd/device/Logitech.h"
 
+#include "config.h"
+#include "keyleds.h"
+#include "logging.h"
 #include <algorithm>
 #include <cassert>
 #include <cerrno>
@@ -24,9 +27,6 @@
 #include <memory>
 #include <sstream>
 #include <string>
-#include "keyleds.h"
-#include "logging.h"
-#include "config.h"
 
 LOGGING("device");
 
@@ -43,7 +43,7 @@ namespace std {
     template<> struct default_delete<struct keyleds_device_version> {
         void operator()(struct keyleds_device_version *p) const { keyleds_free_device_version(p); }
     };
-}
+} // namespace std
 
 static constexpr char InterfaceProtocolAttr[] = "bInterfaceProtocol";
 static constexpr unsigned ApplicationInterfaceProtocol = 0;
@@ -59,7 +59,7 @@ Logitech::Logitech(std::unique_ptr<struct keyleds_device> device,
    m_device(std::move(device))
 {}
 
-Logitech::~Logitech() {}
+Logitech::~Logitech() = default;
 
 std::unique_ptr<keyleds::Device> Logitech::open(const std::string & path)
 {
@@ -280,7 +280,7 @@ void Logitech::parseVersion(struct keyleds_device * device, std::string * model,
         if (protocol.is_active) {
             std::ostringstream buffer;
             auto prefix = std::string(protocol.prefix);
-            auto endpos = prefix.find_last_not_of(" ");
+            auto endpos = prefix.find_last_not_of(' ');
             if (endpos != std::string::npos) { prefix.erase(endpos + 1, std::string::npos); }
             buffer <<prefix
                      <<'v' <<protocol.version_major
@@ -295,7 +295,7 @@ void Logitech::parseVersion(struct keyleds_device * device, std::string * model,
 /****************************************************************************/
 /****************************************************************************/
 
-Logitech::error::error(std::string what, keyleds_error_t code, int oserror)
+Logitech::error::error(const std::string & what, keyleds_error_t code, int oserror)
  : Device::error(what), m_code(code), m_oserror(oserror)
 {
     if (m_code == KEYLEDS_ERROR_ERRNO && m_oserror == 0) { m_oserror = errno; }

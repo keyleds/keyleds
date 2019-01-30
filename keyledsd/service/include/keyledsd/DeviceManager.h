@@ -33,7 +33,7 @@ namespace device { class Description; }
 
 namespace keyleds {
 
-class LayoutDescription;
+struct LayoutDescription;
 
 /****************************************************************************/
 
@@ -97,7 +97,7 @@ public:
 public:
     void                    setConfiguration(const Configuration *);
     void                    setContext(const string_map &);
-    void                    handleFileEvent(FileWatcher::event, uint32_t, std::string);
+    void                    handleFileEvent(FileWatcher::Event, uint32_t, const std::string &);
     void                    handleGenericEvent(const string_map &);
     void                    handleKeyEvent(int, bool);
     void                    setPaused(bool);

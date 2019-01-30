@@ -41,7 +41,7 @@ KeyDatabase::KeyDatabase(key_list keys)
    m_relations(computeRelations(m_keys))
 {}
 
-KeyDatabase::~KeyDatabase() {}
+KeyDatabase::~KeyDatabase() = default;
 
 KeyDatabase::const_iterator KeyDatabase::findKeyCode(int keyCode) const
 {
@@ -65,10 +65,10 @@ KeyDatabase::position_type KeyDatabase::distance(const Key & a, const Key & b) c
 double KeyDatabase::angle(const Key & a, const Key & b) const noexcept
 {
     if (a.index == b.index) { return 0.0; }
-    auto xa = double((a.position.x1 + a.position.x0) / 2);
-    auto ya = double((a.position.y1 + a.position.y0) / 2);
-    auto xb = double((b.position.x1 + b.position.x0) / 2);
-    auto yb = double((b.position.y1 + b.position.y0) / 2);
+    auto xa = double(a.position.x1 + a.position.x0) / 2.0;
+    auto ya = double(a.position.y1 + a.position.y0) / 2.0;
+    auto xb = double(b.position.x1 + b.position.x0) / 2.0;
+    auto yb = double(b.position.y1 + b.position.y0) / 2.0;
     return std::atan2(ya - yb, xb - xa);    // note: y axis is inverted
 }
 
@@ -117,7 +117,7 @@ KeyDatabase::KeyGroup::KeyGroup(std::string name, key_list keys)
  : m_name(std::move(name)), m_keys(std::move(keys))
 {}
 
-KeyDatabase::KeyGroup::~KeyGroup() {}
+KeyDatabase::KeyGroup::~KeyGroup() = default;
 
 void KeyDatabase::KeyGroup::swap(KeyGroup & other) noexcept
 {

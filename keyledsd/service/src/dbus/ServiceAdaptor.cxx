@@ -16,16 +16,16 @@
  */
 #include "keyledsd/dbus/ServiceAdaptor.h"
 
+#include "keyledsd/Configuration.h"
+#include "keyledsd/DeviceManager.h"
+#include "keyledsd/EffectManager.h"
+#include "keyledsd/Service.h"
+#include "keyledsd/dbus/DeviceManagerAdaptor.h"
 #include <QDBusConnection>
 #include <QDBusMetaType>
 #include <algorithm>
 #include <limits>
 #include <string>
-#include "keyledsd/dbus/DeviceManagerAdaptor.h"
-#include "keyledsd/Configuration.h"
-#include "keyledsd/DeviceManager.h"
-#include "keyledsd/EffectManager.h"
-#include "keyledsd/Service.h"
 
 using keyleds::dbus::ServiceAdaptor;
 
@@ -109,7 +109,7 @@ QStringList ServiceAdaptor::plugins() const
     return plugins;
 }
 
-void ServiceAdaptor::setContextValues(ServiceContextValues data)
+void ServiceAdaptor::setContextValues(const ServiceContextValues & data)
 {
     std::vector<std::pair<std::string, std::string>> context;
 
@@ -117,17 +117,17 @@ void ServiceAdaptor::setContextValues(ServiceContextValues data)
         context.emplace_back(std::string(it.key().toUtf8()),
                              std::string(it.value().toUtf8()));
     }
-    parent()->setContext(std::move(context));
+    parent()->setContext(context);
 }
 
-void ServiceAdaptor::setContextValue(QString key, QString val)
+void ServiceAdaptor::setContextValue(const QString & key, const QString & val)
 {
     parent()->setContext({
         { std::string(key.toUtf8()), std::string(val.toUtf8()) }
     });
 }
 
-void ServiceAdaptor::sendGenericEvent(ServiceContextValues data)
+void ServiceAdaptor::sendGenericEvent(const ServiceContextValues & data)
 {
     std::vector<std::pair<std::string, std::string>> context;
 
@@ -135,14 +135,14 @@ void ServiceAdaptor::sendGenericEvent(ServiceContextValues data)
         context.emplace_back(std::string(it.key().toUtf8()),
                              std::string(it.value().toUtf8()));
     }
-    parent()->handleGenericEvent(std::move(context));
+    parent()->handleGenericEvent(context);
 }
 
-void ServiceAdaptor::sendKeyEvent(QString qSerial, int key)
+void ServiceAdaptor::sendKeyEvent(const QString & serial, int key)
 {
-    auto serial = std::string(qSerial.toUtf8());
+    auto sserial = std::string(serial.toUtf8());
     for (auto & device : parent()->devices()) {
-        if (device->serial() == serial) {
+        if (device->serial() == sserial) {
             device->handleKeyEvent(key, true);
             device->handleKeyEvent(key, false);
             break;
@@ -160,10 +160,7 @@ void ServiceAdaptor::onDeviceManagerAdded(DeviceManager & manager)
     }
 }
 
-void ServiceAdaptor::onDeviceManagerRemoved(DeviceManager &)
-{
-    return;
-}
+void ServiceAdaptor::onDeviceManagerRemoved(DeviceManager &) { /* empty */ }
 
 QString ServiceAdaptor::managerPath(const DeviceManager & manager) const
 {

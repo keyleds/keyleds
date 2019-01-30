@@ -49,7 +49,7 @@ public:
     class error : public std::runtime_error
     {
     public:
-        explicit        error(std::string what);
+        explicit        error(const std::string & what);
         virtual bool    expected() const = 0;       ///< Error is a normal failure condition
         virtual bool    recoverable() const = 0;    ///< Error recovery can be attempted with resync()
     };
@@ -66,6 +66,8 @@ protected:
                         Device(std::string path, Type type, std::string name, std::string model,
                                std::string serial, std::string firmware, int layout, block_list);
 public:
+                        Device(const Device &) = delete;
+    Device &            operator=(const Device &) = delete;
     virtual             ~Device();
 
     // Query

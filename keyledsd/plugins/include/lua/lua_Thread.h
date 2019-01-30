@@ -20,7 +20,7 @@
 #include <chrono>
 #include "lua/lua_types.h"
 
-namespace keyleds { namespace lua {
+namespace keyleds::lua {
 
 /****************************************************************************/
 
@@ -44,6 +44,6 @@ template <> struct metatable<Thread>
 
 /****************************************************************************/
 
-} } // namespace keyleds::lua
+} // namespace keyleds::lua
 
 #endif

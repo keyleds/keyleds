@@ -17,16 +17,17 @@
 #include "keyledsd/Service.h"
 
 #include <QCoreApplication>
-#include <cassert>
-#include <functional>
-#include <sstream>
-#include "keyledsd/device/Logitech.h"
+#include "keyleds.h"
 #include "keyledsd/Configuration.h"
 #include "keyledsd/DeviceManager.h"
 #include "keyledsd/DisplayManager.h"
-#include "tools/XWindow.h"
-#include "keyleds.h"
+#include "keyledsd/device/Logitech.h"
 #include "logging.h"
+#include "tools/XWindow.h"
+#include <cassert>
+#include <functional>
+#include <optional>
+#include <sstream>
 
 LOGGING("service");
 
@@ -79,10 +80,7 @@ Service::Service(EffectManager & effectManager, tools::FileWatcher & fileWatcher
                  Configuration configuration, QObject * parent)
     : QObject(parent),
       m_effectManager(effectManager),
-      m_fileWatcher(fileWatcher),
-      m_autoQuit(false),
-      m_active(false),
-      m_deviceWatcher(nullptr)
+      m_fileWatcher(fileWatcher)
 {
     QObject::connect(&m_deviceWatcher, &DeviceWatcher::deviceAdded,
                      this, &Service::onDeviceAdded);
@@ -128,7 +126,7 @@ void Service::setConfiguration(Configuration config)
     // Setup configuration file watch
     if (!m_configuration.path.empty()) {
         m_fileWatcherSub = m_fileWatcher.subscribe(
-            m_configuration.path, FileWatcher::event::CloseWrite,
+            m_configuration.path, FileWatcher::Event::CloseWrite,
             std::bind(&Service::onConfigurationFileChanged, this, std::placeholders::_1)
         );
     }
@@ -139,11 +137,11 @@ void Service::setAutoQuit(bool val)
     m_autoQuit = val;
 }
 
-void Service::setActive(bool active)
+void Service::setActive(bool val)
 {
-    VERBOSE("switching to ", active ? "active" : "inactive", " mode");
-    m_deviceWatcher.setActive(active);
-    m_active = active;
+    VERBOSE("switching to ", val ? "active" : "inactive", " mode");
+    m_deviceWatcher.setActive(val);
+    m_active = val;
 }
 
 void Service::setContext(const string_map & context)
@@ -171,7 +169,7 @@ void Service::handleKeyEvent(const std::string & devNode, int key, bool press)
 
 /****************************************************************************/
 
-void Service::onConfigurationFileChanged(FileWatcher::event event)
+void Service::onConfigurationFileChanged(FileWatcher::Event event)
 {
     INFO("reloading ", m_configuration.path);
 
@@ -186,10 +184,10 @@ void Service::onConfigurationFileChanged(FileWatcher::event event)
         return; // setConfiguration reloads the watch unconditionally
     }
 
-    if ((event & FileWatcher::event::Ignored) != 0) {
+    if ((event & FileWatcher::Event::Ignored) != 0) {
         // Happens when editors swap in the configuration file instead of rewriting it
         m_fileWatcherSub = m_fileWatcher.subscribe(
-            m_configuration.path, FileWatcher::event::CloseWrite,
+            m_configuration.path, FileWatcher::Event::CloseWrite,
             std::bind(&Service::onConfigurationFileChanged, this, std::placeholders::_1)
         );
     }

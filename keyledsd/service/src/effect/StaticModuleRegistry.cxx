@@ -19,8 +19,8 @@
 using keyleds::effect::StaticModuleRegistry;
 
 
-StaticModuleRegistry::StaticModuleRegistry() {}
-StaticModuleRegistry::~StaticModuleRegistry() {}
+StaticModuleRegistry::StaticModuleRegistry() = default;
+StaticModuleRegistry::~StaticModuleRegistry() = default;
 
 StaticModuleRegistry & StaticModuleRegistry::instance()
 {

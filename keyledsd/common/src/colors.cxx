@@ -200,9 +200,9 @@ std::optional<RGBColor> RGBColor::parse(const std::string & str)
         char * endptr;
         auto code = uint32_t(::strtoul(str.c_str(), &endptr, 16));
         if (*endptr == '\0') {
-            return RGBColor(channel_type(code >> 16),
-                            channel_type(code >> 8),
-                            channel_type(code >> 0));
+            return RGBColor(channel_type(code >> 16u),
+                            channel_type(code >> 8u),
+                            channel_type(code >> 0u));
         }
     }
 
@@ -246,15 +246,15 @@ std::optional<RGBAColor> RGBAColor::parse(const std::string & str)
         char * endptr;
         auto code = uint32_t(::strtoul(str.c_str(), &endptr, 16));
         if (*endptr == '\0') {
-            return RGBAColor(channel_type(code >> 24),
-                             channel_type(code >> 16),
-                             channel_type(code >> 8),
-                             channel_type(code >> 0));
+            return RGBAColor(channel_type(code >> 24u),
+                             channel_type(code >> 16u),
+                             channel_type(code >> 8u),
+                             channel_type(code >> 0u));
         }
     }
 
     auto color = RGBColor::parse(str);
-    if (color) { return RGBAColor(*color); }
+    if (color) { return RGBAColor(*color, 0xff); }
     return {};
 }
 

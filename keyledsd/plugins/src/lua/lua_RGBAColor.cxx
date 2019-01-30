@@ -16,20 +16,20 @@
  */
 #include "lua/lua_RGBAColor.h"
 
+#include "keyledsd/colors.h"
+#include "lua/lua_common.h"
 #include <algorithm>
 #include <array>
 #include <cassert>
 #include <cstring>
 #include <iomanip>
 #include <limits>
-#include <sstream>
 #include <lua.hpp>
-#include "keyledsd/colors.h"
-#include "lua/lua_common.h"
+#include <sstream>
 
 using keyleds::RGBAColor;
 
-namespace keyleds { namespace lua {
+namespace keyleds::lua {
 
 /****************************************************************************/
 
@@ -243,4 +243,4 @@ const struct luaL_Reg metatable<RGBAColor>::meta_methods[] = {
     { nullptr,      nullptr}
 };
 
-} } // namespace keyleds::lua
+} // namespace keyleds::lua

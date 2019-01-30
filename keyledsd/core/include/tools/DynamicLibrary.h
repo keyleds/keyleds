@@ -33,23 +33,23 @@ class DynamicLibrary final
     using handle_type = void *;
     static constexpr handle_type invalid_handle = nullptr;
 private:
-                    DynamicLibrary(handle_type);
+    explicit        DynamicLibrary(handle_type);
 public:
-                    DynamicLibrary();
+                    DynamicLibrary() = default;
                     DynamicLibrary(DynamicLibrary &&) noexcept;
-    DynamicLibrary& operator=(DynamicLibrary &&);
+    DynamicLibrary& operator=(DynamicLibrary &&) noexcept;
                     ~DynamicLibrary();
 
     static DynamicLibrary load(const std::string & name, std::string * error = nullptr);
 
-    void *          getSymbol(const std::string & name);
-    template <typename T> const T * getSymbol(const std::string & name)
+    const void *    getSymbol(const char * name);
+    template <typename T> const T * getSymbol(const char * name)
      { return static_cast<const T *>(getSymbol(name)); }
 
                     operator bool() const { return m_handle != invalid_handle; }
 
 private:
-    handle_type     m_handle;
+    handle_type     m_handle = invalid_handle;
 };
 
 /****************************************************************************/

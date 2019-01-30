@@ -33,7 +33,7 @@
 #include <vector>
 
 namespace std {
-    template <> struct default_delete<::Display> { void operator()(::Display *p) const; };
+    template <> struct default_delete<::Display> { void operator()(::Display *) const; };
 }
 
 /** Xlib object-oriented wrappers
@@ -89,7 +89,7 @@ private:
     handle_type             m_window;           ///< Window handle
     mutable std::string     m_className;        ///< Cached window class name
     mutable std::string     m_instanceName;     ///< Cached window instance name
-    mutable bool            m_classLoaded;      ///< Set when m_className and m_instanceName are loaded
+    mutable bool            m_classLoaded = false; ///< Set when caches are loaded
 };
 
 /****************************************************************************/
@@ -108,9 +108,8 @@ class Device final
     static constexpr handle_type invalid_device = 0;
 public:
                             Device(Display & display, handle_type device);
-                            Device(const Device &) = delete;
                             Device(Device &&) noexcept;
-    Device &                operator=(Device &&);
+    Device &                operator=(Device &&) noexcept;
                             ~Device();
 
     Display &               display() const { return m_display; }
@@ -122,9 +121,9 @@ public:
     std::string             getProperty(Atom atom, Atom type) const;
 
 private:
-    Display &               m_display;          ///< Display the device belongs to
-    handle_type             m_device;           ///< Device handle
-    std::string             m_devNode;          ///< Path to device node
+    Display &               m_display;                  ///< Display the device belongs to
+    handle_type             m_device = invalid_device;  ///< Device handle
+    std::string             m_devNode;                  ///< Path to device node
 };
 
 /****************************************************************************/
@@ -152,16 +151,16 @@ public:
     public:
                     subscription(Display & watcher, subscription_id_type id);
                     subscription(subscription && other)
-                     : m_display(other.m_display), m_id(invalid_subscription)
+                     : m_display(other.m_display)
                      { std::swap(m_id, other.m_id); }
                     ~subscription();
     private:
         Display &               m_display;
-        subscription_id_type    m_id;
+        subscription_id_type    m_id = invalid_subscription;
     };
 
 public:
-                            Display(std::string name = std::string());
+    explicit                Display(const std::string & name = std::string());
                             Display(const Display &) = delete;
     Display &               operator=(const Display &) = delete;
                             ~Display();
@@ -202,8 +201,8 @@ private:
 class Error : public std::runtime_error
 {
 public:
-                            Error(const std::string & msg);
-                            Error(XErrorEvent *event);
+    explicit                Error(const std::string & msg);
+    explicit                Error(XErrorEvent *event);
                             ~Error();
 private:
     static std::string      makeMessage(XErrorEvent *event);
@@ -217,12 +216,13 @@ public:
     using error_list = std::vector<XErrorEvent>;
     using handler_type = int (*)(X11Display *, XErrorEvent *);
 public:
-    ErrorCatcher();
-    ErrorCatcher(const ErrorCatcher &) = delete;
-    ~ErrorCatcher();
+                    ErrorCatcher();
+                    ErrorCatcher(const ErrorCatcher &) = delete;
+    ErrorCatcher &  operator=(const ErrorCatcher &) = delete;
+                    ~ErrorCatcher();
 
     const error_list & errors() const { return m_errors; }
-    operator bool() const { return !m_errors.empty(); }
+    operator bool() const noexcept { return !m_errors.empty(); }
 
     void synchronize(Display &) const;
 private:
@@ -231,8 +231,8 @@ private:
 private:
     static ErrorCatcher * s_current;
     error_list      m_errors;
-    handler_type    m_oldHandler;
-    ErrorCatcher *  m_oldCatcher;
+    handler_type    m_oldHandler = nullptr;
+    ErrorCatcher *  m_oldCatcher = nullptr;
 };
 
 /****************************************************************************/

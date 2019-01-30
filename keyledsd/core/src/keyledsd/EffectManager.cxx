@@ -16,11 +16,11 @@
  */
 #include "keyledsd/EffectManager.h"
 
-#include <unistd.h>
-#include <algorithm>
 #include "keyledsd/effect/module.h"
-#include "tools/DynamicLibrary.h"
 #include "logging.h"
+#include "tools/DynamicLibrary.h"
+#include <algorithm>
+#include <unistd.h>
 
 LOGGING("effect-manager");
 
@@ -56,9 +56,10 @@ public:
        m_name(std::move(name)),
        m_library(std::move(library)),
        m_definition(definition),
-       m_instance(instance),
-       m_useCount(0) {}
-    ~PluginTracker() { m_manager.unload(*this); }
+       m_instance(instance) {}
+                                PluginTracker(const PluginTracker &) = delete;
+    PluginTracker &             operator=(const PluginTracker &) = delete;
+                                ~PluginTracker() { m_manager.unload(*this); }
 
     const std::string &         name() const { return m_name; }
     const module_definition *   definition() const { return m_definition; }
@@ -74,16 +75,12 @@ private:
     DynamicLibrary              m_library;      ///< Actual underlying library of the plugin
     const module_definition *   m_definition;   ///< Plugin description structure
     Plugin *                    m_instance;     ///< Instance created by the plugin itself
-    unsigned                    m_useCount;     ///< Number of loaded effects using this plugin
+    unsigned                    m_useCount = 0; ///< Number of loaded effects using this plugin
 };
 
 /****************************************************************************/
 
-EffectManager::effect_deleter::effect_deleter()
- : m_manager(nullptr),
-   m_tracker(nullptr),
-   m_service(nullptr)
-{}
+EffectManager::effect_deleter::effect_deleter() = default;
 
 EffectManager::effect_deleter::effect_deleter(EffectManager * manager, PluginTracker * tracker,
                                               std::unique_ptr<effect::interface::EffectService> service)
@@ -94,7 +91,7 @@ EffectManager::effect_deleter::effect_deleter(EffectManager * manager, PluginTra
 
 EffectManager::effect_deleter::effect_deleter(effect_deleter &&) noexcept = default;
 
-EffectManager::effect_deleter::~effect_deleter() {}
+EffectManager::effect_deleter::~effect_deleter() = default;
 
 void EffectManager::effect_deleter::operator()(effect::interface::Effect * ptr) const
 {
@@ -103,8 +100,8 @@ void EffectManager::effect_deleter::operator()(effect::interface::Effect * ptr) 
 
 /****************************************************************************/
 
-EffectManager::EffectManager() {}
-EffectManager::~EffectManager() {}
+EffectManager::EffectManager() = default;
+EffectManager::~EffectManager() = default;
 
 /** Add a static / pre-loaded plugin to the manager.
  * @param name Plugin name
@@ -156,7 +153,7 @@ bool EffectManager::load(const std::string & name, std::string * error)
     if (!library) { return false; }
 
     // Lookup plugin definition structure
-    auto definition = static_cast<module_definition *>(library.getSymbol(moduleEntry));
+    auto definition = static_cast<const module_definition *>(library.getSymbol(moduleEntry));
     if (!definition) {
         if (error) { *error = "module entry point not found"; }
         return false;

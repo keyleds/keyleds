@@ -14,12 +14,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "keyledsd/PluginHelper.h"
+#include "lua/LuaEffect.h"
 #include <algorithm>
 #include <cassert>
 #include <memory>
 #include <vector>
-#include "keyledsd/PluginHelper.h"
-#include "lua/LuaEffect.h"
 
 using keyleds::plugin::lua::LuaEffect;
 
@@ -35,8 +35,6 @@ class LuaPlugin final : public keyleds::effect::interface::Plugin
 
 public:
     explicit LuaPlugin(const char *) {}
-
-    ~LuaPlugin() {}
 
     keyleds::effect::interface::Effect *
     createEffect(const std::string & name, EffectService & service) override

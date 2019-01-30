@@ -38,7 +38,7 @@ struct DBusDeviceKeyInfo final
 };
 using DBusDeviceKeyInfoList = QList<DBusDeviceKeyInfo>;
 
-namespace keyleds { namespace dbus {
+namespace keyleds::dbus {
 
 /****************************************************************************/
 
@@ -81,6 +81,6 @@ private:
 
 /****************************************************************************/
 
-} } // namespace keyleds::dbus
+} // namespace keyleds::dbus
 
 #endif

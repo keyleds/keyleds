@@ -14,12 +14,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <unistd.h>
+#include "logging.h"
 #include <algorithm>
 #include <array>
 #include <sstream>
 #include <stdexcept>
-#include "logging.h"
+#include <unistd.h>
 
 using logging::Configuration;
 using logging::Policy;
@@ -68,7 +68,7 @@ const Policy & Configuration::defaultPolicy()
 
 /****************************************************************************/
 
-logging::Policy::~Policy() {}
+logging::Policy::~Policy() = default;
 
 /****************************************************************************/
 

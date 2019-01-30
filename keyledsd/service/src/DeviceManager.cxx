@@ -16,17 +16,17 @@
  */
 #include "keyledsd/DeviceManager.h"
 
-#include <unistd.h>
+#include "config.h"
+#include "keyledsd/LayoutDescription.h"
+#include "keyledsd/device/Logitech.h"
+#include "keyledsd/effect/EffectService.h"
+#include "logging.h"
+#include "tools/Paths.h"
 #include <algorithm>
 #include <cassert>
 #include <iomanip>
 #include <sstream>
-#include "keyledsd/device/Logitech.h"
-#include "keyledsd/effect/EffectService.h"
-#include "keyledsd/LayoutDescription.h"
-#include "tools/Paths.h"
-#include "config.h"
-#include "logging.h"
+#include <unistd.h>
 
 LOGGING("dev-manager");
 
@@ -52,7 +52,7 @@ DeviceManager::EffectGroup::EffectGroup(std::string name, effect_list && effects
    m_effects(std::move(effects))
 {}
 
-DeviceManager::EffectGroup::~EffectGroup() {}
+DeviceManager::EffectGroup::~EffectGroup() = default;
 
 /****************************************************************************/
 
@@ -66,7 +66,7 @@ DeviceManager::DeviceManager(EffectManager & effectManager, FileWatcher & fileWa
       m_serial(getSerial(description)),
       m_eventDevices(findEventDevices(description)),
       m_device(std::move(device)),
-      m_fileWatcherSub(fileWatcher.subscribe(description.devNode(), FileWatcher::event::Attrib,
+      m_fileWatcherSub(fileWatcher.subscribe(description.devNode(), FileWatcher::Event::Attrib,
                                              std::bind(&DeviceManager::handleFileEvent, this,
                                                        std::placeholders::_1, std::placeholders::_2,
                                                        std::placeholders::_3))),
@@ -114,7 +114,7 @@ void DeviceManager::setContext(const string_map & context)
     m_renderLoop.renderers() = std::move(renderers);
 }
 
-void DeviceManager::handleFileEvent(FileWatcher::event, uint32_t, std::string)
+void DeviceManager::handleFileEvent(FileWatcher::Event, uint32_t, const std::string &)
 {
     int result = access(m_device->path().c_str(), R_OK | W_OK);
     setPaused(result != 0);
@@ -273,8 +273,9 @@ std::vector<keyleds::effect::interface::Effect *> DeviceManager::loadEffects(con
 
     for (const auto & profileEntry : m_configuration->profiles) {
         const auto & devices = profileEntry.devices;
-        if (!devices.empty() && std::find(devices.begin(), devices.end(), m_name) == devices.end())
+        if (!devices.empty() && std::find(devices.begin(), devices.end(), m_name) == devices.end()) {
             continue;
+        }
         if (profileEntry.name == defaultProfileName) {
             defaultProfile = &profileEntry;
         } else if (profileEntry.name == overlayProfileName) {

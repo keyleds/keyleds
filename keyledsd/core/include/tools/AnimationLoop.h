@@ -42,14 +42,16 @@ class AnimationLoop
 protected:
     using milliseconds = std::chrono::duration<unsigned, std::milli>;
 public:
-                    AnimationLoop(unsigned fps);
+    explicit        AnimationLoop(unsigned fps);
+                    AnimationLoop(const AnimationLoop &) = delete;
+    AnimationLoop & operator=(const AnimationLoop &) = delete;
     virtual         ~AnimationLoop();
 
     bool            paused() const { return m_paused; }
     int             error() const { return m_error; }
 
     void            start();
-    void            setPaused(bool paused);
+    void            setPaused(bool);
     void            stop();
 
 protected:
@@ -65,9 +67,9 @@ private:
     std::condition_variable m_cRunStatus;   ///< Used to wait on m_paused and m_abort changes
 
     milliseconds    m_period;               ///< Animation period
-    bool            m_paused;               ///< If set, the animation loop thread goes into sleep
-    bool            m_abort;                ///< If set, the animation loop thread exits
-    int             m_error;                ///< Error code from animation loop thread, errno-style
+    bool            m_paused = true;        ///< If set, the animation loop thread goes into sleep
+    bool            m_abort = false;        ///< If set, the animation loop thread exits
+    int             m_error = 0;            ///< Error code from animation loop thread, errno-style
 
     std::thread     m_thread;               ///< Actual thread instance
 };

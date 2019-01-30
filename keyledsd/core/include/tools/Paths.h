@@ -75,8 +75,8 @@ std::optional<std::pair<std::filebuf, std::string>>
 open_filebuf(XDG type, const std::string &, std::ios::openmode);
 
 /// Returns the list of system-dependent locations that would be searched for
-/// files of the given type. Those may differ depending on open mode, thus the read flag.
-std::vector<std::string> getPaths(XDG type, bool read);
+/// files of the given type. Those may differ depending on open mode, thus the extra flag.
+std::vector<std::string> getPaths(XDG type, bool extra);
 
 
 /// Opens the given file, using the file described by given path and XDG type.

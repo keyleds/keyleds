@@ -16,13 +16,13 @@
  */
 #include "lua/LuaEffect.h"
 
-#include <lua.hpp>
+#include "lua/Environment.h"
+#include "lua/lua_common.h"
 #include <algorithm>
 #include <cassert>
 #include <cstring>
+#include <lua.hpp>
 #include <sstream>
-#include "lua/Environment.h"
-#include "lua/lua_common.h"
 
 using keyleds::plugin::lua::LuaEffect;
 using namespace keyleds::lua;
@@ -69,7 +69,7 @@ LuaEffect::LuaEffect(std::string name, EffectService & service, state_ptr state)
    m_enabled(true)
 {}
 
-LuaEffect::~LuaEffect() {}
+LuaEffect::~LuaEffect() = default;
 
 std::unique_ptr<LuaEffect> LuaEffect::create(const std::string & name, EffectService & service,
                                              const std::string & code)
@@ -475,7 +475,7 @@ bool LuaEffect::handleError(lua_State * lua, EffectService & service, int code)
 // Ensure unique_ptr works on lua_State
 namespace std {
     void default_delete<lua_State>::operator()(lua_State *p) const { lua_close(p); }
-}
+} // namespace std
 
 /****************************************************************************/
 

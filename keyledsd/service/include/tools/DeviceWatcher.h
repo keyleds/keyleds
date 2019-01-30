@@ -153,7 +153,7 @@ private:
     void                onMonitorReady(int socket);
 
 private:
-    bool                                    m_active;       ///< If set, the watcher is monitoring
+    bool                                    m_active = false; ///< If set, the watcher is monitoring
                                                             ///  device changes
     std::unique_ptr<struct udev>            m_udev;         ///< Connection to udev, or nullptr
     std::unique_ptr<struct udev_monitor>    m_monitor;      ///< Monitoring endpoint, or nullptr

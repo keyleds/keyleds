@@ -51,7 +51,7 @@ protected:
     using EffectService = keyleds::effect::interface::EffectService;
 
 public:
-    Plugin(const char * name) : m_name(name) {}
+    explicit Plugin(const char * name) : m_name(name) {}
 
     keyleds::effect::interface::Effect *
     createEffect(const std::string & name, EffectService & service) override

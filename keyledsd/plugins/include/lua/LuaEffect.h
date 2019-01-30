@@ -28,7 +28,7 @@ namespace std {
 }
 
 
-namespace keyleds { namespace plugin { namespace lua {
+namespace keyleds::plugin::lua {
 
 /****************************************************************************/
 
@@ -46,7 +46,7 @@ public:
 
 public: // Effect interface for keyleds & lua init hook
     void            init();
-    void            render(milliseconds ms, RenderTarget & target) override;
+    void            render(milliseconds elapsed, RenderTarget & target) override;
     void            handleContextChange(const string_map &) override;
     void            handleGenericEvent(const string_map &) override;
     void            handleKeyEvent(const KeyDatabase::Key &, bool) override;
@@ -61,7 +61,7 @@ public: // Environment::Controller interface for lua
 
 private:
            void     setupState();
-           void     stepThreads(milliseconds ms);
+           void     stepThreads(milliseconds);
            void     runThread(Thread &, lua_State * thread, int nargs);
     static bool     pushHook(lua_State *, const char *);
     static bool     handleError(lua_State *, EffectService &, int code);
@@ -74,6 +74,6 @@ private:
 
 /****************************************************************************/
 
-} } } // namespace keyleds::plugin::lua
+} // namespace keyleds::plugin::lua
 
 #endif

@@ -21,7 +21,7 @@
 
 namespace keyleds { struct RGBAColor; }
 
-namespace keyleds { namespace lua {
+namespace keyleds::lua {
 
 /****************************************************************************/
 
@@ -36,6 +36,6 @@ RGBAColor lua_checkcolor(lua_State * lua, int index);
 
 /****************************************************************************/
 
-} } // namespace keyleds::lua
+} // namespace keyleds::lua
 
 #endif

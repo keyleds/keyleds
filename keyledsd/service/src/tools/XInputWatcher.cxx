@@ -16,12 +16,12 @@
  */
 #include "tools/XInputWatcher.h"
 
+#include "logging.h"
 #define Bool int
 #include <X11/extensions/XInput2.h>
 #undef Bool
 #include <algorithm>
 #include <cassert>
-#include "logging.h"
 
 #define MIN_KEYCODE 8
 
@@ -33,27 +33,31 @@ using xlib::XInputWatcher;
 
 static constexpr char XInputExtensionName[] = "XInputExtension";
 
+static int queryOpcode(xlib::Display & display, const char * name)
+{
+    int event, error, opcode;
+    if (!XQueryExtension(display.handle(), name, &opcode, &event, &error)) {
+        throw std::runtime_error("XInput extension not available");
+    }
+    return opcode;
+}
+
 /****************************************************************************/
 
 XInputWatcher::XInputWatcher(Display & display, QObject *parent)
  : QObject(parent),
    m_display(display),
    m_displayReg(m_display.registerHandler(GenericEvent, std::bind(
-                &XInputWatcher::handleEvent, this, std::placeholders::_1)))
+                &XInputWatcher::handleEvent, this, std::placeholders::_1))),
+   m_XIopcode(queryOpcode(display, XInputExtensionName))
 {
-    int event, error;
-    if (!XQueryExtension(display.handle(), XInputExtensionName, &m_XIopcode, &event, &error)) {
-        throw std::runtime_error("XInput extension not available");
-    }
-
     std::vector<unsigned char> mask(XIMaskLen(XI_LASTEVENT), 0);
-    XIEventMask eventMask = { XIAllDevices, (int)mask.size(), mask.data() };
+    XIEventMask eventMask = { XIAllDevices, int(mask.size()), mask.data() };
     XISetMask(mask.data(), XI_HierarchyChanged);
     XISelectEvents(display.handle(), display.root().handle(), &eventMask, 1);
 }
 
-XInputWatcher::~XInputWatcher()
-{}
+XInputWatcher::~XInputWatcher() = default;
 
 void XInputWatcher::scan()
 {
@@ -108,9 +112,9 @@ void XInputWatcher::handleEvent(const XEvent & event)
     }
 }
 
-void XInputWatcher::onInputEnabled(int deviceId, int type)
+void XInputWatcher::onInputEnabled(int deviceId, int use)
 {
-    if (type != XISlaveKeyboard) { return; }
+    if (use != XISlaveKeyboard) { return; }
     auto it = std::find_if(
         m_devices.begin(), m_devices.end(),
         [&](const auto & device) { return device.handle() == deviceId; }
@@ -133,9 +137,9 @@ void XInputWatcher::onInputEnabled(int deviceId, int type)
     }
 }
 
-void XInputWatcher::onInputDisabled(int deviceId, int type)
+void XInputWatcher::onInputDisabled(int deviceId, int use)
 {
-    if (type != XISlaveKeyboard) { return; }
+    if (use != XISlaveKeyboard) { return; }
     auto it = std::find_if(
         m_devices.begin(), m_devices.end(),
         [&](const auto & device) { return device.handle() == deviceId; }

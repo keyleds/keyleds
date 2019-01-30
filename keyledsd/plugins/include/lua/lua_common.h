@@ -20,7 +20,7 @@
 struct lua_State;
 struct luaL_Reg;
 
-namespace keyleds { namespace lua {
+namespace keyleds::lua {
 
 /****************************************************************************/
 
@@ -46,6 +46,6 @@ int lua_keyError(lua_State * lua, int index);
 
 /****************************************************************************/
 
-} } // namespace keyleds::lua
+} // namespace keyleds::lua
 
 #endif

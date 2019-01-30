@@ -20,7 +20,7 @@
 #include "keyledsd/KeyDatabase.h"
 #include "lua/lua_types.h"
 
-namespace keyleds { namespace lua {
+namespace keyleds::lua {
 
 /****************************************************************************/
 
@@ -31,6 +31,6 @@ template <> struct metatable<const KeyDatabase *>
 
 /****************************************************************************/
 
-} } // namespace keyleds::lua
+} // namespace keyleds::lua
 
 #endif

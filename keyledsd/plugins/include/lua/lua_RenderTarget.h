@@ -21,7 +21,7 @@
 
 namespace keyleds { class RenderTarget; }
 
-namespace keyleds { namespace lua {
+namespace keyleds::lua {
 
 /****************************************************************************/
 
@@ -32,6 +32,6 @@ template <> struct metatable<RenderTarget *>
 
 /****************************************************************************/
 
-} } // namespace keyleds::lua
+} // namespace keyleds::lua
 
 #endif

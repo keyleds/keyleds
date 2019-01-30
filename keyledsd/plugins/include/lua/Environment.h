@@ -28,10 +28,10 @@
 #include "lua/lua_Thread.h"
 
 struct lua_State;
-namespace keyleds { namespace device { class RenderTarget; } }
 namespace keyleds { struct RGBAColor; }
+namespace keyleds::device { class RenderTarget; }
 
-namespace keyleds { namespace lua {
+namespace keyleds::lua {
 
 struct Thread;
 
@@ -74,6 +74,6 @@ private:
 
 /****************************************************************************/
 
-} } // namespace keyleds::lua
+} // namespace keyleds::lua
 
 #endif

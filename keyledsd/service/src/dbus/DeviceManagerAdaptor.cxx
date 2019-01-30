@@ -16,10 +16,10 @@
  */
 #include "keyledsd/dbus/DeviceManagerAdaptor.h"
 
+#include "keyledsd/DeviceManager.h"
 #include <QDBusArgument>
 #include <QDBusMetaType>
 #include <limits>
-#include "keyledsd/DeviceManager.h"
 
 using keyleds::dbus::DeviceManagerAdaptor;
 

@@ -16,19 +16,19 @@
  */
 #include "keyledsd/LayoutDescription.h"
 
-#include <libxml/parser.h>
-#include <libxml/tree.h>
+#include "config.h"
+#include "logging.h"
+#include "tools/Paths.h"
 #include <algorithm>
 #include <cstddef>
 #include <cstring>
 #include <fstream>
 #include <istream>
+#include <libxml/parser.h>
+#include <libxml/tree.h>
 #include <limits>
-#include <sstream>
 #include <memory>
-#include "tools/Paths.h"
-#include "config.h"
-#include "logging.h"
+#include <sstream>
 
 LOGGING("layout");
 
@@ -36,7 +36,7 @@ using keyleds::LayoutDescription;
 
 /****************************************************************************/
 
-using xmlString = std::unique_ptr<xmlChar, void(*)(void *)>;
+using xmlString = std::unique_ptr<xmlChar[], void(*)(void *)>;
 
 static constexpr xmlChar SPURIOUS_TAG[] = "spurious";
 static constexpr xmlChar KEYBOARD_TAG[] = "keyboard";
@@ -57,13 +57,13 @@ static constexpr xmlChar KEY_ATTR_WIDTH[] = "width";
 
 static void hideErrorFunc(void *, xmlErrorPtr) {}
 
-static unsigned parseUInt(const xmlNode * node, const xmlChar * name, int base)
+static unsigned parseUInt(xmlNode * node, const xmlChar * name, int base)
 {
-    xmlString valueStr(xmlGetProp(const_cast<xmlNode *>(node), name), xmlFree);
+    xmlString valueStr(xmlGetProp(node, name), xmlFree);
     if (valueStr == nullptr) {
         std::ostringstream errMsg;
         errMsg <<"Element '" <<node->name <<"' misses a '" <<name <<"' attribute";
-        throw LayoutDescription::ParseError(errMsg.str(), xmlGetLineNo(const_cast<xmlNode *>(node)));
+        throw LayoutDescription::ParseError(errMsg.str(), xmlGetLineNo(node));
     }
     char * strEnd;
     auto valueUInt = std::strtoul(reinterpret_cast<char*>(valueStr.get()), &strEnd, base);
@@ -71,20 +71,20 @@ static unsigned parseUInt(const xmlNode * node, const xmlChar * name, int base)
         std::ostringstream errMsg;
         errMsg <<"Value '" <<valueStr.get() <<"' in attribute '" <<name <<"' of '"
                <<node->name <<"' element cannot be parsed as an integer";
-        throw LayoutDescription::ParseError(errMsg.str(), xmlGetLineNo(const_cast<xmlNode *>(node)));
+        throw LayoutDescription::ParseError(errMsg.str(), xmlGetLineNo(node));
     }
     if (valueUInt > std::numeric_limits<unsigned>::max()) {
         std::ostringstream errMsg;
         errMsg <<"Value '" <<valueStr.get() <<"' in attribute '" <<name <<"' of '"
                <<node->name <<"' is too large";
-        throw LayoutDescription::ParseError(errMsg.str(), xmlGetLineNo(const_cast<xmlNode *>(node)));
+        throw LayoutDescription::ParseError(errMsg.str(), xmlGetLineNo(node));
     }
     return static_cast<unsigned>(valueUInt);
 }
 
 /****************************************************************************/
 
-static void parseKeyboard(const xmlNode * keyboard, LayoutDescription::key_list & keys)
+static void parseKeyboard(xmlNode * keyboard, LayoutDescription::key_list & keys)
 {
     char * strEnd;
     unsigned kbX = parseUInt(keyboard, KEYBOARD_ATTR_X, 10);
@@ -103,9 +103,9 @@ static void parseKeyboard(const xmlNode * keyboard, LayoutDescription::key_list 
         if (row->type != XML_ELEMENT_NODE || xmlStrcmp(row->name, ROW_TAG) != 0) { continue; }
 
         unsigned totalWidth = 0;
-        for (const xmlNode * key = row->children; key != nullptr; key = key->next) {
+        for (xmlNode * key = row->children; key != nullptr; key = key->next) {
             if (key->type != XML_ELEMENT_NODE || xmlStrcmp(key->name, KEY_TAG) != 0) { continue; }
-            xmlString keyWidthStr(xmlGetProp(const_cast<xmlNode *>(key), KEY_ATTR_WIDTH), xmlFree);
+            xmlString keyWidthStr(xmlGetProp(key, KEY_ATTR_WIDTH), xmlFree);
             if (keyWidthStr != nullptr) {
                 auto keyWidthFloat = ::strtof(reinterpret_cast<char *>(keyWidthStr.get()), &strEnd);
                 if (*strEnd != '\0') {
@@ -113,7 +113,7 @@ static void parseKeyboard(const xmlNode * keyboard, LayoutDescription::key_list 
                     errMsg <<"Value '" <<keyWidthStr.get() <<"' in attribute '"
                            <<KEY_ATTR_WIDTH <<"' of '" <<KEY_TAG
                            <<"' element cannot be parsed as a float";
-                    throw LayoutDescription::ParseError(errMsg.str(), xmlGetLineNo(const_cast<xmlNode *>(key)));
+                    throw LayoutDescription::ParseError(errMsg.str(), xmlGetLineNo(key));
                 }
                 totalWidth += static_cast<unsigned int>(keyWidthFloat * 1000);
             } else {
@@ -122,11 +122,11 @@ static void parseKeyboard(const xmlNode * keyboard, LayoutDescription::key_list 
         }
 
         unsigned xOffset = 0;
-        for (const xmlNode * key = row->children; key != nullptr; key = key->next) {
+        for (xmlNode * key = row->children; key != nullptr; key = key->next) {
             if (key->type != XML_ELEMENT_NODE || xmlStrcmp(key->name, KEY_TAG) != 0) { continue; }
-            xmlString code(xmlGetProp(const_cast<xmlNode *>(key), KEY_ATTR_CODE), xmlFree);
-            xmlString glyph(xmlGetProp(const_cast<xmlNode *>(key), KEY_ATTR_GLYPH), xmlFree);
-            xmlString keyWidthStr(xmlGetProp(const_cast<xmlNode *>(key), KEY_ATTR_WIDTH), xmlFree);
+            xmlString code(xmlGetProp(key, KEY_ATTR_CODE), xmlFree);
+            xmlString glyph(xmlGetProp(key, KEY_ATTR_GLYPH), xmlFree);
+            xmlString keyWidthStr(xmlGetProp(key, KEY_ATTR_WIDTH), xmlFree);
 
             unsigned keyWidth;
             if (keyWidthStr != nullptr) {
@@ -197,12 +197,12 @@ LayoutDescription LayoutDescription::parse(std::istream & stream)
     }
 
     // Scan top-level nodes
-    const xmlNode * const root = xmlDocGetRootElement(document.get());
-    auto name = xmlString(xmlGetProp(const_cast<xmlNode *>(root), ROOT_ATTR_NAME), xmlFree);
+    xmlNode * const root = xmlDocGetRootElement(document.get());
+    auto name = xmlString(xmlGetProp(root, ROOT_ATTR_NAME), xmlFree);
 
     key_list keys;
     pos_list spurious;
-    for (const xmlNode * node = root->children; node != nullptr; node = node->next) {
+    for (xmlNode * node = root->children; node != nullptr; node = node->next) {
         if (node->type == XML_ELEMENT_NODE && xmlStrcmp(node->name, KEYBOARD_TAG) == 0) {
             parseKeyboard(node, keys);
         } else if (node->type == XML_ELEMENT_NODE && xmlStrcmp(node->name, SPURIOUS_TAG) == 0) {
@@ -222,16 +222,20 @@ LayoutDescription LayoutDescription::parse(std::istream & stream)
     };
 }
 
-LayoutDescription LayoutDescription::loadFile(const std::string & name)
+LayoutDescription LayoutDescription::loadFile(const std::string & path)
 {
     const auto & xdgPaths = tools::paths::getPaths(tools::paths::XDG::Data, true);
 
-    std::vector<std::string> paths;
-    std::transform(xdgPaths.begin(), xdgPaths.end(), std::back_inserter(paths),
-                   [](const auto & path) { return path + "/" KEYLEDSD_DATA_PREFIX "/layouts"; });
+    std::vector<std::string> candidates(xdgPaths.size());
+    std::transform(xdgPaths.begin(), xdgPaths.end(), candidates.begin(),
+                   [](const auto & prefix) { return prefix + "/" KEYLEDSD_DATA_PREFIX "/layouts"; });
 
-    for (const auto & path : paths) {
-        std::string fullName = path + '/' + name;
+    for (const auto & candidate : candidates) {
+        auto fullName = std::string();
+        fullName.reserve(candidate.size() + 1 + path.size());
+        fullName += candidate;
+        if (candidate.back() != '/' && path.front() != '/') { fullName += '/'; }
+        fullName += path;
         std::ifstream file(fullName);
         if (!file) { continue; }
         try {
@@ -253,4 +257,4 @@ LayoutDescription::ParseError::ParseError(const std::string & what, long line)
  : std::runtime_error(what), m_line(line)
 {}
 
-LayoutDescription::ParseError::~ParseError() {}
+LayoutDescription::ParseError::~ParseError() = default;

@@ -23,9 +23,9 @@
  */
 #include "tools/YAMLParser.h"
 
-#include <yaml.h>
 #include <istream>
 #include <sstream>
+#include <yaml.h>
 
 using tools::YAMLParser;
 
@@ -43,14 +43,15 @@ class Parser final
 {
 public:
     explicit Parser(std::istream & stream)
-     : m_done(false),
-       m_hasEvent(false)
     {
         if (yaml_parser_initialize(&m_parser) == 0) {
             throw std::runtime_error("YAML parser initialization failed");
         }
         yaml_parser_set_input(&m_parser, readHandler, &stream);
     }
+
+    Parser(const Parser &) = delete;
+    Parser & operator=(const Parser &) = delete;
 
     ~Parser()
     {
@@ -95,9 +96,9 @@ public:
     yaml_event_t    event;
 
 private:
-    bool            m_done;         ///< Set when end of stream was reached
-    yaml_parser_t   m_parser;       ///< libYAML parser object
-    bool            m_hasEvent;     ///< Set when @ref event holds an event
+    yaml_parser_t   m_parser;               ///< libYAML parser object
+    bool            m_done = false;         ///< Set when end of stream was reached
+    bool            m_hasEvent = false;     ///< Set when @ref event holds an event
 };
 
 static const char * toStr(const yaml_char_t * str) {
@@ -107,8 +108,7 @@ static const char * toStr(const yaml_char_t * str) {
 
 /****************************************************************************/
 
-YAMLParser::~YAMLParser()
- {}
+YAMLParser::~YAMLParser() = default;
 
 void YAMLParser::parse(std::istream & stream)
 {

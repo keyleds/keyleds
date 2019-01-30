@@ -16,8 +16,8 @@
  */
 #include "keyledsd/DisplayManager.h"
 
-#include <QSocketNotifier>
 #include "tools/XInputWatcher.h"
+#include <QSocketNotifier>
 
 using keyleds::DisplayManager;
 
@@ -39,8 +39,7 @@ DisplayManager::DisplayManager(std::unique_ptr<Display> display, QObject *parent
                      this, &DisplayManager::onKeyEventReceived);
 }
 
-DisplayManager::~DisplayManager()
-{}
+DisplayManager::~DisplayManager() = default;
 
 void DisplayManager::scanDevices()
 {

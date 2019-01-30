@@ -17,7 +17,6 @@
 #ifndef KEYLEDSD_CONFIGURATION_H_603C2B68
 #define KEYLEDSD_CONFIGURATION_H_603C2B68
 
-#include <memory>
 #include <regex>
 #include <string>
 #include <utility>
@@ -105,6 +104,8 @@ public:
     public:
                             Lookup() = default;
         explicit            Lookup(string_map filters);
+                            Lookup(Lookup &&) noexcept = default;
+        Lookup &            operator=(Lookup &&) noexcept = default;
                             ~Lookup();
 
         bool                match(const string_map &) const;

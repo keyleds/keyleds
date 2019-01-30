@@ -56,6 +56,7 @@ public:
                         Service(EffectManager &, FileWatcher &,
                                 Configuration, QObject *parent = nullptr);
                         Service(const Service &) = delete;
+    Service &           operator=(const Service &) = delete;
                         ~Service() override;
 
     const EffectManager & effectManager() const { return m_effectManager; }
@@ -82,7 +83,7 @@ signals:
 
 private:
     // Events from watchers
-    void                onConfigurationFileChanged(FileWatcher::event);
+    void                onConfigurationFileChanged(FileWatcher::Event);
     void                onDeviceAdded(const ::device::Description &);
     void                onDeviceRemoved(const ::device::Description &);
     void                onDisplayAdded(std::unique_ptr<xlib::Display> &);
@@ -91,10 +92,10 @@ private:
     EffectManager &     m_effectManager;    ///< Controls lifecycle of effects (injected)
     FileWatcher &       m_fileWatcher;     ///< Connection to inotify
     Configuration       m_configuration;
-    bool                m_autoQuit;         ///< Quit when last device is removed?
+    bool                m_autoQuit = false; ///< Quit when last device is removed?
 
     string_map          m_context;          ///< Current context. Used when instanciating new managers
-    bool                m_active;           ///< If clear, the service stops watching devices
+    bool                m_active = false;   ///< If clear, the service stops watching devices
     device_list         m_devices;          ///< Map of serial number to DeviceManager instances
     display_list        m_displays;         ///< Connections to X displays
 

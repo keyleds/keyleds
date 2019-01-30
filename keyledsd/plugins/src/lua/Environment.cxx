@@ -16,13 +16,13 @@
  */
 #include "lua/Environment.h"
 
+#include "lua/lua_common.h"
 #include <cassert>
 #include <lua.hpp>
 #include <sstream>
-#include "lua/lua_common.h"
 
 
-namespace keyleds { namespace lua {
+namespace keyleds::lua {
 
 static void * const controllerToken = const_cast<void **>(&controllerToken);
 
@@ -151,4 +151,4 @@ Environment::Controller * Environment::controller() const
 
 /****************************************************************************/
 
-} } // namespace keyleds::lua
+} // namespace keyleds::lua

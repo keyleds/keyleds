@@ -26,7 +26,7 @@
 
 namespace keyleds { class DeviceManager; }
 
-namespace keyleds { namespace effect {
+namespace keyleds::effect {
 
 /****************************************************************************/
 
@@ -64,6 +64,6 @@ private:
 
 /****************************************************************************/
 
-} } // namespace keyleds::effect
+} // namespace keyleds::effect
 
 #endif

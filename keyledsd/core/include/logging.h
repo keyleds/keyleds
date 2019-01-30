@@ -40,10 +40,10 @@ using level_t = unsigned int;
  */
 class Configuration final
 {
-    Configuration();
+                    Configuration();
 public:
-    Configuration(const Configuration &) = delete;
-    Configuration(Configuration &&) = delete;
+                    Configuration(const Configuration &) = delete;
+    Configuration & operator=(const Configuration &) = delete;
     static Configuration & instance();          ///< singleton instance
 
     void    registerLogger(Logger *);
@@ -145,24 +145,11 @@ template <level_t L> struct level {
 };
 template <level_t L> constexpr level_t level<L>::value;
 
-/// @private
-namespace detail {
-    template<typename T> static inline void print_bits(std::ostream & out, T && val)
-    {
-        out << val;
-    }
-
-    template<typename T, typename...Args> static inline void print_bits(std::ostream & out,
-                                                                        T && val, Args && ...args)
-    {
-        print_bits(out << val, std::forward<Args>(args)...);
-    }
-}
 
 template <level_t L> template <typename...Args> void level<L>::print(Logger & logger, Args && ...args)
 {
     std::ostringstream buffer;
-    detail::print_bits(buffer, std::forward<Args>(args)...);
+    (buffer << ... << args);
     logger.print(value, buffer.str());
 }
 

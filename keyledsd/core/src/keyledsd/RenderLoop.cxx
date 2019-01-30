@@ -16,19 +16,18 @@
  */
 #include "keyledsd/RenderLoop.h"
 
-#include <numeric>
+#include "keyledsd/Device.h"
+#include "logging.h"
 #include <algorithm>
 #include <cassert>
 #include <cerrno>
 #include <chrono>
 #include <exception>
+#include <numeric>
 #include <thread>
-#include "keyledsd/Device.h"
-#include "logging.h"
 
 LOGGING("render-loop");
 
-using keyleds::Renderer;
 using keyleds::RenderLoop;
 
 /****************************************************************************/
@@ -47,8 +46,7 @@ RenderLoop::RenderLoop(Device & device, unsigned fps)
     m_directives.reserve(max);
 }
 
-RenderLoop::~RenderLoop()
-{}
+RenderLoop::~RenderLoop() = default;
 
 /** Lock render loop, to synchronize renderer list access.
  * @return Mutex lock preventing the animation from using renderers until it is destroyed.

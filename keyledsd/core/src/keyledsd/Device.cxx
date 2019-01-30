@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "keyledsd/Device.h"
+#include <algorithm>
 
 using keyleds::Device;
 
@@ -32,7 +33,7 @@ Device::Device(std::string path, Type type, std::string name, std::string model,
    m_blocks(std::move(blocks))
 {}
 
-Device::~Device() {}
+Device::~Device() = default;
 
 /** Patch key declaration with missing keys.
  * @param block Which block the keys are in.
@@ -41,14 +42,16 @@ Device::~Device() {}
  */
 void Device::patchMissingKeys(const KeyBlock & block, const key_list & keyIds)
 {
-    // Note: the intent here is block is used for "indexing".
-    // Conceptually, this searches the block within m_blocks to modify it.
-    const_cast<KeyBlock &>(block).patchMissingKeys(keyIds);
+    auto it = std::find_if(m_blocks.begin(), m_blocks.end(),
+                           [&](const auto & item){ return &item == &block; });
+    if (it != m_blocks.end()) {
+        it->patchMissingKeys(keyIds);
+    }
 }
 
 /****************************************************************************/
 
-Device::error::error(std::string what) : std::runtime_error(what)
+Device::error::error(const std::string & what) : std::runtime_error(what)
 {}
 
 /****************************************************************************/
@@ -60,7 +63,7 @@ Device::KeyBlock::KeyBlock(key_block_id_type id, std::string name, key_list keys
       m_maxValues(maxValues)
 {}
 
-Device::KeyBlock::~KeyBlock() {}
+Device::KeyBlock::~KeyBlock() = default;
 
 /** Add key identifiers into the block.
  * @param keyIds List of key identifiers to add. They must not already be known.

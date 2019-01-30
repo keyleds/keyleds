@@ -16,6 +16,7 @@
  */
 #include "tools/Paths.h"
 
+#include "config.h"
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
@@ -23,7 +24,6 @@
 #include <regex>
 #include <sstream>
 #include <stdexcept>
-#include "config.h"
 
 using tools::paths::XDG;
 
@@ -59,7 +59,7 @@ static_assert(variables.back().type == XDG::Runtime,
 
 static std::string expandVars(const std::string & value)
 {
-    static const std::regex varRe("\\$\\{([^}]+)\\}");
+    static const std::regex varRe(R"(\$\{([^}]+)\})");
 
     auto it = std::sregex_iterator(value.begin(), value.end(), varRe);
     const auto endIt = std::sregex_iterator();
@@ -147,7 +147,7 @@ tools::paths::open_filebuf(XDG type, const std::string & path, std::ios::openmod
     // Handle simple cases not using dynamic lookup
     if (path[0] == '/' || path[0] == '.') {
         if (buf.open(path, mode)) {
-            return std::make_pair(std::move(buf), std::move(path));
+            return std::make_pair(std::move(buf), path);
         }
     }
 
@@ -155,7 +155,12 @@ tools::paths::open_filebuf(XDG type, const std::string & path, std::ios::openmod
 
     // Actually look for file
     for (const auto & dir : dirs) {
-        auto fullPath = canonicalPath(dir + "/" + path);
+        auto fullPath = std::string();
+        fullPath.reserve(dir.size() + 1 + path.size());
+        fullPath += dir;
+        if (dir.back() != '/' && path.front() != '/') { fullPath += '/'; }
+        fullPath += path;
+        fullPath = canonicalPath(fullPath);
         if (!fullPath.empty() && buf.open(fullPath, mode)) {
             return std::make_pair(std::move(buf), std::move(fullPath));
         }

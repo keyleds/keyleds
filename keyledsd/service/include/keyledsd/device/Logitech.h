@@ -36,7 +36,7 @@ namespace std {
     };
 };
 
-namespace keyleds { namespace device {
+namespace keyleds::device {
 
 /****************************************************************************/
 
@@ -54,7 +54,7 @@ public:
     {
         using keyleds_error_t = unsigned int;
     public:
-                        error(std::string what, keyleds_error_t code, int oserror=0);
+                        error(const std::string & what, keyleds_error_t code, int oserror=0);
         bool            expected() const override;
         bool            recoverable() const override;
         keyleds_error_t code() const { return m_code; }
@@ -122,6 +122,6 @@ private:
 
 /****************************************************************************/
 
-} } // namespace keyleds::device
+} // namespace keyleds::device
 
 #endif

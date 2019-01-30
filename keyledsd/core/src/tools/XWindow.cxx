@@ -16,17 +16,17 @@
  */
 #include "tools/XWindow.h"
 
-#define Bool int
-#include <X11/Xatom.h>
-#include <X11/extensions/XInput2.h>
-#undef Bool
+#include "logging.h"
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <limits>
 #include <sstream>
 #include <stdexcept>
-#include "logging.h"
+#define Bool int
+#include <X11/Xatom.h>
+#include <X11/extensions/XInput2.h>
+#undef Bool
 
 LOGGING("xwindow");
 
@@ -52,9 +52,7 @@ struct xlib::Display::HandlerInfo
 
 /****************************************************************************/
 
-constexpr xlib::Display::subscription_id_type xlib::Display::invalid_subscription;
-
-xlib::Display::Display(std::string name)
+xlib::Display::Display(const std::string & name)
  : m_display(openDisplay(name)),
    m_name(DisplayString(m_display.get())),
    m_root(*this, DefaultRootWindow(m_display.get())),
@@ -148,10 +146,10 @@ xlib::Display::subscription::~subscription()
 /****************************************************************************/
 
 xlib::Window::Window(Display & display, handle_type window)
- : m_display(display), m_window(window), m_classLoaded(false)
+ : m_display(display), m_window(window)
 {}
 
-xlib::Window::~Window() {}
+xlib::Window::~Window() = default;
 
 void xlib::Window::changeAttributes(unsigned long mask, const XSetWindowAttributes & attrs)
 {
@@ -223,8 +221,6 @@ void xlib::Window::loadClass() const
 
 /****************************************************************************/
 
-constexpr Device::handle_type Device::invalid_device;
-
 Device::Device(Display & display, handle_type device)
  : m_display(display), m_device(device)
 {
@@ -232,13 +228,13 @@ Device::Device(Display & display, handle_type device)
 }
 
 Device::Device(Device && other) noexcept
- : m_display(other.m_display), m_device(invalid_device)
+ : m_display(other.m_display)
 {
     std::swap(m_device, other.m_device);
     std::swap(m_devNode, other.m_devNode);
 }
 
-Device & Device::operator=(Device && other)
+Device & Device::operator=(Device && other) noexcept
 {
     assert(&m_display == &other.m_display);
     if (m_device != invalid_device) { setEventMask({}); m_device = invalid_device; }
@@ -304,7 +300,7 @@ xlib::Error::Error(XErrorEvent *event)
  : std::runtime_error(makeMessage(event))
 {}
 
-xlib::Error::~Error() {}
+xlib::Error::~Error() = default;
 
 std::string xlib::Error::makeMessage(XErrorEvent *event)
 {

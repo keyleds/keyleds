@@ -21,7 +21,7 @@
 #include <type_traits>
 #include <utility>
 
-namespace keyleds { namespace lua {
+namespace keyleds::lua {
 
 /****************************************************************************/
 
@@ -30,7 +30,7 @@ template <typename T> struct metatable {};
 namespace detail {
     void registerType(lua_State *, const char * name, const luaL_Reg * methods,
                       const luaL_Reg * metaMethods, bool weakTable);
-    bool isType(lua_State * lua, int index, const char * type);
+    bool isType(lua_State * lua, int index, const char * name);
     void lua_pushref(lua_State * lua, const void * value, const char * name,
                      const luaL_Reg * metaMethods);
 }
@@ -104,6 +104,6 @@ lua_push(lua_State * lua, T value)
 
 /****************************************************************************/
 
-} } // namespace keyleds::lua
+} // namespace keyleds::lua
 
 #endif

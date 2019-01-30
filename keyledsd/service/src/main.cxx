@@ -14,33 +14,32 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <fcntl.h>
-#ifdef _GNU_SOURCE
-#include <getopt.h>
-#endif
-#include <locale.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <unistd.h>
-#include <QCoreApplication>
-#include <QDBusConnection>
-#include <QSocketNotifier>
-#include <QTimer>
-#include <csignal>
-#include <exception>
-#include <iostream>
-#include <optional>
 #include "config.h"
+#include "keyledsd/Configuration.h"
 #ifndef NO_DBUS
 #include "keyledsd/dbus/ServiceAdaptor.h"
 #endif
 #include "keyledsd/EffectManager.h"
-#include "keyledsd/effect/StaticModuleRegistry.h"
-#include "keyledsd/Configuration.h"
 #include "keyledsd/Service.h"
-#include "tools/FileWatcher.h"
-#include "config.h"
+#include "keyledsd/effect/StaticModuleRegistry.h"
 #include "logging.h"
+#include "tools/FileWatcher.h"
+#include <QCoreApplication>
+#include <QDBusConnection>
+#include <QSocketNotifier>
+#include <QTimer>
+#include <clocale>
+#include <csignal>
+#include <exception>
+#include <fcntl.h>
+#ifdef _GNU_SOURCE
+#include <getopt.h>
+#endif
+#include <iostream>
+#include <optional>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 LOGGING("main");
 
@@ -81,7 +80,7 @@ public:
 #endif
             switch(opt) {
             case 'c': options.configPath = optarg; break;
-            case 'm': options.modulePaths.push_back(optarg); break;
+            case 'm': options.modulePaths.emplace_back(optarg); break;
             case 'q': options.logLevel = logging::critical::value; break;
             case 's': options.autoQuit = true; break;
             case 'v': options.logLevel += 1; break;
@@ -90,10 +89,10 @@ public:
                 std::cout <<"Usage: " <<argv[0] <<" [-c path] [-h] [-m path] [-q] [-s] [-v] [-D]\n";
                 return std::nullopt;
             case ':':
-                std::cerr <<argv[0] <<": option -- '" <<(char)::optopt <<"' requires an argument\n";
+                std::cerr <<argv[0] <<": option -- '" <<char(::optopt) <<"' requires an argument\n";
                 return std::nullopt;
             default:
-                std::cerr <<argv[0] <<": invalid option -- '" <<(char)::optopt <<"'\n";
+                std::cerr <<argv[0] <<": invalid option -- '" <<char(::optopt) <<"'\n";
                 return std::nullopt;
             }
         }
@@ -200,9 +199,9 @@ int main(int argc, char * argv[])
 
     // Create event loop
     QCoreApplication app(argc, argv);
-    app.setOrganizationDomain("etherdream.org");
-    app.setApplicationName("keyledsd");
-    app.setApplicationVersion(KEYLEDSD_VERSION_STR);
+    QCoreApplication::setOrganizationDomain("etherdream.org");
+    QCoreApplication::setApplicationName("keyledsd");
+    QCoreApplication::setApplicationVersion(KEYLEDSD_VERSION_STR);
 
     // Setup application components
     auto watcher = tools::FileWatcher();
@@ -232,5 +231,5 @@ int main(int argc, char * argv[])
                          [&](int fd){ handleSignalEvent(*options, service.get(), fd); });
     }
 
-    return app.exec();
+    return QCoreApplication::exec();
 }

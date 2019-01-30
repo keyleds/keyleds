@@ -16,6 +16,10 @@
  */
 #include "keyledsd/Configuration.h"
 
+#include "config.h"
+#include "logging.h"
+#include "tools/Paths.h"
+#include "tools/YAMLParser.h"
 #include <algorithm>
 #include <array>
 #include <cassert>
@@ -29,10 +33,6 @@
 #include <stdexcept>
 #include <system_error>
 #include <unistd.h>
-#include "tools/Paths.h"
-#include "tools/YAMLParser.h"
-#include "logging.h"
-#include "config.h"
 
 using keyleds::Configuration;
 
@@ -105,10 +105,13 @@ public:
     using state_type = unsigned int;
 
 public:
-    BuildState(state_type type = 0) : m_type(type) {}
-    virtual ~BuildState() {}
-    state_type type() const noexcept { return m_type; }
-    virtual void print(std::ostream &) const = 0;
+    explicit        BuildState(state_type type = 0) : m_type(type) {}
+                    BuildState(const BuildState &) = delete;
+    BuildState &    operator=(const BuildState &) = delete;
+
+    virtual         ~BuildState() = default;
+    state_type      type() const noexcept { return m_type; }
+    virtual void    print(std::ostream &) const = 0;
 
 public:
     virtual state_ptr sequenceStart(ConfigurationBuilder & builder, const std::string &)
@@ -340,7 +343,7 @@ class EffectGroupState final: public MappingBuildState
     using EffectGroup = Configuration::EffectGroup;
     enum SubState : state_type { KeyGroupList, EffectList };
 public:
-    EffectGroupState(std::string name, state_type type = 0)
+    explicit EffectGroupState(std::string name, state_type type = 0)
       : MappingBuildState(type), m_name(std::move(name)) {}
     void print(std::ostream & out) const override { out <<"effect(" <<m_name <<')'; }
 
@@ -413,10 +416,10 @@ private:
 /// Configuration builder state: within a profile
 class ProfileState final: public MappingBuildState
 {
-    using Profile = Configuration::Profile;
+    using value_type = Configuration::Profile;
     enum SubState : state_type { Lookup, DeviceList, EffectGroupList };
 public:
-    ProfileState(std::string name, state_type type = 0)
+    explicit ProfileState(std::string name, state_type type = 0)
       : MappingBuildState(type), m_name(std::move(name)) {}
     void print(std::ostream & out) const override { out <<"profile(" <<m_name <<')'; }
 
@@ -451,7 +454,7 @@ public:
     {
         switch(state.type()) {
             case SubState::Lookup: {
-                m_lookup = Profile::Lookup(
+                m_lookup = value_type::Lookup(
                     state.as<StringMappingBuildState>().result()
                 );
                 break;
@@ -468,17 +471,17 @@ public:
         MappingBuildState::subStateEnd(builder, state);
     }
 
-    Profile result()
+    value_type result()
     {
         return {std::move(m_name), std::move(m_lookup),
                 std::move(m_devices), std::move(m_effectGroups)};
     }
 
 private:
-    std::string                 m_name;
-    Profile::Lookup             m_lookup;
-    Profile::device_list        m_devices;
-    Profile::effect_group_list  m_effectGroups;
+    std::string                     m_name;
+    value_type::Lookup              m_lookup;
+    value_type::device_list         m_devices;
+    value_type::effect_group_list   m_effectGroups;
 };
 
 /// Configuration builder state: within a profile list
@@ -543,8 +546,11 @@ public:
     void scalarEntry(ConfigurationBuilder & builder, const std::string & key,
                      const std::string & value, const std::string & anchor) override
     {
-        if (key == "plugin-path")  { m_value.pluginPaths = { value }; }
-        else MappingBuildState::scalarEntry(builder, key, value, anchor);
+        if (key == "plugin-path") {
+            m_value.pluginPaths = { value };
+        } else {
+            MappingBuildState::scalarEntry(builder, key, value, anchor);
+        }
     }
 
     void subStateEnd(ConfigurationBuilder & builder, BuildState & state) override
@@ -706,7 +712,7 @@ Configuration::Profile::Lookup::Lookup(string_map filters)
  : m_entries(buildRegexps(std::move(filters)))
 {}
 
-Configuration::Profile::Lookup::~Lookup() {}
+Configuration::Profile::Lookup::~Lookup() = default;
 
 bool Configuration::Profile::Lookup::match(const string_map & context) const
 {

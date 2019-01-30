@@ -22,7 +22,7 @@
 
 struct module_definition;
 
-namespace keyleds { namespace effect {
+namespace keyleds::effect {
 
 /****************************************************************************/
 
@@ -56,6 +56,6 @@ struct StaticModuleRegistry::Registration final
 
 /****************************************************************************/
 
-} } // namespace keyleds::effect
+} // namespace keyleds::effect
 
 #endif

@@ -16,13 +16,13 @@
  */
 #include "lua/lua_Key.h"
 
+#include "lua/lua_common.h"
 #include <cstring>
 #include <lua.hpp>
-#include "lua/lua_common.h"
 
 using keyleds::KeyDatabase;
 
-namespace keyleds { namespace lua {
+namespace keyleds::lua {
 
 /****************************************************************************/
 
@@ -67,4 +67,4 @@ const struct luaL_Reg metatable<const KeyDatabase::Key *>::meta_methods[] = {
     { nullptr,      nullptr}
 };
 
-} } // namespace keyleds::lua
+} // namespace keyleds::lua

@@ -14,11 +14,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "keyledsd/PluginHelper.h"
+#include "keyledsd/utils.h"
 #include <algorithm>
 #include <random>
 #include <vector>
-#include "keyledsd/PluginHelper.h"
-#include "keyledsd/utils.h"
 
 using namespace std::literals::chrono_literals;
 using keyleds::parseDuration;
