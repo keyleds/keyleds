@@ -28,9 +28,8 @@ static constexpr char activeWindowAtom[] = "_NET_ACTIVE_WINDOW";
 
 /****************************************************************************/
 
-XContextWatcher::XContextWatcher(xlib::Display & display, QObject *parent)
- : QObject(parent),
-   m_display(display),
+XContextWatcher::XContextWatcher(xlib::Display & display)
+ : m_display(display),
    m_displayReg(m_display.registerHandler(PropertyNotify, std::bind(
                 &XContextWatcher::handleEvent, this, std::placeholders::_1)))
 {
@@ -131,6 +130,6 @@ void XContextWatcher::setContext(xlib::Window * window)
 
     if (context != m_context) {
         m_context = std::move(context);
-        emit contextChanged(m_context);
+        contextChanged.emit(m_context);
     }
 }

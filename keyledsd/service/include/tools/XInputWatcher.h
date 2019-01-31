@@ -17,10 +17,10 @@
 #ifndef TOOLS_XINPUTWATCHER_H_51CB4EAC
 #define TOOLS_XINPUTWATCHER_H_51CB4EAC
 
-#include <QObject>
+#include "tools/Event.h"
+#include "tools/XWindow.h"
 #include <string>
 #include <vector>
-#include "tools/XWindow.h"
 
 namespace xlib {
 
@@ -30,24 +30,23 @@ namespace xlib {
  *
  * Watches device hierarchy changes and emits signals when keys are pressed.
  */
-class XInputWatcher final : public QObject
+class XInputWatcher final
 {
-    Q_OBJECT
     using device_list = std::vector<Device>;
 public:
-                    XInputWatcher(Display & display, QObject *parent = nullptr);
-                    ~XInputWatcher() override;
+                    XInputWatcher(Display & display);
+                    ~XInputWatcher();
 
     const Display & display() const { return m_display; }
 
     void            scan();                 ///< Rescans Xinput devices actively
 
-signals:
+    // signals
     /// Emitted whenever a key event happens on any slave keyboard
     /// @param devNode the path to kernel device that the event originates from.
     /// @param key the key code, as sent by the kernel device
     /// @param pressed true if this indicates a keypress, otherwise it's a key release
-    void            keyEventReceived(const std::string & devNode, int key, bool pressed);
+    tools::Callback<const std::string &, int, bool> keyEventReceived;
 
 protected:
     /// Invoked from the main X display event loop for Xinput events

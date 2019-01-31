@@ -44,9 +44,8 @@ static int queryOpcode(xlib::Display & display, const char * name)
 
 /****************************************************************************/
 
-XInputWatcher::XInputWatcher(Display & display, QObject *parent)
- : QObject(parent),
-   m_display(display),
+XInputWatcher::XInputWatcher(Display & display)
+ : m_display(display),
    m_displayReg(m_display.registerHandler(GenericEvent, std::bind(
                 &XInputWatcher::handleEvent, this, std::placeholders::_1))),
    m_XIopcode(queryOpcode(display, XInputExtensionName))
@@ -105,7 +104,7 @@ void XInputWatcher::handleEvent(const XEvent & event)
             [&](const auto & device) { return device.handle() == data->deviceid; }
         );
         if (it != m_devices.end()) {
-            emit keyEventReceived(it->devNode(), data->detail - MIN_KEYCODE,
+            keyEventReceived.emit(it->devNode(), data->detail - MIN_KEYCODE,
                                   event.xcookie.evtype == XI_RawKeyPress);
         }
         } break;

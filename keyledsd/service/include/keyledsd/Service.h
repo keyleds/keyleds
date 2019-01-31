@@ -17,15 +17,15 @@
 #ifndef KEYLEDSD_KEYLEDSSERVICE_884F711D
 #define KEYLEDSD_KEYLEDSSERVICE_884F711D
 
-#include <QObject>
-#include <memory>
-#include <string>
-#include <vector>
 #include "keyledsd/Configuration.h"
 #include "keyledsd/Device.h"
 #include "keyledsd/device/Logitech.h"
 #include "tools/DeviceWatcher.h"
+#include "tools/Event.h"
 #include "tools/FileWatcher.h"
+#include <memory>
+#include <string>
+#include <vector>
 
 namespace xlib { class Display; }
 
@@ -43,9 +43,8 @@ class EffectManager;
  * together, notably managing event watchers and device managers, and
  * passing messages around.
  */
-class Service final : public QObject
+class Service final
 {
-    Q_OBJECT
     using DeviceWatcher = device::LogitechWatcher;
     using FileWatcher = tools::FileWatcher;
     using string_map = std::vector<std::pair<std::string, std::string>>;
@@ -54,10 +53,10 @@ class Service final : public QObject
     using display_list = std::vector<std::unique_ptr<DisplayManager>>;
 public:
                         Service(EffectManager &, FileWatcher &,
-                                Configuration, QObject *parent = nullptr);
+                                Configuration, uv_loop_t & loop);
                         Service(const Service &) = delete;
     Service &           operator=(const Service &) = delete;
-                        ~Service() override;
+                        ~Service();
 
     const EffectManager & effectManager() const { return m_effectManager; }
     const Configuration & configuration() const { return m_configuration; }
@@ -75,11 +74,11 @@ public:
     void                handleGenericEvent(const string_map &);
     void                handleKeyEvent(const std::string &, int, bool);
 
-signals:
+    // signals
     /// Fires whenever a device is added - whether it is in devices list is undefined
-    void                deviceManagerAdded(keyleds::DeviceManager &);
+    tools::Callback<keyleds::DeviceManager &>   deviceManagerAdded;
     /// Fires whenever a device is removed - whether it is still in devices list is undefined
-    void                deviceManagerRemoved(keyleds::DeviceManager &);
+    tools::Callback<keyleds::DeviceManager &>   deviceManagerRemoved;
 
 private:
     // Events from watchers
@@ -90,8 +89,9 @@ private:
     void                onDisplayRemoved();
 private:
     EffectManager &     m_effectManager;    ///< Controls lifecycle of effects (injected)
-    FileWatcher &       m_fileWatcher;     ///< Connection to inotify
+    FileWatcher &       m_fileWatcher;      ///< Connection to inotify
     Configuration       m_configuration;
+    uv_loop_t &         m_loop;             ///< Event loop
     bool                m_autoQuit = false; ///< Quit when last device is removed?
 
     string_map          m_context;          ///< Current context. Used when instanciating new managers

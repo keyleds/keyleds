@@ -17,7 +17,6 @@
 #ifndef KEYLEDSD_DEVICEMANAGER_H_0517383B
 #define KEYLEDSD_DEVICEMANAGER_H_0517383B
 
-#include <QObject>
 #include "keyledsd/Configuration.h"
 #include "keyledsd/Device.h"
 #include "keyledsd/EffectManager.h"
@@ -44,9 +43,8 @@ struct LayoutDescription;
  * configuration at creation time, and coordinates feature detection,
  * layout management, and related objects' life cycle.
  */
-class DeviceManager final : public QObject
+class DeviceManager final
 {
-    Q_OBJECT
     using Effect = effect::interface::Effect;
     using FileWatcher = tools::FileWatcher;
     using string_map = std::vector<std::pair<std::string, std::string>>;
@@ -79,9 +77,8 @@ public:
                             DeviceManager(EffectManager &, FileWatcher &,
                                           const ::device::Description &,
                                           std::unique_ptr<Device>,
-                                          const Configuration *,
-                                          QObject *parent = nullptr);
-                            ~DeviceManager() override;
+                                          const Configuration *);
+                            ~DeviceManager();
 
     const std::string &     sysPath() const noexcept { return m_sysPath; }
     const std::string &     serial() const noexcept { return m_serial; }

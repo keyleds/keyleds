@@ -17,7 +17,6 @@
 #include "tools/FileWatcher.h"
 
 #include "logging.h"
-#include <QSocketNotifier>
 #include <algorithm>
 #include <cassert>
 #include <cerrno>
@@ -38,17 +37,19 @@ struct FileWatcher::Watch final
 
 /****************************************************************************/
 
-FileWatcher::FileWatcher(QObject * parent)
- : QObject(parent)
+static int inotify_init_throw(int flags)
 {
-    if ((m_fd = inotify_init1(IN_NONBLOCK | IN_CLOEXEC)) < 0) {
-        throw std::system_error(errno, std::generic_category());
-    }
-    // this QObject takes automatic ownership of QSocketNotifier
-    auto notifier = new QSocketNotifier(m_fd, QSocketNotifier::Read, this);
-    QObject::connect(notifier, &QSocketNotifier::activated,
-                     this, &FileWatcher::onNotifyReady);
+    int fd = inotify_init1(flags);
+    if (fd < 0) { throw std::system_error(errno, std::generic_category()); }
+    return fd;
 }
+
+
+FileWatcher::FileWatcher(uv_loop_t & loop)
+ : m_fd(inotify_init_throw(IN_NONBLOCK | IN_CLOEXEC)),
+   m_fdWatcher(m_fd, tools::FDWatcher::Read,
+               std::bind(&FileWatcher::onNotifyReady, this), loop)
+{}
 
 FileWatcher::~FileWatcher()
 {
@@ -82,7 +83,7 @@ void FileWatcher::unsubscribe(watch_id wd)
     DEBUG("unsubscribed from events => ", wd);
 }
 
-void FileWatcher::onNotifyReady(int)
+void FileWatcher::onNotifyReady()
 {
     // We use a union to allocate the buffer on the stack
     union {

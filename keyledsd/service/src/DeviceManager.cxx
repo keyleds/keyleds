@@ -58,9 +58,8 @@ DeviceManager::EffectGroup::~EffectGroup() = default;
 
 DeviceManager::DeviceManager(EffectManager & effectManager, FileWatcher & fileWatcher,
                              const ::device::Description & description, std::unique_ptr<Device> device,
-                             const Configuration * conf, QObject *parent)
-    : QObject(parent),
-      m_effectManager(effectManager),
+                             const Configuration * conf)
+    : m_effectManager(effectManager),
       m_configuration(nullptr),
       m_sysPath(description.sysPath()),
       m_serial(getSerial(description)),

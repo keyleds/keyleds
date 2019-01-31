@@ -23,14 +23,13 @@
 #ifndef TOOLS_DEVICE_WATCHER_H_20E285D9
 #define TOOLS_DEVICE_WATCHER_H_20E285D9
 
-#include <QObject>
+#include "tools/Event.h"
 #include <memory>
 #include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
 
-class QSocketNotifier;
 struct udev;
 struct udev_monitor;
 struct udev_enumerate;
@@ -127,21 +126,20 @@ inline bool operator!=(const Description & a, const Description & b) { return !(
  *
  * Deleting the watcher does not emit deviceRemoved signals.
  */
-class DeviceWatcher : public QObject
+class DeviceWatcher
 {
-    Q_OBJECT
 private:
     using device_list = std::vector<Description>;
 public:
-                        DeviceWatcher(struct udev * udev = nullptr, QObject *parent = nullptr);
-                        ~DeviceWatcher() override;
+    explicit            DeviceWatcher(uv_loop_t & loop, struct udev * udev = nullptr);
+    virtual             ~DeviceWatcher();
 
     void                scan();                 ///< Rescans system's devices actively
     void                setActive(bool active); ///< Enables listening for system notifications
 
-signals:
-    void                deviceAdded(const device::Description &);
-    void                deviceRemoved(const device::Description &);
+    // Signals
+    tools::Callback<const Description &>    deviceAdded;
+    tools::Callback<const Description &>    deviceRemoved;
 
 protected:
     virtual void        setupEnumerator(struct udev_enumerate & enumerator) const;
@@ -150,14 +148,15 @@ protected:
 
 private:
     /// Invoked whenever system notifications from udev become available
-    void                onMonitorReady(int socket);
+    void                onMonitorReady();
 
 private:
     bool                                    m_active = false; ///< If set, the watcher is monitoring
                                                             ///  device changes
+    uv_loop_t &                             m_loop;         ///< Event loop
     std::unique_ptr<struct udev>            m_udev;         ///< Connection to udev, or nullptr
     std::unique_ptr<struct udev_monitor>    m_monitor;      ///< Monitoring endpoint, or nullptr
-    std::unique_ptr<QSocketNotifier>        m_udevNotifier; ///< Connection monitor for event loop
+    std::unique_ptr<tools::FDWatcher>       m_fdWatcher;    ///< Monitors udev socket
     device_list                             m_known;        ///< List of device descriptions
 };
 
@@ -171,9 +170,8 @@ private:
  */
 class FilteredDeviceWatcher : public DeviceWatcher
 {
-    Q_OBJECT
 public:
-            FilteredDeviceWatcher(struct udev * udev = nullptr, QObject *parent = nullptr);
+    explicit FilteredDeviceWatcher(uv_loop_t & loop, struct udev * udev = nullptr);
 
     void    setSubsystem(std::string val);
     void    setDevType(std::string val);

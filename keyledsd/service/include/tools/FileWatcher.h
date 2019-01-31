@@ -17,18 +17,17 @@
 #ifndef TOOLS_FILE_WATCHER_H_3F146693
 #define TOOLS_FILE_WATCHER_H_3F146693
 
-#include <sys/inotify.h>
-#include <QObject>
+#include "tools/Event.h"
 #include <functional>
+#include <sys/inotify.h>
 #include <vector>
 
 namespace tools {
 
 /****************************************************************************/
 
-class FileWatcher final : public QObject
+class FileWatcher final
 {
-    Q_OBJECT
 public:
     enum Event : uint32_t {
         Access = IN_ACCESS,
@@ -74,20 +73,21 @@ public:
     };
 
 public:
-    explicit            FileWatcher(QObject *parent = nullptr);
+    explicit            FileWatcher(uv_loop_t & loop);
                         FileWatcher(const FileWatcher &) = delete;
     FileWatcher &       operator=(const FileWatcher &) = delete;
-                        ~FileWatcher() override;
+                        ~FileWatcher();
 
     subscription        subscribe(const std::string & path, Event events, Listener);
 
 private:
     /// Invoked whenever system notifications from udev become available
-    void                onNotifyReady(int socket);
+    void                onNotifyReady();
     /// Invoked by subscription destructors
     void                unsubscribe(watch_id);
 private:
     int                 m_fd = -1;      ///< file descriptor of inotify device
+    tools::FDWatcher    m_fdWatcher;    ///< libuv poll
     listener_list       m_listeners;    ///< list of registered watches
 };
 

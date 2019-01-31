@@ -16,7 +16,6 @@
  */
 #include "keyledsd/Service.h"
 
-#include <QCoreApplication>
 #include "keyleds.h"
 #include "keyledsd/Configuration.h"
 #include "keyledsd/DeviceManager.h"
@@ -77,15 +76,15 @@ static std::string to_string(const std::vector<std::pair<std::string, std::strin
 /****************************************************************************/
 
 Service::Service(EffectManager & effectManager, tools::FileWatcher & fileWatcher,
-                 Configuration configuration, QObject * parent)
-    : QObject(parent),
-      m_effectManager(effectManager),
-      m_fileWatcher(fileWatcher)
+                 Configuration configuration, uv_loop_t & loop)
+    : m_effectManager(effectManager),
+      m_fileWatcher(fileWatcher),
+      m_loop(loop),
+      m_deviceWatcher(loop)
 {
-    QObject::connect(&m_deviceWatcher, &DeviceWatcher::deviceAdded,
-                     this, &Service::onDeviceAdded);
-    QObject::connect(&m_deviceWatcher, &DeviceWatcher::deviceRemoved,
-                     this, &Service::onDeviceRemoved);
+    using namespace std::placeholders;
+    m_deviceWatcher.deviceAdded.connect(std::bind(&Service::onDeviceAdded, this, _1));
+    m_deviceWatcher.deviceRemoved.connect(std::bind(&Service::onDeviceRemoved, this, _1));
     setConfiguration(std::move(configuration));
     DEBUG("created");
 }
@@ -103,7 +102,7 @@ void Service::init()
         onDisplayAdded(display);
     } catch (xlib::Error & err) {
         CRITICAL("X display initialization failed: ", err.what());
-        QCoreApplication::quit();
+        uv_stop(&m_loop);
         return;
     }
     setActive(true);
@@ -204,7 +203,7 @@ void Service::onDeviceAdded(const ::device::Description & description)
         );
         manager->setContext(m_context);
 
-        emit deviceManagerAdded(*manager);
+        deviceManagerAdded.emit(*manager);
 
         INFO("opened device ", description.devNode(),
              " [", manager->name(), ']',
@@ -237,10 +236,10 @@ void Service::onDeviceRemoved(const ::device::Description & description)
 
         INFO("removing device ", manager->serial());
 
-        emit deviceManagerRemoved(*manager);
+        deviceManagerRemoved.emit(*manager);
 
         if (m_devices.empty() && m_autoQuit) {
-            QCoreApplication::quit();
+            uv_stop(&m_loop);
         }
     }
 }
@@ -250,11 +249,12 @@ void Service::onDeviceRemoved(const ::device::Description & description)
 void Service::onDisplayAdded(std::unique_ptr<xlib::Display> & display)
 {
     INFO("connected to display ", display->name());
-    auto displayManager = std::make_unique<DisplayManager>(std::move(display));
-    QObject::connect(displayManager.get(), &DisplayManager::contextChanged,
-                     this, &Service::setContext);
-    QObject::connect(displayManager.get(), &DisplayManager::keyEventReceived,
-                     this, &Service::handleKeyEvent);
+    auto displayManager = std::make_unique<DisplayManager>(std::move(display), m_loop);
+
+    using namespace std::placeholders;
+    displayManager->contextChanged.connect(std::bind(&Service::setContext, this, _1));
+    displayManager->keyEventReceived.connect(std::bind(&Service::handleKeyEvent, this, _1, _2, _3));
+
     displayManager->scanDevices();
     setContext(displayManager->currentContext());
 

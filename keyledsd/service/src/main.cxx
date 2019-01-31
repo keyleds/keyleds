@@ -16,18 +16,12 @@
  */
 #include "config.h"
 #include "keyledsd/Configuration.h"
-#ifndef NO_DBUS
-#include "keyledsd/dbus/ServiceAdaptor.h"
-#endif
 #include "keyledsd/EffectManager.h"
 #include "keyledsd/Service.h"
 #include "keyledsd/effect/StaticModuleRegistry.h"
 #include "logging.h"
+#include "tools/Event.h"
 #include "tools/FileWatcher.h"
-#include <QCoreApplication>
-#include <QDBusConnection>
-#include <QSocketNotifier>
-#include <QTimer>
 #include <clocale>
 #include <csignal>
 #include <exception>
@@ -44,6 +38,8 @@
 LOGGING("main");
 
 using keyleds::Configuration;
+
+static uv_loop_t main_loop;
 
 /****************************************************************************/
 // Command line parsing
@@ -136,7 +132,7 @@ static void handleSignalEvent(const Options & options, keyleds::Service * servic
             case SIGINT:
             case SIGQUIT:
             case SIGTERM:
-                QCoreApplication::quit();
+                uv_stop(&main_loop);
                 break;
             case SIGHUP:
                 INFO("reloading ", options.configPath);
@@ -199,38 +195,31 @@ int main(int argc, char * argv[])
     }
 
     // Create event loop
-    QCoreApplication app(argc, argv);
-    QCoreApplication::setOrganizationDomain("etherdream.org");
-    QCoreApplication::setApplicationName("keyledsd");
-    QCoreApplication::setApplicationVersion(KEYLEDSD_VERSION_STR);
+    uv_loop_init(&main_loop);
+    {
 
-    // Setup application components
-    auto watcher = tools::FileWatcher();
-    auto service = std::make_unique<keyleds::Service>(
-        effectManager, watcher, std::move(configuration)
-    );
-    service->setAutoQuit(options->autoQuit);
-    QTimer::singleShot(0, service.get(), &keyleds::Service::init);
+        // Setup application components
+        auto watcher = tools::FileWatcher(main_loop);
+        auto service = std::make_unique<keyleds::Service>(
+            effectManager, watcher, std::move(configuration), main_loop
+        );
+        service->setAutoQuit(options->autoQuit);
 
-#ifndef NO_DBUS
-    if (!options->noDBus) {
-        auto connection = QDBusConnection::sessionBus();
-        new keyleds::dbus::ServiceAdaptor(service.get());   // service takes ownership
-        if (!connection.registerObject("/Service", service.get()) ||
-            !connection.registerService("org.etherdream.KeyledsService")) {
-            CRITICAL("DBus registration failed");
-            return 2;
+        // Register signals and go
+        auto sigFdWatcher = std::unique_ptr<tools::FDWatcher>();
+        int sigFd = openSignalSocket({SIGINT, SIGTERM, SIGQUIT, SIGHUP});
+        if (sigFd >= 0) {
+            sigFdWatcher = std::make_unique<tools::FDWatcher>(
+                sigFd, tools::FDWatcher::Read,
+                [&](auto){ handleSignalEvent(*options, service.get(), sigFd); },
+                main_loop
+            );
         }
-    }
-#endif
 
-    // Register signals and go
-    int sigFd = openSignalSocket({SIGINT, SIGTERM, SIGQUIT, SIGHUP});
-    if (sigFd >= 0) {
-        auto * notifier = new QSocketNotifier(sigFd, QSocketNotifier::Read, service.get());
-        QObject::connect(notifier, &QSocketNotifier::activated,
-                         [&](int fd){ handleSignalEvent(*options, service.get(), fd); });
+        service->init();
+        uv_run(&main_loop, UV_RUN_DEFAULT);
     }
-
-    return QCoreApplication::exec();
+    uv_run(&main_loop, UV_RUN_NOWAIT);  // let closed handles cleanup
+    uv_loop_close(&main_loop);
+    return 0;
 }

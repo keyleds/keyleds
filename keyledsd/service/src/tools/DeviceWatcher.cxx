@@ -16,7 +16,6 @@
  */
 #include "tools/DeviceWatcher.h"
 
-#include <QSocketNotifier>
 #include <algorithm>
 #include <cassert>
 #include <libudev.h>
@@ -150,8 +149,8 @@ unsigned long long Description::usecSinceInitialized() const
 
 /****************************************************************************/
 
-DeviceWatcher::DeviceWatcher(struct udev * udev, QObject *parent)
-    : QObject(parent),
+DeviceWatcher::DeviceWatcher(uv_loop_t & loop, struct udev * udev)
+    : m_loop(loop),
       m_udev(udev == nullptr ? udev_new() : udev_ref(udev))
 {
     if (m_udev == nullptr) {
@@ -195,14 +194,14 @@ void DeviceWatcher::scan()
                 auto description = Description(device.get());
                 if (isVisible(description)) {
                     result.emplace_back(std::move(description));
-                    emit deviceAdded(result.back());
+                    deviceAdded.emit(result.back());
                 }
             }
         }
     }
 
     // At that point, m_known only has devices that no longer exist
-    for (const auto & device : m_known) { emit deviceRemoved(device); }
+    for (const auto & device : m_known) { deviceRemoved.emit(device); }
     m_known = std::move(result);
 }
 
@@ -218,21 +217,21 @@ void DeviceWatcher::setActive(bool active)
         setupMonitor(*m_monitor);
 
         udev_monitor_enable_receiving(m_monitor.get());
-        int fd = udev_monitor_get_fd(m_monitor.get());
-        m_udevNotifier = std::make_unique<QSocketNotifier>(fd, QSocketNotifier::Read);
-
-        QObject::connect(m_udevNotifier.get(), &decltype(m_udevNotifier)::element_type::activated,
-                         this, &DeviceWatcher::onMonitorReady);
+        m_fdWatcher = std::make_unique<tools::FDWatcher>(
+            udev_monitor_get_fd(m_monitor.get()), tools::FDWatcher::Read,
+            std::bind(&DeviceWatcher::onMonitorReady, this),
+            m_loop
+        );
         scan();
 
     } else {
-        m_udevNotifier.reset(nullptr);
-        m_monitor.reset(nullptr);
+        m_fdWatcher = nullptr;
+        m_monitor = nullptr;
     }
     m_active = active;
 }
 
-void DeviceWatcher::onMonitorReady(int)
+void DeviceWatcher::onMonitorReady()
 {
     auto device = std::unique_ptr<struct udev_device>(udev_monitor_receive_device(m_monitor.get()));
     if (device == nullptr) {
@@ -248,13 +247,13 @@ void DeviceWatcher::onMonitorReady(int)
         auto description = Description(device.get());
         if (isVisible(description)) {
             if (kit == m_known.end()) {
-                emit deviceAdded(description);
+                deviceAdded.emit(description);
                 m_known.emplace_back(std::move(description));
             }
         }
     } else if (action == "remove") {
         if (kit != m_known.end()) {
-            emit deviceRemoved(*kit);
+            deviceRemoved.emit(*kit);
             if (kit != m_known.end() - 1) { *kit = std::move(m_known.back()); }
             m_known.pop_back();
         }
@@ -267,8 +266,8 @@ bool DeviceWatcher::isVisible(const Description &) const { return true; }
 
 /****************************************************************************/
 
-FilteredDeviceWatcher::FilteredDeviceWatcher(struct udev * udev, QObject *parent)
- : DeviceWatcher(udev, parent)
+FilteredDeviceWatcher::FilteredDeviceWatcher(uv_loop_t & loop, struct udev * udev)
+ : DeviceWatcher(loop, udev)
 {}
 
 void FilteredDeviceWatcher::setSubsystem(std::string val)

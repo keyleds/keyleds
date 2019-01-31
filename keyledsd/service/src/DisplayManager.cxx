@@ -16,43 +16,43 @@
  */
 #include "keyledsd/DisplayManager.h"
 
-#include "tools/XInputWatcher.h"
-#include <QSocketNotifier>
+#include <functional>
 
 using keyleds::DisplayManager;
 
 /****************************************************************************/
 
-DisplayManager::DisplayManager(std::unique_ptr<Display> display, QObject *parent)
- : QObject(parent),
-   m_display(std::move(display)),
-   m_contextWatcher(std::make_unique<XContextWatcher>(*m_display)),
-   m_inputWatcher(std::make_unique<XInputWatcher>(*m_display)),
-   m_context(m_contextWatcher->current())
+DisplayManager::DisplayManager(std::unique_ptr<Display> display, uv_loop_t & loop)
+ : m_display(std::move(display)),
+   m_contextWatcher(*m_display),
+   m_inputWatcher(*m_display),
+   m_fdWatcher(m_display->connection(), tools::FDWatcher::Read,
+               [this](auto){ m_display->processEvents(); }, loop),
+   m_context(m_contextWatcher.current())
 {
-    auto * notifier = new QSocketNotifier(m_display->connection(), QSocketNotifier::Read, this);
-    QObject::connect(notifier, &QSocketNotifier::activated,
-                     [this](int){ m_display->processEvents(); });
-    QObject::connect(m_contextWatcher.get(), &XContextWatcher::contextChanged,
-                     this, &DisplayManager::onContextChanged);
-    QObject::connect(m_inputWatcher.get(), &XInputWatcher::keyEventReceived,
-                     this, &DisplayManager::onKeyEventReceived);
+    using namespace std::placeholders;
+    m_contextWatcher.contextChanged.connect(std::bind(
+        &DisplayManager::onContextChanged, this, _1
+    ));
+    m_inputWatcher.keyEventReceived.connect(std::bind(
+        &DisplayManager::onKeyEventReceived, this, _1, _2, _3
+    ));
 }
 
 DisplayManager::~DisplayManager() = default;
 
 void DisplayManager::scanDevices()
 {
-    m_inputWatcher->scan();
+    m_inputWatcher.scan();
 }
 
 void DisplayManager::onContextChanged(const XContextWatcher::context_map & context)
 {
     m_context = context;
-    emit contextChanged(m_context);
+    contextChanged.emit(m_context);
 }
 
 void DisplayManager::onKeyEventReceived(const std::string & devNode, int key, bool press)
 {
-    emit keyEventReceived(devNode, key, press);
+    keyEventReceived.emit(devNode, key, press);
 }

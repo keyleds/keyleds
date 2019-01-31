@@ -326,8 +326,8 @@ bool Logitech::error::recoverable() const
 /****************************************************************************/
 /****************************************************************************/
 
-LogitechWatcher::LogitechWatcher(struct udev * udev, QObject *parent)
-    : FilteredDeviceWatcher(udev, parent)
+LogitechWatcher::LogitechWatcher(uv_loop_t & loop, struct udev * udev)
+    : FilteredDeviceWatcher(loop, udev)
 {
     setSubsystem("hidraw");
 }

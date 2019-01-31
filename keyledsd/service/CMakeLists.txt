@@ -33,6 +33,7 @@ set(service_SRCS
     src/effect/EffectService.cxx
     src/effect/StaticModuleRegistry.cxx
     src/tools/DeviceWatcher.cxx
+    src/tools/Event.cxx
     src/tools/FileWatcher.cxx
     src/tools/XContextWatcher.cxx
     src/tools/XInputWatcher.cxx
@@ -41,50 +42,21 @@ set(service_SRCS
     src/Service.cxx
     src/main.cxx
 )
-if(NOT NO_DBUS)
-    set(service_SRCS ${service_SRCS}
-        src/dbus/DeviceManagerAdaptor.cxx
-        src/dbus/ServiceAdaptor.cxx)
-endif()
 
 ##############################################################################
 # Dependencies
-
-set(QT_MODULES Core)
-IF(NOT NO_DBUS)
-    set(QT_MODULES ${QT_MODULES} DBus)
-ENDIF()
-
-find_package(Qt5 COMPONENTS ${QT_MODULES} REQUIRED)
-include_directories(SYSTEM ${Qt5Core_INCLUDE_DIRS})
-set(service_DEPS ${service_DEPS} Qt5Core)
-qt5_wrap_cpp(moc_sources
-    include/keyledsd/device/Logitech.h
-    include/keyledsd/DeviceManager.h
-    include/keyledsd/DisplayManager.h
-    include/keyledsd/Service.h
-    include/tools/DeviceWatcher.h
-    include/tools/FileWatcher.h
-    include/tools/XContextWatcher.h
-    include/tools/XInputWatcher.h
-)
-set(service_SRCS ${service_SRCS} ${moc_sources})
-
-IF(NOT NO_DBUS)
-    include_directories(${Qt5DBus_INCLUDE_DIRS})
-    set(service_DEPS ${service_DEPS} Qt5DBus)
-    qt5_wrap_cpp(moc_sources
-        include/keyledsd/dbus/DeviceManagerAdaptor.h
-        include/keyledsd/dbus/ServiceAdaptor.h
-    )
-    set(service_SRCS ${service_SRCS} ${moc_sources})
-ENDIF()
 
 find_library(LIBUDEV udev)
 IF(NOT LIBUDEV)
     MESSAGE(SEND_ERROR "libudev is required for keyledsd")
 ENDIF(NOT LIBUDEV)
 set(service_DEPS ${service_DEPS} ${LIBUDEV})
+
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(LIBUV REQUIRED libuv)
+include_directories(${LIBUV_INCLUDE_DIRS})
+set(service_DEPS ${service_DEPS} ${LIBUV_LIBRARIES})
+
 
 configure_file("include/config.h.in" "config.h")
 

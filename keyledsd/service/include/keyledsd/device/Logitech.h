@@ -17,7 +17,6 @@
 #ifndef KEYLEDSD_KEYBOARD_H_F57B19AC
 #define KEYLEDSD_KEYBOARD_H_F57B19AC
 
-#include <QObject>
 #include <cstdint>
 #include <memory>
 #include <stdexcept>
@@ -111,9 +110,8 @@ private:
  */
 class LogitechWatcher : public ::device::FilteredDeviceWatcher
 {
-    Q_OBJECT
 public:
-            LogitechWatcher(struct udev * udev = nullptr, QObject *parent = nullptr);
+    explicit LogitechWatcher(uv_loop_t & loop, struct udev * udev = nullptr);
     bool    isVisible(const ::device::Description & dev) const override;
 private:
     bool    checkInterface(const ::device::Description & dev) const;

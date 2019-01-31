@@ -17,14 +17,14 @@
 #ifndef KEYLEDSD_CONTEXTWATCHER_H_1CF5FE0A
 #define KEYLEDSD_CONTEXTWATCHER_H_1CF5FE0A
 
+#include "tools/Event.h"
+#include "tools/XWindow.h"
 #include <X11/Xlib.h>
 #undef CursorShape
 #undef Bool
-#include <QObject>
 #include <memory>
 #include <utility>
 #include <vector>
-#include "tools/XWindow.h"
 
 namespace xlib {
 
@@ -38,21 +38,20 @@ namespace xlib {
  *
  * Every context update generates a contextChanged signal.
  */
-class XContextWatcher final : public QObject
+class XContextWatcher final
 {
-    Q_OBJECT
 public:
     using context_map = std::vector<std::pair<std::string, std::string>>;
 public:
-                    XContextWatcher(Display & display, QObject *parent = nullptr);
-                    ~XContextWatcher() override;
+                    XContextWatcher(Display & display);
+                    ~XContextWatcher();
 
     const xlib::Display & display() const { return m_display; }
 
     const context_map & current() const noexcept { return m_context; }
 
-signals:
-    void            contextChanged(const context_map &);
+    // signals
+    tools::Callback<const context_map &>    contextChanged;
 
 private:
     /// Invoked from the main X display event loop for Xinput events
