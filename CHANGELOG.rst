@@ -3,7 +3,20 @@ Release Notes
 #############
 
 *****************************
-0.7.9 - current release
+0.8.0 - current release
+*****************************
+
+Released on February 1st, 2019
+
+The is a maintenance release, with many technical improvements:
+
+- Drop Qt dependency, and use libuv and sd-bus instead (much lighter).
+- Switch from C++14 to C++17.
+- Simplify many datastructures and matching code.
+- Fix many sign inconsistencies that could have introduced bugs.
+
+*****************************
+0.7.9
 *****************************
 
 Released on November 17th, 2018
