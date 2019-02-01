@@ -49,29 +49,33 @@ public:
     using iterator = value_type *;
     using const_iterator = const value_type *;
 public:
-    explicit                    RenderTarget(size_type);
-                                RenderTarget(RenderTarget && other) noexcept = default;
-    RenderTarget &              operator=(RenderTarget &&) noexcept = default;
-                                ~RenderTarget();
+    explicit            RenderTarget(size_type);
+                        RenderTarget(RenderTarget && other) noexcept
+                         { swap(*this, other); }
+    RenderTarget &      operator=(RenderTarget && other) noexcept
+                         { if (m_colors) { clear(); } swap(*this, other); return *this; }
+                        ~RenderTarget();
 
-    iterator                    begin() { return &m_colors[0]; }
-    const_iterator              begin() const { return &m_colors[0]; }
-    const_iterator              cbegin() const { return &m_colors[0]; }
-    iterator                    end() { return &m_colors[m_size]; }
-    const_iterator              end() const { return &m_colors[m_size]; }
-    const_iterator              cend() const { return &m_colors[m_size]; }
-    bool                        empty() const noexcept { return false; }
-    size_type                   size() const noexcept { return m_size; }
-    size_type                   capacity() const noexcept { return m_capacity; }
-    value_type *                data() { return m_colors.get(); }
-    const value_type *          data() const { return m_colors.get(); }
-    reference                   operator[](size_type idx) { return m_colors[idx]; }
-    const_reference             operator[](size_type idx) const { return m_colors[idx]; }
+    iterator            begin() { return &m_colors[0]; }
+    const_iterator      begin() const { return &m_colors[0]; }
+    const_iterator      cbegin() const { return &m_colors[0]; }
+    iterator            end() { return &m_colors[m_size]; }
+    const_iterator      end() const { return &m_colors[m_size]; }
+    const_iterator      cend() const { return &m_colors[m_size]; }
+    bool                empty() const noexcept { return false; }
+    size_type           size() const noexcept { return m_size; }
+    size_type           capacity() const noexcept { return m_capacity; }
+    value_type *        data() { return m_colors; }
+    const value_type *  data() const { return m_colors; }
+    reference           operator[](size_type idx) { return m_colors[idx]; }
+    const_reference     operator[](size_type idx) const { return m_colors[idx]; }
 
 private:
-    size_type                   m_size = 0;         ///< Number of color entries
-    size_type                   m_capacity = 0;     ///< Number of allocated color entries
-    std::unique_ptr<RGBAColor[]> m_colors;          ///< Color buffer. RGBAColor is a POD type
+    void                clear() noexcept;
+private:
+    size_type           m_size = 0;         ///< Number of color entries
+    size_type           m_capacity = 0;     ///< Number of allocated color entries
+    RGBAColor *         m_colors = nullptr; ///< Color buffer. RGBAColor is a POD type
 
     friend void swap(RenderTarget &, RenderTarget &) noexcept;
 };

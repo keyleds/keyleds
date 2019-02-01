@@ -16,6 +16,7 @@
  */
 #include "keyledsd/RenderTarget.h"
 
+#include <memory>
 #include <type_traits>
 
 using keyleds::RenderTarget;
@@ -41,7 +42,20 @@ template <typename T> constexpr T align(T value, T alignment)
 RenderTarget::RenderTarget(size_type size)
  : m_size(size),                            // m_size tracks actual number of keys
    m_capacity(align(size, alignColors)),    // m_capacity tracks actual buffer size
-   m_colors(new (alignBytes) RGBAColor[m_capacity])
+   m_colors(new (operator new[](m_capacity * sizeof(RGBAColor), alignBytes)) RGBAColor[m_size])
 {}
 
-RenderTarget::~RenderTarget() = default;
+RenderTarget::~RenderTarget()
+{
+    std::destroy(begin(), end());
+    operator delete[](m_colors, alignBytes);
+}
+
+void RenderTarget::clear() noexcept
+{
+    std::destroy(begin(), end());
+    operator delete[](m_colors, alignBytes);
+    m_size = 0;
+    m_capacity = 0;
+    m_colors = nullptr;
+}
