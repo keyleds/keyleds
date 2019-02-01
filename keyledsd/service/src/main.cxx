@@ -15,6 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "config.h"
+#ifndef NO_DBUS
+#include "keyledsd/dbus/Service.h"
+#endif
 #include "keyledsd/Configuration.h"
 #include "keyledsd/EffectManager.h"
 #include "keyledsd/Service.h"
@@ -24,6 +27,7 @@
 #include "tools/FileWatcher.h"
 #include <clocale>
 #include <csignal>
+#include <cstring>
 #include <exception>
 #include <fcntl.h>
 #ifdef _GNU_SOURCE
@@ -33,6 +37,9 @@
 #include <optional>
 #include <sys/socket.h>
 #include <sys/types.h>
+#ifndef NO_DBUS
+#include <systemd/sd-bus.h>
+#endif
 #include <unistd.h>
 
 LOGGING("main");
@@ -124,7 +131,7 @@ static int openSignalSocket(const std::vector<int> & sigs)
 }
 
 /// Invoked asynchronously to convert POSIX signal into intent
-static void handleSignalEvent(const Options & options, keyleds::Service * service, int fd)
+static void handleSignalEvent(const Options & options, keyleds::Service & service, int fd)
 {
     int sig;
     while (read(fd, &sig, sizeof(sig)) == static_cast<ssize_t>(sizeof(sig))) {
@@ -137,7 +144,7 @@ static void handleSignalEvent(const Options & options, keyleds::Service * servic
             case SIGHUP:
                 INFO("reloading ", options.configPath);
                 try {
-                    service->setConfiguration(Configuration::loadFile(options.configPath));
+                    service.setConfiguration(Configuration::loadFile(options.configPath));
                 } catch (std::exception & error) {
                     CRITICAL("reloading failed: ", error.what());
                 }
@@ -150,6 +157,7 @@ static void handleSignalEvent(const Options & options, keyleds::Service * servic
 
 int main(int argc, char * argv[])
 {
+    int err;
     ::setlocale(LC_NUMERIC, "C"); // we deal with system stuff and config files
 
     // Parse command line
@@ -194,16 +202,36 @@ int main(int argc, char * argv[])
         }
     }
 
+#ifndef NO_DBUS
+    sd_bus * bus = nullptr;
+    if ((err = sd_bus_open_user(&bus)) < 0) {
+        CRITICAL("Could not connect to session bus: ", strerror(-err));
+        return 2;
+    }
+    if ((err = sd_bus_request_name(bus, "org.etherdream.KeyledsService", 0)) < 0) {
+        CRITICAL("Could not reserve name on session bus: ", strerror(-err));
+        return 2;
+    }
+#endif
+
     // Create event loop
     uv_loop_init(&main_loop);
     {
-
         // Setup application components
         auto watcher = tools::FileWatcher(main_loop);
-        auto service = std::make_unique<keyleds::Service>(
+        auto service = keyleds::Service(
             effectManager, watcher, std::move(configuration), main_loop
         );
-        service->setAutoQuit(options->autoQuit);
+        service.setAutoQuit(options->autoQuit);
+
+#ifndef NO_DBUS
+        auto serviceAdapter = keyleds::dbus::ServiceAdapter(bus, service);
+        auto dbusFdWatcher = tools::FDWatcher(
+            sd_bus_get_fd(bus), tools::FDWatcher::Read,
+            [&](auto){ while (sd_bus_process(bus, NULL) > 0) { /* empty */ } },
+            main_loop
+        );
+#endif
 
         // Register signals and go
         auto sigFdWatcher = std::unique_ptr<tools::FDWatcher>();
@@ -211,15 +239,22 @@ int main(int argc, char * argv[])
         if (sigFd >= 0) {
             sigFdWatcher = std::make_unique<tools::FDWatcher>(
                 sigFd, tools::FDWatcher::Read,
-                [&](auto){ handleSignalEvent(*options, service.get(), sigFd); },
+                [&](auto){ handleSignalEvent(*options, service, sigFd); },
                 main_loop
             );
         }
 
-        service->init();
+        service.init();
         uv_run(&main_loop, UV_RUN_DEFAULT);
     }
     uv_run(&main_loop, UV_RUN_NOWAIT);  // let closed handles cleanup
     uv_loop_close(&main_loop);
+
+#ifndef NO_DBUS
+    sd_bus_flush(bus);
+    sd_bus_close(bus);
+    sd_bus_unref(bus);
+#endif
+
     return 0;
 }

@@ -43,6 +43,13 @@ set(service_SRCS
     src/main.cxx
 )
 
+IF(NOT NO_DBUS)
+    set(service_SRCS ${service_SRCS}
+        src/dbus/DeviceManager.cxx
+        src/dbus/Service.cxx
+    )
+ENDIF()
+
 ##############################################################################
 # Dependencies
 
@@ -57,6 +64,11 @@ pkg_check_modules(LIBUV REQUIRED libuv)
 include_directories(${LIBUV_INCLUDE_DIRS})
 set(service_DEPS ${service_DEPS} ${LIBUV_LIBRARIES})
 
+IF(NOT NO_DBUS)
+    pkg_check_modules(LIBSYSTEMD REQUIRED libsystemd)
+    include_directories(${LIBSYSTEMD_INCLUDE_DIRS})
+    set(service_DEPS ${service_DEPS} ${LIBSYSTEMD_LIBRARIES})
+ENDIF()
 
 configure_file("include/config.h.in" "config.h")
 

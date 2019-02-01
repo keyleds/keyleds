@@ -40,6 +40,8 @@ public:
         m_value = std::forward<T>(listener);
     }
 
+    void disconnect() { m_value = nullptr; }
+
     void emit(Args... args)
     {
         if (m_value) { m_value(std::forward<Args>(args)...); }

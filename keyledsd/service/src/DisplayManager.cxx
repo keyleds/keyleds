@@ -39,7 +39,11 @@ DisplayManager::DisplayManager(std::unique_ptr<Display> display, uv_loop_t & loo
     ));
 }
 
-DisplayManager::~DisplayManager() = default;
+DisplayManager::~DisplayManager()
+{
+    m_contextWatcher.contextChanged.disconnect();
+    m_inputWatcher.keyEventReceived.disconnect();
+}
 
 void DisplayManager::scanDevices()
 {
