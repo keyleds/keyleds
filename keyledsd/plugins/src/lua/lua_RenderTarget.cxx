@@ -160,7 +160,7 @@ static int len(lua_State * lua)
 {
     auto * target = lua_to<RenderTarget *>(lua, 1);
     if (!target) { return luaL_error(lua, noLongerExistsErrorMessage); }
-    lua_pushinteger(lua, target->size());
+    lua_pushinteger(lua, static_cast<lua_Integer>(target->size()));
     return 1;
 }
 

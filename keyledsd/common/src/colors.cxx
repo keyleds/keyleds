@@ -255,7 +255,7 @@ std::optional<RGBAColor> RGBAColor::parse(const std::string & str)
 
     auto color = RGBColor::parse(str);
     if (color) { return RGBAColor(*color, 0xff); }
-    return {};
+    return std::nullopt;
 }
 
 /** Write a human-readable representation of color.

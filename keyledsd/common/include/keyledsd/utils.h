@@ -30,7 +30,7 @@ template <typename T>
 std::optional<T> parseDuration(const std::string & str)
 {
     auto value = parseNumber(str);
-    if (!value) { return {}; }
+    if (!value) { return std::nullopt; }
     return std::chrono::duration_cast<T>(std::chrono::milliseconds(*value));
 }
 

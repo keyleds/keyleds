@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
+#include <cstring>
 #include <limits>
 #include <sstream>
 #include <stdexcept>
@@ -85,7 +86,8 @@ Atom xlib::Display::atom(const std::string & name) const
 std::unique_ptr<xlib::Window> xlib::Display::getActiveWindow()
 {
     std::string data = m_root.getProperty(atom(activeWindowAtom), XA_WINDOW);
-    ::Window handle = *reinterpret_cast<const ::Window *>(data.data());
+    ::Window handle;
+    memcpy(&handle, data.data(), sizeof(handle));
     if (handle == 0) { return nullptr; }
     return std::make_unique<Window>(*this, handle);
 }

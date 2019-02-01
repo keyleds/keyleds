@@ -3,7 +3,7 @@ Release Notes
 #############
 
 *****************************
-0.8.0 - current release
+0.8.0.1 - current release
 *****************************
 
 Released on February 1st, 2019
