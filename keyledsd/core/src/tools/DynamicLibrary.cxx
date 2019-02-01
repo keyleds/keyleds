@@ -55,7 +55,10 @@ DynamicLibrary DynamicLibrary::load(const std::string & name, std::string * erro
 {
     handle_type handle = dlopen(name.c_str(), RTLD_NOW | RTLD_LOCAL);
     if (handle == nullptr) {
-        if (error) { *error = dlerror(); }
+        if (error) {
+            *error = dlerror();
+            dlerror(); // let libdl clear allocated buffer
+        }
         return {};
     }
     return DynamicLibrary(handle);

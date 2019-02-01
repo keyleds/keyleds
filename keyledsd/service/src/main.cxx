@@ -159,9 +159,10 @@ int main(int argc, char * argv[])
     // Parse command line
     const auto options = Options::parse(argc, argv);
     if (!options) { return 1; }
-    logging::Configuration::instance().setPolicy(
-        new logging::FilePolicy(STDERR_FILENO, options->logLevel)
-    );
+
+    // Configure logging - intentionally leak policy in case some destructor logs stuff
+    auto logPolicy = new logging::FilePolicy(STDERR_FILENO, options->logLevel);
+    logging::Configuration::instance().setPolicy(logPolicy);
 
     INFO("keyledsd v" KEYLEDSD_VERSION_STR " starting up");
 
