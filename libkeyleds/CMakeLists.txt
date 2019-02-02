@@ -54,11 +54,11 @@ IF(NOT HIDRAW_FOUND)
 ENDIF()
 
 # Optional Thread-local storage for error reporting
-check_c_source_compiles("__thread int tls; int main() { return 0; }" GCC_THREAD_LOCAL_FOUND)
-check_c_source_compiles("_Thread_local int tls; int main() { return 0; }" C11_THREAD_LOCAL_FOUND)
+check_c_source_compiles("__thread int tls; int main(void) { return 0; }" GCC_THREAD_LOCAL_FOUND)
+check_c_source_compiles("_Thread_local int tls; int main(void) { return 0; }" C11_THREAD_LOCAL_FOUND)
 
 # Optional enhanced strerrror if available
-check_c_source_compiles("#include <string.h>\nint main() { char buf[1]; return strerror_r(0, buf, 1); }"
+check_c_source_compiles("#include <string.h>\nint main(void) { char buf[1]; return strerror_r(0, buf, 1); }"
                         POSIX_STRERROR_R_FOUND)
 
 # Optional automatic translation of key names to/from Linux input keycodes
