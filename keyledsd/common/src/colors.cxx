@@ -227,9 +227,9 @@ std::optional<RGBColor> RGBColor::parse(const std::string & str)
  */
 void RGBColor::print(std::ostream & out) const
 {
-    const auto flags = out.flags(std::ios_base::hex | std::ios_base::left);
+    const auto flags = out.flags(std::ios_base::hex | std::ios_base::right);
     const auto fillChar = out.fill('0');
-    out <<'#' <<std::setw(2) <<red <<std::setw(2) <<green <<std::setw(2) <<blue;
+    out <<'#' <<std::setw(2) <<int(red) <<std::setw(2) <<int(green) <<std::setw(2) <<int(blue);
     out.flags(flags);
     out.fill(fillChar);
 }
@@ -263,10 +263,10 @@ std::optional<RGBAColor> RGBAColor::parse(const std::string & str)
  */
 void RGBAColor::print(std::ostream & out) const
 {
-    const auto flags = out.flags(std::ios_base::hex | std::ios_base::left);
+    const auto flags = out.flags(std::ios_base::hex | std::ios_base::right);
     const auto fillChar = out.fill('0');
-    out <<'#' <<std::setw(2) <<red <<std::setw(2) <<green <<std::setw(2) <<blue;
-    out <<std::setw(2) <<alpha;
+    out <<'#' <<std::setw(2) <<int(red) <<std::setw(2) <<int(green) <<std::setw(2) <<int(blue);
+    out <<std::setw(2) <<int(alpha);
     out.flags(flags);
     out.fill(fillChar);
 }

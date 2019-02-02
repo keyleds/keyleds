@@ -21,10 +21,6 @@
 /****************************************************************************/
 /* blend */
 
-void blend_avx2(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length);
-void blend_sse2(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length);
-void blend_plain(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length);
-
 #ifdef HAVE_BUILTIN_CPU_SUPPORTS
 static void (*resolve_blend(void))(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
 {
@@ -58,10 +54,6 @@ void blend(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length
 
 /****************************************************************************/
 /* multiply */
-
-void multiply_avx2(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length);
-void multiply_sse2(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length);
-void multiply_plain(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length);
 
 #ifdef HAVE_BUILTIN_CPU_SUPPORTS
 static void (*resolve_multiply(void))(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)

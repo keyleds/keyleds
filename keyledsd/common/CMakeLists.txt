@@ -49,6 +49,12 @@ if(KEYLEDSD_USE_AVX2)
                                 PROPERTIES COMPILE_FLAGS "-mavx2")
 endif()
 
+set(test-common_SRCS
+    tests/RenderTarget.cxx
+    tests/colors.cxx
+    tests/utils.cxx
+)
+
 ##############################################################################
 # Feature detection
 
@@ -77,3 +83,18 @@ set_target_properties(common PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(common PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
 
 install(TARGETS common LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+
+##############################################################################
+# Tests
+
+find_package(GTest)
+IF(GTEST_FOUND)
+    find_package(Threads REQUIRED)
+
+    add_executable(test-common ${test-common_SRCS})
+    target_compile_options(test-common PRIVATE "-Wno-unevaluated-expression")
+    target_include_directories(test-common SYSTEM PRIVATE ${GTEST_INCLUDE_DIRS})
+    target_link_libraries(test-common common ${GTEST_BOTH_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+
+    add_test(NAME common COMMAND test-common)
+ENDIF(GTEST_FOUND)

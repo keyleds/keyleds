@@ -49,6 +49,7 @@ public:
     using iterator = value_type *;
     using const_iterator = const value_type *;
 public:
+                        RenderTarget() = default;
     explicit            RenderTarget(size_type);
                         RenderTarget(RenderTarget && other) noexcept
                          { swap(*this, other); }
@@ -62,7 +63,11 @@ public:
     iterator            end() { return &m_colors[m_size]; }
     const_iterator      end() const { return &m_colors[m_size]; }
     const_iterator      cend() const { return &m_colors[m_size]; }
-    bool                empty() const noexcept { return false; }
+    reference           front() { return m_colors[0]; }
+    const_reference     front() const { return m_colors[0]; }
+    reference           back() { return m_colors[m_size - 1]; }
+    const_reference     back() const { return m_colors[m_size - 1]; }
+    bool                empty() const noexcept { return !m_colors; }
     size_type           size() const noexcept { return m_size; }
     size_type           capacity() const noexcept { return m_capacity; }
     value_type *        data() { return m_colors; }
@@ -121,11 +126,27 @@ inline void blend(RenderTarget & lhs, const RenderTarget & rhs) noexcept
           reinterpret_cast<const uint8_t*>(rhs.data()), rhs.capacity());
 }
 
+template <typename A>
+inline void blend(RenderTarget & lhs, const RenderTarget & rhs) noexcept
+{
+    assert(lhs.capacity() == rhs.capacity());
+    A::blend(reinterpret_cast<uint8_t*>(lhs.data()),
+             reinterpret_cast<const uint8_t*>(rhs.data()), rhs.capacity());
+}
+
 inline void multiply(RenderTarget & lhs, const RenderTarget & rhs) noexcept
 {
     assert(lhs.capacity() == rhs.capacity());
     multiply(reinterpret_cast<uint8_t*>(lhs.data()),
              reinterpret_cast<const uint8_t*>(rhs.data()), rhs.capacity());
+}
+
+template <typename A>
+inline void multiply(RenderTarget & lhs, const RenderTarget & rhs) noexcept
+{
+    assert(lhs.capacity() == rhs.capacity());
+    A::multiply(reinterpret_cast<uint8_t*>(lhs.data()),
+                reinterpret_cast<const uint8_t*>(rhs.data()), rhs.capacity());
 }
 
 } // keyleds

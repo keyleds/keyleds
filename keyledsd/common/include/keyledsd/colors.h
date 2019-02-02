@@ -77,7 +77,7 @@ struct alignas(4) RGBAColor final {
     RGBAColor() = default;
     constexpr RGBAColor(channel_type r, channel_type g, channel_type b, channel_type a)
      : red(r), green(g), blue(b), alpha(a) {}
-    explicit RGBAColor(RGBColor c, channel_type a = std::numeric_limits<channel_type>::max())
+    constexpr RGBAColor(RGBColor c, channel_type a = std::numeric_limits<channel_type>::max())
      : red(c.red), green(c.green), blue(c.blue), alpha(a) {}
 
     KEYLEDSD_EXPORT static std::optional<RGBAColor> parse(const std::string &);
@@ -87,7 +87,8 @@ struct alignas(4) RGBAColor final {
 inline constexpr bool operator==(RGBAColor a, RGBAColor b) {
     return (a.red == b.red &&
             a.green == b.green &&
-            a.blue == b.blue);
+            a.blue == b.blue &&
+            a.alpha == b.alpha);
 }
 inline constexpr bool operator!=(RGBAColor a, RGBAColor b) { return !(a == b); }
 

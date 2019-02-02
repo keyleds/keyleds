@@ -30,6 +30,14 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
 
 ##############################################################################
+# Global dependencies
+
+find_package(GTest)
+IF(GTEST_FOUND)
+    enable_testing()
+ENDIF(GTEST_FOUND)
+
+##############################################################################
 # Include subprojects
 
 add_subdirectory(libkeyleds)

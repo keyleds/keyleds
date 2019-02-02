@@ -57,7 +57,39 @@ void blend(uint8_t * a, const uint8_t * b, unsigned length);
 void multiply(uint8_t * a, const uint8_t * b, unsigned length);
 
 #ifdef __cplusplus
-}
+    namespace detail {  // exposed for testing purposes
+#endif
+        void blend_plain(uint8_t * a, const uint8_t * b, unsigned length);
+        void blend_sse2(uint8_t * a, const uint8_t * b, unsigned length);
+        void blend_avx2(uint8_t * a, const uint8_t * b, unsigned length);
+        void multiply_plain(uint8_t * a, const uint8_t * b, unsigned length);
+        void multiply_sse2(uint8_t * a, const uint8_t * b, unsigned length);
+        void multiply_avx2(uint8_t * a, const uint8_t * b, unsigned length);
+#ifdef __cplusplus
+    } // namespace detail
+
+    namespace architecture {
+        struct plain {
+            static inline void blend(uint8_t * a, const uint8_t * b, unsigned length)
+                { detail::blend_plain(a, b, length); }
+            static inline void multiply(uint8_t * a, const uint8_t * b, unsigned length)
+                { detail::multiply_plain(a, b, length); }
+        };
+        struct sse2 {
+            static inline void blend(uint8_t * a, const uint8_t * b, unsigned length)
+                { detail::blend_sse2(a, b, length); }
+            static inline void multiply(uint8_t * a, const uint8_t * b, unsigned length)
+                { detail::multiply_sse2(a, b, length); }
+        };
+        struct avx2 {
+            static inline void blend(uint8_t * a, const uint8_t * b, unsigned length)
+                { detail::blend_avx2(a, b, length); }
+            static inline void multiply(uint8_t * a, const uint8_t * b, unsigned length)
+                { detail::multiply_avx2(a, b, length); }
+        };
+    } // namespace architecture
+
+} // extern "C"
 } // namespace keyleds
 #endif
 
