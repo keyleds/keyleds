@@ -15,37 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "keyledsd/RenderTarget.h"
+
+#include "keyledsd/accelerated.h"
 #include <gtest/gtest.h>
 #include <type_traits>
 
 using keyleds::RenderTarget;
 using keyleds::RGBColor;
 using keyleds::RGBAColor;
-using keyleds::blend;
-using keyleds::multiply;
 
 
-class RenderTargetTest : public ::testing::Test {
-protected:
-    static constexpr RenderTarget::size_type size = 101;
-
-    RenderTargetTest()
-     : translucentWhite(size),
-       opaqueWhite(size)
-    {
-        std::fill(translucentWhite.begin(), translucentWhite.end(),
-                  RGBAColor{0xff, 0xff, 0xff, 0x7f});
-        std::fill(opaqueWhite.begin(), opaqueWhite.end(),
-                  RGBAColor{0xff, 0xff, 0xff, 0xff});
-    }
-
-    const RGBColor  black = {0, 0, 0};
-    const RGBColor  white = {0xff, 0xff, 0xff};
-    RenderTarget    translucentWhite;
-    RenderTarget    opaqueWhite;
-};
-
-TEST_F(RenderTargetTest, requirements) {
+TEST(RenderTargetTest, requirements) {
     static_assert(std::is_default_constructible_v<RenderTarget>);
     static_assert(std::is_const_v<std::remove_reference_t<RenderTarget::const_reference>>);
     static_assert(std::is_unsigned_v<RenderTarget::size_type>);
@@ -84,7 +64,7 @@ TEST_F(RenderTargetTest, requirements) {
     SUCCEED();
 }
 
-TEST_F(RenderTargetTest, construct) {
+TEST(RenderTargetTest, construct) {
     auto target = RenderTarget(7);
     EXPECT_EQ(target.begin() + 7, target.end());
     EXPECT_EQ(target.cbegin() + 7, target.cend());
@@ -100,7 +80,7 @@ TEST_F(RenderTargetTest, construct) {
 
 }
 
-TEST_F(RenderTargetTest, move) {
+TEST(RenderTargetTest, move) {
     auto targetA = RenderTarget(7);
     targetA[0] = RGBAColor{0x11, 0x22, 0x33, 0x44};
 
@@ -127,7 +107,7 @@ TEST_F(RenderTargetTest, move) {
     EXPECT_EQ(RGBAColor(0x11, 0x22, 0x33, 0x44), targetA[0]);
 }
 
-TEST_F(RenderTargetTest, iterator) {
+TEST(RenderTargetTest, iterator) {
     auto target = RenderTarget(7);
 
     for (auto & item : target) {
@@ -141,67 +121,57 @@ TEST_F(RenderTargetTest, iterator) {
     EXPECT_EQ(7, std::count(target.begin(), target.end(), RGBAColor{0x22, 0x33, 0x44, 0x55}));
 }
 
-TEST_F(RenderTargetTest, blend_plain) {
-    auto target = RenderTarget(size);
-    std::fill(target.begin(), target.end(), black);
-    blend<keyleds::architecture::plain>(target, translucentWhite);
-    EXPECT_EQ(RGBAColor(0x7f, 0x7f, 0x7f, 0xff), target[0]);
-    EXPECT_TRUE(std::all_of(target.begin(), target.end(),
-                [](auto item) { return item == RGBAColor{0x7f, 0x7f, 0x7f, 0xff}; }));
-    blend<keyleds::architecture::plain>(target, opaqueWhite);
-    EXPECT_EQ(RGBAColor(0xff, 0xff, 0xff, 0xff), target[0]);
-    EXPECT_TRUE(std::all_of(target.begin(), target.end(),
-                [](auto item) { return item == RGBAColor{0xff, 0xff, 0xff, 0xff}; }));
-}
 
-TEST_F(RenderTargetTest, blend_sse2) {
-    auto target = RenderTarget(size);
-    std::fill(target.begin(), target.end(), black);
-    blend<keyleds::architecture::sse2>(target, translucentWhite);
+template <typename T>
+class RenderTargetAccelerationTest : public ::testing::Test {
+public:
+    static constexpr RenderTarget::size_type size = 101;
+    using architecture = T;
+
+    RenderTargetAccelerationTest()
+     : translucentWhite(size),
+       opaqueWhite(size)
+    {
+        std::fill(translucentWhite.begin(), translucentWhite.end(),
+                  RGBAColor{0xff, 0xff, 0xff, 0x7f});
+        std::fill(opaqueWhite.begin(), opaqueWhite.end(),
+                  RGBAColor{0xff, 0xff, 0xff, 0xff});
+    }
+
+    const RGBColor  black = {0, 0, 0};
+    const RGBColor  white = {0xff, 0xff, 0xff};
+    RenderTarget    translucentWhite;
+    RenderTarget    opaqueWhite;
+};
+
+namespace testing::internal {   // dirty hack to have type names despite -fno-rtti
+    template <> std::string GetTypeName<keyleds::architecture::plain>() { return "plain"; }
+    template <> std::string GetTypeName<keyleds::architecture::sse2>() { return "sse2"; }
+    template <> std::string GetTypeName<keyleds::architecture::avx2>() { return "avx2"; }
+}
+using Architectures = ::testing::Types<keyleds::architecture::plain,
+                                       keyleds::architecture::sse2,
+                                       keyleds::architecture::avx2>;
+TYPED_TEST_SUITE(RenderTargetAccelerationTest, Architectures);
+
+
+TYPED_TEST(RenderTargetAccelerationTest, blend) {
+    auto target = RenderTarget(TestFixture::size);
+    std::fill(target.begin(), target.end(), TestFixture::black);
+    keyleds::blend<typename TestFixture::architecture>(target, TestFixture::translucentWhite);
     EXPECT_EQ(RGBAColor(0x7f, 0x7f, 0x7f, 0xbf), target[0]);
     EXPECT_TRUE(std::all_of(target.begin(), target.end(),
                 [](auto item) { return item == RGBAColor{0x7f, 0x7f, 0x7f, 0xbf}; }));
-    blend<keyleds::architecture::sse2>(target, opaqueWhite);
+    keyleds::blend<typename TestFixture::architecture>(target, TestFixture::opaqueWhite);
     EXPECT_EQ(RGBAColor(0xff, 0xff, 0xff, 0xff), target[0]);
     EXPECT_TRUE(std::all_of(target.begin(), target.end(),
                 [](auto item) { return item == RGBAColor{0xff, 0xff, 0xff, 0xff}; }));
 }
 
-TEST_F(RenderTargetTest, blend_avx2) {
-    auto target = RenderTarget(size);
-    std::fill(target.begin(), target.end(), black);
-    blend<keyleds::architecture::avx2>(target, translucentWhite);
-    EXPECT_EQ(RGBAColor(0x7f, 0x7f, 0x7f, 0xbf), target[0]);
-    EXPECT_TRUE(std::all_of(target.begin(), target.end(),
-                [](auto item) { return item == RGBAColor{0x7f, 0x7f, 0x7f, 0xbf}; }));
-    blend<keyleds::architecture::avx2>(target, opaqueWhite);
-    EXPECT_EQ(RGBAColor(0xff, 0xff, 0xff, 0xff), target[0]);
-    EXPECT_TRUE(std::all_of(target.begin(), target.end(),
-                [](auto item) { return item == RGBAColor{0xff, 0xff, 0xff, 0xff}; }));
-}
-
-TEST_F(RenderTargetTest, multiply_plain) {
-    auto target = RenderTarget(size);
+TYPED_TEST(RenderTargetAccelerationTest, multiply) {
+    auto target = RenderTarget(TestFixture::size);
     std::fill(target.begin(), target.end(), RGBAColor{0xff, 0x80, 0x00, 0x7f});
-    multiply<keyleds::architecture::plain>(target, translucentWhite);
-    EXPECT_EQ(RGBAColor(0xff, 0x80, 0x00, 0x3f), target[0]);
-    EXPECT_TRUE(std::all_of(target.begin(), target.end(),
-                [](auto item) { return item == RGBAColor{0xff, 0x80, 0x00, 0x3f}; }));
-}
-
-TEST_F(RenderTargetTest, multiply_sse2) {
-    auto target = RenderTarget(size);
-    std::fill(target.begin(), target.end(), RGBAColor{0xff, 0x80, 0x00, 0x7f});
-    multiply<keyleds::architecture::sse2>(target, translucentWhite);
-    EXPECT_EQ(RGBAColor(0xff, 0x80, 0x00, 0x3f), target[0]);
-    EXPECT_TRUE(std::all_of(target.begin(), target.end(),
-                [](auto item) { return item == RGBAColor{0xff, 0x80, 0x00, 0x3f}; }));
-}
-
-TEST_F(RenderTargetTest, multiply_avx2) {
-    auto target = RenderTarget(size);
-    std::fill(target.begin(), target.end(), RGBAColor{0xff, 0x80, 0x00, 0x7f});
-    multiply<keyleds::architecture::avx2>(target, translucentWhite);
+    keyleds::multiply<typename TestFixture::architecture>(target, TestFixture::translucentWhite);
     EXPECT_EQ(RGBAColor(0xff, 0x80, 0x00, 0x3f), target[0]);
     EXPECT_TRUE(std::all_of(target.begin(), target.end(),
                 [](auto item) { return item == RGBAColor{0xff, 0x80, 0x00, 0x3f}; }));

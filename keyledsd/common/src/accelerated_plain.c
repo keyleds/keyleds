@@ -33,6 +33,7 @@ void blend_plain(uint8_t * restrict a, const uint8_t * restrict b, unsigned leng
         a[0] = ((uint16_t)a[0] * ((uint16_t)256 - alpha) + (uint16_t)b[0] * alpha) / 256;
         a[1] = ((uint16_t)a[1] * ((uint16_t)256 - alpha) + (uint16_t)b[1] * alpha) / 256;
         a[2] = ((uint16_t)a[2] * ((uint16_t)256 - alpha) + (uint16_t)b[2] * alpha) / 256;
+        a[3] = ((uint16_t)a[3] * ((uint16_t)256 - alpha) + (uint16_t)b[3] * alpha) / 256;
         a += 4;
         b += 4;
     } while (--length > 0);
