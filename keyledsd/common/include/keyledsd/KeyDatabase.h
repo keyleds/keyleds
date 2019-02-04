@@ -17,6 +17,8 @@
 #ifndef KEYLEDSD_KEYDATABASE_H_E8A1B5AF
 #define KEYLEDSD_KEYDATABASE_H_E8A1B5AF
 
+#include <iosfwd>
+#include <iterator>
 #include <string>
 #include <utility>
 #include <vector>
@@ -61,13 +63,13 @@ private:
     using relation_list = std::vector<Relation>;
 public:
     using value_type = key_list::value_type;
-    using reference = key_list::const_reference;
-    using iterator = key_list::const_iterator;
+    using const_reference = key_list::const_reference;
     using const_iterator = key_list::const_iterator;
     using difference_type = signed int;     // narrow down vector's size
     using size_type = unsigned int;         // narrow down vector's size
 public:
-                    KeyDatabase(key_list keys);
+                    KeyDatabase() = default;
+    explicit        KeyDatabase(key_list keys);
                     ~KeyDatabase();
 
     const_iterator  findKeyCode(int keyCode) const;
@@ -75,8 +77,9 @@ public:
 
     const_iterator  begin() const { return m_keys.cbegin(); }
     const_iterator  end() const { return m_keys.cend(); }
-    const Key &     operator[](size_type idx) const { return m_keys[idx]; }
+    bool            empty() const noexcept { return m_keys.empty(); }
     size_type       size() const noexcept { return size_type(m_keys.size()); }
+    const_reference operator[](size_type idx) const { return m_keys[idx]; }
 
     Rect            bounds() const noexcept { return m_bounds; }
     position_type   distance(const Key &, const Key &) const noexcept;
@@ -85,6 +88,7 @@ public:
     /// Builds a KeyGroup with given name; first and last define a sequence of
     /// string defining key names for the group. Invalid names are ignored.
     template<typename It> KeyGroup makeGroup(std::string name, It first, It last) const;
+    template<typename S, typename C> KeyGroup makeGroup(S && name, const C &) const;
 
 private:
     /// Computes m_bounds, invoked once at initialization
@@ -110,9 +114,9 @@ private:
  */
 class KeyDatabase::KeyGroup final
 {
-    using key_list = std::vector<KeyDatabase::iterator>;
+    using key_list = std::vector<KeyDatabase::const_iterator>;
 public:
-    using value_type = KeyDatabase::iterator;
+    using value_type = Key;
     using reference = value_type &;
     using const_reference = const value_type &;
     using size_type = unsigned int;
@@ -129,12 +133,26 @@ public:
         iterator &  operator=(const iterator &) = default;
         iterator &  operator++() { ++m_it; return *this; }
         iterator    operator++(int) { return iterator(m_it++); }
+        iterator &  operator+=(difference_type n) { m_it += n; return *this; }
         iterator &  operator--() { --m_it; return *this; }
         iterator    operator--(int) { return iterator(m_it--); }
+        iterator &  operator-=(difference_type n) { m_it -= n; return *this; }
         reference   operator*() const { return **m_it; }
+        const value_type * operator->() const { return &**m_it; }
         void        swap(iterator & o) noexcept { std::swap(m_it, o.m_it); }
 
-        key_list::const_iterator get() const { return m_it; }
+    private:
+        friend class KeyGroup;
+        friend iterator operator+(const iterator & a, difference_type b)
+            { return iterator(a.m_it + b); }
+        friend iterator operator+(difference_type a, const iterator & b)
+            { return iterator(a + b.m_it); }
+        friend iterator operator-(const iterator & a, difference_type b)
+            { return iterator(a.m_it - b); }
+        friend difference_type operator-(const iterator & a, const iterator & b)
+            { return a.m_it - b.m_it; }
+        friend bool operator==(const iterator & a, const iterator & b) { return a.m_it == b.m_it; }
+        friend bool operator!=(const iterator & a, const iterator & b) { return a.m_it != b.m_it; }
     };
     using const_iterator = iterator;
 public:
@@ -152,17 +170,17 @@ public:
     const_iterator  cbegin() const { return const_iterator(m_keys.cbegin()); }
     const_iterator  end() const { return cend(); }
     const_iterator  cend() const { return const_iterator(m_keys.cend()); }
-    const Key &     operator[](size_type idx) const { return *m_keys[idx]; }
+    const_reference operator[](size_type idx) const { return *m_keys[idx]; }
 
     bool            empty() const noexcept { return m_keys.empty(); }
     size_type       size() const noexcept { return size_type(m_keys.size()); }
 
     void            clear() { m_keys.clear(); }
     const_iterator  erase(const_iterator it)
-                        { return const_iterator(m_keys.erase(it.get())); }
-    const_iterator  insert(const_iterator pos, KeyDatabase::iterator it)
-                        { return const_iterator(m_keys.insert(pos.get(), it)); }
-    void            push_back(KeyDatabase::iterator it) { m_keys.push_back(it); }
+                        { return const_iterator(m_keys.erase(it.m_it)); }
+    const_iterator  insert(const_iterator pos, key_list::value_type it)
+                        { return const_iterator(m_keys.insert(pos.m_it, it)); }
+    void            push_back(key_list::value_type it) { m_keys.push_back(it); }
     void            pop_back() { m_keys.pop_back(); }
 
     void            shrink_to_fit() { m_keys.shrink_to_fit(); }
@@ -174,32 +192,39 @@ private:
 
 /****************************************************************************/
 
+inline bool operator==(const KeyDatabase::Rect & a, const KeyDatabase::Rect & b)
+ { return a.x0 == b.x0 && a.y0 == b.y0 && a.x1 == b.x1 && a.y1 == b.y1; }
+inline bool operator!=(const KeyDatabase::Rect & a, const KeyDatabase::Rect & b)
+ { return !(a == b); }
+
+KEYLEDSD_EXPORT std::ostream & operator<<(std::ostream &, const KeyDatabase::Key &);
 inline bool operator==(const KeyDatabase::Key & a, const KeyDatabase::Key & b)
  { return a.index == b.index; }
 inline bool operator!=(const KeyDatabase::Key & a, const KeyDatabase::Key & b)
  { return !(a == b); }
 
-bool operator==(const KeyDatabase::KeyGroup & a, const KeyDatabase::KeyGroup & b);
+KEYLEDSD_EXPORT std::ostream & operator<<(std::ostream &, const KeyDatabase::KeyGroup &);
+KEYLEDSD_EXPORT bool operator==(const KeyDatabase::KeyGroup & a, const KeyDatabase::KeyGroup & b);
 inline bool operator!=(const KeyDatabase::KeyGroup & a, const KeyDatabase::KeyGroup & b)
- { return !(a == b); }
-
-inline bool operator==(const KeyDatabase::KeyGroup::iterator & a,
-                       const KeyDatabase::KeyGroup::iterator & b)
- { return a.get() == b.get(); }
-inline bool operator!=(const KeyDatabase::KeyGroup::iterator & a,
-                       const KeyDatabase::KeyGroup::iterator & b)
  { return !(a == b); }
 
 template<typename It>
 KeyDatabase::KeyGroup KeyDatabase::makeGroup(std::string name, It first, It last) const
 {
-    static_assert(std::is_convertible_v<typename It::value_type, std::string>);
-    std::vector<iterator> result;
+    using It_value_type = typename std::iterator_traits<It>::value_type;
+    static_assert(std::is_convertible_v<It_value_type, std::string>);
+    std::vector<const_iterator> result;
     for (auto it = first; it != last; ++it) {
         auto kit = findName(it->c_str());
         if (kit != end()) { result.push_back(kit); }
     }
     return KeyGroup(std::move(name), std::move(result));
+}
+
+template<typename S, typename C>
+KeyDatabase::KeyGroup KeyDatabase::makeGroup(S && name, const C & container) const
+{
+    return makeGroup(std::forward<S>(name), std::begin(container), std::end(container));
 }
 
 /****************************************************************************/

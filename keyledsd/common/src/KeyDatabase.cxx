@@ -17,7 +17,9 @@
 #include "keyledsd/KeyDatabase.h"
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
+#include <ostream>
 
 using keyleds::KeyDatabase;
 
@@ -39,7 +41,13 @@ KeyDatabase::KeyDatabase(key_list keys)
  : m_keys(std::move(keys)),
    m_bounds(computeBounds(m_keys)),
    m_relations(computeRelations(m_keys))
-{}
+{
+#ifndef NDEBUG
+    for (auto it = m_keys.begin(); it != m_keys.end(); ++it) {
+        assert(it->index == std::distance(m_keys.begin(), it));
+    }
+#endif
+}
 
 KeyDatabase::~KeyDatabase() = default;
 
@@ -126,7 +134,25 @@ void KeyDatabase::KeyGroup::swap(KeyGroup & other) noexcept
     swap(m_keys, other.m_keys);
 }
 
-bool operator==(const KeyDatabase::KeyGroup & a, const KeyDatabase::KeyGroup & b)
+std::ostream & keyleds::operator<<(std::ostream & out, const KeyDatabase::Key & key)
+{
+    out <<"Key(" <<key.index <<", " <<key.keyCode <<", " <<key.name <<')';
+    return out;
+}
+
+std::ostream & keyleds::operator<<(std::ostream & out, const KeyDatabase::KeyGroup & group)
+{
+    if (group.empty()) {
+        out <<"KeyGroup{}";
+    } else {
+        out <<"KeyGroup{" <<group[0].name;
+        std::for_each(group.begin() + 1, group.end(), [&](auto & key) { out <<", " <<key.name; });
+        out <<'}';
+    }
+    return out;
+}
+
+bool keyleds::operator==(const KeyDatabase::KeyGroup & a, const KeyDatabase::KeyGroup & b)
 {
     return a.size() == b.size() && std::equal(a.begin(), a.end(), b.begin());
 }

@@ -255,7 +255,7 @@ keyleds::KeyDatabase DeviceManager::buildKeyDatabase(const Device & device, cons
             ++keyIndex;
         }
     }
-    return db;
+    return KeyDatabase(db);
 }
 
 /// Applies the configuration to a string_map, matching profiles and resolving

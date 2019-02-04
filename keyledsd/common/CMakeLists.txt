@@ -50,6 +50,7 @@ if(KEYLEDSD_USE_AVX2)
 endif()
 
 set(test-common_SRCS
+    tests/KeyDatabase.cxx
     tests/RenderTarget.cxx
     tests/colors.cxx
     tests/utils.cxx
