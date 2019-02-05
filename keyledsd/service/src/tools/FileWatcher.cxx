@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cerrno>
+#include <dirent.h>
 #include <system_error>
 #include <unistd.h>
 

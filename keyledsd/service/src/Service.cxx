@@ -27,6 +27,7 @@
 #include <functional>
 #include <optional>
 #include <sstream>
+#include <uv.h>
 
 LOGGING("service");
 
@@ -83,8 +84,8 @@ Service::Service(EffectManager & effectManager, tools::FileWatcher & fileWatcher
       m_deviceWatcher(loop)
 {
     using namespace std::placeholders;
-    m_deviceWatcher.deviceAdded.connect(std::bind(&Service::onDeviceAdded, this, _1));
-    m_deviceWatcher.deviceRemoved.connect(std::bind(&Service::onDeviceRemoved, this, _1));
+    connect(m_deviceWatcher.deviceAdded, this, std::bind(&Service::onDeviceAdded, this, _1));
+    connect(m_deviceWatcher.deviceRemoved, this, std::bind(&Service::onDeviceRemoved, this, _1));
     setConfiguration(std::move(configuration));
     DEBUG("created");
 }
@@ -252,8 +253,10 @@ void Service::onDisplayAdded(std::unique_ptr<xlib::Display> & display)
     auto displayManager = std::make_unique<DisplayManager>(std::move(display), m_loop);
 
     using namespace std::placeholders;
-    displayManager->contextChanged.connect(std::bind(&Service::setContext, this, _1));
-    displayManager->keyEventReceived.connect(std::bind(&Service::handleKeyEvent, this, _1, _2, _3));
+    connect(displayManager->contextChanged, this,
+            std::bind(&Service::setContext, this, _1));
+    connect(displayManager->keyEventReceived, this,
+            std::bind(&Service::handleKeyEvent, this, _1, _2, _3));
 
     displayManager->scanDevices();
     setContext(displayManager->currentContext());

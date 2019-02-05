@@ -31,18 +31,16 @@ DisplayManager::DisplayManager(std::unique_ptr<Display> display, uv_loop_t & loo
    m_context(m_contextWatcher.current())
 {
     using namespace std::placeholders;
-    m_contextWatcher.contextChanged.connect(std::bind(
-        &DisplayManager::onContextChanged, this, _1
-    ));
-    m_inputWatcher.keyEventReceived.connect(std::bind(
-        &DisplayManager::onKeyEventReceived, this, _1, _2, _3
-    ));
+    connect(m_contextWatcher.contextChanged, this,
+            std::bind(&DisplayManager::onContextChanged, this, _1));
+    connect(m_inputWatcher.keyEventReceived, this,
+            std::bind(&DisplayManager::onKeyEventReceived, this, _1, _2, _3));
 }
 
 DisplayManager::~DisplayManager()
 {
-    m_contextWatcher.contextChanged.disconnect();
-    m_inputWatcher.keyEventReceived.disconnect();
+    disconnect(m_contextWatcher.contextChanged, this);
+    disconnect(m_inputWatcher.keyEventReceived, this);
 }
 
 void DisplayManager::scanDevices()

@@ -19,9 +19,13 @@
 
 #include <cassert>
 #include <functional>
-#include <uv.h>
+#include <utility>
 #include <type_traits>
 
+struct uv_loop_s;
+struct uv_poll_s;
+using uv_loop_t = struct uv_loop_s;
+using uv_poll_t = struct uv_poll_s;
 
 namespace tools {
 
@@ -34,8 +38,9 @@ public:
     using function_type = std::function<void(Args...)>;
 public:
     template <typename T>
-    std::enable_if_t<std::is_convertible_v<T, function_type>> connect(T && listener)
+    void connect(T && listener)
     {
+        static_assert(std::is_convertible_v<T, function_type>, "incorrect listener signature");
         assert(!m_value);
         m_value = std::forward<T>(listener);
     }
@@ -51,12 +56,25 @@ private:
     function_type   m_value;
 };
 
+template <typename ...Args, typename T, typename Listener>
+void connect(Callback<Args...> & event, const T *, Listener && listener)
+{
+    event.connect(std::forward<Listener>(listener));
+}
+
+template <typename ...Args, typename T>
+void disconnect(Callback<Args...> & event, const T *)
+{
+    event.disconnect();
+}
+
+
 /****************************************************************************/
 
 class FDWatcher final
 {
 public:
-    enum events { Read = UV_READABLE, Write = UV_WRITABLE };
+    enum events { Read = 1u, Write = 2u };
 
     FDWatcher(int fd, events, Callback<events>::function_type onReady, uv_loop_t &);
                 FDWatcher(const FDWatcher &) = delete;

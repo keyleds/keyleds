@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "tools/Event.h"
+#include <uv.h>
 #include <memory>
 
 using tools::FDWatcher;
@@ -29,7 +30,11 @@ FDWatcher::FDWatcher(int fd, events ev, Callback<events>::function_type onReady,
     m_handle = reinterpret_cast<uv_poll_t *>(operator new(sizeof(uv_poll_t)));
     uv_poll_init(&loop, m_handle, fd);
     m_handle->data = this;
-    uv_poll_start(m_handle, static_cast<int>(ev), fdNotifierCallback);
+
+    auto mask = 0;
+    if (ev & Read) { mask |= UV_READABLE; }
+    if (ev & Write) { mask |= UV_WRITABLE; }
+    uv_poll_start(m_handle, mask, fdNotifierCallback);
 }
 
 FDWatcher::~FDWatcher()
@@ -40,5 +45,8 @@ FDWatcher::~FDWatcher()
 
 void FDWatcher::fdNotifierCallback(uv_poll_t * handle, int, int ev)
 {
-    static_cast<FDWatcher *>(handle->data)->ready.emit(static_cast<events>(ev));
+    auto mask = 0u;
+    if (ev & UV_READABLE) { mask |= Read; }
+    if (ev & UV_WRITABLE) { mask |= Write; }
+    static_cast<FDWatcher *>(handle->data)->ready.emit(static_cast<events>(mask));
 }

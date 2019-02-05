@@ -233,14 +233,16 @@ ServiceAdapter::ServiceAdapter(sd_bus * bus, Service & service)
                              interfaceVtable, this);
 
     using namespace std::placeholders;
-    m_service.deviceManagerAdded.connect(std::bind(&ServiceAdapter::onDeviceAdded, this, _1));
-    m_service.deviceManagerRemoved.connect(std::bind(&ServiceAdapter::onDeviceRemoved, this, _1));
+    connect(m_service.deviceManagerAdded, this,
+            std::bind(&ServiceAdapter::onDeviceAdded, this, _1));
+    connect(m_service.deviceManagerRemoved, this,
+            std::bind(&ServiceAdapter::onDeviceRemoved, this, _1));
 }
 
 ServiceAdapter::~ServiceAdapter()
 {
-    m_service.deviceManagerAdded.disconnect();
-    m_service.deviceManagerRemoved.disconnect();
+    disconnect(m_service.deviceManagerAdded, this);
+    disconnect(m_service.deviceManagerRemoved, this);
 
     sd_bus_slot_unref(m_slot);
     sd_bus_unref(m_bus);

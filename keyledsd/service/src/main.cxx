@@ -41,6 +41,7 @@
 #include <systemd/sd-bus.h>
 #endif
 #include <unistd.h>
+#include <uv.h>
 
 LOGGING("main");
 
