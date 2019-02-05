@@ -219,6 +219,7 @@ keyleds::KeyDatabase DeviceManager::buildKeyDatabase(const Device & device, cons
     for (const auto & block : device.blocks()) {
         for (unsigned kidx = 0; kidx < block.keys().size(); ++kidx) {
             const auto keyId = block.keys()[kidx];
+            auto spurious = false;
             std::string name;
             auto position = KeyDatabase::Rect{0, 0, 0, 0};
 
@@ -227,9 +228,8 @@ keyleds::KeyDatabase DeviceManager::buildKeyDatabase(const Device & device, cons
                 [&](const auto & pos) { return pos.first == block.id() && pos.second == keyId; }
             );
             if (it != layout.spurious.cend()) {
-                DEBUG("omitting <", (int)block.id(), ", ", (int)keyId, ">");
-                ++keyIndex;
-                continue;
+                VERBOSE("marking <", int(block.id()), ", ", int(keyId), "> as spurious");
+                spurious = true;
             }
 
             for (const auto & key : layout.keys) {
@@ -248,8 +248,8 @@ keyleds::KeyDatabase DeviceManager::buildKeyDatabase(const Device & device, cons
 
             db.push_back({
                 keyIndex,
-                device.decodeKeyId(block.id(), keyId),
-                std::move(name),
+                spurious ? 0 : device.decodeKeyId(block.id(), keyId),
+                spurious ? std::string() : std::move(name),
                 position
             });
             ++keyIndex;
