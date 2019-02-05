@@ -22,7 +22,8 @@
 using namespace std::literals::chrono_literals;
 using keyleds::parseDuration;
 
-static constexpr float pi = 3.14159265358979f;
+static constexpr auto pi = 3.14159265358979f;
+static constexpr auto white = keyleds::RGBAColor{255, 255, 255, 255};
 
 /****************************************************************************/
 
@@ -31,24 +32,14 @@ class BreateEffect final : public plugin::Effect
     using KeyGroup = KeyDatabase::KeyGroup;
 public:
     explicit BreateEffect(EffectService & service)
-     : m_buffer(service.createRenderTarget())
+     : m_period(parseDuration<milliseconds>(service.getConfig("period")).value_or(10s)),
+       m_keys(findGroup(service.keyGroups(), service.getConfig("group"))),
+       m_buffer(*service.createRenderTarget())
     {
-        auto color = RGBAColor::parse(service.getConfig("color"))
-                               .value_or(RGBAColor{255, 255, 255, 255});
-        m_alpha = color.alpha;
-        color.alpha = 0;
+        auto color = RGBAColor::parse(service.getConfig("color")).value_or(white);
+        std::swap(color.alpha, m_alpha);
 
-        const auto & groupStr = service.getConfig("group");
-        if (!groupStr.empty()) {
-            auto git = std::find_if(
-                service.keyGroups().begin(), service.keyGroups().end(),
-                [groupStr](const auto & group) { return group.name() == groupStr; });
-            if (git != service.keyGroups().end()) { m_keys = &*git; }
-        }
-
-        m_period = parseDuration<milliseconds>(service.getConfig("period")).value_or(m_period);
-
-        std::fill(m_buffer->begin(), m_buffer->end(), color);
+        std::fill(m_buffer.begin(), m_buffer.end(), color);
     }
 
     void render(milliseconds elapsed, RenderTarget & target) override
@@ -61,20 +52,31 @@ public:
         auto alpha = RGBAColor::channel_type(m_alpha * (unsigned(128.0f * alphaf) + 128) / 256);
 
         if (m_keys) {
-            for (const auto & key : *m_keys) { (*m_buffer)[key.index].alpha = alpha; }
+            for (const auto & key : *m_keys) { m_buffer[key.index].alpha = alpha; }
         } else {
-            for (auto & key : *m_buffer) { key.alpha = alpha; }
+            for (auto & key : m_buffer) { key.alpha = alpha; }
         }
-        blend(target, *m_buffer);
+        blend(target, m_buffer);
     }
 
 private:
-    RenderTarget *  m_buffer = nullptr; ///< this plugin's rendered state
-    const KeyGroup* m_keys = nullptr;   ///< what keys the effect applies to. Empty for whole keyboard.
-    uint8_t         m_alpha = 255;      ///< peak alpha value through the breathing cycle
+    static const std::optional<KeyGroup> findGroup(const std::vector<KeyGroup> & groups,
+                                                   const std::string & name)
+    {
+        if (name.empty()) { return std::nullopt; }
+        auto it = std::find_if(groups.begin(), groups.end(),
+                               [&](auto & group) { return group.name() == name; });
+        if (it == groups.end()) { return std::nullopt; }
+        return *it;
+    }
 
+private:
+    const milliseconds              m_period;   ///< total duration of a cycle
+    const std::optional<KeyGroup>   m_keys;     ///< what keys the effect applies to
+    uint8_t                         m_alpha = 0;///< peak alpha value through the breathing cycle
+
+    RenderTarget &  m_buffer;           ///< this plugin's rendered state
     milliseconds    m_time = 0ms;       ///< time since beginning of current cycle
-    milliseconds    m_period = 10000ms; ///< total duration of a cycle
 };
 
 KEYLEDSD_SIMPLE_EFFECT("breathe", BreateEffect);

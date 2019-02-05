@@ -20,6 +20,7 @@
 #include <cassert>
 #include <cmath>
 #include <cstddef>
+#include <optional>
 #include <string>
 
 using namespace std::literals::chrono_literals;
@@ -27,6 +28,7 @@ using keyleds::parseDuration;
 
 static constexpr float pi = 3.14159265358979f;
 static constexpr unsigned int accuracy = 1024;
+static constexpr auto transparent = keyleds::RGBAColor{0, 0, 0, 0};
 
 static_assert(accuracy && ((accuracy & (accuracy - 1)) == 0),
               "accuracy must be a power of two");
@@ -39,38 +41,15 @@ class WaveEffect final : public plugin::Effect
 public:
     explicit WaveEffect(EffectService & service)
      : m_service(service),
-       m_buffer(service.createRenderTarget())
+       m_period(parseDuration<milliseconds>(service.getConfig("period")).value_or(10s)),
+       m_keys(findGroup(service.keyGroups(), service.getConfig("group"))),
+       m_phases(computePhases(service.keyDB(), m_keys,
+                float(keyleds::parseNumber(service.getConfig("length")).value_or(1000)),
+                float(keyleds::parseNumber(service.getConfig("direction")).value_or(0)))),
+       m_colors(generateColorTable(parseColors(service))),
+       m_buffer(*service.createRenderTarget())
     {
-        m_period = parseDuration<milliseconds>(service.getConfig("period")).value_or(m_period);
-        m_length = static_cast<unsigned>(
-            keyleds::parseNumber(service.getConfig("length")).value_or(m_length)
-        );
-        m_direction = static_cast<unsigned>(
-            keyleds::parseNumber(service.getConfig("direction")).value_or(m_direction)
-        );
-
-        // Load color list
-        std::vector<RGBAColor> colors;
-        for (const auto & item : service.configuration()) {
-            if (item.first.rfind("color", 0) == 0) {
-                auto color = RGBAColor::parse(item.second);
-                if (color) { colors.push_back(*color); }
-            }
-        }
-        m_colors = generateColorTable(colors);
-
-        // Load key list
-        const auto & groupStr = service.getConfig("group");
-        if (!groupStr.empty()) {
-            auto git = std::find_if(
-                service.keyGroups().begin(), service.keyGroups().end(),
-                [groupStr](const auto & group) { return group.name() == groupStr; });
-            if (git != service.keyGroups().end()) { m_keys = &*git; }
-        }
-
-        // Get ready
-        computePhases(service.keyDB());
-        std::fill(m_buffer->begin(), m_buffer->end(), RGBAColor{0, 0, 0, 0});
+        std::fill(m_buffer.begin(), m_buffer.end(), transparent);
     }
 
     void render(milliseconds elapsed, RenderTarget & target) override
@@ -85,7 +64,7 @@ public:
             for (KeyGroup::size_type idx = 0; idx < m_keys->size(); ++idx) {
                 auto tphi = (t >= m_phases[idx] ? 0 : accuracy) + t - m_phases[idx];
 
-                (*m_buffer)[(*m_keys)[idx].index] = m_colors[tphi];
+                m_buffer[(*m_keys)[idx].index] = m_colors[tphi];
             }
         } else {
             const auto & keyDB = m_service.keyDB();
@@ -93,21 +72,31 @@ public:
             for (KeyDatabase::size_type idx = 0; idx < keyDB.size(); ++idx) {
                 auto tphi = (t >= m_phases[idx] ? 0 : accuracy) + t - m_phases[idx];
 
-                (*m_buffer)[keyDB[idx].index] = m_colors[tphi];
+                m_buffer[keyDB[idx].index] = m_colors[tphi];
             }
         }
-        blend(target, *m_buffer);
+        blend(target, m_buffer);
     }
 
 private:
-    void computePhases(const KeyDatabase & keyDB)
+    static const std::optional<KeyGroup> findGroup(const std::vector<KeyGroup> & groups,
+                                                   const std::string & name)
     {
-        auto frequency = 1000.0f / float(m_length);
-        auto freqX = frequency * std::sin(2.0f * pi / 360.0f * float(m_direction));
-        auto freqY = frequency * std::cos(2.0f * pi / 360.0f * float(m_direction));
-        auto bounds = keyDB.bounds();
+        if (name.empty()) { return std::nullopt; }
+        auto it = std::find_if(groups.begin(), groups.end(),
+                               [&](auto & group) { return group.name() == name; });
+        if (it == groups.end()) { return std::nullopt; }
+        return *it;
+    }
 
-        m_phases.clear();
+    static std::vector<unsigned>
+    computePhases(const KeyDatabase & keyDB, const std::optional<KeyGroup> keys,
+                  const float length, const float direction)
+    {
+        auto frequency = 1000.0f / length;
+        auto freqX = frequency * std::sin(2.0f * pi / 360.0f * direction);
+        auto freqY = frequency * std::cos(2.0f * pi / 360.0f * direction);
+        auto bounds = keyDB.bounds();
 
         auto keyPhase = [&](const auto & key) {
             auto x = (key.position.x0 + key.position.x1) / 2u;
@@ -122,13 +111,27 @@ private:
             return unsigned(phase * accuracy);
         };
 
-        if (m_keys) {
-            std::transform(m_keys->begin(), m_keys->end(),
-                           std::back_inserter(m_phases), keyPhase);
+        auto phases = std::vector<unsigned>();
+        if (keys) {
+            phases.resize(keys->size());
+            std::transform(keys->begin(), keys->end(), phases.begin(), keyPhase);
         } else {
-            std::transform(keyDB.begin(), keyDB.end(),
-                           std::back_inserter(m_phases), keyPhase);
+            phases.resize(keyDB.size());
+            std::transform(keyDB.begin(), keyDB.end(), phases.begin(), keyPhase);
         }
+        return phases;
+    }
+
+    static std::vector<RGBAColor> parseColors(const EffectService & service)
+    {
+        auto colors = std::vector<RGBAColor>();
+        for (const auto & item : service.configuration()) {
+            if (item.first.rfind("color", 0) == 0) {
+                auto color = RGBAColor::parse(item.second);
+                if (color) { colors.push_back(*color); }
+            }
+        }
+        return colors;
     }
 
     static std::vector<RGBAColor> generateColorTable(const std::vector<RGBAColor> & colors)
@@ -156,17 +159,15 @@ private:
     }
 
 private:
-    const EffectService &   m_service;
-    RenderTarget *          m_buffer = nullptr; ///< this plugin's rendered state
-    const KeyGroup *        m_keys = nullptr;   ///< what keys the effect applies to.
-    std::vector<unsigned>   m_phases;           ///< one per key in m_keys or one per key in m_buffer.
+    const EffectService &           m_service;
+    const milliseconds              m_period;   ///< total duration of a cycle.
+    const std::optional<KeyGroup>   m_keys;     ///< what keys the effect applies to.
+    const std::vector<unsigned>     m_phases;   ///< one per key in m_keys or one per key in m_buffer.
                                                 ///< From 0 (no phase shift) to 1000 (2*pi shift)
-    std::vector<RGBAColor>  m_colors;           ///< pre-computed color samples.
+    const std::vector<RGBAColor>    m_colors;   ///< pre-computed color samples.
 
-    milliseconds        m_time = 0ms;           ///< time since beginning of current cycle.
-    milliseconds        m_period = 10000ms;     ///< total duration of a cycle.
-    unsigned            m_length = 1000;        ///< wave length, in keyboard 1000th.
-    unsigned            m_direction = 0;        ///< wave propagation direction (0 for North).
+    RenderTarget &                  m_buffer;   ///< this plugin's rendered state
+    milliseconds                    m_time = 0ms; ///< time since beginning of current cycle.
 };
 
 /****************************************************************************/

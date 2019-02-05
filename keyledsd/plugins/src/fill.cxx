@@ -19,29 +19,40 @@
 #include <algorithm>
 #include <vector>
 
+static constexpr auto transparent = keyleds::RGBAColor{0, 0, 0, 0};
+
 /****************************************************************************/
 
 class FillEffect final : public plugin::Effect
 {
-    using KeyGroup = KeyDatabase::KeyGroup;
-
-    class Rule final
+    struct Rule final
     {
-    public:
-                            Rule(KeyGroup keys, RGBAColor color)
-                            : m_keys(std::move(keys)), m_color(color) {}
-        const KeyGroup &    keys() const { return m_keys; }
-        const RGBAColor &   color() const { return m_color; }
-    private:
-        KeyGroup            m_keys;
-        RGBAColor           m_color;
+        KeyDatabase::KeyGroup   keys;
+        RGBAColor               color;
     };
 
 public:
     explicit FillEffect(EffectService & service)
-    {
-        m_fill = RGBAColor::parse(service.getConfig("color")).value_or(m_fill);
+     : m_fill(RGBAColor::parse(service.getConfig("color")).value_or(transparent)),
+       m_rules(buildRules(service))
+    {}
 
+    void render(milliseconds, RenderTarget & target) override
+    {
+        if (m_fill.alpha > 0) {
+            std::fill(target.begin(), target.end(), m_fill);
+        }
+        for (const auto & rule : m_rules) {
+            for (const auto & key : rule.keys) {
+                target[key.index] = rule.color;
+            }
+        }
+    }
+
+private:
+    static std::vector<Rule> buildRules(const EffectService & service)
+    {
+        auto rules = std::vector<Rule>();
         for (const auto & item : service.configuration()) {
             if (item.first == "color") { continue; }
             auto git = std::find_if(
@@ -51,25 +62,14 @@ public:
             if (git == service.keyGroups().end()) { continue; }
 
             auto color = RGBAColor::parse(item.second);
-            if (color) { m_rules.emplace_back(*git, *color); }
+            if (color) { rules.push_back({*git, *color}); }
         }
-    }
-
-    void render(milliseconds, RenderTarget & target) override
-    {
-        if (m_fill.alpha > 0) {
-            std::fill(target.begin(), target.end(), m_fill);
-        }
-        for (const auto & rule : m_rules) {
-            for (const auto & key : rule.keys()) {
-                target[key.index] = rule.color();
-            }
-        }
+        return rules;
     }
 
 private:
-    RGBAColor           m_fill = {0, 0, 0, 0};  ///< fill whole target before applying rules
-    std::vector<Rule>   m_rules;                ///< each rule maps a key group to a color
+    const RGBAColor         m_fill;     ///< fill whole target before applying rules
+    const std::vector<Rule> m_rules;    ///< each rule maps a key group to a color
 };
 
 KEYLEDSD_SIMPLE_EFFECT("fill", FillEffect);

@@ -22,6 +22,9 @@
 using namespace std::literals::chrono_literals;
 using keyleds::parseDuration;
 
+static constexpr auto transparent = keyleds::RGBAColor{0, 0, 0, 0};
+static constexpr auto white = keyleds::RGBAColor{255, 255, 255, 255};
+
 /****************************************************************************/
 
 class FeedbackEffect final : public plugin::Effect
@@ -34,14 +37,12 @@ class FeedbackEffect final : public plugin::Effect
 
 public:
     explicit FeedbackEffect(EffectService & service)
-     : m_buffer(service.createRenderTarget())
+     : m_color(RGBAColor::parse(service.getConfig("color")).value_or(white)),
+       m_sustain(parseDuration<milliseconds>(service.getConfig("sustain")).value_or(750ms)),
+       m_decay(parseDuration<milliseconds>(service.getConfig("decay")).value_or(500ms)),
+       m_buffer(*service.createRenderTarget())
     {
-        m_color = RGBAColor::parse(service.getConfig("color")).value_or(m_color);
-        m_sustain = parseDuration<milliseconds>(service.getConfig("sustain")).value_or(m_sustain);
-        m_decay = parseDuration<milliseconds>(service.getConfig("decay")).value_or(m_decay);
-
-        // Get ready
-        std::fill(m_buffer->begin(), m_buffer->end(), RGBAColor{0, 0, 0, 0});
+        std::fill(m_buffer.begin(), m_buffer.end(), transparent);
     }
 
     void render(milliseconds elapsed, RenderTarget & target) override
@@ -51,7 +52,7 @@ public:
         for (auto & keyPress : m_presses) {
             keyPress.age += elapsed;
             if (keyPress.age > lifetime) { keyPress.age = lifetime; }
-            (*m_buffer)[keyPress.key->index] = RGBAColor(
+            m_buffer[keyPress.key->index] = RGBAColor(
                 m_color.red,
                 m_color.green,
                 m_color.blue,
@@ -65,7 +66,7 @@ public:
                            [lifetime](const auto & keyPress){ return keyPress.age >= lifetime; }),
             m_presses.end()
         );
-        blend(target, *m_buffer);
+        blend(target, m_buffer);
     }
 
     void handleKeyEvent(const KeyDatabase::Key & key, bool) override
@@ -80,12 +81,12 @@ public:
     }
 
 private:
-    RenderTarget *      m_buffer = nullptr; ///< this plugin's rendered state
+    const RGBAColor     m_color;        ///< color taken by keys on keypress
+    const milliseconds  m_sustain;      ///< how long key remains at full color
+    const milliseconds  m_decay;        ///< how long it takes for keys to fade out
 
-    RGBAColor           m_color = {255, 255, 255, 255}; ///< color taken by keys on keypress
-    milliseconds        m_sustain = 750ms;  ///< how long key remains at full color
-    milliseconds        m_decay = 500ms;    ///< how long it takes for keys to fade out
-    std::vector<KeyPress> m_presses;        ///< list of recent keypresses still drawn
+    RenderTarget &      m_buffer;       ///< this plugin's rendered state
+    std::vector<KeyPress> m_presses;    ///< list of recent keypresses still drawn
 };
 
 KEYLEDSD_SIMPLE_EFFECT("feedback", FeedbackEffect);

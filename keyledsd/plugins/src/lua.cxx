@@ -54,8 +54,7 @@ public:
 
         if (!info.effect) { return nullptr; }
 
-        m_states.push_back(std::move(info));
-        return m_states.back().effect.get();
+        return m_states.emplace_back(std::move(info)).effect.get();
     }
 
     void destroyEffect(keyleds::effect::interface::Effect * ptr, EffectService &) override

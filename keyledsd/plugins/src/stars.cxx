@@ -17,11 +17,14 @@
 #include "keyledsd/PluginHelper.h"
 #include "keyledsd/utils.h"
 #include <algorithm>
+#include <optional>
 #include <random>
 #include <vector>
 
 using namespace std::literals::chrono_literals;
 using keyleds::parseDuration;
+
+static constexpr auto transparent = keyleds::RGBAColor{0, 0, 0, 0};
 
 /****************************************************************************/
 
@@ -39,32 +42,16 @@ class StarsEffect final : public plugin::Effect
 public:
     explicit StarsEffect(EffectService & service)
      : m_service(service),
-       m_buffer(service.createRenderTarget())
+       m_colors(parseColors(service)),
+       m_duration(parseDuration<milliseconds>(service.getConfig("duration")).value_or(1s)),
+       m_keys(findGroup(service.keyGroups(), service.getConfig("group"))),
+       m_buffer(*service.createRenderTarget())
     {
-        m_duration = parseDuration<milliseconds>(service.getConfig("duration")).value_or(m_duration);
-
         auto number = keyleds::parseNumber(service.getConfig("number")).value_or(8);
         m_stars.resize(number);
 
-        // Load color list
-        for (const auto & item : service.configuration()) {
-            if (item.first.rfind("color", 0) == 0) {
-                auto color = RGBAColor::parse(item.second);
-                if (color) { m_colors.push_back(*color); }
-            }
-        }
-
-        // Load key list
-        const auto & groupStr = service.getConfig("group");
-        if (!groupStr.empty()) {
-            auto git = std::find_if(
-                service.keyGroups().begin(), service.keyGroups().end(),
-                [groupStr](const auto & group) { return group.name() == groupStr; });
-            if (git != service.keyGroups().end()) { m_keys = &*git; }
-        }
-
         // Get ready
-        std::fill(m_buffer->begin(), m_buffer->end(), RGBAColor{0, 0, 0, 0});
+        std::fill(m_buffer.begin(), m_buffer.end(), transparent);
 
         for (std::size_t idx = 0; idx < m_stars.size(); ++idx) {
             auto & star = m_stars[idx];
@@ -73,12 +60,34 @@ public:
         }
     }
 
+    static std::vector<RGBAColor> parseColors(const EffectService & service)
+    {
+        auto colors = std::vector<RGBAColor>();
+        for (const auto & item : service.configuration()) {
+            if (item.first.rfind("color", 0) == 0) {
+                auto color = RGBAColor::parse(item.second);
+                if (color) { colors.push_back(*color); }
+            }
+        }
+        return colors;
+    }
+
+    static const std::optional<KeyGroup> findGroup(const std::vector<KeyGroup> & groups,
+                                                   const std::string & name)
+    {
+        if (name.empty()) { return std::nullopt; }
+        auto it = std::find_if(groups.begin(), groups.end(),
+                               [&](auto & group) { return group.name() == name; });
+        if (it == groups.end()) { return std::nullopt; }
+        return *it;
+    }
+
     void render(milliseconds elapsed, RenderTarget & target) override
     {
         for (auto & star : m_stars) {
             star.age += elapsed;
             if (star.age >= m_duration) { rebirth(star); }
-            (*m_buffer)[star.key->index] = RGBAColor(
+            m_buffer[star.key->index] = RGBAColor(
                 star.color.red,
                 star.color.green,
                 star.color.blue,
@@ -86,13 +95,13 @@ public:
             );
         }
 
-        blend(target, *m_buffer);
+        blend(target, m_buffer);
     }
 
     void rebirth(Star & star)
     {
         if (star.key != nullptr) {
-            (*m_buffer)[star.key->index] = RGBAColor{0, 0, 0, 0};
+            m_buffer[star.key->index] = transparent;
         }
         if (m_keys) {
             using distribution = std::uniform_int_distribution<KeyGroup::size_type>;
@@ -118,14 +127,13 @@ public:
 
 
 private:
-    const EffectService &   m_service;
-    RenderTarget *          m_buffer = nullptr; ///< this plugin's rendered state
+    const EffectService &           m_service;
+    const std::vector<RGBAColor>    m_colors;   ///< list of colors to choose from
+    const milliseconds              m_duration; ///< how long stars stay alive
+    const std::optional<KeyGroup>   m_keys;     ///< what keys the effect applies to.
+
+    RenderTarget &          m_buffer;           ///< this plugin's rendered state
     std::minstd_rand        m_random;           ///< picks stars when they are reborn
-
-    milliseconds            m_duration = 1000ms;///< how long stars stay alive
-    std::vector<RGBAColor>  m_colors;           ///< list of colors to choose from
-    const KeyGroup *        m_keys = nullptr;   ///< what keys the effect applies to.
-
     std::vector<Star>       m_stars;            ///< all the star objects
 };
 
