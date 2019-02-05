@@ -90,7 +90,7 @@ private:
     }
 
     static std::vector<unsigned>
-    computePhases(const KeyDatabase & keyDB, const std::optional<KeyGroup> keys,
+    computePhases(const KeyDatabase & keyDB, const std::optional<KeyGroup> & keys,
                   const float length, const float direction)
     {
         auto frequency = 1000.0f / length;
