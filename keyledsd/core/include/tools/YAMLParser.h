@@ -29,6 +29,7 @@
 #include <iosfwd>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 
 namespace tools {
 
@@ -70,13 +71,13 @@ protected:
     virtual void    streamEnd() = 0;
     virtual void    documentStart() = 0;
     virtual void    documentEnd() = 0;
-    virtual void    sequenceStart(const std::string & tag, const std::string & anchor) = 0;
+    virtual void    sequenceStart(std::string_view tag, std::string_view anchor) = 0;
     virtual void    sequenceEnd() = 0;
-    virtual void    mappingStart(const std::string & tag, const std::string & anchor) = 0;
+    virtual void    mappingStart(std::string_view tag, std::string_view anchor) = 0;
     virtual void    mappingEnd() = 0;
-    virtual void    alias(const std::string & anchor) = 0;
-    virtual void    scalar(const std::string & value, const std::string & tag,
-                           const std::string & anchor) = 0;
+    virtual void    alias(std::string_view anchor) = 0;
+    virtual void    scalar(std::string_view value, std::string_view tag,
+                           std::string_view anchor) = 0;
 
     /// Builds a ParseError using internal state to set file position of the error
     ParseError      makeError(const std::string & what) const

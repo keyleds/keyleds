@@ -101,9 +101,14 @@ private:
     bool            m_hasEvent = false;     ///< Set when @ref event holds an event
 };
 
-static const char * toStr(const yaml_char_t * str) {
-    if (str == nullptr) { return ""; }
-    return reinterpret_cast<const char *>(str);
+static std::string_view toStr(const yaml_char_t * str) {
+    return str ? std::string_view(reinterpret_cast<const char *>(str))
+               : std::string_view();
+}
+
+static std::string_view toStr(const yaml_char_t * str, std::size_t size) {
+    return size > 0 ? std::string_view(reinterpret_cast<const char *>(str))
+                    : std::string_view();
 }
 
 /****************************************************************************/
@@ -143,8 +148,7 @@ void YAMLParser::parse(std::istream & stream)
         }
         case YAML_SCALAR_EVENT: {
             const auto & data = parser.event.data.scalar;
-            scalar(std::string(toStr(data.value), data.length),
-                   toStr(data.tag), toStr(data.anchor));
+            scalar(toStr(data.value, data.length), toStr(data.tag), toStr(data.anchor));
             break;
         }
         default:
