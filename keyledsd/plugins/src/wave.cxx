@@ -44,7 +44,7 @@ public:
        m_period(parseDuration<milliseconds>(service.getConfig("period")).value_or(10s)),
        m_keys(findGroup(service.keyGroups(), service.getConfig("group"))),
        m_phases(computePhases(service.keyDB(), m_keys,
-                float(keyleds::parseNumber(service.getConfig("length")).value_or(1000)),
+                keyleds::parseNumber(service.getConfig("length")).value_or(1000u),
                 float(keyleds::parseNumber(service.getConfig("direction")).value_or(0)))),
        m_colors(generateColorTable(parseColors(service))),
        m_buffer(*service.createRenderTarget())
@@ -91,11 +91,14 @@ private:
 
     static std::vector<unsigned>
     computePhases(const KeyDatabase & keyDB, const std::optional<KeyGroup> & keys,
-                  const float length, const float direction)
+                  const unsigned long length, const float direction)
     {
-        auto frequency = 1000.0f / length;
-        auto freqX = frequency * std::sin(2.0f * pi / 360.0f * direction);
-        auto freqY = frequency * std::cos(2.0f * pi / 360.0f * direction);
+        auto freqX = length > 0
+                   ? 1000.0f / float(length) * std::sin(2.0f * pi / 360.0f * direction)
+                   : 0.0f;
+        auto freqY = length > 0
+                   ? 1000.0f / float(length) * std::cos(2.0f * pi / 360.0f * direction)
+                   : 0.0f;
         auto bounds = keyDB.bounds();
 
         auto keyPhase = [&](const auto & key) {
