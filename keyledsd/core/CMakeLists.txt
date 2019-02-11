@@ -51,10 +51,6 @@ IF(NOT LIBYAML)
 ENDIF(NOT LIBYAML)
 set(core_DEPS ${core_DEPS} ${LIBYAML})
 
-find_package(LibXml2 REQUIRED)
-include_directories(${LIBXML2_INCLUDE_DIR})
-set(core_DEPS ${core_DEPS} ${LIBXML2_LIBRARIES})
-
 find_package(X11)
 include_directories(${X11_Xlib_INCLUDE_PATH} ${X11_Xinput_INCLUDE_PATH})
 set(core_DEPS ${core_DEPS} ${X11_LIBRARIES} ${X11_Xinput_LIB})

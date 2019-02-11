@@ -16,7 +16,7 @@ License: GPL-3.0+
 Group: Applications/System
 Source: https://github.com/spectras/keyleds/archive/v%{version}/%{name}-%{version}.tar.gz
 URL: https://github.com/spectras/keyleds
-BuildRequires: cmake, make, gcc, gcc-c++, libudev-devel, libuv-devel, libxml2-devel, libyaml-devel, libX11-devel, libXi-devel, systemd-devel
+BuildRequires: cmake, make, gcc, gcc-c++, libudev-devel, libuv-devel, libyaml-devel, libX11-devel, libXi-devel, systemd-devel
 %if 0%{?suse_version}
 BuildRequires: lua51-luajit-devel
 %else

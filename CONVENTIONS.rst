@@ -15,7 +15,7 @@ All source files have a mandatory suffix, whhich is:
     * ``.cxx`` for C++ source code.
     * ``.h`` for header files (both C and C++).
     * ``.rst`` for ReStructured Text files.
-    * ``.xml`` for XML data file distributed with project's binaries.
+    * ``.yaml`` for YAML data file distributed with project's binaries.
 
 To encourage abstraction, headers are kept apart from their implementation,
 having an ``include`` and ``src`` root, respectively.

@@ -19,242 +19,354 @@
 #include "config.h"
 #include "logging.h"
 #include "tools/Paths.h"
+#include "tools/YAMLParser.h"
 #include <algorithm>
-#include <cstddef>
-#include <cstring>
+#include <cerrno>
 #include <fstream>
 #include <istream>
-#include <libxml/parser.h>
-#include <libxml/tree.h>
 #include <limits>
-#include <memory>
 #include <sstream>
+#include <system_error>
 
 LOGGING("layout");
 
 using keyleds::LayoutDescription;
 
 /****************************************************************************/
+/** Builder class that creates a LayoutDescription object from a YAML file.
+ *
+ * It uses a variant of the State pattern where state gets pushed onto a stack
+ * when entering a collection and popped back when exiting. Each state class
+ * represent a type of object that can appear in the layout description file, and
+ * knows how to interpret sub-items.
+ */
+class LayoutDescriptionParser final : public tools::StackYAMLParser
+{
+    class SpuriousState;
+    class SpuriousListState;
+    class KeyState;
+    class KeyListState;
+    class KeyboardState;
+    class KeyboardListState;
+    class RootState;
+    class InitialState;
+public:
+    LayoutDescriptionParser();
+    LayoutDescription & result();
 
-using xmlString = std::unique_ptr<xmlChar[], void(*)(void *)>;
+    using StackYAMLParser::parse;
 
-static constexpr xmlChar SPURIOUS_TAG[] = "spurious";
-static constexpr xmlChar KEYBOARD_TAG[] = "keyboard";
-static constexpr xmlChar ROW_TAG[] = "row";
-static constexpr xmlChar KEY_TAG[] = "key";
+private:
+    unsigned long parseUInt(std::string_view str, unsigned long minimum, unsigned long maximum)
+    {
+        auto nullTerminated = std::string(str.data(), str.size());
+        char * endPtr = nullptr;
 
-static constexpr xmlChar ROOT_ATTR_NAME[] = "layout";
-static constexpr xmlChar KEYBOARD_ATTR_X[] = "x";
-static constexpr xmlChar KEYBOARD_ATTR_Y[] = "y";
-static constexpr xmlChar KEYBOARD_ATTR_WIDTH[] = "width";
-static constexpr xmlChar KEYBOARD_ATTR_HEIGHT[] = "height";
-static constexpr xmlChar KEYBOARD_ATTR_ZONE[] = "zone";
-static constexpr xmlChar KEY_ATTR_CODE[] = "code";
-static constexpr xmlChar KEY_ATTR_GLYPH[] = "glyph";
-static constexpr xmlChar KEY_ATTR_WIDTH[] = "width";
+        auto value = ::strtoul(nullTerminated.c_str(), &endPtr, 0);
+        if (*endPtr != '\0') { throw makeError("expected an integer"); }
+        if (value < minimum || maximum < value) {
+            std::ostringstream buffer;
+            buffer <<"value must be between " <<minimum <<" and " <<maximum;
+            throw makeError(buffer.str());
+        }
+        return value;
+    }
+
+    template <typename T, T minimum = std::numeric_limits<T>::min(),
+                          T maximum = std::numeric_limits<T>::max()>
+    T parse(std::string_view str)
+    {
+        static_assert(std::numeric_limits<unsigned long>::min() <= minimum);
+        static_assert(std::numeric_limits<unsigned long>::min() <= maximum);
+        static_assert(std::numeric_limits<unsigned long>::max() >= minimum);
+        static_assert(std::numeric_limits<unsigned long>::max() >= maximum);
+        auto value = parseUInt(str, minimum, maximum);
+        return T(value);
+    }
+};
+
+
 
 /****************************************************************************/
 
-static void hideErrorFunc(void *, xmlErrorPtr) {}
-
-static unsigned parseUInt(xmlNode * node, const xmlChar * name, int base)
+class LayoutDescriptionParser::SpuriousState final : public MappingState
 {
-    xmlString valueStr(xmlGetProp(node, name), xmlFree);
-    if (valueStr == nullptr) {
-        std::ostringstream errMsg;
-        errMsg <<"Element '" <<node->name <<"' misses a '" <<name <<"' attribute";
-        throw LayoutDescription::ParseError(errMsg.str(), xmlGetLineNo(node));
+    using value_type = std::pair<LayoutDescription::block_type, LayoutDescription::code_type>;
+public:
+    void print(std::ostream & out) const override { out <<"spurious"; }
+
+    void scalarEntry(StackYAMLParser & parser, std::string_view key,
+                     std::string_view value, std::string_view anchor) override
+    {
+        auto & layoutParser = parser.as<LayoutDescriptionParser>();
+        if (key == "zone") { m_zone = layoutParser.parse<LayoutDescription::block_type>(value); }
+        else if (key == "code") { m_code = layoutParser.parse<LayoutDescription::code_type>(value); }
+        else { MappingState::scalarEntry(parser, key, value, anchor); }
     }
-    char * strEnd;
-    auto valueUInt = std::strtoul(reinterpret_cast<char*>(valueStr.get()), &strEnd, base);
-    if (*strEnd != '\0') {
-        std::ostringstream errMsg;
-        errMsg <<"Value '" <<valueStr.get() <<"' in attribute '" <<name <<"' of '"
-               <<node->name <<"' element cannot be parsed as an integer";
-        throw LayoutDescription::ParseError(errMsg.str(), xmlGetLineNo(node));
+
+    value_type result(LayoutDescriptionParser & parser) {
+        if (!m_zone) { throw parser.makeError("missing zone in spurious entry"); }
+        if (!m_code)  { throw parser.makeError("missing code in spurious entry"); }
+        return { *m_zone, *m_code };
     }
-    if (valueUInt > std::numeric_limits<unsigned>::max()) {
-        std::ostringstream errMsg;
-        errMsg <<"Value '" <<valueStr.get() <<"' in attribute '" <<name <<"' of '"
-               <<node->name <<"' is too large";
-        throw LayoutDescription::ParseError(errMsg.str(), xmlGetLineNo(node));
+
+private:
+    std::optional<LayoutDescription::block_type>    m_zone;
+    std::optional<LayoutDescription::code_type>     m_code;
+};
+
+
+class LayoutDescriptionParser::SpuriousListState : public State
+{
+    using value_type = LayoutDescription::pos_list;
+public:
+    void print(std::ostream & out) const override { out <<"spurious-list"; }
+
+    std::unique_ptr<State> mappingStart(StackYAMLParser &, std::string_view) final override {
+        return std::make_unique<SpuriousState>();
     }
-    return static_cast<unsigned>(valueUInt);
+
+    void subStateEnd(StackYAMLParser & parser, State & state) final override
+    {
+        m_value.emplace_back(state.as<SpuriousState>().result(parser.as<LayoutDescriptionParser>()));
+    }
+
+    value_type && result() { return std::move(m_value); }
+
+private:
+    value_type  m_value;
+};
+
+
+class LayoutDescriptionParser::KeyState : public MappingState
+{
+    using value_type = LayoutDescription::Key;
+public:
+    void print(std::ostream & out) const override { out <<"key"; }
+
+    void scalarEntry(StackYAMLParser & parser, std::string_view key,
+                     std::string_view value, std::string_view anchor) override
+    {
+        auto & layoutParser = parser.as<LayoutDescriptionParser>();
+        if (key == "code") { m_code = layoutParser.parse<LayoutDescription::code_type>(value); }
+        else if (key == "x") { m_x = layoutParser.parse<unsigned>(value); }
+        else if (key == "y") { m_y = layoutParser.parse<unsigned>(value); }
+        else if (key == "width") { m_width = layoutParser.parse<unsigned>(value); }
+        else if (key == "height") { m_height = layoutParser.parse<unsigned>(value); }
+        else if (key == "glyph") {
+            m_name.resize(value.size());
+            std::transform(value.begin(), value.end(), m_name.begin(), ::toupper);
+        }
+        else { MappingState::scalarEntry(parser, key, value, anchor); }
+    }
+
+    value_type result(LayoutDescriptionParser & parser) {
+        if (!m_code)       { throw parser.makeError("missing code in key entry"); }
+        if (m_x == 0)      { throw parser.makeError("missing x value in key entry"); }
+        if (m_y == 0)      { throw parser.makeError("missing y value in key entry"); }
+        if (m_width == 0)  { throw parser.makeError("missing width in key entry"); }
+        if (m_height == 0) { throw parser.makeError("missing height in key entry"); }
+        return {
+            0, *m_code,
+            {m_x, m_y, m_x + m_width, m_y + m_height},
+            m_name
+        };
+    }
+
+private:
+    std::optional<LayoutDescription::code_type> m_code;
+    unsigned    m_x = 0, m_y = 0, m_width = 0, m_height = 0;
+    std::string m_name;
+};
+
+
+class LayoutDescriptionParser::KeyListState : public State
+{
+    using value_type = LayoutDescription::key_list;
+public:
+    void print(std::ostream & out) const override { out <<"key-list"; }
+
+    std::unique_ptr<State> mappingStart(StackYAMLParser &, std::string_view) final override {
+        return std::make_unique<KeyState>();
+    }
+
+    void subStateEnd(StackYAMLParser & parser, State & state) final override
+    {
+        m_value.emplace_back(state.as<KeyState>().result(parser.as<LayoutDescriptionParser>()));
+    }
+
+    value_type && result() { return std::move(m_value); }
+
+private:
+    value_type  m_value;
+};
+
+
+class LayoutDescriptionParser::KeyboardState final : public MappingState
+{
+    using value_type = LayoutDescription::key_list;
+public:
+    void print(std::ostream & out) const override { out <<"keyboard"; }
+
+    void scalarEntry(StackYAMLParser & parser, std::string_view key,
+                     std::string_view value, std::string_view anchor) override
+    {
+        auto & layoutParser = parser.as<LayoutDescriptionParser>();
+        if (key == "zone") { m_zone = layoutParser.parse<LayoutDescription::block_type>(value); }
+        else { MappingState::scalarEntry(parser, key, value, anchor); }
+    }
+
+    std::unique_ptr<State>
+    sequenceEntry(StackYAMLParser & parser, std::string_view key, std::string_view anchor) final override {
+        if (key == "keys") { return std::make_unique<KeyListState>(); }
+        return MappingState::sequenceEntry(parser, key, anchor);
+    }
+
+    void subStateEnd(StackYAMLParser & parser, State & state) final override
+    {
+        m_value = state.as<KeyListState>().result();
+        MappingState::subStateEnd(parser, state);
+    }
+
+    value_type && result() {
+        std::for_each(m_value.begin(), m_value.end(),
+                      [zone=m_zone](auto & key) { key.block = zone; });
+        return std::move(m_value);
+    }
+
+private:
+    LayoutDescription::block_type   m_zone = 1;
+    value_type                      m_value;
+};
+
+
+class LayoutDescriptionParser::KeyboardListState : public State
+{
+    using value_type = LayoutDescription::key_list;
+public:
+    void print(std::ostream & out) const override { out <<"keyboard-list"; }
+
+    std::unique_ptr<State> mappingStart(StackYAMLParser &, std::string_view) final override {
+        return std::make_unique<KeyboardState>();
+    }
+
+    void subStateEnd(StackYAMLParser &, State & state) final override
+    {
+        auto result = state.as<KeyboardState>().result();
+        m_value.reserve(m_value.size() + result.size());
+        std::move(result.begin(), result.end(), std::back_inserter(m_value));
+    }
+
+    value_type && result() { return std::move(m_value); }
+
+private:
+    value_type  m_value;
+};
+
+
+class LayoutDescriptionParser::RootState final : public MappingState
+{
+    enum class SubState { Spurious, Keyboards };
+public:
+    using value_type = LayoutDescription;
+public:
+    void print(std::ostream & out) const override { out <<"root"; }
+
+    std::unique_ptr<State>
+    sequenceEntry(StackYAMLParser & parser, std::string_view key, std::string_view anchor) override
+    {
+        if (key == "spurious") {
+            m_currentSubState = SubState::Spurious;
+            return std::make_unique<SpuriousListState>();
+        }
+        if (key == "keyboards") {
+            m_currentSubState = SubState::Keyboards;
+            return std::make_unique<KeyboardListState>();
+        }
+        return MappingState::sequenceEntry(parser, key, anchor);
+    }
+
+    void scalarEntry(StackYAMLParser & parser, std::string_view key,
+                     std::string_view value, std::string_view anchor) override
+    {
+        if (key == "layout") { m_value.name = std::string(value); }
+        else { MappingState::scalarEntry(parser, key, value, anchor); }
+    }
+
+    void subStateEnd(StackYAMLParser & parser, State & state) override
+    {
+        switch (m_currentSubState) {
+        case SubState::Spurious:
+            m_value.spurious = state.as<SpuriousListState>().result();
+            break;
+        case SubState::Keyboards:
+            m_value.keys = state.as<KeyboardListState>().result();
+            break;
+        }
+        MappingState::subStateEnd(parser, state);
+    }
+
+    value_type && result() { return std::move(m_value); }
+
+private:
+    value_type  m_value;
+    SubState    m_currentSubState;
+};
+
+
+class LayoutDescriptionParser::InitialState final : public State
+{
+    using value_type = LayoutDescription;
+public:
+    void print(std::ostream &) const override { }
+
+    std::unique_ptr<State> mappingStart(StackYAMLParser &, std::string_view) override
+    {
+        return std::make_unique<RootState>();
+    }
+
+    void subStateEnd(StackYAMLParser &, State & state) override
+    {
+        m_value = state.as<RootState>().result();
+    }
+
+    value_type & result() { return m_value; }
+
+private:
+    value_type  m_value;
+};
+
+/****************************************************************************/
+
+LayoutDescriptionParser::LayoutDescriptionParser()
+ : StackYAMLParser(std::make_unique<InitialState>())
+{
 }
 
-/****************************************************************************/
-
-static void parseKeyboard(xmlNode * keyboard, LayoutDescription::key_list & keys)
+LayoutDescription & LayoutDescriptionParser::result()
 {
-    char * strEnd;
-    unsigned kbX = parseUInt(keyboard, KEYBOARD_ATTR_X, 10);
-    unsigned kbY = parseUInt(keyboard, KEYBOARD_ATTR_Y, 10);
-    unsigned kbWidth = parseUInt(keyboard, KEYBOARD_ATTR_WIDTH, 10);
-    unsigned kbHeight = parseUInt(keyboard, KEYBOARD_ATTR_HEIGHT, 10);
-    unsigned kbZone = parseUInt(keyboard, KEYBOARD_ATTR_ZONE, 0);
-
-    unsigned nbRows = 0;
-    for (const xmlNode * row = keyboard->children; row != nullptr; row = row->next) {
-        if (row->type == XML_ELEMENT_NODE || xmlStrcmp(row->name, ROW_TAG) == 0) { nbRows += 1; }
-    }
-
-    unsigned rowIdx = 0;
-    for (const xmlNode * row = keyboard->children; row != nullptr; row = row->next) {
-        if (row->type != XML_ELEMENT_NODE || xmlStrcmp(row->name, ROW_TAG) != 0) { continue; }
-
-        unsigned totalWidth = 0;
-        for (xmlNode * key = row->children; key != nullptr; key = key->next) {
-            if (key->type != XML_ELEMENT_NODE || xmlStrcmp(key->name, KEY_TAG) != 0) { continue; }
-            xmlString keyWidthStr(xmlGetProp(key, KEY_ATTR_WIDTH), xmlFree);
-            if (keyWidthStr != nullptr) {
-                auto keyWidthFloat = ::strtof(reinterpret_cast<char *>(keyWidthStr.get()), &strEnd);
-                if (*strEnd != '\0') {
-                    std::ostringstream errMsg;
-                    errMsg <<"Value '" <<keyWidthStr.get() <<"' in attribute '"
-                           <<KEY_ATTR_WIDTH <<"' of '" <<KEY_TAG
-                           <<"' element cannot be parsed as a float";
-                    throw LayoutDescription::ParseError(errMsg.str(), xmlGetLineNo(key));
-                }
-                totalWidth += static_cast<unsigned int>(keyWidthFloat * 1000);
-            } else {
-                totalWidth += 1000u;
-            }
-        }
-
-        unsigned xOffset = 0;
-        for (xmlNode * key = row->children; key != nullptr; key = key->next) {
-            if (key->type != XML_ELEMENT_NODE || xmlStrcmp(key->name, KEY_TAG) != 0) { continue; }
-            xmlString code(xmlGetProp(key, KEY_ATTR_CODE), xmlFree);
-            xmlString glyph(xmlGetProp(key, KEY_ATTR_GLYPH), xmlFree);
-            xmlString keyWidthStr(xmlGetProp(key, KEY_ATTR_WIDTH), xmlFree);
-
-            unsigned keyWidth;
-            if (keyWidthStr != nullptr) {
-                auto keyWidthFloat = ::strtof(reinterpret_cast<char*>(keyWidthStr.get()), &strEnd);
-                keyWidth = kbWidth
-                         * static_cast<unsigned int>(keyWidthFloat * 1000)
-                         / totalWidth;
-            } else {
-                keyWidth = kbWidth * 1000 / totalWidth;
-            }
-
-            if (code != nullptr) {
-                unsigned codeVal = parseUInt(key, KEY_ATTR_CODE, 0);
-                auto codeNameStr = glyph != nullptr ? std::string(reinterpret_cast<char *>(glyph.get()))
-                                                    : std::string();
-                std::transform(codeNameStr.begin(), codeNameStr.end(), codeNameStr.begin(), ::toupper);
-
-                keys.push_back({
-                    kbZone,
-                    codeVal,
-                    LayoutDescription::Rect {
-                        kbX + xOffset,
-                        kbY + rowIdx * (kbHeight / nbRows),
-                        kbX + xOffset + keyWidth - 1,
-                        kbY + (rowIdx + 1) * (kbHeight / nbRows) - 1
-                    },
-                    codeNameStr
-                });
-            }
-            xOffset += keyWidth;
-        }
-        rowIdx += 1;
-    }
+    return finalState<InitialState>().result();
 }
-
-/****************************************************************************/
 
 LayoutDescription LayoutDescription::parse(std::istream & stream)
 {
-    // Parser context
-    std::unique_ptr<xmlParserCtxt, void(*)(xmlParserCtxtPtr)> context(
-        xmlNewParserCtxt(), xmlFreeParserCtxt
-    );
-    if (context == nullptr) {
-        throw std::runtime_error("Failed to initialize libxml");
+    auto parser = LayoutDescriptionParser();
+    try {
+        parser.parse(stream);
+    } catch (LayoutDescriptionParser::ParseError & error) {
+        throw ParseError(error.what());
     }
-    xmlSetStructuredErrorFunc(context.get(), hideErrorFunc);
-
-    // Document
-    std::ostringstream bufferStream;
-    bufferStream << stream.rdbuf();
-
-    auto buffer = bufferStream.str();
-    if (buffer.size() > std::numeric_limits<int>::max()) {
-        throw std::runtime_error("Description file too large");
-    }
-    std::unique_ptr<xmlDoc, void(*)(xmlDocPtr)> document(
-        xmlCtxtReadMemory(context.get(), buffer.data(), static_cast<int>(buffer.size()),
-                          nullptr, nullptr, XML_PARSE_NOWARNING | XML_PARSE_NONET),
-        xmlFreeDoc
-    );
-    if (document == nullptr) {
-        auto error = xmlCtxtGetLastError(context.get());
-        if (error == nullptr) { throw ParseError("empty file", 1); }
-        std::string errMsg(error->message);
-        errMsg.erase(errMsg.find_last_not_of(" \r\n") + 1);
-        throw ParseError(errMsg, error->line);
-    }
-
-    // Scan top-level nodes
-    xmlNode * const root = xmlDocGetRootElement(document.get());
-    auto name = xmlString(xmlGetProp(root, ROOT_ATTR_NAME), xmlFree);
-
-    key_list keys;
-    pos_list spurious;
-    for (xmlNode * node = root->children; node != nullptr; node = node->next) {
-        if (node->type == XML_ELEMENT_NODE && xmlStrcmp(node->name, KEYBOARD_TAG) == 0) {
-            parseKeyboard(node, keys);
-        } else if (node->type == XML_ELEMENT_NODE && xmlStrcmp(node->name, SPURIOUS_TAG) == 0) {
-            unsigned kbZone = parseUInt(node, KEYBOARD_ATTR_ZONE, 0);
-            unsigned codeVal = parseUInt(node, KEY_ATTR_CODE, 0);
-            if (codeVal > 0) {
-                spurious.push_back({kbZone, codeVal});
-            }
-        }
-    }
-
-    // Finalize
-    return LayoutDescription{
-        std::string(reinterpret_cast<std::string::const_pointer>(name.get())),
-        std::move(keys),
-        std::move(spurious)
-    };
+    return std::move(parser.result());
 }
 
 LayoutDescription LayoutDescription::loadFile(const std::string & path)
 {
-    const auto & xdgPaths = tools::paths::getPaths(tools::paths::XDG::Data, true);
+    const auto prefixedPath = KEYLEDSD_DATA_PREFIX "/layouts/" + path;
+    auto file = tools::paths::open<std::ifstream>(
+        tools::paths::XDG::Data, prefixedPath, std::ios::binary
+    );
+    if (!file) { throw std::system_error(errno, std::generic_category()); }
 
-    std::vector<std::string> candidates(xdgPaths.size());
-    std::transform(xdgPaths.begin(), xdgPaths.end(), candidates.begin(),
-                   [](const auto & prefix) { return prefix + "/" KEYLEDSD_DATA_PREFIX "/layouts"; });
-
-    for (const auto & candidate : candidates) {
-        auto fullName = std::string();
-        fullName.reserve(candidate.size() + 1 + path.size());
-        fullName += candidate;
-        if (candidate.back() != '/' && path.front() != '/') { fullName += '/'; }
-        fullName += path;
-        std::ifstream file(fullName);
-        if (!file) { continue; }
-        try {
-            auto result = parse(file);
-            INFO("loaded layout ", fullName);
-            return result;
-        } catch (ParseError & error) {
-            ERROR("layout ", fullName, " line ", error.line(), ": ", error.what());
-        } catch (std::exception & error) {
-            ERROR("layout ", fullName, ": ", error.what());
-        }
-    }
-    return {};
+    INFO("loading layout ", file->path);
+    return parse(file->stream);
 }
-
-/****************************************************************************/
-
-LayoutDescription::ParseError::ParseError(const std::string & what, long line)
- : std::runtime_error(what), m_line(line)
-{}
-
-LayoutDescription::ParseError::~ParseError() = default;

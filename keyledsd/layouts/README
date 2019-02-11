@@ -1,5 +1,5 @@
 Files in this directory describe the physical layout of keyboards.
-Names follow format <model>_<layout>.xml
+Names follow format <model>_<layout>.yaml
     model: model code from device, 6 bytes written in hexadecimal. For USB devices,
            this is the product id on 16 bits followed by 4 0-bytes.
     layout: layout code from device, 2 bytes written in hexadecimal.
@@ -21,7 +21,7 @@ Known layouts for feature 4540:
     0033:   Thai
     0037:   INTL2
 
-File format is XML, with the following structure:
+Source file format is XML, with the following structure:
     root element (any tag)
         attributes:
             - (str)layout: gives name of layout

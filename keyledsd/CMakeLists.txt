@@ -39,6 +39,6 @@ install(DIRECTORY effects/
         FILES_MATCHING PATTERN "*.lua")
 install(DIRECTORY layouts/
         DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/layouts
-        FILES_MATCHING PATTERN "*.xml")
+        FILES_MATCHING PATTERN "*.yaml")
 install(FILES keyledsd.conf.sample keyledsd.desktop
         DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME})

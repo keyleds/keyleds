@@ -36,21 +36,13 @@ struct LayoutDescription final
     using block_type = unsigned int;
     using code_type = unsigned int;
 
-    struct Rect { unsigned x0, y0, x1, y1; };
+    struct Key;
+    struct Rect final { unsigned x0, y0, x1, y1; };
 
-    struct Key
-    {
-        block_type  block;      ///< Block identifier, eg: normal keys, game/light keys, ...
-        code_type   code;       ///< Key identifier within block
-        Rect        position;   ///< Physical key bounds. [0, 0] is upper left corner.
-        std::string name;       ///< User-readable key name
-    };
-
-    class ParseError;
+    class ParseError : public std::runtime_error { using runtime_error::runtime_error; };
     using key_list = std::vector<Key>;
     using pos_list = std::vector<std::pair<block_type, code_type>>;
 
-public:
     static LayoutDescription parse(std::istream &);
     static LayoutDescription loadFile(const std::string & path);
 
@@ -61,15 +53,12 @@ public:
 
 /****************************************************************************/
 
-class LayoutDescription::ParseError : public std::runtime_error
+struct LayoutDescription::Key final
 {
-public:
-                ParseError(const std::string & what, long line);
-                ~ParseError();
-
-    long        line() const noexcept { return m_line; }
-private:
-    long        m_line; ///< Line of the parsing error, as reported by xml lib
+    block_type  block;      ///< Block identifier, eg: normal keys, game/light keys, ...
+    code_type   code;       ///< Key identifier within block
+    Rect        position;   ///< Physical key bounds. [0, 0] is upper left corner.
+    std::string name;       ///< User-readable key name
 };
 
 /****************************************************************************/

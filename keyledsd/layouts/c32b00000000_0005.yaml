@@ -1,0 +1,139 @@
+# Keyleds layout file
+# Generated from ./c32b00000000_0005.xml on 2019-02-11 17:19:13
+---
+
+layout: FRA
+spurious:
+    - {zone: 1, code: 0x31}
+keyboards:
+    - zone: 16
+      keys:
+        - {code: 0x01, x: 54, y: 81, width: 62, height: 62, glyph: 'Logo'}
+    - zone: 16
+      keys:
+        - {code: 0x02, x: 290, y: 505, width: 158, height: 33, glyph: 'Badge'}
+    - zone: 4
+      keys:
+        - {code: 0x01, x: 52, y: 160, width: 62, height: 58, glyph: 'G1'}
+        - {code: 0x02, x: 52, y: 218, width: 62, height: 58, glyph: 'G2'}
+        - {code: 0x03, x: 52, y: 276, width: 62, height: 58, glyph: 'G3'}
+        - {code: 0x04, x: 52, y: 334, width: 62, height: 58, glyph: 'G4'}
+        - {code: 0x05, x: 52, y: 392, width: 62, height: 58, glyph: 'G5'}
+    - zone: 4
+      keys:
+        - {code: 0x06, x: 224, y: 27, width: 57, height: 57, glyph: 'G6'}
+        - {code: 0x07, x: 281, y: 27, width: 57, height: 57, glyph: 'G7'}
+        - {code: 0x08, x: 339, y: 27, width: 57, height: 57, glyph: 'G8'}
+        - {code: 0x09, x: 396, y: 27, width: 57, height: 57, glyph: 'G9'}
+    - keys:
+        - {code: 0x29, x: 125, y: 84, width: 60, height: 57}
+    - keys:
+        - {code: 0x3a, x: 224, y: 84, width: 58, height: 57}
+        - {code: 0x3b, x: 282, y: 84, width: 58, height: 57}
+        - {code: 0x3c, x: 341, y: 84, width: 58, height: 57}
+        - {code: 0x3d, x: 399, y: 84, width: 58, height: 57}
+    - keys:
+        - {code: 0x3e, x: 496, y: 84, width: 58, height: 57}
+        - {code: 0x3f, x: 554, y: 84, width: 58, height: 57}
+        - {code: 0x40, x: 613, y: 84, width: 58, height: 57}
+        - {code: 0x41, x: 671, y: 84, width: 58, height: 57}
+    - keys:
+        - {code: 0x42, x: 769, y: 84, width: 58, height: 57}
+        - {code: 0x43, x: 827, y: 84, width: 58, height: 57}
+        - {code: 0x44, x: 886, y: 84, width: 58, height: 57}
+        - {code: 0x45, x: 944, y: 84, width: 58, height: 57}
+    - keys:
+        - {code: 0x46, x: 1019, y: 84, width: 59, height: 57}
+        - {code: 0x47, x: 1078, y: 84, width: 59, height: 57}
+        - {code: 0x48, x: 1137, y: 84, width: 59, height: 57}
+    - keys:
+        - {code: 0x35, x: 125, y: 160, width: 60, height: 58}
+        - {code: 0x1e, x: 185, y: 160, width: 60, height: 58}
+        - {code: 0x1f, x: 245, y: 160, width: 60, height: 58}
+        - {code: 0x20, x: 306, y: 160, width: 60, height: 58}
+        - {code: 0x21, x: 366, y: 160, width: 60, height: 58}
+        - {code: 0x22, x: 426, y: 160, width: 60, height: 58}
+        - {code: 0x23, x: 487, y: 160, width: 60, height: 58}
+        - {code: 0x24, x: 547, y: 160, width: 60, height: 58}
+        - {code: 0x25, x: 607, y: 160, width: 60, height: 58}
+        - {code: 0x26, x: 668, y: 160, width: 60, height: 58}
+        - {code: 0x27, x: 728, y: 160, width: 60, height: 58}
+        - {code: 0x2d, x: 788, y: 160, width: 60, height: 58}
+        - {code: 0x2e, x: 849, y: 160, width: 60, height: 58}
+        - {code: 0x2a, x: 909, y: 160, width: 90, height: 58}
+        - {code: 0x2b, x: 125, y: 218, width: 76, height: 58}
+        - {code: 0x14, x: 201, y: 218, width: 58, height: 58}
+        - {code: 0x1a, x: 260, y: 218, width: 58, height: 58}
+        - {code: 0x08, x: 319, y: 218, width: 58, height: 58}
+        - {code: 0x15, x: 378, y: 218, width: 58, height: 58}
+        - {code: 0x17, x: 437, y: 218, width: 58, height: 58}
+        - {code: 0x1c, x: 496, y: 218, width: 58, height: 58}
+        - {code: 0x18, x: 555, y: 218, width: 58, height: 58}
+        - {code: 0x0c, x: 614, y: 218, width: 58, height: 58}
+        - {code: 0x12, x: 672, y: 218, width: 58, height: 58}
+        - {code: 0x13, x: 731, y: 218, width: 58, height: 58}
+        - {code: 0x2f, x: 790, y: 218, width: 58, height: 58}
+        - {code: 0x30, x: 849, y: 218, width: 76, height: 58}
+        - {code: 0x28, x: 926, y: 218, width: 73, height: 58}
+        - {code: 0x39, x: 125, y: 276, width: 88, height: 58}
+        - {code: 0x04, x: 213, y: 276, width: 59, height: 58}
+        - {code: 0x16, x: 273, y: 276, width: 59, height: 58}
+        - {code: 0x07, x: 332, y: 276, width: 59, height: 58}
+        - {code: 0x09, x: 391, y: 276, width: 59, height: 58}
+        - {code: 0x0a, x: 451, y: 276, width: 59, height: 58}
+        - {code: 0x0b, x: 510, y: 276, width: 59, height: 58}
+        - {code: 0x0d, x: 569, y: 276, width: 59, height: 58}
+        - {code: 0x0e, x: 629, y: 276, width: 59, height: 58}
+        - {code: 0x0f, x: 688, y: 276, width: 59, height: 58}
+        - {code: 0x33, x: 747, y: 276, width: 59, height: 58}
+        - {code: 0x34, x: 807, y: 276, width: 59, height: 58}
+        - {code: 0x32, x: 866, y: 276, width: 64, height: 58}
+        - {code: 0xe1, x: 125, y: 334, width: 74, height: 58}
+        - {code: 0x64, x: 199, y: 334, width: 59, height: 58}
+        - {code: 0x1d, x: 258, y: 334, width: 59, height: 58}
+        - {code: 0x1b, x: 317, y: 334, width: 59, height: 58}
+        - {code: 0x06, x: 377, y: 334, width: 59, height: 58}
+        - {code: 0x19, x: 436, y: 334, width: 59, height: 58}
+        - {code: 0x05, x: 495, y: 334, width: 59, height: 58}
+        - {code: 0x11, x: 555, y: 334, width: 59, height: 58}
+        - {code: 0x10, x: 614, y: 334, width: 59, height: 58}
+        - {code: 0x36, x: 673, y: 334, width: 59, height: 58}
+        - {code: 0x37, x: 733, y: 334, width: 59, height: 58}
+        - {code: 0x38, x: 792, y: 334, width: 59, height: 58}
+        - {code: 0xe5, x: 851, y: 334, width: 148, height: 58}
+        - {code: 0xe0, x: 125, y: 392, width: 87, height: 58}
+        - {code: 0xe3, x: 212, y: 392, width: 72, height: 58}
+        - {code: 0xe2, x: 285, y: 392, width: 72, height: 58}
+        - {code: 0x2c, x: 358, y: 392, width: 335, height: 58}
+        - {code: 0xe6, x: 693, y: 392, width: 72, height: 58}
+        - {code: 0xe7, x: 766, y: 392, width: 72, height: 58}
+        - {code: 0x65, x: 839, y: 392, width: 72, height: 58}
+        - {code: 0xe4, x: 912, y: 392, width: 87, height: 58}
+    - keys:
+        - {code: 0x49, x: 1019, y: 160, width: 57, height: 57}
+        - {code: 0x4a, x: 1076, y: 160, width: 57, height: 57}
+        - {code: 0x4b, x: 1133, y: 160, width: 57, height: 57}
+        - {code: 0x53, x: 1220, y: 160, width: 57, height: 57}
+        - {code: 0x54, x: 1277, y: 160, width: 57, height: 57}
+        - {code: 0x55, x: 1335, y: 160, width: 57, height: 57}
+        - {code: 0x56, x: 1392, y: 160, width: 57, height: 57}
+        - {code: 0x4c, x: 1019, y: 217, width: 57, height: 57}
+        - {code: 0x4d, x: 1076, y: 217, width: 57, height: 57}
+        - {code: 0x4e, x: 1133, y: 217, width: 57, height: 57}
+        - {code: 0x5f, x: 1220, y: 217, width: 57, height: 57}
+        - {code: 0x60, x: 1277, y: 217, width: 57, height: 57}
+        - {code: 0x61, x: 1335, y: 217, width: 57, height: 57}
+        - {code: 0x57, x: 1392, y: 217, width: 57, height: 57}
+        - {code: 0x5c, x: 1220, y: 275, width: 57, height: 57}
+        - {code: 0x5d, x: 1277, y: 275, width: 57, height: 57}
+        - {code: 0x5e, x: 1335, y: 275, width: 57, height: 57}
+        - {code: 0x52, x: 1076, y: 333, width: 57, height: 57}
+        - {code: 0x59, x: 1220, y: 333, width: 57, height: 57}
+        - {code: 0x5a, x: 1277, y: 333, width: 57, height: 57}
+        - {code: 0x5b, x: 1335, y: 333, width: 57, height: 57}
+        - {code: 0x58, x: 1392, y: 333, width: 57, height: 57}
+        - {code: 0x50, x: 1019, y: 391, width: 57, height: 57}
+        - {code: 0x51, x: 1076, y: 391, width: 57, height: 57}
+        - {code: 0x4f, x: 1133, y: 391, width: 57, height: 57}
+        - {code: 0x62, x: 1220, y: 391, width: 114, height: 57}
+        - {code: 0x63, x: 1335, y: 391, width: 57, height: 57}

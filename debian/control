@@ -2,7 +2,7 @@ Source: keyleds
 Section: utils
 Priority: optional
 Maintainer: Julien Hartmann <juli1.hartmann@gmail.com>
-Build-Depends: debhelper (>=10), cmake, pkg-config, linux-libc-dev, libudev-dev, libx11-dev, libxi-dev, libxml2-dev, libyaml-dev, libluajit-5.1-dev, libuv1-dev, libsystemd-dev
+Build-Depends: debhelper (>=10), cmake, pkg-config, linux-libc-dev, libudev-dev, libx11-dev, libxi-dev, libyaml-dev, libluajit-5.1-dev, libuv1-dev, libsystemd-dev
 Standards-Version: 3.9.8
 Homepage: https://github.com/spectras/keyleds
 #Vcs-Git: https://github.com/spectras/keyleds.git

@@ -1,0 +1,140 @@
+# Keyleds layout file
+# Generated from ./c33100000000_0007.xml on 2019-02-11 17:19:14
+---
+
+layout: RUS
+spurious:
+    - {zone: 1, code: 0x31}
+keyboards:
+    - zone: 16
+      keys:
+        - {code: 0x01, x: 12, y: 41, width: 46, height: 46, glyph: 'Logo'}
+    - zone: 64
+      keys:
+        - {code: 0x05, x: 525, y: 56, width: 9, height: 18, glyph: 'NumLockLed'}
+        - {code: 0x03, x: 571, y: 56, width: 9, height: 18, glyph: 'CapsLockLed'}
+        - {code: 0x04, x: 617, y: 56, width: 9, height: 18, glyph: 'ScrollLockLed'}
+    - zone: 64
+      keys:
+        - {code: 0x02, x: 710, y: 48, width: 33, height: 35, glyph: 'Game'}
+        - {code: 0x01, x: 796, y: 48, width: 33, height: 35, glyph: 'Light'}
+    - zone: 2
+      keys:
+        - {code: 0xe2, x: 858, y: 48, width: 35, height: 35, glyph: 'Mute'}
+    - zone: 2
+      keys:
+        - {code: 0xcd, x: 858, y: 103, width: 33, height: 35, glyph: 'Play'}
+        - {code: 0xb7, x: 904, y: 103, width: 33, height: 35, glyph: 'Stop'}
+        - {code: 0xb6, x: 950, y: 103, width: 33, height: 35, glyph: 'Prev'}
+        - {code: 0xb5, x: 997, y: 103, width: 33, height: 35, glyph: 'Next'}
+    - keys:
+        - {code: 0x29, x: 13, y: 96, width: 46, height: 46}
+    - keys:
+        - {code: 0x3a, x: 89, y: 96, width: 46, height: 46}
+        - {code: 0x3b, x: 135, y: 96, width: 46, height: 46}
+        - {code: 0x3c, x: 181, y: 96, width: 46, height: 46}
+        - {code: 0x3d, x: 227, y: 96, width: 46, height: 46}
+    - keys:
+        - {code: 0x3e, x: 299, y: 96, width: 46, height: 46}
+        - {code: 0x3f, x: 345, y: 96, width: 46, height: 46}
+        - {code: 0x40, x: 391, y: 96, width: 46, height: 46}
+        - {code: 0x41, x: 437, y: 96, width: 46, height: 46}
+    - keys:
+        - {code: 0x42, x: 507, y: 96, width: 46, height: 46}
+        - {code: 0x43, x: 553, y: 96, width: 46, height: 46}
+        - {code: 0x44, x: 599, y: 96, width: 46, height: 46}
+        - {code: 0x45, x: 645, y: 96, width: 46, height: 46}
+    - keys:
+        - {code: 0x46, x: 702, y: 96, width: 44, height: 46}
+        - {code: 0x47, x: 746, y: 96, width: 44, height: 46}
+        - {code: 0x48, x: 790, y: 96, width: 44, height: 46}
+    - keys:
+        - {code: 0x35, x: 13, y: 152, width: 46, height: 45}
+        - {code: 0x1e, x: 59, y: 152, width: 46, height: 45}
+        - {code: 0x1f, x: 106, y: 152, width: 46, height: 45}
+        - {code: 0x20, x: 153, y: 152, width: 46, height: 45}
+        - {code: 0x21, x: 200, y: 152, width: 46, height: 45}
+        - {code: 0x22, x: 246, y: 152, width: 46, height: 45}
+        - {code: 0x23, x: 293, y: 152, width: 46, height: 45}
+        - {code: 0x24, x: 340, y: 152, width: 46, height: 45}
+        - {code: 0x25, x: 387, y: 152, width: 46, height: 45}
+        - {code: 0x26, x: 433, y: 152, width: 46, height: 45}
+        - {code: 0x27, x: 480, y: 152, width: 46, height: 45}
+        - {code: 0x2d, x: 527, y: 152, width: 46, height: 45}
+        - {code: 0x2e, x: 574, y: 152, width: 46, height: 45}
+        - {code: 0x2a, x: 620, y: 152, width: 70, height: 45}
+        - {code: 0x2b, x: 13, y: 197, width: 59, height: 45}
+        - {code: 0x14, x: 72, y: 197, width: 45, height: 45}
+        - {code: 0x1a, x: 118, y: 197, width: 45, height: 45}
+        - {code: 0x08, x: 163, y: 197, width: 45, height: 45}
+        - {code: 0x15, x: 209, y: 197, width: 45, height: 45}
+        - {code: 0x17, x: 254, y: 197, width: 45, height: 45}
+        - {code: 0x1c, x: 300, y: 197, width: 45, height: 45}
+        - {code: 0x18, x: 346, y: 197, width: 45, height: 45}
+        - {code: 0x0c, x: 391, y: 197, width: 45, height: 45}
+        - {code: 0x12, x: 437, y: 197, width: 45, height: 45}
+        - {code: 0x13, x: 483, y: 197, width: 45, height: 45}
+        - {code: 0x2f, x: 528, y: 197, width: 45, height: 45}
+        - {code: 0x30, x: 574, y: 197, width: 59, height: 45}
+        - {code: 0x28, x: 633, y: 197, width: 57, height: 45}
+        - {code: 0x39, x: 13, y: 243, width: 68, height: 45}
+        - {code: 0x04, x: 81, y: 243, width: 45, height: 45}
+        - {code: 0x16, x: 127, y: 243, width: 45, height: 45}
+        - {code: 0x07, x: 173, y: 243, width: 45, height: 45}
+        - {code: 0x09, x: 219, y: 243, width: 45, height: 45}
+        - {code: 0x0a, x: 265, y: 243, width: 45, height: 45}
+        - {code: 0x0b, x: 311, y: 243, width: 45, height: 45}
+        - {code: 0x0d, x: 357, y: 243, width: 45, height: 45}
+        - {code: 0x0e, x: 403, y: 243, width: 45, height: 45}
+        - {code: 0x0f, x: 449, y: 243, width: 45, height: 45}
+        - {code: 0x33, x: 495, y: 243, width: 45, height: 45}
+        - {code: 0x34, x: 541, y: 243, width: 45, height: 45}
+        - {code: 0x32, x: 587, y: 243, width: 49, height: 45}
+        - {code: 0xe1, x: 13, y: 288, width: 83, height: 45}
+        - {code: 0x1d, x: 96, y: 288, width: 47, height: 45}
+        - {code: 0x1b, x: 143, y: 288, width: 47, height: 45}
+        - {code: 0x06, x: 191, y: 288, width: 47, height: 45}
+        - {code: 0x19, x: 239, y: 288, width: 47, height: 45}
+        - {code: 0x05, x: 286, y: 288, width: 47, height: 45}
+        - {code: 0x11, x: 334, y: 288, width: 47, height: 45}
+        - {code: 0x10, x: 381, y: 288, width: 47, height: 45}
+        - {code: 0x36, x: 429, y: 288, width: 47, height: 45}
+        - {code: 0x37, x: 476, y: 288, width: 47, height: 45}
+        - {code: 0x38, x: 524, y: 288, width: 47, height: 45}
+        - {code: 0xe5, x: 572, y: 288, width: 118, height: 45}
+        - {code: 0xe0, x: 13, y: 334, width: 67, height: 45}
+        - {code: 0xe3, x: 80, y: 334, width: 56, height: 45}
+        - {code: 0xe2, x: 137, y: 334, width: 56, height: 45}
+        - {code: 0x2c, x: 193, y: 334, width: 259, height: 45}
+        - {code: 0xe6, x: 453, y: 334, width: 56, height: 45}
+        - {code: 0xe7, x: 510, y: 334, width: 56, height: 45}
+        - {code: 0x65, x: 566, y: 334, width: 56, height: 45}
+        - {code: 0xe4, x: 623, y: 334, width: 67, height: 45}
+    - keys:
+        - {code: 0x49, x: 702, y: 152, width: 44, height: 45}
+        - {code: 0x4a, x: 746, y: 152, width: 44, height: 45}
+        - {code: 0x4b, x: 790, y: 152, width: 44, height: 45}
+        - {code: 0x53, x: 856, y: 152, width: 44, height: 45}
+        - {code: 0x54, x: 900, y: 152, width: 44, height: 45}
+        - {code: 0x55, x: 944, y: 152, width: 44, height: 45}
+        - {code: 0x56, x: 988, y: 152, width: 44, height: 45}
+        - {code: 0x4c, x: 702, y: 197, width: 44, height: 45}
+        - {code: 0x4d, x: 746, y: 197, width: 44, height: 45}
+        - {code: 0x4e, x: 790, y: 197, width: 44, height: 45}
+        - {code: 0x5f, x: 856, y: 197, width: 44, height: 45}
+        - {code: 0x60, x: 900, y: 197, width: 44, height: 45}
+        - {code: 0x61, x: 944, y: 197, width: 44, height: 45}
+        - {code: 0x57, x: 988, y: 197, width: 44, height: 45}
+        - {code: 0x5c, x: 856, y: 243, width: 44, height: 45}
+        - {code: 0x5d, x: 900, y: 243, width: 44, height: 45}
+        - {code: 0x5e, x: 944, y: 243, width: 44, height: 45}
+        - {code: 0x52, x: 746, y: 288, width: 44, height: 45}
+        - {code: 0x59, x: 856, y: 288, width: 44, height: 45}
+        - {code: 0x5a, x: 900, y: 288, width: 44, height: 45}
+        - {code: 0x5b, x: 944, y: 288, width: 44, height: 45}
+        - {code: 0x58, x: 988, y: 288, width: 44, height: 45}
+        - {code: 0x50, x: 702, y: 334, width: 44, height: 45}
+        - {code: 0x51, x: 746, y: 334, width: 44, height: 45}
+        - {code: 0x4f, x: 790, y: 334, width: 44, height: 45}
+        - {code: 0x62, x: 856, y: 334, width: 88, height: 45}
+        - {code: 0x63, x: 944, y: 334, width: 44, height: 45}

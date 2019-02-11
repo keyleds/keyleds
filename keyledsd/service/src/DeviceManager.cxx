@@ -41,7 +41,7 @@ static std::string layoutName(const keyleds::Device & device)
 {
     std::ostringstream fileNameBuf;
     fileNameBuf.fill('0');
-    fileNameBuf <<device.model() <<'_' <<std::hex <<std::setw(4) <<device.layout() <<".xml";
+    fileNameBuf <<device.model() <<'_' <<std::hex <<std::setw(4) <<device.layout() <<".yaml";
     return fileNameBuf.str();
 }
 
@@ -185,9 +185,15 @@ DeviceManager::dev_list DeviceManager::findEventDevices(const ::device::Descript
 keyleds::KeyDatabase DeviceManager::setupKeyDatabase(Device & device)
 {
     // Load layout description file from disk
-    const auto layout = device.hasLayout()
-                      ? LayoutDescription::loadFile(layoutName(device))
-                      : LayoutDescription{};
+    auto layout = LayoutDescription();
+    if (device.hasLayout()) {
+        auto name = layoutName(device);
+        try {
+            layout = LayoutDescription::loadFile(name);
+        } catch (std::runtime_error & error) {
+            ERROR("could not load layout <", name, ">: ", error.what());
+        }
+    }
 
     // Some keyboards do not report all keys, look for missing keys and patch device
     for (const auto & block : device.blocks()) {
