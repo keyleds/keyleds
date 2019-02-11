@@ -23,11 +23,15 @@
  */
 #include "tools/YAMLParser.h"
 
+#include <algorithm>
+#include <cassert>
 #include <istream>
 #include <sstream>
 #include <yaml.h>
 
 using tools::YAMLParser;
+using tools::StackYAMLParser;
+using namespace std::literals::string_literals;
 
 /****************************************************************************/
 // Helpers
@@ -174,4 +178,162 @@ std::string YAMLParser::ParseError::makeMessage(const std::string & what, line_t
           <<" line " <<line + 1 <<" column " <<col + 1
           <<" " <<context <<" from line " <<ctx_line + 1;
     return error.str();
+}
+
+/****************************************************************************/
+
+StackYAMLParser::StackYAMLParser(std::unique_ptr<State> initial)
+{
+    m_state.push(std::move(initial));
+}
+
+StackYAMLParser::~StackYAMLParser() = default;
+
+StackYAMLParser::State & tools::StackYAMLParser::finalState()
+{
+    assert(m_state.size() == 1);
+    return *m_state.top();
+}
+
+void StackYAMLParser::sequenceStart(std::string_view, std::string_view anchor)
+{
+    m_state.push(m_state.top()->sequenceStart(*this, anchor));
+}
+
+void StackYAMLParser::sequenceEnd()
+{
+    auto removed = std::move(m_state.top());
+    m_state.pop();
+    m_state.top()->subStateEnd(*this, *removed);
+}
+
+void StackYAMLParser::mappingStart(std::string_view, std::string_view anchor)
+{
+    m_state.push(m_state.top()->mappingStart(*this, anchor));
+}
+
+void StackYAMLParser::mappingEnd()
+{
+    auto removed = std::move(m_state.top());
+    m_state.pop();
+    m_state.top()->subStateEnd(*this, *removed);
+}
+
+void StackYAMLParser::alias(std::string_view anchor)
+{
+    m_state.top()->alias(*this, anchor);
+}
+
+void StackYAMLParser::scalar(std::string_view value, std::string_view, std::string_view anchor)
+{
+    m_state.top()->scalar(*this, value, anchor);
+}
+
+void StackYAMLParser::addScalarAlias(std::string anchor, std::string value)
+{
+    m_scalarAliases.emplace_back(std::move(anchor), std::move(value));
+}
+
+const std::string & StackYAMLParser::getScalarAlias(std::string_view anchor)
+{
+    auto it = std::find_if(m_scalarAliases.begin(), m_scalarAliases.end(),
+                           [anchor](const auto & alias) { return alias.first == anchor; });
+    if (it == m_scalarAliases.end()) {
+        throw makeError("unknown anchor or invalid anchor target");
+    }
+    return it->second;
+}
+
+StackYAMLParser::ParseError StackYAMLParser::makeError(const std::string & what)
+{
+    auto state = std::vector<decltype(m_state)::value_type>();
+    state.reserve(m_state.size());
+    while (!m_state.empty()) {
+        state.emplace_back(std::move(m_state.top()));
+        m_state.pop();
+    }
+    std::ostringstream msg;
+    msg <<what <<" in ";
+    std::for_each(state.rbegin() + 1, state.rend(),
+                  [&msg](const auto & statep){ msg <<'/'; statep->print(msg); });
+    return YAMLParser::makeError(msg.str());
+}
+
+/****************************************************************************/
+
+StackYAMLParser::State::~State() = default;
+
+std::unique_ptr<StackYAMLParser::State>
+StackYAMLParser::State::sequenceStart(StackYAMLParser & parser, std::string_view)
+    { throw parser.makeError("unexpected sequence"s); }
+std::unique_ptr<StackYAMLParser::State>
+StackYAMLParser::State::mappingStart(StackYAMLParser & parser, std::string_view)
+    { throw parser.makeError("unexpected mapping"s); }
+void StackYAMLParser::State::subStateEnd(StackYAMLParser &, State &) {}
+void StackYAMLParser::State::alias(StackYAMLParser & parser, std::string_view)
+    { throw parser.makeError("unexpected alias"s); }
+void StackYAMLParser::State::scalar(StackYAMLParser & parser, std::string_view, std::string_view)
+    { throw parser.makeError("unexpected scalar"s); }
+
+
+std::unique_ptr<StackYAMLParser::State>
+StackYAMLParser::MappingState::sequenceStart(StackYAMLParser & parser, std::string_view anchor)
+{
+    if (!m_currentKey.empty()) { return sequenceEntry(parser, m_currentKey, anchor); }
+    return State::sequenceStart(parser, anchor);
+}
+
+std::unique_ptr<StackYAMLParser::State>
+StackYAMLParser::MappingState::mappingStart(StackYAMLParser & parser, std::string_view anchor)
+{
+    if (!m_currentKey.empty()) { return mappingEntry(parser, m_currentKey, anchor); }
+    return State::mappingStart(parser, anchor);
+}
+
+void StackYAMLParser::MappingState::alias(StackYAMLParser & parser, std::string_view anchor)
+{
+    if (!m_currentKey.empty()) {
+        aliasEntry(parser, m_currentKey, anchor);
+        m_currentKey.clear();
+    } else {
+        m_currentKey = parser.getScalarAlias(anchor);
+    }
+}
+
+void StackYAMLParser::MappingState::scalar(StackYAMLParser & parser, std::string_view value, std::string_view anchor)
+{
+    if (!m_currentKey.empty()) {
+        scalarEntry(parser, m_currentKey, value, anchor);
+        m_currentKey.clear();
+    } else {
+        m_currentKey = value;
+    }
+}
+
+void StackYAMLParser::MappingState::subStateEnd(StackYAMLParser &, State &)
+{
+    m_currentKey.clear();
+}
+
+std::unique_ptr<StackYAMLParser::State>
+StackYAMLParser::MappingState::sequenceEntry(StackYAMLParser & parser, std::string_view, std::string_view anchor)
+{
+    return State::sequenceStart(parser, anchor);
+}
+
+std::unique_ptr<StackYAMLParser::State>
+StackYAMLParser::MappingState::mappingEntry(StackYAMLParser & parser, std::string_view, std::string_view anchor)
+{
+    return State::mappingStart(parser, anchor);
+}
+
+void StackYAMLParser::MappingState::aliasEntry(StackYAMLParser & parser, std::string_view, std::string_view anchor)
+{
+    return State::alias(parser, anchor);
+}
+
+void StackYAMLParser::MappingState::scalarEntry(StackYAMLParser & parser, std::string_view,
+                                                std::string_view value, std::string_view anchor)
+{
+    return State::scalar(parser, value, anchor);
 }

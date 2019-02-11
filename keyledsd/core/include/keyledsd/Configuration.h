@@ -17,6 +17,7 @@
 #ifndef KEYLEDSD_CONFIGURATION_H_603C2B68
 #define KEYLEDSD_CONFIGURATION_H_603C2B68
 
+#include <iosfwd>
 #include <regex>
 #include <string>
 #include <utility>
@@ -39,6 +40,7 @@ struct Configuration final
     struct KeyGroup;
     struct Profile;
 
+    class ParseError : public std::runtime_error { using runtime_error::runtime_error; };
     using string_list = std::vector<std::string>;
     using path_list = std::vector<std::string>;
     using device_map = std::vector<std::pair<std::string, std::string>>;
@@ -46,6 +48,7 @@ struct Configuration final
     using effect_group_list = std::vector<EffectGroup>;
     using profile_list = std::vector<Profile>;
 
+    static Configuration parse(std::istream &);
     static Configuration loadFile(const std::string & path);
 
     std::string         path;           ///< Path of configuration on disk

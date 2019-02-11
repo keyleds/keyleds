@@ -16,23 +16,13 @@
  */
 #include "keyledsd/Configuration.h"
 
-#include "config.h"
-#include "logging.h"
 #include "tools/Paths.h"
 #include "tools/YAMLParser.h"
 #include <algorithm>
-#include <array>
-#include <cassert>
 #include <cerrno>
-#include <cstdlib>
 #include <fstream>
-#include <iostream>
-#include <memory>
-#include <sstream>
-#include <stack>
-#include <stdexcept>
+#include <istream>
 #include <system_error>
-#include <unistd.h>
 
 using keyleds::Configuration;
 
@@ -53,174 +43,51 @@ struct Configuration::Profile::Lookup::Entry
  * when entering a collection and popped back when exiting. Each state class
  * represent a type of object that can appear in the configuration file, and
  * knows how to interpret sub-items.
- *
- * Builder also keeps cross-state data such as aliases dictionary.
  */
-class ConfigurationBuilder final : public tools::YAMLParser
+class ConfigurationParser final : public tools::StackYAMLParser
 {
+    class StringSequenceBuildState;
+    class StringMappingBuildState;
+    class KeyGroupListState;
+    class EffectListState;
+    class EffectGroupState;
+    class EffectGroupListState;
+    class ProfileState;
+    class ProfileListState;
+    class RootState;
+    class InitialState;
 public:
-    class BuildState;
-    using state_ptr = std::unique_ptr<BuildState>;
-public:
-    ConfigurationBuilder();
+    ConfigurationParser();
 
-    void addScalarAlias(std::string anchor, std::string value);
-    const std::string & getScalarAlias(std::string_view anchor);
     void addGroupAlias(std::string anchor, Configuration::KeyGroup::key_list);
     const Configuration::KeyGroup::key_list & getGroupAlias(std::string_view anchor);
 
-    void streamStart() override {}
-    void streamEnd() override {}
-    void documentStart() override {}
-    void documentEnd() override {}
-    void sequenceStart(std::string_view, std::string_view anchor) override;
-    void sequenceEnd() override;
-    void mappingStart(std::string_view, std::string_view anchor) override;
-    void mappingEnd() override;
-    void alias(std::string_view anchor) override;
-    void scalar(std::string_view value, std::string_view, std::string_view anchor) override;
-
-    ParseError makeError(const std::string & what);
-
-    auto && result();
+    Configuration & result();
 
 private:
-    std::stack<state_ptr, std::vector<state_ptr>>                m_state;
-    std::vector<std::pair<std::string, std::string>>             m_scalarAliases;
     std::vector<std::pair<std::string, Configuration::KeyGroup::key_list>> m_groupAliases;
 };
 
 /****************************************************************************/
-
-/** Builder parsing state
- *
- * Tracks the current state of the configuration builder. Each possible state
- * must inherit this class and implement methods matching allowable events in
- * that state.
- */
-class ConfigurationBuilder::BuildState
-{
-public:
-    using state_ptr = std::unique_ptr<BuildState>;
-    using state_type = unsigned int;
-
-public:
-    explicit        BuildState(state_type type = 0) : m_type(type) {}
-                    BuildState(const BuildState &) = delete;
-    BuildState &    operator=(const BuildState &) = delete;
-
-    virtual         ~BuildState() = default;
-    state_type      type() const noexcept { return m_type; }
-    virtual void    print(std::ostream &) const = 0;
-
-public:
-    virtual state_ptr sequenceStart(ConfigurationBuilder & builder, std::string_view)
-        { throw builder.makeError("unexpected sequence"); }
-    virtual state_ptr mappingStart(ConfigurationBuilder & builder, std::string_view)
-        { throw builder.makeError("unexpected mapping"); }
-    virtual void subStateEnd(ConfigurationBuilder &, BuildState &) {}
-    virtual void alias(ConfigurationBuilder & builder, std::string_view)
-        { throw builder.makeError("unexpected alias"); }
-    virtual void scalar(ConfigurationBuilder & builder, std::string_view, std::string_view)
-        { throw builder.makeError("unexpected scalar"); }
-
-    template<class T> T & as() noexcept { return static_cast<T&>(*this); }
-
-private:
-    state_type  m_type;         ///< State subtype, used by parent state to identify
-                                ///  which state this object represents, when several
-                                ///  substates use the same class.
-};
-
-std::ostream & operator<<(std::ostream & out, ConfigurationBuilder::BuildState & state)
-{
-    state.print(out);
-    return out;
-}
-
-/****************************************************************************/
-/****************************************************************************/
-/// Generic inheritable build state for mappings
-/** Pairs events two by two to associate a key scalar to the following event.
- */
-class MappingBuildState : public ConfigurationBuilder::BuildState
-{
-public:
-    explicit MappingBuildState(state_type type) : BuildState(type) {}
-
-    virtual state_ptr sequenceEntry(ConfigurationBuilder & builder, std::string_view, std::string_view)
-        { throw builder.makeError("unexpected sequence"); }
-    virtual state_ptr mappingEntry(ConfigurationBuilder & builder, std::string_view, std::string_view)
-        { throw builder.makeError("unexpected mapping"); }
-    virtual void aliasEntry(ConfigurationBuilder & builder, std::string_view, std::string_view)
-        { throw builder.makeError("unexpected alias"); }
-    virtual void scalarEntry(ConfigurationBuilder & builder, std::string_view,
-                             std::string_view, std::string_view)
-        { throw builder.makeError("unexpected scalar"); }
-
-    state_ptr sequenceStart(ConfigurationBuilder & builder, std::string_view anchor) final override
-    {
-        if (m_currentKey.empty()) { throw builder.makeError("unexpected sequence"); }
-        return sequenceEntry(builder, m_currentKey, anchor);
-    }
-
-    state_ptr mappingStart(ConfigurationBuilder & builder, std::string_view anchor) final override
-    {
-        if (m_currentKey.empty()) { throw builder.makeError("unexpected mapping"); }
-        return mappingEntry(builder, m_currentKey, anchor);
-    }
-
-    void subStateEnd(ConfigurationBuilder &, BuildState &) override { m_currentKey.clear(); }
-
-    void alias(ConfigurationBuilder & builder, std::string_view anchor) final override
-    {
-        if (m_currentKey.empty()) {
-            m_currentKey = builder.getScalarAlias(anchor);
-        } else {
-            aliasEntry(builder, m_currentKey, anchor);
-            m_currentKey.clear();
-        }
-    }
-
-    void scalar(ConfigurationBuilder & builder, std::string_view value,
-                std::string_view anchor) final override
-    {
-        if (m_currentKey.empty()) {
-            m_currentKey = value;
-        } else {
-            scalarEntry(builder, m_currentKey, value, anchor);
-            m_currentKey.clear();
-        }
-    }
-
-protected:
-    const std::string & currentKey() const { return m_currentKey; }
-
-private:
-    std::string     m_currentKey;
-};
-
 /****************************************************************************/
 // Generic build states for string sequence and string map
 
-class StringSequenceBuildState final : public ConfigurationBuilder::BuildState
+class ConfigurationParser::StringSequenceBuildState final : public State
 {
 public:
     using value_type = std::vector<std::string>;
 public:
-    explicit StringSequenceBuildState(state_type type = 0) : BuildState(type) {}
     void print(std::ostream & out) const override { out <<"string-sequence"; }
 
-    void alias(ConfigurationBuilder & builder, std::string_view anchor) override
+    void alias(StackYAMLParser & parser, std::string_view anchor) override
     {
-        m_value.emplace_back(builder.getScalarAlias(anchor));
+        m_value.emplace_back(parser.getScalarAlias(anchor));
     }
 
-    void scalar(ConfigurationBuilder & builder, std::string_view value,
-                std::string_view anchor) override
+    void scalar(StackYAMLParser & parser, std::string_view value, std::string_view anchor) override
     {
         m_value.emplace_back(value);
-        builder.addScalarAlias(std::string(anchor), std::string(value));
+        parser.addScalarAlias(std::string(anchor), std::string(value));
     }
 
     value_type &&   result() { return std::move(m_value); }
@@ -229,25 +96,24 @@ private:
     value_type      m_value;
 };
 
-class StringMappingBuildState final : public MappingBuildState
+class ConfigurationParser::StringMappingBuildState final : public MappingState
 {
 public:
     using value_type = std::vector<std::pair<std::string, std::string>>;
 public:
-    explicit StringMappingBuildState(state_type type = 0) : MappingBuildState(type) {}
     void print(std::ostream & out) const override { out <<"string-mapping"; }
 
-    void aliasEntry(ConfigurationBuilder & builder, std::string_view key,
+    void aliasEntry(StackYAMLParser & parser, std::string_view key,
                     std::string_view anchor) override
     {
-        m_value.emplace_back(key, builder.getScalarAlias(anchor));
+        m_value.emplace_back(key, parser.getScalarAlias(anchor));
     }
 
-    void scalarEntry(ConfigurationBuilder & builder, std::string_view key,
+    void scalarEntry(StackYAMLParser & parser, std::string_view key,
                      std::string_view value, std::string_view anchor) override
     {
         m_value.emplace_back(key, value);
-        if (!anchor.empty()) { builder.addScalarAlias(std::string(anchor), std::string(value)); }
+        if (!anchor.empty()) { parser.addScalarAlias(std::string(anchor), std::string(value)); }
     }
 
     value_type &&   result() { return std::move(m_value); }
@@ -262,23 +128,22 @@ private:
 // Specific types for keyledsd configuration
 
 /// Configuration builder state: withing a key group list
-class KeyGroupListState final : public MappingBuildState
+class ConfigurationParser::KeyGroupListState final : public MappingState
 {
 public:
     using value_type = Configuration::key_group_list;
 public:
-    explicit KeyGroupListState(state_type type) : MappingBuildState(type) {}
     void print(std::ostream & out) const override { out <<"group-list"; }
 
-    state_ptr sequenceEntry(ConfigurationBuilder &, std::string_view,
-                            std::string_view anchor) override
+    std::unique_ptr<State> sequenceEntry(StackYAMLParser &, std::string_view, std::string_view anchor) override
     {
         m_currentAnchor = anchor;
         return std::make_unique<StringSequenceBuildState>();
     }
 
-    void subStateEnd(ConfigurationBuilder & builder, BuildState & state) override
+    void subStateEnd(StackYAMLParser & parser, State & state) override
     {
+        auto & builder = parser.as<ConfigurationParser>();
         auto keys = state.as<StringSequenceBuildState>().result();
         for (auto & key : keys) {
             std::transform(key.begin(), key.end(), key.begin(), ::toupper);
@@ -286,12 +151,13 @@ public:
 
         if (!m_currentAnchor.empty()) { builder.addGroupAlias(m_currentAnchor, keys); }
         m_value.push_back({currentKey(), std::move(keys)});
-        MappingBuildState::subStateEnd(builder, state);
+        MappingState::subStateEnd(builder, state);
     }
 
-    void aliasEntry(ConfigurationBuilder & builder, std::string_view key,
+    void aliasEntry(StackYAMLParser & parser, std::string_view key,
                     std::string_view anchor) override
     {
+        auto & builder = parser.as<ConfigurationParser>();
         m_value.push_back({std::string(key), builder.getGroupAlias(anchor)});
     }
 
@@ -304,21 +170,21 @@ private:
 
 
 /// Configuration builder state: within an effect group's plugin list
-class EffectListState final : public ConfigurationBuilder::BuildState
+class ConfigurationParser::EffectListState final : public State
 {
 public:
     using value_type = Configuration::EffectGroup::effect_list;
 public:
-    explicit EffectListState(state_type type) : BuildState(type) {}
     void print(std::ostream & out) const override { out <<"plugin-list"; }
 
-    state_ptr mappingStart(ConfigurationBuilder &, std::string_view) override
+    std::unique_ptr<State> mappingStart(StackYAMLParser &, std::string_view) override
     {
         return std::make_unique<StringMappingBuildState>();
     }
 
-    void subStateEnd(ConfigurationBuilder & builder, BuildState & state) override
+    void subStateEnd(StackYAMLParser & parser, State & state) override
     {
+        auto & builder = parser.as<ConfigurationParser>();
         auto conf = state.as<StringMappingBuildState>().result();
         auto it_name = std::find_if(conf.cbegin(), conf.cend(),
                                     [](auto & item) { return item.first == "effect" ||
@@ -338,32 +204,37 @@ private:
 };
 
 /// Configuration builder state: within an effect
-class EffectGroupState final: public MappingBuildState
+class ConfigurationParser::EffectGroupState final: public MappingState
 {
     using EffectGroup = Configuration::EffectGroup;
-    enum SubState : state_type { KeyGroupList, EffectList };
+    enum class SubState { KeyGroupList, EffectList };
 public:
-    explicit EffectGroupState(std::string name, state_type type = 0)
-      : MappingBuildState(type), m_name(std::move(name)) {}
+    explicit EffectGroupState(std::string name) : m_name(std::move(name)) {}
     void print(std::ostream & out) const override { out <<"effect(" <<m_name <<')'; }
 
-    state_ptr sequenceEntry(ConfigurationBuilder & builder, std::string_view key,
-                            std::string_view anchor) override
+    std::unique_ptr<State>
+    sequenceEntry(StackYAMLParser & parser, std::string_view key, std::string_view anchor) override
     {
-        if (key == "plugins") { return std::make_unique<EffectListState>(SubState::EffectList); }
-        return MappingBuildState::sequenceEntry(builder, key, anchor);
+        if (key == "plugins") {
+            m_currentSubState = SubState::EffectList;
+            return std::make_unique<EffectListState>();
+        }
+        return MappingState::sequenceEntry(parser, key, anchor);
     }
 
-    state_ptr mappingEntry(ConfigurationBuilder & builder, std::string_view key,
-                           std::string_view anchor) override
+    std::unique_ptr<State>
+    mappingEntry(StackYAMLParser & parser, std::string_view key, std::string_view anchor) override
     {
-        if (key == "groups") { return std::make_unique<KeyGroupListState>(SubState::KeyGroupList); }
-        return MappingBuildState::mappingEntry(builder, key, anchor);
+        if (key == "groups") {
+            m_currentSubState = SubState::KeyGroupList;
+            return std::make_unique<KeyGroupListState>();
+        }
+        return MappingState::mappingEntry(parser, key, anchor);
     }
 
-    void subStateEnd(ConfigurationBuilder & builder, BuildState & state) override
+    void subStateEnd(StackYAMLParser & parser, State & state) override
     {
-        switch(state.type()) {
+        switch(m_currentSubState) {
             case SubState::KeyGroupList: {
                 m_keyGroups = state.as<KeyGroupListState>().result();
                 break;
@@ -373,7 +244,7 @@ public:
                 break;
             }
         }
-        MappingBuildState::subStateEnd(builder, state);
+        MappingState::subStateEnd(parser, state);
     }
 
     EffectGroup result()
@@ -385,26 +256,26 @@ private:
     std::string                 m_name;
     EffectGroup::key_group_list m_keyGroups;
     EffectGroup::effect_list    m_effects;
+    SubState                    m_currentSubState;
 };
 
 /// Configuration builder state: within an effect list
-class EffectGroupListState final: public MappingBuildState
+class ConfigurationParser::EffectGroupListState final: public MappingState
 {
 public:
     using value_type = Configuration::effect_group_list;
 public:
-    explicit EffectGroupListState(state_type type) : MappingBuildState(type) {}
     void print(std::ostream & out) const override { out <<"effect-map"; }
 
-    state_ptr mappingEntry(ConfigurationBuilder &, std::string_view key, std::string_view) override
+    std::unique_ptr<State> mappingEntry(StackYAMLParser &, std::string_view key, std::string_view) override
     {
         return std::make_unique<EffectGroupState>(std::string(key));
     }
 
-    void subStateEnd(ConfigurationBuilder & builder, BuildState & state) override
+    void subStateEnd(StackYAMLParser & parser, State & state) override
     {
         m_value.emplace_back(state.as<EffectGroupState>().result());
-        MappingBuildState::subStateEnd(builder, state);
+        MappingState::subStateEnd(parser, state);
     }
 
     value_type &&   result() { return std::move(m_value); }
@@ -414,45 +285,52 @@ private:
 };
 
 /// Configuration builder state: within a profile
-class ProfileState final: public MappingBuildState
+class ConfigurationParser::ProfileState final: public MappingState
 {
     using value_type = Configuration::Profile;
-    enum SubState : state_type { Lookup, DeviceList, EffectGroupList };
+    enum class SubState { Lookup, DeviceList, EffectGroupList };
 public:
-    explicit ProfileState(std::string name, state_type type = 0)
-      : MappingBuildState(type), m_name(std::move(name)) {}
+    explicit ProfileState(std::string name) : m_name(std::move(name)) {}
     void print(std::ostream & out) const override { out <<"profile(" <<m_name <<')'; }
 
-    state_ptr sequenceEntry(ConfigurationBuilder & builder, std::string_view key,
-                            std::string_view anchor) override
+    std::unique_ptr<State>
+    sequenceEntry(StackYAMLParser & parser, std::string_view key, std::string_view anchor) override
     {
-        if (key == "devices") { return std::make_unique<StringSequenceBuildState>(SubState::DeviceList); }
-        if (key == "effects") { return std::make_unique<StringSequenceBuildState>(SubState::EffectGroupList); }
-        return MappingBuildState::sequenceEntry(builder, key, anchor);
+        if (key == "devices") {
+            m_currentSubState = SubState::DeviceList;
+            return std::make_unique<StringSequenceBuildState>();
+        }
+        if (key == "effects") {
+            m_currentSubState = SubState::EffectGroupList;
+            return std::make_unique<StringSequenceBuildState>();
+        }
+        return MappingState::sequenceEntry(parser, key, anchor);
     }
 
-    state_ptr mappingEntry(ConfigurationBuilder & builder, std::string_view key,
-                           std::string_view anchor) override
+    std::unique_ptr<State>
+    mappingEntry(StackYAMLParser & parser, std::string_view key, std::string_view anchor) override
     {
+        auto & builder = parser.as<ConfigurationParser>();
         if (key == "lookup") {
             if (m_name == "default") {
                 throw builder.makeError("default profile cannot have filters defined");
             }
-            return std::make_unique<StringMappingBuildState>(SubState::Lookup);
+            m_currentSubState = SubState::Lookup;
+            return std::make_unique<StringMappingBuildState>();
         }
-        return MappingBuildState::mappingEntry(builder, key, anchor);
+        return MappingState::mappingEntry(parser, key, anchor);
     }
 
-    void scalarEntry(ConfigurationBuilder & builder, std::string_view key,
+    void scalarEntry(StackYAMLParser & parser, std::string_view key,
                      std::string_view value, std::string_view anchor) override
     {
         if (key == "effect")    { m_effectGroups = { std::string(value) }; return; }
-        MappingBuildState::scalarEntry(builder, key, value, anchor);
+        MappingState::scalarEntry(parser, key, value, anchor);
     }
 
-    void subStateEnd(ConfigurationBuilder & builder, BuildState & state) override
+    void subStateEnd(StackYAMLParser & parser, State & state) override
     {
-        switch(state.type()) {
+        switch(m_currentSubState) {
             case SubState::Lookup: {
                 m_lookup = value_type::Lookup(
                     state.as<StringMappingBuildState>().result()
@@ -468,7 +346,7 @@ public:
                 break;
             }
         }
-        MappingBuildState::subStateEnd(builder, state);
+        MappingState::subStateEnd(parser, state);
     }
 
     value_type result()
@@ -482,26 +360,27 @@ private:
     value_type::Lookup              m_lookup;
     value_type::device_list         m_devices;
     value_type::effect_group_list   m_effectGroups;
+    SubState                        m_currentSubState;
 };
 
 /// Configuration builder state: within a profile list
-class ProfileListState final : public MappingBuildState
+class ConfigurationParser::ProfileListState final : public MappingState
 {
 public:
     using value_type = std::vector<Configuration::Profile>;
 public:
-    explicit ProfileListState(state_type type) : MappingBuildState(type) {}
     void print(std::ostream & out) const override { out <<"profile-map"; }
 
-    state_ptr mappingEntry(ConfigurationBuilder &, std::string_view key, std::string_view) override
+    std::unique_ptr<State>
+    mappingEntry(StackYAMLParser &, std::string_view key, std::string_view) override
     {
         return std::make_unique<ProfileState>(std::string(key));
     }
 
-    void subStateEnd(ConfigurationBuilder & builder, BuildState & state) override
+    void subStateEnd(StackYAMLParser & parser, State & state) override
     {
         m_value.emplace_back(state.as<ProfileState>().result());
-        MappingBuildState::subStateEnd(builder, state);
+        MappingState::subStateEnd(parser, state);
     }
 
     value_type &&   result() { return std::move(m_value); }
@@ -512,50 +391,65 @@ private:
 
 
 /// Configuration builder state: at document root
-class RootState final : public MappingBuildState
+class ConfigurationParser::RootState final : public MappingState
 {
-    enum SubState : state_type {
-        Plugins, PluginPaths, Layouts, Devices, KeyGroups, EffectGroups, Profiles
+    enum class SubState {
+        Plugins, PluginPaths, Devices, KeyGroups, EffectGroups, Profiles
     };
 public:
     using value_type = Configuration;
 public:
-    RootState() : MappingBuildState(0) {}
     void print(std::ostream & out) const override { out <<"root"; }
 
-    state_ptr sequenceEntry(ConfigurationBuilder & builder, std::string_view key,
-                           std::string_view anchor) override
+    std::unique_ptr<State>
+    sequenceEntry(StackYAMLParser & parser, std::string_view key, std::string_view anchor) override
     {
-        if (key == "plugins")
-            { return std::make_unique<StringSequenceBuildState>(SubState::Plugins); }
-        if (key == "plugin-paths")
-            { return std::make_unique<StringSequenceBuildState>(SubState::PluginPaths); }
-        return MappingBuildState::sequenceEntry(builder, key, anchor);
+        if (key == "plugins") {
+            m_currentSubState = SubState::Plugins;
+            return std::make_unique<StringSequenceBuildState>();
+        }
+        if (key == "plugin-paths") {
+            m_currentSubState = SubState::PluginPaths;
+            return std::make_unique<StringSequenceBuildState>();
+        }
+        return MappingState::sequenceEntry(parser, key, anchor);
     }
 
-    state_ptr mappingEntry(ConfigurationBuilder & builder, std::string_view key,
-                           std::string_view anchor) override
+    std::unique_ptr<State>
+    mappingEntry(StackYAMLParser & parser, std::string_view key, std::string_view anchor) override
     {
-        if (key == "devices")   { return std::make_unique<StringMappingBuildState>(SubState::Devices); }
-        if (key == "groups")    { return std::make_unique<KeyGroupListState>(SubState::KeyGroups); }
-        if (key == "effects")   { return std::make_unique<EffectGroupListState>(SubState::EffectGroups); }
-        if (key == "profiles")  { return std::make_unique<ProfileListState>(SubState::Profiles); }
-        return MappingBuildState::mappingEntry(builder, key, anchor);
+        if (key == "devices") {
+            m_currentSubState = SubState::Devices;
+            return std::make_unique<StringMappingBuildState>();
+        }
+        if (key == "groups") {
+            m_currentSubState = SubState::KeyGroups;
+            return std::make_unique<KeyGroupListState>();
+        }
+        if (key == "effects") {
+            m_currentSubState = SubState::EffectGroups;
+            return std::make_unique<EffectGroupListState>();
+        }
+        if (key == "profiles") {
+            m_currentSubState = SubState::Profiles;
+            return std::make_unique<ProfileListState>();
+        }
+        return MappingState::mappingEntry(parser, key, anchor);
     }
 
-    void scalarEntry(ConfigurationBuilder & builder, std::string_view key,
+    void scalarEntry(StackYAMLParser & parser, std::string_view key,
                      std::string_view value, std::string_view anchor) override
     {
         if (key == "plugin-path") {
             m_value.pluginPaths = { std::string(value) };
         } else {
-            MappingBuildState::scalarEntry(builder, key, value, anchor);
+            MappingState::scalarEntry(parser, key, value, anchor);
         }
     }
 
-    void subStateEnd(ConfigurationBuilder & builder, BuildState & state) override
+    void subStateEnd(StackYAMLParser & parser, State & state) override
     {
-        switch (state.type()) {
+        switch (m_currentSubState) {
         case SubState::Plugins:
             m_value.plugins = state.as<StringSequenceBuildState>().result();
             break;
@@ -575,34 +469,35 @@ public:
             m_value.profiles = state.as<ProfileListState>().result();
             break;
         }
-        MappingBuildState::subStateEnd(builder, state);
+        MappingState::subStateEnd(parser, state);
     }
 
     value_type && result() { return std::move(m_value); }
 
 private:
     value_type  m_value;
+    SubState    m_currentSubState;
 };
 
 
 /// Configuration builder state: parsing just started
-class InitialState final : public ConfigurationBuilder::BuildState
+class ConfigurationParser::InitialState final : public State
 {
     using value_type = Configuration;
 public:
     void print(std::ostream &) const override { }
 
-    state_ptr mappingStart(ConfigurationBuilder &, std::string_view) override
+    std::unique_ptr<State> mappingStart(StackYAMLParser &, std::string_view) override
     {
         return std::make_unique<RootState>();
     }
 
-    void subStateEnd(ConfigurationBuilder &, BuildState & state) override
+    void subStateEnd(StackYAMLParser &, State & state) override
     {
         m_value = state.as<RootState>().result();
     }
 
-    value_type && result() { return std::move(m_value); }
+    value_type & result() { return m_value; }
 
 private:
     value_type  m_value;
@@ -610,29 +505,18 @@ private:
 
 /****************************************************************************/
 
-ConfigurationBuilder::ConfigurationBuilder()
+ConfigurationParser::ConfigurationParser()
+ : StackYAMLParser(std::make_unique<InitialState>())
 {
-    m_state.push(std::make_unique<InitialState>());
 }
 
-void ConfigurationBuilder::addScalarAlias(std::string anchor, std::string value) {
-    m_scalarAliases.emplace_back(std::move(anchor), std::move(value));
-}
-
-const std::string & ConfigurationBuilder::getScalarAlias(std::string_view anchor) {
-    auto it = std::find_if(m_scalarAliases.begin(), m_scalarAliases.end(),
-                           [anchor](const auto & alias) { return alias.first == anchor; });
-    if (it == m_scalarAliases.end()) {
-        throw makeError("unknown anchor or invalid anchor target");
-    }
-    return it->second;
-}
-
-void ConfigurationBuilder::addGroupAlias(std::string anchor, Configuration::KeyGroup::key_list value) {
+void ConfigurationParser::addGroupAlias(std::string anchor, Configuration::KeyGroup::key_list value)
+{
     m_groupAliases.emplace_back(std::move(anchor), std::move(value));
 }
 
-const Configuration::KeyGroup::key_list & ConfigurationBuilder::getGroupAlias(std::string_view anchor) {
+const Configuration::KeyGroup::key_list & ConfigurationParser::getGroupAlias(std::string_view anchor)
+{
     auto it = std::find_if(m_groupAliases.begin(), m_groupAliases.end(),
                            [&anchor](const auto & alias) { return alias.first == anchor; });
     if (it == m_groupAliases.end()) {
@@ -641,56 +525,23 @@ const Configuration::KeyGroup::key_list & ConfigurationBuilder::getGroupAlias(st
     return it->second;
 }
 
-void ConfigurationBuilder::sequenceStart(std::string_view, std::string_view anchor) {
-    m_state.push(m_state.top()->sequenceStart(*this, anchor));
-}
-
-void ConfigurationBuilder::sequenceEnd() {
-    auto removed = std::move(m_state.top());
-    m_state.pop();
-    m_state.top()->subStateEnd(*this, *removed);
-}
-
-void ConfigurationBuilder::mappingStart(std::string_view, std::string_view anchor) {
-    m_state.push(m_state.top()->mappingStart(*this, anchor));
-}
-
-void ConfigurationBuilder::mappingEnd() {
-    auto removed = std::move(m_state.top());
-    m_state.pop();
-    m_state.top()->subStateEnd(*this, *removed);
-}
-
-void ConfigurationBuilder::alias(std::string_view anchor) {
-    m_state.top()->alias(*this, anchor);
-}
-
-void ConfigurationBuilder::scalar(std::string_view value, std::string_view, std::string_view anchor) {
-    m_state.top()->scalar(*this, value, anchor);
-}
-
-ConfigurationBuilder::ParseError ConfigurationBuilder::makeError(const std::string & what)
+Configuration & ConfigurationParser::result()
 {
-    auto state = std::vector<decltype(m_state)::value_type>();
-    state.reserve(m_state.size());
-    while (!m_state.empty()) {
-        state.emplace_back(std::move(m_state.top()));
-        m_state.pop();
-    }
-    std::ostringstream msg;
-    msg <<what <<" in ";
-    std::for_each(state.rbegin() + 1, state.rend(),
-                  [&msg](const auto & statep){ msg <<'/' <<*statep; });
-    return YAMLParser::makeError(msg.str());
-}
-
-auto && ConfigurationBuilder::result()
-{
-    assert(m_state.size() == 1);
-    return m_state.top()->as<InitialState>().result();
+    return finalState<InitialState>().result();
 }
 
 /****************************************************************************/
+
+Configuration Configuration::parse(std::istream & stream)
+{
+    auto parser = ConfigurationParser();
+    try {
+        parser.parse(stream);
+    } catch (ConfigurationParser::ParseError & error) {
+        throw ParseError(error.what());
+    }
+    return std::move(parser.result());
+}
 
 Configuration Configuration::loadFile(const std::string & path)
 {
@@ -699,9 +550,7 @@ Configuration Configuration::loadFile(const std::string & path)
     );
     if (!file) { throw std::system_error(errno, std::generic_category()); }
 
-    auto builder = ConfigurationBuilder();
-    builder.parse(file->stream);
-    auto result = builder.result();
+    auto result = parse(file->stream);
     result.path = file->path;
     return result;
 }

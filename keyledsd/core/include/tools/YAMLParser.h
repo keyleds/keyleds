@@ -27,9 +27,12 @@
 /****************************************************************************/
 
 #include <iosfwd>
+#include <memory>
+#include <stack>
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace tools {
 
@@ -62,7 +65,7 @@ public:
     };
 
 public:
-    virtual         ~YAMLParser();
+    virtual         ~YAMLParser() = 0;
     virtual void    parse(std::istream & stream);
 
 protected:
@@ -80,7 +83,7 @@ protected:
                            std::string_view anchor) = 0;
 
     /// Builds a ParseError using internal state to set file position of the error
-    ParseError      makeError(const std::string & what) const
+    ParseError      makeError(const std::string & what)
                     { return ParseError(what, m_line, m_column); }
 private:
     line_t          m_line;     ///< Line of token being parsed. Only in event methods.
@@ -88,6 +91,93 @@ private:
 };
 
 /****************************************************************************/
+
+/** State-stack YAML parser
+ * Tracks current position in YAML document through a stack of states.
+ */
+class StackYAMLParser : public YAMLParser
+{
+public:
+    void                addScalarAlias(std::string anchor, std::string value);
+    const std::string & getScalarAlias(std::string_view anchor);
+    template<class T> T & as() noexcept { return static_cast<T&>(*this); }
+
+protected:
+    class State;
+    class MappingState;
+protected:
+    explicit StackYAMLParser(std::unique_ptr<State> initial);
+            ~StackYAMLParser() override = 0;
+
+    State & finalState();
+    template <typename T> T & finalState();
+
+    void streamStart() override {}
+    void streamEnd() override {}
+    void documentStart() override {}
+    void documentEnd() override {}
+    void sequenceStart(std::string_view tag, std::string_view anchor) override;
+    void sequenceEnd() override;
+    void mappingStart(std::string_view tag, std::string_view anchor) override;
+    void mappingEnd() override;
+    void alias(std::string_view anchor) override;
+    void scalar(std::string_view value, std::string_view, std::string_view anchor) override;
+
+    ParseError          makeError(const std::string & what);
+
+private:
+    using state_ptr = std::unique_ptr<State>;
+    std::stack<state_ptr, std::vector<state_ptr>>       m_state;
+    std::vector<std::pair<std::string, std::string>>    m_scalarAliases;
+};
+
+
+class StackYAMLParser::State
+{
+public:
+               State(const State &) = delete;
+    State &    operator=(const State &) = delete;
+    virtual    ~State() = 0;
+
+    virtual std::unique_ptr<State> sequenceStart(StackYAMLParser &, std::string_view anchor);
+    virtual std::unique_ptr<State> mappingStart(StackYAMLParser &, std::string_view anchor);
+    virtual void subStateEnd(StackYAMLParser &, State &);
+    virtual void alias(StackYAMLParser &, std::string_view anchor);
+    virtual void scalar(StackYAMLParser &, std::string_view value, std::string_view anchor);
+
+    virtual void print(std::ostream &) const = 0;
+
+    template<class T> T & as() noexcept { return static_cast<T&>(*this); }
+protected:
+    State() = default;
+};
+
+class StackYAMLParser::MappingState : public State
+{
+public:
+    std::unique_ptr<State> sequenceStart(StackYAMLParser &, std::string_view anchor) final override;
+    std::unique_ptr<State> mappingStart(StackYAMLParser &, std::string_view anchor) final override;
+    void alias(StackYAMLParser &, std::string_view) final override;
+    void scalar(StackYAMLParser &, std::string_view value, std::string_view) final override;
+    void subStateEnd(StackYAMLParser &, State &) override;
+protected:
+    virtual std::unique_ptr<State> sequenceEntry(StackYAMLParser &, std::string_view key, std::string_view anchor);
+    virtual std::unique_ptr<State> mappingEntry(StackYAMLParser &, std::string_view key, std::string_view anchor);
+    virtual void aliasEntry(StackYAMLParser &, std::string_view key, std::string_view anchor);
+    virtual void scalarEntry(StackYAMLParser &, std::string_view key,
+                             std::string_view value, std::string_view anchor);
+protected:
+    const std::string & currentKey() const { return m_currentKey; }
+private:
+    std::string m_currentKey;
+};
+
+/****************************************************************************/
+
+template <typename T> T & StackYAMLParser::finalState()
+{
+    return finalState().as<T>();
+}
 
 } // namespace tools
 
