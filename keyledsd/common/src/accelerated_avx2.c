@@ -17,9 +17,11 @@
 #include <assert.h>
 #include <stdint.h>
 #include <immintrin.h>
+#include "keyledsd/accelerated.h"
 #include "config.h"
 
-void blend_avx2(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
+
+KEYLEDSD_EXPORT void blend_avx2(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
 {
     assert((uintptr_t)dst % 32 == 0);   // AVX2 requires 32-bytes aligned data
     assert((uintptr_t)src % 32 == 0);   // AVX2 requires 32-bytes aligned data
@@ -66,7 +68,7 @@ void blend_avx2(uint8_t * restrict dst, const uint8_t * restrict src, unsigned l
     } while (--length > 0);
 }
 
-void multiply_avx2(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
+KEYLEDSD_EXPORT void multiply_avx2(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
 {
     assert((uintptr_t)dst % 32 == 0);   // AVX2 requires 32-bytes aligned data
     assert((uintptr_t)src % 32 == 0);   // AVX2 requires 32-bytes aligned data

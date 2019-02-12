@@ -17,9 +17,11 @@
 #include <assert.h>
 #include <stdint.h>
 #include <emmintrin.h>
+#include "keyledsd/accelerated.h"
 #include "config.h"
 
-void blend_sse2(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
+
+KEYLEDSD_EXPORT void blend_sse2(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
 {
     assert((uintptr_t)dst % 16 == 0);   // SSE2 requires 16-bytes aligned data
     assert((uintptr_t)src % 16 == 0);   // SSE2 requires 16-bytes aligned data
@@ -66,7 +68,7 @@ void blend_sse2(uint8_t * restrict dst, const uint8_t * restrict src, unsigned l
     } while (--length > 0);
 }
 
-void multiply_sse2(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
+KEYLEDSD_EXPORT void multiply_sse2(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
 {
     assert((uintptr_t)dst % 16 == 0);   // SSE2 requires 16-bytes aligned data
     assert((uintptr_t)src % 16 == 0);   // SSE2 requires 16-bytes aligned data

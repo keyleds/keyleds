@@ -17,8 +17,6 @@
 cmake_minimum_required (VERSION 3.0)
 project (python-keyleds VERSION 0.1 LANGUAGES C)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Werror -std=c99")
-
 ##############################################################################
 # Sources
 
@@ -62,6 +60,7 @@ add_custom_command(OUTPUT keyleds.c
 # Python bindings
 add_library(keyleds MODULE ${keyleds_SRCS})
 set_target_properties(keyleds PROPERTIES PREFIX "")
+target_compile_features(keyleds PRIVATE c_std_99)
 target_include_directories(keyleds PRIVATE ${keyleds_INCLUDES})
 target_link_libraries(keyleds libkeyleds ${keyleds_DEPS})
 

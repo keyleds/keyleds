@@ -19,14 +19,8 @@ project(libkeyleds VERSION 1.0 LANGUAGES C)
 include(CheckCSourceCompiles)
 include(CheckIncludeFile)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -D_POSIX_C_SOURCE=200112L -fvisibility=internal")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wall -Wextra -Wconversion -Wsign-conversion -Wcast-qual -Wstrict-prototypes -Wmissing-prototypes -Wshadow -Wpointer-arith")
-
 ##############################################################################
 # Sources
-
-# Look for header files in build directory (for config.h) and include dir
-include_directories(BEFORE "${PROJECT_BINARY_DIR}" "include")
 
 # List of sources
 set(libkeyleds_SRCS
@@ -74,11 +68,20 @@ configure_file("include/config.h.in" "config.h")
 
 # Main library
 add_library(libkeyleds SHARED ${libkeyleds_SRCS})
+target_compile_definitions(libkeyleds PRIVATE _POSIX_C_SOURCE=200112L)
+target_compile_features(libkeyleds PRIVATE c_std_99)
+target_compile_options(libkeyleds PRIVATE -fvisibility=internal)
+target_compile_options(libkeyleds PRIVATE -Wconversion -Wsign-conversion -Wcast-qual
+                                          -Wstrict-prototypes -Wmissing-prototypes -Wshadow
+                                          -Wpointer-arith)
+target_include_directories(libkeyleds BEFORE PRIVATE ${PROJECT_BINARY_DIR})
 target_include_directories(libkeyleds PUBLIC "include")
-set_target_properties(libkeyleds PROPERTIES POSITION_INDEPENDENT_CODE on)
-set_target_properties(libkeyleds PROPERTIES PREFIX "")
-set_target_properties(libkeyleds PROPERTIES VERSION ${PROJECT_VERSION})
-set_target_properties(libkeyleds PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
+set_target_properties(libkeyleds PROPERTIES
+    C_EXTENSIONS off
+    POSITION_INDEPENDENT_CODE on
+    PREFIX ""
+    VERSION ${PROJECT_VERSION}
+    SOVERSION ${PROJECT_VERSION_MAJOR})
 
 install(TARGETS libkeyleds LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 install(FILES include/keyleds.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})

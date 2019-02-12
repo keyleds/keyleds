@@ -22,12 +22,6 @@ cmake_minimum_required (VERSION 3.0)
 option(WITH_LUA "build LUA scripting engine" ON)
 
 ##############################################################################
-# Sources
-
-# Look for header files in build directory (for config.h) and include dir
-include_directories("${CMAKE_CURRENT_BINARY_DIR}" "include")
-
-##############################################################################
 # Dependencies
 
 find_package(PkgConfig)
@@ -41,6 +35,7 @@ endif(WITH_LUA)
 
 foreach(module breathe feedback fill stars wave)
     add_library(fx_${module} MODULE src/${module}.cxx)
+    target_include_directories(fx_${module} PRIVATE "include")
     target_link_libraries(fx_${module} common)
     set_target_properties(fx_${module} PROPERTIES PREFIX "")
     set(module_TARGETS ${module_TARGETS} fx_${module})
@@ -63,7 +58,7 @@ IF(WITH_LUA)
         src/lua.cxx
     )
     target_compile_options(fx_lua PRIVATE ${LUA_CFLAGS_OTHER})
-    target_include_directories(fx_lua PRIVATE ${LUA_INCLUDE_DIRS})
+    target_include_directories(fx_lua PRIVATE "include" ${LUA_INCLUDE_DIRS})
     target_link_libraries(fx_lua common ${LUA_LIBRARIES})
     set_target_properties(fx_lua PROPERTIES PREFIX "")
     set(module_TARGETS ${module_TARGETS} fx_lua)

@@ -18,12 +18,13 @@
 #define CONFIG_H_336F4E89
 
 // Settings
-#cmakedefine KEYLEDSD_USE_MMX
 #cmakedefine KEYLEDSD_USE_SSE2
 #cmakedefine KEYLEDSD_USE_AVX2
 
 // Feature detection results
 #cmakedefine HAVE_BUILTIN_CPU_SUPPORTS
 #cmakedefine HAVE_IFUNC_ATTRIBUTE
+
+#define KEYLEDSD_EXPORT         __attribute__((visibility("default")))
 
 #endif

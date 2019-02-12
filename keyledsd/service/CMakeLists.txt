@@ -24,9 +24,6 @@ option(NO_DBUS "Do not compile DBus support" OFF)
 ##############################################################################
 # Sources
 
-# Look for header files in build directory (for config.h) and include dir
-include_directories("${CMAKE_CURRENT_BINARY_DIR}")
-
 # List of sources
 set(service_SRCS
     src/device/Logitech.cxx
@@ -78,7 +75,7 @@ configure_file("include/config.h.in" "config.h")
 # Binary
 add_executable(${PROJECT_NAME} ${service_SRCS})
 target_compile_definitions(${PROJECT_NAME} PRIVATE KEYLEDSD_MODULES_STATIC=1)
-target_include_directories(${PROJECT_NAME} PRIVATE include)
+target_include_directories(${PROJECT_NAME} PRIVATE include ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(${PROJECT_NAME} common core libkeyleds ${service_DEPS})
 
 ##############################################################################

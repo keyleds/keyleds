@@ -28,8 +28,6 @@ endif()
 ##############################################################################
 # Sources
 
-include_directories("${CMAKE_CURRENT_BINARY_DIR}")
-
 set(common_SRCS
     src/KeyDatabase.cxx
     src/RenderTarget.cxx
@@ -76,12 +74,11 @@ configure_file("include/config.h.in" "config.h")
 # Targets
 
 add_library(common SHARED ${common_SRCS})
-target_include_directories(common PUBLIC "include")
+target_include_directories(common PUBLIC "include" PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(common PRIVATE gcc_s gcc) # Work around a bug in gcc
-
-set_target_properties(common PROPERTIES PREFIX "keyleds_")
-set_target_properties(common PROPERTIES VERSION ${PROJECT_VERSION})
-set_target_properties(common PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
+set_target_properties(common PROPERTIES PREFIX "keyleds_"
+                                        VERSION ${PROJECT_VERSION}
+                                        SOVERSION ${PROJECT_VERSION_MAJOR})
 
 install(TARGETS common LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 

@@ -37,18 +37,18 @@ static void (*resolve_blend(void))(uint8_t * restrict dst, const uint8_t * restr
 }
 
 #  ifdef HAVE_IFUNC_ATTRIBUTE
-void blend(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
+KEYLEDSD_EXPORT void blend(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
     __attribute__((ifunc("resolve_blend")));
 #  else
 static void (*resolved_blend)(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length);
-void blend(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
+KEYLEDSD_EXPORT void blend(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
 {
     if (resolved_blend == 0) { resolved_blend = resolve_blend(); }
     (*resolved_blend)(dst, src, length);
 }
 #  endif
 #else
-void blend(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
+KEYLEDSD_EXPORT void blend(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
     { blend_plain(dst, src, length); }
 #endif
 
@@ -71,17 +71,17 @@ static void (*resolve_multiply(void))(uint8_t * restrict dst, const uint8_t * re
 }
 
 #  ifdef HAVE_IFUNC_ATTRIBUTE
-void multiply(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
+KEYLEDSD_EXPORT void multiply(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
     __attribute__((ifunc("resolve_multiply")));
 #  else
 static void (*resolved_multiply)(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length);
-void multiply(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
+KEYLEDSD_EXPORT void multiply(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
 {
     if (resolved_multiply == 0) { resolved_multiply = resolve_multiply(); }
     (*resolved_multiply)(dst, src, length);
 }
 #  endif
 #else
-void multiply(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
+KEYLEDSD_EXPORT void multiply(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
     { multiply_plain(dst, src, length); }
 #endif

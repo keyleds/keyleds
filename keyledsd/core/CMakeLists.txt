@@ -19,9 +19,6 @@ cmake_minimum_required (VERSION 3.0)
 ##############################################################################
 # Sources
 
-# Look for header files in build directory (for config.h)
-include_directories("${CMAKE_CURRENT_BINARY_DIR}")
-
 # List of sources
 set(core_SRCS
     src/keyledsd/Configuration.cxx
@@ -37,23 +34,17 @@ set(core_SRCS
     src/logging.cxx
 )
 
-set(core_DEPS ${CMAKE_DL_LIBS})
-
 ##############################################################################
 # Dependencies
 
 find_package(Threads REQUIRED)
-set(core_DEPS ${core_DEPS} ${CMAKE_THREAD_LIBS_INIT})
+find_package(X11 REQUIRED)
 
 find_library(LIBYAML yaml)
 IF(NOT LIBYAML)
     MESSAGE(SEND_ERROR "libyaml is required for keyledsd")
 ENDIF(NOT LIBYAML)
-set(core_DEPS ${core_DEPS} ${LIBYAML})
 
-find_package(X11)
-include_directories(${X11_Xlib_INCLUDE_PATH} ${X11_Xinput_INCLUDE_PATH})
-set(core_DEPS ${core_DEPS} ${X11_LIBRARIES} ${X11_Xinput_LIB})
 
 configure_file("include/config.h.in" "config.h")
 
@@ -61,5 +52,8 @@ configure_file("include/config.h.in" "config.h")
 # Targets
 
 add_library(core STATIC ${core_SRCS})
-target_include_directories(core PUBLIC "include")
-target_link_libraries(core common ${core_DEPS})
+target_include_directories(core PUBLIC "include" PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+target_include_directories(core PUBLIC ${X11_Xlib_INCLUDE_PATH} ${X11_Xinput_INCLUDE_PATH})
+target_link_libraries(core common
+    ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT} ${LIBYAML} ${X11_X11_LIB} ${X11_Xinput_LIB}
+)

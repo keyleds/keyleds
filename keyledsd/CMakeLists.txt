@@ -15,13 +15,18 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 cmake_minimum_required (VERSION 3.0)
-project(keyledsd VERSION 0.7.9 LANGUAGES CXX)
+project(keyledsd VERSION 0.8.0 LANGUAGES C CXX)
 
 ##############################################################################
 # Options
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -fPIC -fno-rtti -fvisibility=hidden -fstrict-enums -ffast-math")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -Wextra -Wcast-align -Wcast-qual -Wconversion -Wsign-conversion -Wshadow -Wstrict-overflow=3")
+add_compile_options(
+    $<$<COMPILE_LANGUAGE:CXX>:-std=c++17>
+    $<$<COMPILE_LANGUAGE:C>:-std=c99>
+    $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>
+    $<$<COMPILE_LANGUAGE:CXX>:-fstrict-enums>
+    -fvisibility=hidden -flto -ffast-math
+)
 
 ##############################################################################
 # Subtargets and data files

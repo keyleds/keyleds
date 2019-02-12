@@ -17,13 +17,8 @@
 cmake_minimum_required (VERSION 3.0)
 project(keyledsctl VERSION 1.0 LANGUAGES C)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Werror -std=c99 -D_POSIX_C_SOURCE=200112L")
-
 ##############################################################################
 # Sources
-
-# Look for header files in build directory (for config.h) and include dir
-include_directories("${PROJECT_BINARY_DIR}" "include")
 
 # List of sources
 set(keyledsctl_SRCS
@@ -54,7 +49,11 @@ configure_file("include/config.h.in" "config.h")
 
 # CLI tool
 add_executable(keyledsctl ${keyledsctl_SRCS})
+target_compile_definitions(keyledsctl PRIVATE _POSIX_C_SOURCE=200112L)
+target_compile_features(keyledsctl PRIVATE c_std_99)
+target_include_directories(keyledsctl PRIVATE "${PROJECT_BINARY_DIR}" "include")
 target_link_libraries(keyledsctl libkeyleds ${keyledsctl_DEPS})
+set_target_properties(keyledsctl PROPERTIES C_EXTENSIONS off)
 
 # Installing stuff (stub)
 install(TARGETS keyledsctl DESTINATION ${CMAKE_INSTALL_BINDIR})

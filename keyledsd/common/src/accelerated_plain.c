@@ -16,9 +16,11 @@
  */
 #include <assert.h>
 #include <stdint.h>
+#include "keyledsd/accelerated.h"
 #include "config.h"
 
-void blend_plain(uint8_t * restrict a, const uint8_t * restrict b, unsigned length)
+
+KEYLEDSD_EXPORT void blend_plain(uint8_t * restrict a, const uint8_t * restrict b, unsigned length)
 {
     assert((uintptr_t)a % 8 == 0);    // Not a requirement, but lets compiler optimize stuff
     assert((uintptr_t)b % 8 == 0);    // Not a requirement, but lets compiler optimize stuff
@@ -39,7 +41,7 @@ void blend_plain(uint8_t * restrict a, const uint8_t * restrict b, unsigned leng
     } while (--length > 0);
 }
 
-void multiply_plain(uint8_t * restrict a, const uint8_t * restrict b, unsigned length)
+KEYLEDSD_EXPORT void multiply_plain(uint8_t * restrict a, const uint8_t * restrict b, unsigned length)
 {
     assert((uintptr_t)a % 8 == 0);    // Not a requirement, but lets compiler optimize stuff
     assert((uintptr_t)b % 8 == 0);    // Not a requirement, but lets compiler optimize stuff
