@@ -15,23 +15,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "keyledsd/PluginHelper.h"
-#include "keyledsd/utils.h"
+#include "keyledsd/tools/utils.h"
 #include <algorithm>
 #include <cmath>
 
 using namespace std::literals::chrono_literals;
-using keyleds::parseDuration;
+using keyleds::tools::parseDuration;
 
 static constexpr auto pi = 3.14159265358979f;
 static constexpr auto white = keyleds::RGBAColor{255, 255, 255, 255};
 
 /****************************************************************************/
 
-class BreateEffect final : public plugin::Effect
+namespace keyleds::plugin {
+
+class BreatheEffect final : public SimpleEffect
 {
     using KeyGroup = KeyDatabase::KeyGroup;
 public:
-    explicit BreateEffect(EffectService & service)
+    explicit BreatheEffect(EffectService & service)
      : m_period(parseDuration<milliseconds>(service.getConfig("period")).value_or(10s)),
        m_keys(findGroup(service.keyGroups(), service.getConfig("group"))),
        m_buffer(*service.createRenderTarget())
@@ -79,4 +81,6 @@ private:
     milliseconds    m_time = 0ms;       ///< time since beginning of current cycle
 };
 
-KEYLEDSD_SIMPLE_EFFECT("breathe", BreateEffect);
+KEYLEDSD_SIMPLE_EFFECT("breathe", BreatheEffect);
+
+} // namespace keyleds::plugin

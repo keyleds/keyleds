@@ -15,20 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "keyledsd/PluginHelper.h"
-#include "keyledsd/utils.h"
+#include "keyledsd/tools/utils.h"
 #include <algorithm>
 #include <optional>
 #include <random>
 #include <vector>
 
 using namespace std::literals::chrono_literals;
-using keyleds::parseDuration;
 
 static constexpr auto transparent = keyleds::RGBAColor{0, 0, 0, 0};
 
 /****************************************************************************/
 
-class StarsEffect final : public plugin::Effect
+namespace keyleds::plugin {
+
+class StarsEffect final : public SimpleEffect
 {
     using KeyGroup = KeyDatabase::KeyGroup;
 
@@ -43,11 +44,11 @@ public:
     explicit StarsEffect(EffectService & service)
      : m_service(service),
        m_colors(parseColors(service)),
-       m_duration(parseDuration<milliseconds>(service.getConfig("duration")).value_or(1s)),
+       m_duration(tools::parseDuration<milliseconds>(service.getConfig("duration")).value_or(1s)),
        m_keys(findGroup(service.keyGroups(), service.getConfig("group"))),
        m_buffer(*service.createRenderTarget())
     {
-        auto number = keyleds::parseNumber(service.getConfig("number")).value_or(8);
+        auto number = tools::parseNumber(service.getConfig("number")).value_or(8);
         m_stars.resize(number);
 
         // Get ready
@@ -138,3 +139,5 @@ private:
 };
 
 KEYLEDSD_SIMPLE_EFFECT("stars", StarsEffect);
+
+} // namespace keyleds::plugin

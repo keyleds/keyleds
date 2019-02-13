@@ -23,11 +23,11 @@
 
 using keyleds::plugin::lua::LuaEffect;
 
+namespace keyleds::plugin {
 
-class LuaPlugin final : public keyleds::effect::interface::Plugin
+
+class LuaPlugin final : public Plugin
 {
-    using EffectService = keyleds::effect::interface::EffectService;
-
     struct StateInfo {
         std::unique_ptr<LuaEffect>  effect;
     };
@@ -36,8 +36,7 @@ class LuaPlugin final : public keyleds::effect::interface::Plugin
 public:
     explicit LuaPlugin(const char *) {}
 
-    keyleds::effect::interface::Effect *
-    createEffect(const std::string & name, EffectService & service) override
+    Effect * createEffect(const std::string & name, EffectService & service) override
     {
         auto source = service.getFile("effects/" + name + ".lua");
         if (source.empty()) { return nullptr; }
@@ -57,7 +56,7 @@ public:
         return m_states.emplace_back(std::move(info)).effect.get();
     }
 
-    void destroyEffect(keyleds::effect::interface::Effect * ptr, EffectService &) override
+    void destroyEffect(Effect * ptr, EffectService &) override
     {
         auto it = std::find_if(m_states.begin(), m_states.end(),
                                [ptr](const auto & state) { return state.effect.get() == ptr; });
@@ -72,5 +71,6 @@ private:
     state_list  m_states;
 };
 
-
 KEYLEDSD_EXPORT_PLUGIN("lua", LuaPlugin);
+
+} // namespace keyleds::plugin

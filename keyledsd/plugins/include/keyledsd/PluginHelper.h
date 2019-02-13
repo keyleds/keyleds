@@ -18,26 +18,23 @@
 #define KEYLEDSD_EFFECT_PLUGIN_HELPER_H_41D603AB
 
 #include "keyledsd/RenderTarget.h"
-#include "keyledsd/effect/interfaces.h"
-#include "keyledsd/effect/module.h"
+#include "keyledsd/plugin/interfaces.h"
+#include "keyledsd/plugin/module.h"
 
-namespace plugin {
+namespace keyleds::plugin {
 
 /****************************************************************************/
 
 /** Empty implementation for the Effect and Renderer interface, for simple effects.
  */
-class Effect : public keyleds::effect::interface::Effect, public keyleds::Renderer
+class SimpleEffect : public Effect, public Renderer
 {
-protected:
-    using EffectService = keyleds::effect::interface::EffectService;
-    using RGBAColor = keyleds::RGBAColor;
 public:
     void    handleContextChange(const string_map &) override {}
     void    handleGenericEvent(const string_map &) override {}
     void    handleKeyEvent(const KeyDatabase::Key &, bool) override {}
 
-    keyleds::Renderer * renderer() override { return this; }
+    Renderer * renderer() override { return this; }
 };
 
 
@@ -45,28 +42,24 @@ public:
  * @tparam T Effect class, derived from Effect.
  */
 template <typename T>
-class Plugin : public keyleds::effect::interface::Plugin
+class SimplePlugin : public Plugin
 {
-protected:
-    using EffectService = keyleds::effect::interface::EffectService;
-
 public:
-    explicit Plugin(const char * name) : m_name(name) {}
+    explicit SimplePlugin(const char * name) : m_name(name) {}
 
-    keyleds::effect::interface::Effect *
-    createEffect(const std::string & name, EffectService & service) override
+    Effect * createEffect(const std::string & name, EffectService & service) override
     {
         if (name == m_name) { return new T(service); }
         return nullptr;
     }
 
-    void destroyEffect(keyleds::effect::interface::Effect * ptr, EffectService &) override
+    void destroyEffect(Effect * ptr, EffectService &) override
     {
         delete static_cast<T *>(ptr);
     }
 
 protected:
-    ~Plugin() {}
+    ~SimplePlugin() {}
     const char * name() const { return m_name; }
 
 private:
@@ -89,7 +82,7 @@ private:
     KEYLEDSD_EXPORT_MODULE(name, keyledsd_simple_create, keyledsd_simple_destroy)
 
 #define KEYLEDSD_SIMPLE_EFFECT(name, Klass) \
-    class Klass##Plugin final : public plugin::Plugin<Klass> { using Plugin::Plugin; }; \
+    class Klass##Plugin final : public plugin::SimplePlugin<Klass> { using SimplePlugin::SimplePlugin; }; \
     KEYLEDSD_EXPORT_PLUGIN(name, Klass##Plugin)
 
 /****************************************************************************/

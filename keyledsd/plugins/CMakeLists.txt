@@ -25,7 +25,6 @@ option(WITH_LUA "build LUA scripting engine" ON)
 # Dependencies
 
 find_package(PkgConfig)
-
 if(WITH_LUA)
     pkg_search_module(LUA REQUIRED luajit lua-5.3 lua-5.2)
 endif(WITH_LUA)

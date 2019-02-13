@@ -15,19 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "keyledsd/PluginHelper.h"
-#include "keyledsd/utils.h"
+#include "keyledsd/tools/utils.h"
 #include <algorithm>
 #include <vector>
 
 using namespace std::literals::chrono_literals;
-using keyleds::parseDuration;
+using keyleds::tools::parseDuration;
 
 static constexpr auto transparent = keyleds::RGBAColor{0, 0, 0, 0};
 static constexpr auto white = keyleds::RGBAColor{255, 255, 255, 255};
 
 /****************************************************************************/
 
-class FeedbackEffect final : public plugin::Effect
+namespace keyleds::plugin {
+
+class FeedbackEffect final : public SimpleEffect
 {
     struct KeyPress
     {
@@ -90,3 +92,5 @@ private:
 };
 
 KEYLEDSD_SIMPLE_EFFECT("feedback", FeedbackEffect);
+
+} // namespace keyleds::plugin

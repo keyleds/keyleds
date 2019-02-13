@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "keyledsd/PluginHelper.h"
-#include "keyledsd/utils.h"
+#include "keyledsd/tools/utils.h"
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -24,7 +24,6 @@
 #include <string>
 
 using namespace std::literals::chrono_literals;
-using keyleds::parseDuration;
 
 static constexpr float pi = 3.14159265358979f;
 static constexpr unsigned int accuracy = 1024;
@@ -35,17 +34,19 @@ static_assert(accuracy && ((accuracy & (accuracy - 1)) == 0),
 
 /****************************************************************************/
 
-class WaveEffect final : public plugin::Effect
+namespace keyleds::plugin {
+
+class WaveEffect final : public SimpleEffect
 {
     using KeyGroup = KeyDatabase::KeyGroup;
 public:
     explicit WaveEffect(EffectService & service)
      : m_service(service),
-       m_period(parseDuration<milliseconds>(service.getConfig("period")).value_or(10s)),
+       m_period(tools::parseDuration<milliseconds>(service.getConfig("period")).value_or(10s)),
        m_keys(findGroup(service.keyGroups(), service.getConfig("group"))),
        m_phases(computePhases(service.keyDB(), m_keys,
-                keyleds::parseNumber(service.getConfig("length")).value_or(1000u),
-                float(keyleds::parseNumber(service.getConfig("direction")).value_or(0)))),
+                tools::parseNumber(service.getConfig("length")).value_or(1000u),
+                float(tools::parseNumber(service.getConfig("direction")).value_or(0)))),
        m_colors(generateColorTable(parseColors(service))),
        m_buffer(*service.createRenderTarget())
     {
@@ -175,12 +176,11 @@ private:
 
 /****************************************************************************/
 
-class WaveEffectPlugin final : public plugin::Plugin<WaveEffect> {
+class WaveEffectPlugin final : public SimplePlugin<WaveEffect> {
 public:
-    explicit WaveEffectPlugin(const char * name) : Plugin(name) {}
+    explicit WaveEffectPlugin(const char * name) : SimplePlugin(name) {}
 
-    keyleds::effect::interface::Effect *
-    createEffect(const std::string & name, EffectService & service) override
+    Effect * createEffect(const std::string & name, EffectService & service) override
     {
         if (name != this->name()) { return nullptr; }
 
@@ -189,8 +189,10 @@ public:
             service.log(1, "effect requires a valid layout");
             return nullptr;
         }
-        return plugin::Plugin<WaveEffect>::createEffect(name, service);
+        return SimplePlugin<WaveEffect>::createEffect(name, service);
     }
 };
 
 KEYLEDSD_EXPORT_PLUGIN("wave", WaveEffectPlugin);
+
+} // namespace keyleds::plugin

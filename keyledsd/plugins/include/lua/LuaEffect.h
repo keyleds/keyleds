@@ -32,7 +32,7 @@ namespace keyleds::plugin::lua {
 
 /****************************************************************************/
 
-class LuaEffect final : public ::plugin::Effect, public keyleds::lua::Environment::Controller
+class LuaEffect final : public SimpleEffect, public keyleds::lua::Environment::Controller
 {
     using state_ptr = std::unique_ptr<lua_State>;
 public:

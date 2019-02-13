@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "keyledsd/PluginHelper.h"
-#include "keyledsd/utils.h"
+#include "keyledsd/tools/utils.h"
 #include <algorithm>
 #include <vector>
 
@@ -23,7 +23,9 @@ static constexpr auto transparent = keyleds::RGBAColor{0, 0, 0, 0};
 
 /****************************************************************************/
 
-class FillEffect final : public plugin::Effect
+namespace keyleds::plugin {
+
+class FillEffect final : public SimpleEffect
 {
     struct Rule final
     {
@@ -73,3 +75,5 @@ private:
 };
 
 KEYLEDSD_SIMPLE_EFFECT("fill", FillEffect);
+
+} // namespace keyleds::plugin
