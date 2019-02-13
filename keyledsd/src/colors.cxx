@@ -25,6 +25,7 @@
 #include <ostream>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <utility>
 
 using keyleds::RGBColor;
@@ -187,6 +188,15 @@ static constexpr std::array<std::pair<const char *, RGBColor>, 149> predefinedCo
 static_assert(predefinedColors.back().second == RGBColor(0x9A, 0xCD, 0x32),
               "Last predefined color is not the expected one - is length correct?");
 
+// Longest color name in array - for allocating buffers
+static constexpr auto predefinedColorsMax = std::string_view(std::max_element(
+    predefinedColors.begin(), predefinedColors.end(),
+    [](const auto & lhs, const auto & rhs) {
+        return std::string_view(lhs.first).size() < std::string_view(rhs.first).size();
+    }
+)->first).size();
+
+/***************************************************************************/
 
 /** Parse a string into an RGBColor.
  * @param str Color name or hexadecimal string in RRGGBB format.
@@ -208,19 +218,20 @@ KEYLEDSD_EXPORT std::optional<RGBColor> RGBColor::parse(const std::string & str)
     }
 
     // Attempt using a predefined color
-    std::string lower;  // to allow case mismatch, make a lowercase version
-    lower.reserve(str.size());
-    std::transform(str.begin(), str.end(), std::back_inserter(lower), ::tolower);
+    if (str.size() <= predefinedColorsMax) {
+        char lowerBuffer[predefinedColorsMax + 1];    // allow case mismatch
+        std::transform(str.begin(), str.end(), &lowerBuffer[0], ::tolower);
+        auto lower = std::string_view(lowerBuffer, str.size());
 
-    const auto it = std::lower_bound(
-        predefinedColors.begin(), predefinedColors.end(),
-        lower, [](const auto & item, const auto & name) { return item.first < name; }
-    );
-    if (it != predefinedColors.end() && it->first == lower) {
-        return it->second;
+        auto it = std::find_if(
+            predefinedColors.begin(), predefinedColors.end(),
+            [lower](const auto & item) { return lower.compare(item.first) == 0; });
+        if (it != predefinedColors.end()) {
+            return it->second;
+        }
     }
 
-    return {};
+    return std::nullopt;
 }
 
 /** Write a human-readable representation of color.
