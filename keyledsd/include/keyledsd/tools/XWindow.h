@@ -32,9 +32,6 @@
 #include <utility>
 #include <vector>
 
-namespace std {
-    template <> struct default_delete<::Display> { void operator()(::Display *) const; };
-}
 
 /** Xlib object-oriented wrappers
  *
@@ -144,6 +141,10 @@ class Display final
     using event_handler = std::function<void(const XEvent &)>;
     using event_type = int;
     using subscription_id_type = unsigned;
+
+    struct X11DisplayDeleter { void operator()(X11Display *) const; };
+    using display_ptr = std::unique_ptr<X11Display, X11DisplayDeleter>;
+
     static constexpr subscription_id_type invalid_subscription = 0;
 public:
     class subscription final
@@ -182,13 +183,13 @@ public:
 private:
     /// Opens a connection through Xlib to specified display.
     /// Invoked once by the constructor. Display name might be empty to use Xlib defaults
-    static std::unique_ptr<X11Display> openDisplay(const std::string &);
+    static display_ptr      openDisplay(const std::string &);
 
     /// Invoked by subscription destructors
     void                    unregisterHandler(subscription_id_type);
 
 private:
-    std::unique_ptr<X11Display> m_display;      ///< Xlib descriptor for the connection to the server
+    display_ptr             m_display;          ///< Xlib descriptor for the connection to the server
     std::string             m_name;             ///< Display name, in Xlib format, eg: ":0"
     Window                  m_root;             ///< Window at the root of the display.
     mutable atom_map        m_atomCache;        ///< key-sorted list of key-values

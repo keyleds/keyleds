@@ -23,10 +23,6 @@
 
 struct lua_State;
 
-namespace std {
-    template <> struct default_delete<lua_State> { void operator()(lua_State *) const; };
-}
-
 
 namespace keyleds::plugin::lua {
 
@@ -34,7 +30,8 @@ namespace keyleds::plugin::lua {
 
 class LuaEffect final : public SimpleEffect, public keyleds::lua::Environment::Controller
 {
-    using state_ptr = std::unique_ptr<lua_State>;
+    struct lua_state_deleter { void operator()(lua_State *) const; };
+    using state_ptr = std::unique_ptr<lua_State, lua_state_deleter>;
 public:
                     LuaEffect(std::string name, EffectService &, state_ptr);
                     LuaEffect(const LuaEffect &) = delete;

@@ -42,8 +42,6 @@ static constexpr char nameAtom[] = "_NET_WM_NAME";
 static constexpr char deviceNodeAtom[] = "Device Node";
 static constexpr char utf8Atom[] = "UTF8_STRING";
 
-void std::default_delete<X11Display>::operator()(X11Display *ptr) const { XCloseDisplay(ptr); }
-
 /****************************************************************************/
 
 struct xlib::Display::HandlerInfo
@@ -94,14 +92,14 @@ std::unique_ptr<xlib::Window> xlib::Display::getActiveWindow()
     return std::make_unique<Window>(*this, handle);
 }
 
-std::unique_ptr<X11Display> xlib::Display::openDisplay(const std::string & name)
+xlib::Display::display_ptr xlib::Display::openDisplay(const std::string & name)
 {
     handle_type display = XOpenDisplay(name.empty() ? nullptr : name.c_str());
     if (display == nullptr) {
         throw Error(name.empty() ? "failed to open default display"
                                  : ("failed to open display " + name));
     }
-    return std::unique_ptr<X11Display>(display);
+    return display_ptr(display);
 }
 
 void xlib::Display::processEvents()
@@ -136,6 +134,11 @@ void xlib::Display::unregisterHandler(subscription_id_type id)
     if (it != m_handlers.end() - 1) { *it = std::move(m_handlers.back()); }
     m_handlers.pop_back();
     DEBUG("unsubscribed from events => ", id);
+}
+
+void xlib::Display::X11DisplayDeleter::operator()(X11Display * ptr) const
+{
+    XCloseDisplay(ptr);
 }
 
 xlib::Display::subscription::subscription(Display & watcher, subscription_id_type id)

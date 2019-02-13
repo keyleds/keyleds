@@ -2,7 +2,6 @@ import argparse
 import sys
 import xml.etree.ElementTree as etree
 from collections import namedtuple
-from contextlib import suppress
 from datetime import datetime
 
 

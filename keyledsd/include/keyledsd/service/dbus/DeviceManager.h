@@ -41,8 +41,8 @@ public:
 
 private:
     sd_bus *        m_bus;
-    sd_bus_slot *   m_slot;
     DeviceManager & m_device;
+    sd_bus_slot *   m_slot;
 };
 
 /****************************************************************************/

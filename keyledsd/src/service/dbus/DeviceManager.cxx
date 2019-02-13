@@ -142,7 +142,7 @@ static constexpr sd_bus_vtable interfaceVtable[] = {
 /****************************************************************************/
 
 DeviceManagerAdapter::DeviceManagerAdapter(sd_bus * bus, DeviceManager & device)
- : m_bus(bus), m_device(device)
+ : m_bus(bus), m_device(device), m_slot(nullptr)
 {
     sd_bus_ref(bus);
     sd_bus_add_object_vtable(m_bus, &m_slot, pathFor(device).c_str(), interfaceName,

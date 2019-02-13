@@ -226,7 +226,7 @@ static constexpr sd_bus_vtable interfaceVtable[] = {
 /****************************************************************************/
 
 ServiceAdapter::ServiceAdapter(sd_bus * bus, Service & service)
- : m_bus(bus), m_service(service)
+ : m_bus(bus), m_service(service), m_slot(nullptr)
 {
     sd_bus_ref(bus);
     sd_bus_add_object_vtable(m_bus, &m_slot, objectPath, interfaceName,

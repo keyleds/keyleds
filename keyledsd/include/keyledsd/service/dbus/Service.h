@@ -49,8 +49,8 @@ private:
 
 private:
     sd_bus *        m_bus;
-    sd_bus_slot *   m_slot;
     Service &       m_service;
+    sd_bus_slot *   m_slot;
     std::vector<std::unique_ptr<DeviceManagerAdapter>>  m_devices;
 };
 

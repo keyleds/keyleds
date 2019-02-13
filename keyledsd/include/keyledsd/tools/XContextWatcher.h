@@ -60,7 +60,7 @@ private:
     /// Invoked from handleEvent when it detects the active window has changed
     /// Passed window is the new active window; m_activeWindow still has the old one.
     /// Both may be nullptr.
-    virtual void    onActiveWindowChanged(Window *, bool silent = false);
+    virtual void    onActiveWindowChanged(Window *, bool silent);
 
     /// Builds a context and emit a contextChanged signal for given window
     /// Signal is debounced: if built context is equal to current, signal is not sent.

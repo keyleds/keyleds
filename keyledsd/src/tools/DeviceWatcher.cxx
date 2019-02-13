@@ -26,13 +26,13 @@ using keyleds::tools::device::Description;
 using keyleds::tools::device::DeviceWatcher;
 using keyleds::tools::device::FilteredDeviceWatcher;
 
-void std::default_delete<struct udev>::operator()(struct udev *ptr) const
+void keyleds::tools::device::detail::udev_deleter<udev>::operator()(udev *ptr) const
     { udev_unref(ptr); }
-void std::default_delete<struct udev_monitor>::operator()(struct udev_monitor *ptr) const
+void keyleds::tools::device::detail::udev_deleter<udev_monitor>::operator()(udev_monitor *ptr) const
     { udev_monitor_unref(ptr); }
-void std::default_delete<struct udev_enumerate>::operator()(struct udev_enumerate *ptr) const
+void keyleds::tools::device::detail::udev_deleter<udev_enumerate>::operator()(udev_enumerate *ptr) const
     { udev_enumerate_unref(ptr); }
-void std::default_delete<struct udev_device>::operator()(struct udev_device *ptr) const
+void keyleds::tools::device::detail::udev_deleter<udev_device>::operator()(udev_device *ptr) const
     { udev_device_unref(ptr); }
 
 /****************************************************************************/
@@ -106,7 +106,7 @@ std::vector<Description> Description::descendantsWithType(const std::string & su
     std::vector<Description> result;
 
     auto udev = udev_device_get_udev(m_device.get());
-    auto enumerator = std::unique_ptr<struct udev_enumerate>(udev_enumerate_new(udev));
+    auto enumerator = udev_ptr<struct udev_enumerate>(udev_enumerate_new(udev));
 
     udev_enumerate_add_match_parent(enumerator.get(), m_device.get());
     udev_enumerate_add_match_subsystem(enumerator.get(), subsystem.c_str());
@@ -120,7 +120,7 @@ std::vector<Description> Description::descendantsWithType(const std::string & su
 
     udev_list_entry_foreach(current, first) {
         const char * syspath = udev_list_entry_get_name(current);
-        auto device = std::unique_ptr<struct udev_device>(
+        auto device = udev_ptr<struct udev_device>(
             udev_device_new_from_syspath(udev, syspath)
         );
         if (device != nullptr) {
@@ -162,7 +162,7 @@ DeviceWatcher::~DeviceWatcher() = default;
 
 void DeviceWatcher::scan()
 {
-    auto enumerator = std::unique_ptr<struct udev_enumerate>(udev_enumerate_new(m_udev.get()));
+    auto enumerator = udev_ptr<struct udev_enumerate>(udev_enumerate_new(m_udev.get()));
 
     setupEnumerator(*enumerator);
 
@@ -187,7 +187,7 @@ void DeviceWatcher::scan()
             if (it != m_known.end() - 1) { *it = std::move(m_known.back()); }
             m_known.pop_back();
         } else {
-            auto device = std::unique_ptr<struct udev_device>(
+            auto device = udev_ptr<struct udev_device>(
                 udev_device_new_from_syspath(m_udev.get(), syspath)
             );
             if (device != nullptr) {
@@ -233,7 +233,7 @@ void DeviceWatcher::setActive(bool active)
 
 void DeviceWatcher::onMonitorReady()
 {
-    auto device = std::unique_ptr<struct udev_device>(udev_monitor_receive_device(m_monitor.get()));
+    auto device = udev_ptr<struct udev_device>(udev_monitor_receive_device(m_monitor.get()));
     if (device == nullptr) {
         throw Error("failed to read notification details from udev");
     }

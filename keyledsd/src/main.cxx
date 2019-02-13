@@ -230,7 +230,7 @@ int main(int argc, char * argv[])
         auto serviceAdapter = service::dbus::ServiceAdapter(bus, service);
         auto dbusFdWatcher = tools::FDWatcher(
             sd_bus_get_fd(bus), tools::FDWatcher::Read,
-            [&](auto){ while (sd_bus_process(bus, NULL) > 0) { /* empty */ } },
+            [&](auto){ while (sd_bus_process(bus, nullptr) > 0) { /* empty */ } },
             main_loop
         );
 #endif

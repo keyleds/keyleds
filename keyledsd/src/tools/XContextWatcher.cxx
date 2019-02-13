@@ -39,7 +39,7 @@ XContextWatcher::XContextWatcher(xlib::Display & display)
     display.root().changeAttributes(CWEventMask, attributes);
 
     m_activeWindow = display.getActiveWindow();
-    onActiveWindowChanged(m_activeWindow.get());
+    onActiveWindowChanged(m_activeWindow.get(), false);
 }
 
 XContextWatcher::~XContextWatcher()
@@ -57,7 +57,7 @@ void XContextWatcher::handleEvent(const XEvent & event)
             if ((active == nullptr) != (m_activeWindow == nullptr) ||
                 (active != nullptr && active->handle() != m_activeWindow->handle())) {
                 // Event must fire before the property is updated
-                onActiveWindowChanged(active.get());
+                onActiveWindowChanged(active.get(), false);
                 m_activeWindow = std::move(active);
             }
         }

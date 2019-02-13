@@ -21,6 +21,7 @@
 #include "keyledsd/tools/Paths.h"
 #include "keyledsd/tools/YAMLParser.h"
 #include <algorithm>
+#include <cassert>
 #include <cerrno>
 #include <fstream>
 #include <istream>
@@ -266,7 +267,7 @@ private:
 
 class LayoutDescriptionParser::RootState final : public MappingState
 {
-    enum class SubState { Spurious, Keyboards };
+    enum class SubState { None, Spurious, Keyboards };
 public:
     using value_type = LayoutDescription;
 public:
@@ -302,6 +303,8 @@ public:
         case SubState::Keyboards:
             m_value.keys = state.as<KeyboardListState>().result();
             break;
+        default:
+            assert(false);
         }
         MappingState::subStateEnd(parser, state);
     }
@@ -310,7 +313,7 @@ public:
 
 private:
     value_type  m_value;
-    SubState    m_currentSubState;
+    SubState    m_currentSubState = SubState::None;
 };
 
 

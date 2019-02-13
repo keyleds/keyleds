@@ -22,7 +22,7 @@
 /* blend */
 
 #ifdef HAVE_BUILTIN_CPU_SUPPORTS
-static void (*resolve_blend(void))(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
+static USED void (*resolve_blend(void))(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
 {
 #  if defined __GNUC__ && !defined __clang__
     __builtin_cpu_init();
@@ -56,7 +56,7 @@ KEYLEDSD_EXPORT void blend(uint8_t * restrict dst, const uint8_t * restrict src,
 /* multiply */
 
 #ifdef HAVE_BUILTIN_CPU_SUPPORTS
-static void (*resolve_multiply(void))(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
+static USED void (*resolve_multiply(void))(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
 {
 #  if defined __GNUC__ && !defined __clang__
     __builtin_cpu_init();

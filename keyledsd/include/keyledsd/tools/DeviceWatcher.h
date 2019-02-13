@@ -35,20 +35,21 @@ struct udev_monitor;
 struct udev_enumerate;
 struct udev_device;
 
-/* We use unique_ptr to get automatic disposal of libudev structures
- * Declare the custom deleters here to ensure they are always used
- * Implement them in cxx file to prevent leakage of libudev.h into other modules
- */
-namespace std {
-    template<> struct default_delete<struct udev> { void operator()(struct udev *) const; };
-    template<> struct default_delete<struct udev_monitor> { void operator()(struct udev_monitor *) const; };
-    template<> struct default_delete<struct udev_enumerate> { void operator()(struct udev_enumerate *) const; };
-    template<> struct default_delete<struct udev_device> { void operator()(struct udev_device *) const; };
-}
-
 /****************************************************************************/
 
 namespace keyleds::tools::device {
+
+namespace detail {
+    template <typename T> struct udev_deleter {};
+    template <> struct udev_deleter<udev> { void operator()(udev *) const; };
+    template <> struct udev_deleter<udev_monitor> { void operator()(udev_monitor *) const; };
+    template <> struct udev_deleter<udev_enumerate> { void operator()(udev_enumerate *) const; };
+    template <> struct udev_deleter<udev_device> { void operator()(udev_device *) const; };
+}
+
+template <typename T>
+using udev_ptr = std::unique_ptr<T, detail::udev_deleter<T>>;
+
 
 class Error : public std::runtime_error
 {
@@ -100,7 +101,7 @@ public:
     const attribute_map &   attributes() const { return m_attributes; };
 
 private:
-    std::unique_ptr<struct udev_device> m_device;   ///< underlying libudev device instance
+    udev_ptr<struct udev_device> m_device;          ///< underlying libudev device instance
     std::string     m_sysPath;                      ///< path to device description - unique
     property_map    m_properties;                   ///< key-value map of libudev properties
     tag_list        m_tags;                         ///< string list of libudev tags
@@ -151,13 +152,13 @@ private:
     void                onMonitorReady();
 
 private:
-    bool                                    m_active = false; ///< If set, the watcher is monitoring
+    bool                            m_active = false; ///< If set, the watcher is monitoring
                                                             ///  device changes
-    uv_loop_t &                             m_loop;         ///< Event loop
-    std::unique_ptr<struct udev>            m_udev;         ///< Connection to udev, or nullptr
-    std::unique_ptr<struct udev_monitor>    m_monitor;      ///< Monitoring endpoint, or nullptr
-    std::unique_ptr<FDWatcher>              m_fdWatcher;    ///< Monitors udev socket
-    device_list                             m_known;        ///< List of device descriptions
+    uv_loop_t &                     m_loop;         ///< Event loop
+    udev_ptr<struct udev>           m_udev;         ///< Connection to udev, or nullptr
+    udev_ptr<struct udev_monitor>   m_monitor;      ///< Monitoring endpoint, or nullptr
+    std::unique_ptr<FDWatcher>      m_fdWatcher;    ///< Monitors udev socket
+    device_list                     m_known;        ///< List of device descriptions
 };
 
 /****************************************************************************/

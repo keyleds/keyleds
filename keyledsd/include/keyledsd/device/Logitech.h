@@ -29,11 +29,6 @@
 struct keyleds_device;
 struct keyleds_key_color;
 
-namespace std {
-    template <> struct default_delete<struct keyleds_device> {
-        void operator()(struct keyleds_device *) const;
-    };
-};
 
 namespace keyleds::device {
 
@@ -47,6 +42,9 @@ namespace keyleds::device {
  */
 class Logitech final : public Device
 {
+    struct keyleds_device_deleter { void operator()(struct keyleds_device *) const; };
+    using device_ptr = std::unique_ptr<struct keyleds_device, keyleds_device_deleter>;
+
 public:
     // Exceptions
     class error : public Device::error
@@ -64,7 +62,7 @@ public:
     };
 
 private:
-                    Logitech(std::unique_ptr<struct keyleds_device>,
+                    Logitech(device_ptr,
                              std::string path, Type type, std::string name, std::string model,
                              std::string serial, std::string firmware, int layout, block_list);
 public:
@@ -98,7 +96,7 @@ private:
                                      std::string * serial, std::string * firmware);
 
 private:
-    std::unique_ptr<struct keyleds_device> m_device;    ///< Underlying libkeyleds opaque handle
+    device_ptr      m_device;    ///< Underlying libkeyleds opaque handle
 };
 
 /****************************************************************************/

@@ -472,10 +472,7 @@ bool LuaEffect::handleError(lua_State * lua, EffectService & service, int code)
     return ok;
 }
 
-// Ensure unique_ptr works on lua_State
-namespace std {
-    void default_delete<lua_State>::operator()(lua_State *p) const { lua_close(p); }
-} // namespace std
+void LuaEffect::lua_state_deleter::operator()(lua_State *p) const { lua_close(p); }
 
 /****************************************************************************/
 

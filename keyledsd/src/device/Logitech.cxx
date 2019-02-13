@@ -33,17 +33,24 @@ LOGGING("device");
 using keyleds::device::Logitech;
 using keyleds::device::LogitechWatcher;
 
-namespace std {
-    void default_delete<struct keyleds_device>::operator()(struct keyleds_device *p) const {
-        keyleds_close(p);
-    }
-    template<> struct default_delete<struct keyleds_keyblocks_info> {
-        void operator()(struct keyleds_keyblocks_info *p) const { keyleds_free_block_info(p); }
-    };
-    template<> struct default_delete<struct keyleds_device_version> {
-        void operator()(struct keyleds_device_version *p) const { keyleds_free_device_version(p); }
-    };
-} // namespace std
+void Logitech::keyleds_device_deleter::operator()(struct keyleds_device *p) const {
+    keyleds_close(p);
+}
+
+template <typename T> struct keyleds_deleter {};
+template <> struct keyleds_deleter<keyleds_keyblocks_info> {
+    void operator()(struct keyleds_keyblocks_info *p) const { keyleds_free_block_info(p); }
+};
+template <> struct keyleds_deleter<keyleds_device_version> {
+    void operator()(struct keyleds_device_version *p) const { keyleds_free_device_version(p); }
+};
+struct keyleds_device_name_deleter {
+    void operator()(char *p) const { keyleds_free_device_name(p); }
+};
+
+template <typename T, typename deleter = keyleds_deleter<T>>
+using keyleds_ptr = std::unique_ptr<T, deleter>;
+
 
 static constexpr char InterfaceProtocolAttr[] = "bInterfaceProtocol";
 static constexpr unsigned ApplicationInterfaceProtocol = 0;
@@ -51,7 +58,7 @@ static constexpr char DeviceVendorAttr[] = "idVendor";
 
 /****************************************************************************/
 
-Logitech::Logitech(std::unique_ptr<struct keyleds_device> device,
+Logitech::Logitech(device_ptr device,
                    std::string path, Type type, std::string name, std::string model,
                    std::string serial, std::string firmware, int layout, block_list blocks)
  : Device(std::move(path), type, std::move(name), std::move(model), std::move(serial),
@@ -63,9 +70,7 @@ Logitech::~Logitech() = default;
 
 std::unique_ptr<keyleds::device::Device> Logitech::open(const std::string & path)
 {
-    auto device = std::unique_ptr<struct keyleds_device>(
-        keyleds_open(path.c_str(), KEYLEDSD_APP_ID)
-    );
+    auto device = device_ptr(keyleds_open(path.c_str(), KEYLEDSD_APP_ID));
     if (device == nullptr) { throw error(keyleds_get_error_str(), keyleds_get_errno()); }
 
     auto type = getType(device.get());
@@ -201,7 +206,7 @@ std::string Logitech::getName(struct keyleds_device * device)
         throw error(keyleds_get_error_str(), keyleds_get_errno());
     }
     // Wrap the pointer in a smart pointer in case string creation throws
-    auto name_p = std::unique_ptr<char[], void(*)(char*)>(name, keyleds_free_device_name);
+    auto name_p = keyleds_ptr<char[], keyleds_device_name_deleter>(name);
     return std::string(name);
 }
 
@@ -212,7 +217,7 @@ Logitech::block_list Logitech::getBlocks(struct keyleds_device * device)
         throw error(keyleds_get_error_str(), keyleds_get_errno());
     }
     // Wrap retrieved data in a smart pointer so it is freed if something throws
-    auto blockinfo_p = std::unique_ptr<struct keyleds_keyblocks_info>(info);
+    auto blockinfo_p = keyleds_ptr<keyleds_keyblocks_info>(info);
 
     block_list blocks;
     for (unsigned i = 0; i < info->length; i += 1) {
@@ -253,7 +258,7 @@ void Logitech::parseVersion(struct keyleds_device * device, std::string * model,
         throw error(keyleds_get_error_str(), keyleds_get_errno());
     }
     // Wrap retrieved data in a smart pointer so it is freed if something throws
-    auto version_p = std::unique_ptr<struct keyleds_device_version>(version);
+    auto version_p = keyleds_ptr<keyleds_device_version>(version);
 
     // Build hex representation of HID++ device model
     {

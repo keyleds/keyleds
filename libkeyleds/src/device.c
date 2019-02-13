@@ -219,7 +219,7 @@ bool keyleds_send(Keyleds * device, uint8_t target_id, uint8_t feature_idx,
     buffer[1] = target_id;
     buffer[2] = feature_idx;
     buffer[3] = (uint8_t)(function << 4 | device->app_id);
-    memcpy(&buffer[4], data, length);
+    if (length > 0) { memcpy(&buffer[4], data, length); }
     memset(&buffer[4 + length], 0, report_size - 3 - length);
 
 #ifndef NDEBUG

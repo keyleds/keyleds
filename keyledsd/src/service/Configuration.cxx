@@ -19,6 +19,7 @@
 #include "keyledsd/tools/Paths.h"
 #include "keyledsd/tools/YAMLParser.h"
 #include <algorithm>
+#include <cassert>
 #include <cerrno>
 #include <fstream>
 #include <istream>
@@ -207,7 +208,7 @@ private:
 class ConfigurationParser::EffectGroupState final: public MappingState
 {
     using EffectGroup = Configuration::EffectGroup;
-    enum class SubState { KeyGroupList, EffectList };
+    enum class SubState { None, KeyGroupList, EffectList };
 public:
     explicit EffectGroupState(std::string name) : m_name(std::move(name)) {}
     void print(std::ostream & out) const override { out <<"effect(" <<m_name <<')'; }
@@ -235,14 +236,14 @@ public:
     void subStateEnd(StackYAMLParser & parser, State & state) override
     {
         switch(m_currentSubState) {
-            case SubState::KeyGroupList: {
-                m_keyGroups = state.as<KeyGroupListState>().result();
-                break;
-            }
-            case SubState::EffectList: {
-                m_effects = state.as<EffectListState>().result();
-                break;
-            }
+        case SubState::KeyGroupList:
+            m_keyGroups = state.as<KeyGroupListState>().result();
+            break;
+        case SubState::EffectList:
+            m_effects = state.as<EffectListState>().result();
+            break;
+        default:
+            assert(false);
         }
         MappingState::subStateEnd(parser, state);
     }
@@ -256,7 +257,7 @@ private:
     std::string                 m_name;
     EffectGroup::key_group_list m_keyGroups;
     EffectGroup::effect_list    m_effects;
-    SubState                    m_currentSubState;
+    SubState                    m_currentSubState = SubState::None;
 };
 
 /// Configuration builder state: within an effect list
@@ -288,7 +289,7 @@ private:
 class ConfigurationParser::ProfileState final: public MappingState
 {
     using value_type = Configuration::Profile;
-    enum class SubState { Lookup, DeviceList, EffectGroupList };
+    enum class SubState { None, Lookup, DeviceList, EffectGroupList };
 public:
     explicit ProfileState(std::string name) : m_name(std::move(name)) {}
     void print(std::ostream & out) const override { out <<"profile(" <<m_name <<')'; }
@@ -331,20 +332,19 @@ public:
     void subStateEnd(StackYAMLParser & parser, State & state) override
     {
         switch(m_currentSubState) {
-            case SubState::Lookup: {
-                m_lookup = value_type::Lookup(
-                    state.as<StringMappingBuildState>().result()
-                );
-                break;
-            }
-            case SubState::DeviceList: {
-                m_devices = state.as<StringSequenceBuildState>().result();
-                break;
-            }
-            case SubState::EffectGroupList: {
-                m_effectGroups = state.as<StringSequenceBuildState>().result();
-                break;
-            }
+        case SubState::Lookup:
+            m_lookup = value_type::Lookup(
+                state.as<StringMappingBuildState>().result()
+            );
+            break;
+        case SubState::DeviceList:
+            m_devices = state.as<StringSequenceBuildState>().result();
+            break;
+        case SubState::EffectGroupList:
+            m_effectGroups = state.as<StringSequenceBuildState>().result();
+            break;
+        default:
+            assert(false);
         }
         MappingState::subStateEnd(parser, state);
     }
@@ -360,7 +360,7 @@ private:
     value_type::Lookup              m_lookup;
     value_type::device_list         m_devices;
     value_type::effect_group_list   m_effectGroups;
-    SubState                        m_currentSubState;
+    SubState                        m_currentSubState = SubState::None;
 };
 
 /// Configuration builder state: within a profile list
@@ -394,7 +394,7 @@ private:
 class ConfigurationParser::RootState final : public MappingState
 {
     enum class SubState {
-        Plugins, PluginPaths, Devices, KeyGroups, EffectGroups, Profiles
+        None, Plugins, PluginPaths, Devices, KeyGroups, EffectGroups, Profiles
     };
 public:
     using value_type = Configuration;
@@ -468,6 +468,8 @@ public:
         case SubState::Profiles:
             m_value.profiles = state.as<ProfileListState>().result();
             break;
+        default:
+            assert(false);
         }
         MappingState::subStateEnd(parser, state);
     }
@@ -476,7 +478,7 @@ public:
 
 private:
     value_type  m_value;
-    SubState    m_currentSubState;
+    SubState    m_currentSubState = SubState::None;
 };
 
 

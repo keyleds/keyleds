@@ -111,7 +111,7 @@ static std::string_view toStr(const yaml_char_t * str) {
 }
 
 static std::string_view toStr(const yaml_char_t * str, std::size_t size) {
-    return size > 0 ? std::string_view(reinterpret_cast<const char *>(str))
+    return size > 0 ? std::string_view(reinterpret_cast<const char *>(str), size)
                     : std::string_view();
 }
 
