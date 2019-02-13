@@ -24,7 +24,6 @@
 using keyleds::logging::Configuration;
 using keyleds::logging::Policy;
 using keyleds::logging::FilePolicy;
-using keyleds::logging::Logger;
 
 /****************************************************************************/
 
@@ -38,27 +37,40 @@ Configuration & Configuration::instance()
     return singleton;
 }
 
-void Configuration::registerLogger(Logger * logger)
-{
-    m_loggers.push_back(logger);
-}
-
-void Configuration::unregisterLogger(Logger * logger)
-{
-    m_loggers.erase(std::remove(m_loggers.begin(), m_loggers.end(), logger),
-                    m_loggers.end());
-}
-
 void Configuration::setPolicy(const Policy * policy)
 {
     m_globalPolicy = (policy != nullptr ? policy : &defaultPolicy());
 }
 
-void Configuration::setPolicy(const std::string & name, const Policy * policy)
+void Configuration::setPolicy(std::string name, const Policy * policy)
 {
-    for (auto & logger : m_loggers) {
-        if (logger->name() == name) { logger->setPolicy(policy); }
+    using std::swap;
+    auto it = std::find_if(m_policies.begin(), m_policies.end(),
+                           [&name](const auto & item) { return item.first == name; });
+    if (it == m_policies.end()) {
+        if (policy) {
+            m_policies.emplace_back(std::move(name), policy);
+        }
+    } else {
+        if (policy) {
+            it->second = policy;
+        } else {
+            if (it != m_policies.end() - 1) {
+                swap(*it, m_policies.back());
+                m_policies.pop_back();
+            }
+        }
     }
+}
+
+const Policy & Configuration::policyFor(const char * name) const
+{
+    auto it = std::find_if(m_policies.begin(), m_policies.end(),
+                           [&name](const auto & item) { return item.first == name; });
+    if (it != m_policies.end()) {
+        return *it->second;
+    }
+    return *m_globalPolicy;
 }
 
 const Policy & Configuration::defaultPolicy()
@@ -129,30 +141,3 @@ void FilePolicy::write(level_t level, const std::string & name, const std::strin
     }
 }
 
-/****************************************************************************/
-
-Logger::Logger(std::string name, const Policy * policy)
- : m_name(std::move(name)),
-   m_policy(policy)
-{
-    Configuration::instance().registerLogger(this);
-}
-
-Logger::~Logger()
-{
-    Configuration::instance().unregisterLogger(this);
-}
-
-void Logger::setPolicy(const Policy * policy)
-{
-    m_policy.store(policy);
-}
-
-void Logger::print(level_t level, const std::string & msg)
-{
-    const auto * policy = m_policy.load();
-    if (policy == nullptr) {
-        policy = &Configuration::instance().globalPolicy();
-    }
-    policy->write(level, m_name, msg);
-}

@@ -46,23 +46,20 @@ public:
     Configuration & operator=(const Configuration &) = delete;
     static Configuration & instance();          ///< singleton instance
 
-    void    registerLogger(Logger *);
-    void    unregisterLogger(Logger *);
-
     /// Define global logging policy. Pass nullptr for default;
-    void    setPolicy(const Policy *);
+    void            setPolicy(const Policy *);
 
     /// Define local logging policy for module of given name. Pass nullptr to revert module
     /// to using global policy.
-    void    setPolicy(const std::string & name, const Policy *);
+    void            setPolicy(std::string name, const Policy *);
 
-    const Policy & globalPolicy() const { return *m_globalPolicy; }
+    const Policy &  policyFor(const char * name) const;
 
 private:
     static const Policy & defaultPolicy();      ///< Used when setPolicy(nullptr) is invoked.
 private:
-    std::vector<Logger *>       m_loggers;      ///< Currently known logger instances.
     std::atomic<const Policy *> m_globalPolicy; ///< Used by loggers with no policy. Never null.
+    std::vector<std::pair<std::string, const Policy *>> m_policies;
 };
 
 
@@ -118,17 +115,15 @@ protected:
 class Logger final
 {
 public:
-                    Logger(std::string name, const Policy * policy = nullptr);
-                    ~Logger();
+    explicit constexpr Logger(const char * name) noexcept : m_name(name) {}
+    constexpr const char * name() const { return m_name; }
 
-    const std::string & name() const { return m_name; }
-    void            setPolicy(const Policy * policy);
-
-    void            print(level_t, const std::string & msg);
+    void print(level_t level, const std::string & msg) const {
+        Configuration::instance().policyFor(m_name).write(level, m_name, msg);
+    }
 
 private:
-    const std::string   m_name;             ///< Module name (for prefixing log entries)
-    std::atomic<const Policy *> m_policy;   ///< Per-module policy. May be null.
+    const char *    m_name;             ///< Module name (for prefixing log entries)
 };
 
 /*****************************************************************************
@@ -141,12 +136,13 @@ private:
  */
 template <level_t L> struct level {
     static constexpr level_t value = L;
-    template <typename...Args> static void print(Logger & logger, Args && ...args);
+    template <typename...Args> static void print(const Logger & logger, Args && ...args);
 };
 template <level_t L> constexpr level_t level<L>::value;
 
 
-template <level_t L> template <typename...Args> void level<L>::print(Logger & logger, Args && ...args)
+template <level_t L> template <typename...Args>
+void level<L>::print(const Logger & logger, Args && ...args)
 {
     std::ostringstream buffer;
     (buffer << ... << args);
@@ -162,13 +158,13 @@ using verbose = level<4u>;
 using debug = level<5u>;
 
 #ifdef NDEBUG
-template <> template<typename...Args> void debug::print(Logger &, Args &&...) {}
+template <> template<typename...Args> void debug::print(const Logger &, Args &&...) {}
 #endif
 
 /****************************************************************************/
 // Module interface
 
-#define LOGGING(name) static keyleds::logging::Logger l_logger(name)
+#define LOGGING(name) static constexpr auto l_logger = keyleds::logging::Logger(name)
 
 #define CRITICAL(...)   keyleds::logging::critical::print(l_logger, __VA_ARGS__)
 #define ERROR(...)      keyleds::logging::error::print(l_logger, __VA_ARGS__)
