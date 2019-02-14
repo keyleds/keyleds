@@ -52,16 +52,24 @@ public:
         const auto lifetime = m_sustain + m_decay;
 
         for (auto & keyPress : m_presses) {
+            RGBAColor color;
+
             keyPress.age += elapsed;
-            if (keyPress.age > lifetime) { keyPress.age = lifetime; }
-            m_buffer[keyPress.key->index] = RGBAColor(
-                m_color.red,
-                m_color.green,
-                m_color.blue,
-                RGBAColor::channel_type(
-                    m_color.alpha * std::min(lifetime - keyPress.age, m_decay) / m_decay
-                )
-            );
+            if (keyPress.age <= m_sustain) {
+                color = m_color;
+            } else if (keyPress.age < lifetime) {
+                color = {
+                    m_color.red,
+                    m_color.green,
+                    m_color.blue,
+                    RGBAColor::channel_type(
+                        m_color.alpha * (lifetime - keyPress.age) / m_decay
+                    )
+                };
+            } else {
+                color = transparent;
+            }
+            m_buffer[keyPress.key->index] = color;
         }
         m_presses.erase(
             std::remove_if(m_presses.begin(), m_presses.end(),
