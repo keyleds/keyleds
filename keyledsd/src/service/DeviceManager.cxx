@@ -54,7 +54,9 @@ static device::LayoutDescription loadLayout(const device::Device & device)
     for (auto layoutId : attempts) {
         auto name = layoutName(device.model(), layoutId);
         try {
-            return device::LayoutDescription::loadFile(name);
+            auto result = device::LayoutDescription::loadFile(name);
+            INFO("loaded layout <", name, ">");
+            return result;
         } catch (std::runtime_error & error) {
             ERROR("could not load layout <", name, ">: ", error.what());
         }

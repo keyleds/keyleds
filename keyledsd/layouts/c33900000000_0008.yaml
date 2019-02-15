@@ -6,6 +6,9 @@ layout: PAN
 spurious:
     - {zone: 1, code: 0x31}
 keyboards:
+    - zone: 16
+      keys:
+        - {code: 0x01, x: 54, y: 8, width: 62, height: 62, glyph: 'Logo'}
     - zone: 64
       keys:
         - {code: 0x03, x: 648, y: 23, width: 47, height: 28, glyph: 'CapsLockLed'}
