@@ -77,6 +77,7 @@ private:
 class Policy
 {
 public:
+    virtual bool    canSkip(level_t) const = 0;
     virtual void    write(level_t, const std::string & name, const std::string & msg) const = 0;
 protected:
     ~Policy();
@@ -94,6 +95,7 @@ class FilePolicy : public Policy
 public:
                     FilePolicy(int fd, level_t, bool ownsFd = false);
     virtual         ~FilePolicy();
+    bool            canSkip(level_t) const override;
     void            write(level_t, const std::string &, const std::string &) const override;
 protected:
     const int       m_fd;           ///< File descriptor number
@@ -118,10 +120,10 @@ public:
     explicit constexpr Logger(const char * name) noexcept : m_name(name) {}
     constexpr const char * name() const { return m_name; }
 
-    void print(level_t level, const std::string & msg) const {
-        Configuration::instance().policyFor(m_name).write(level, m_name, msg);
-    }
-
+    auto & policy() const
+        { return Configuration::instance().policyFor(m_name); }
+    void    print(level_t level, const std::string & msg) const
+        { policy().write(level, m_name, msg); }
 private:
     const char *    m_name;             ///< Module name (for prefixing log entries)
 };
@@ -144,18 +146,22 @@ template <level_t L> constexpr level_t level<L>::value;
 template <level_t L> template <typename...Args>
 void level<L>::print(const Logger & logger, Args && ...args)
 {
+    auto & policy = logger.policy();
+    if (policy.canSkip(L)) { return; }
     std::ostringstream buffer;
     (buffer << ... << args);
-    logger.print(value, buffer.str());
+    policy.write(value, logger.name(), buffer.str());
 }
 
-// Must start from 0 and have no gaps
-using critical = level<0u>;
-using error = level<1u>;
-using warning = level<2u>;
-using info = level<3u>;
-using verbose = level<4u>;
-using debug = level<5u>;
+// See man sd-daemon
+using emergency = level<0u>;
+using alert = level<1u>;
+using critical = level<2u>;
+using error = level<3u>;
+using warning = level<4u>;
+using notice = level<5u>;
+using info = level<6u>;
+using debug = level<7u>;
 
 #ifdef NDEBUG
 template <> template<typename...Args> void debug::print(const Logger &, Args &&...) {}
@@ -169,8 +175,8 @@ template <> template<typename...Args> void debug::print(const Logger &, Args &&.
 #define CRITICAL(...)   keyleds::logging::critical::print(l_logger, __VA_ARGS__)
 #define ERROR(...)      keyleds::logging::error::print(l_logger, __VA_ARGS__)
 #define WARNING(...)    keyleds::logging::warning::print(l_logger, __VA_ARGS__)
+#define NOTICE(...)     keyleds::logging::notice::print(l_logger, __VA_ARGS__)
 #define INFO(...)       keyleds::logging::info::print(l_logger, __VA_ARGS__)
-#define VERBOSE(...)    keyleds::logging::verbose::print(l_logger, __VA_ARGS__)
 #define DEBUG(...)      keyleds::logging::debug::print(l_logger, __VA_ARGS__)
 
 /****************************************************************************/

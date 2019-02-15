@@ -143,7 +143,7 @@ static void handleSignalEvent(const Options & options, keyleds::service::Service
                 uv_stop(&main_loop);
                 break;
             case SIGHUP:
-                INFO("reloading ", options.configPath);
+                NOTICE("reloading ", options.configPath);
                 try {
                     service.setConfiguration(Configuration::loadFile(options.configPath));
                 } catch (std::exception & error) {
@@ -176,7 +176,7 @@ int main(int argc, char * argv[])
     auto configuration = Configuration();
     try {
         configuration = Configuration::loadFile(options->configPath);
-        VERBOSE("using ", configuration.path);
+        INFO("using ", configuration.path);
     } catch (std::exception & error) {
         CRITICAL("Could not load configuration: ", error.what());
         return 1;

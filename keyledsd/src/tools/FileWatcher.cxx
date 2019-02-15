@@ -101,7 +101,7 @@ void FileWatcher::onNotifyReady()
             [&event](const auto & listener) { return listener.id == event.wd; }
         );
         if (it == m_listeners.end()) { continue; }
-        INFO("Got event for ", it->id, ": ", std::string(event.name, event.len));
+        DEBUG("Got event for ", it->id, ": ", std::string(event.name, event.len));
         it->callback(static_cast<Event>(event.mask), event.cookie,
                      std::string(event.name, event.len));
         //NOTE at that point `it` is invalid, because callback is allowed to unsubscribe

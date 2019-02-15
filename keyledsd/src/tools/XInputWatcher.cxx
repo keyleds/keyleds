@@ -131,7 +131,7 @@ void XInputWatcher::onInputEnabled(int deviceId, int use)
         ERROR("failed to set events on device ", deviceId, ": ",
               errors.errors().size(), " errors");
     } else {
-        VERBOSE("xinput keyboard ", deviceId, " enabled for device ", device.devNode());
+        INFO("xinput keyboard ", deviceId, " enabled for device ", device.devNode());
         m_devices.emplace_back(std::move(device));
     }
 }
@@ -148,7 +148,7 @@ void XInputWatcher::onInputDisabled(int deviceId, int use)
     ErrorCatcher errors;
     if (it != m_devices.end() - 1) { *it = std::move(m_devices.back()); }
     m_devices.pop_back();
-    VERBOSE("xinput keyboard ", deviceId, " disabled");
+    INFO("xinput keyboard ", deviceId, " disabled");
 
     errors.synchronize(m_display);
     if (errors) {

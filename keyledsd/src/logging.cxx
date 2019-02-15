@@ -19,7 +19,10 @@
 #include <array>
 #include <sstream>
 #include <stdexcept>
+#include <string_view>
 #include <unistd.h>
+
+using namespace std::literals::string_view_literals;
 
 using keyleds::logging::Configuration;
 using keyleds::logging::Policy;
@@ -85,16 +88,18 @@ Policy::~Policy() = default;
 
 /****************************************************************************/
 
-static constexpr std::array<const char *, 6> levels = {{
+static constexpr std::array<const char *, 8> levels = {{
+    "\033[1;31m<X>\033[;39m",
+    "\033[1;31m<A>\033[;39m",
     "\033[1;31m<C>\033[;39m",
     "\033[1;31m<E>\033[;39m",
     "\033[33m<W>\033[39m",
-    "\033[1m<I>\033[m",
+    "\033[1m<N>\033[m",
     "\033[1m<I>\033[m",
     "\033[2m<D>\033[m"
 }};
-static const std::string nameEnter = "\033[1m";
-static const std::string nameExit = "\033[m";
+static constexpr auto nameEnter = "\033[1m"sv;
+static constexpr auto nameExit = "\033[m"sv;
 
 FilePolicy::FilePolicy(int fd, level_t minLevel, bool ownsFd)
  : m_fd(fd),
@@ -107,6 +112,11 @@ FilePolicy::FilePolicy(int fd, level_t minLevel, bool ownsFd)
 FilePolicy::~FilePolicy()
 {
     if (m_ownsFd) { close(m_fd); }
+}
+
+bool FilePolicy::canSkip(level_t level) const
+{
+    return level > m_minLevel;
 }
 
 /** Write a log entry to a file descriptor

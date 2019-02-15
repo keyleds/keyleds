@@ -55,7 +55,7 @@ static device::LayoutDescription loadLayout(const device::Device & device)
         auto name = layoutName(device.model(), layoutId);
         try {
             auto result = device::LayoutDescription::loadFile(name);
-            INFO("loaded layout <", name, ">");
+            DEBUG("loaded layout <", name, ">");
             return result;
         } catch (std::runtime_error & error) {
             ERROR("could not load layout <", name, ">: ", error.what());
@@ -242,7 +242,7 @@ DeviceManager::buildKeyDatabase(const device::Device & device, const device::Lay
                 [&](const auto & pos) { return pos.first == block.id() && pos.second == keyId; }
             );
             if (it != layout.spurious.cend()) {
-                VERBOSE("marking <", int(block.id()), ", ", int(keyId), "> as spurious");
+                DEBUG("marking <", int(block.id()), ", ", int(keyId), "> as spurious");
                 spurious = true;
             }
 
@@ -305,7 +305,7 @@ std::vector<keyleds::plugin::Effect *> DeviceManager::loadEffects(const string_m
         }
         profile = defaultProfile;
     }
-    VERBOSE("selected profile <", profile->name, ">");
+    INFO("selected profile <", profile->name, ">");
 
     // Collect effect names from selected profile and resolve them
     std::vector<const Configuration::EffectGroup *> effectGroups;
@@ -370,7 +370,7 @@ DeviceManager::EffectGroup & DeviceManager::getEffectGroup(const Configuration::
             ERROR("plugin for effect ", effectConf.name, " not found");
             continue;
         }
-        VERBOSE("loaded plugin effect ", effectConf.name);
+        INFO("loaded plugin effect ", effectConf.name);
         effects.emplace_back(std::move(effect));
     }
 

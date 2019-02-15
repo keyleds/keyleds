@@ -139,7 +139,7 @@ void Service::setAutoQuit(bool val)
 
 void Service::setActive(bool val)
 {
-    VERBOSE("switching to ", val ? "active" : "inactive", " mode");
+    NOTICE("switching to ", val ? "active" : "inactive", " mode");
     m_deviceWatcher.setActive(val);
     m_active = val;
 }
@@ -147,7 +147,7 @@ void Service::setActive(bool val)
 void Service::setContext(const string_map & context)
 {
     merge(m_context, context);
-    VERBOSE("setContext ", ::to_string(m_context));
+    INFO("setContext ", ::to_string(m_context));
     for (auto & device : m_devices) { device->setContext(m_context); }
 }
 
@@ -171,7 +171,7 @@ void Service::handleKeyEvent(const std::string & devNode, int key, bool press)
 
 void Service::onConfigurationFileChanged(FileWatcher::Event event)
 {
-    INFO("reloading ", m_configuration.path);
+    NOTICE("reloading ", m_configuration.path);
 
     auto conf = Configuration();
     try {
@@ -195,7 +195,7 @@ void Service::onConfigurationFileChanged(FileWatcher::Event event)
 
 void Service::onDeviceAdded(const tools::device::Description & description)
 {
-    VERBOSE("device added: ", description.devNode());
+    INFO("device added: ", description.devNode());
     try {
         auto device = device::Logitech::open(description.devNode());
         auto manager = std::make_unique<DeviceManager>(
@@ -206,18 +206,18 @@ void Service::onDeviceAdded(const tools::device::Description & description)
 
         deviceManagerAdded.emit(*manager);
 
-        INFO("opened device ", description.devNode(),
-             " [", manager->name(), ']',
-             ", model ", manager->device().model(),
-             " firmware ", manager->device().firmware(),
-             ", <", manager->device().name(), ">");
+        NOTICE("opened device ", description.devNode(),
+               " [", manager->name(), ']',
+               ", model ", manager->device().model(),
+               " firmware ", manager->device().firmware(),
+               ", <", manager->device().name(), ">");
 
         manager->setPaused(false);
         m_devices.emplace_back(std::move(manager));
 
     } catch (device::Device::error & error) {
         if (error.expected()) {
-            VERBOSE("not opening device ", description.devNode(), ": ", error.what());
+            INFO("not opening device ", description.devNode(), ": ", error.what());
         } else {
             ERROR("not opening device ", description.devNode(), ": ", error.what());
         }
@@ -235,7 +235,7 @@ void Service::onDeviceRemoved(const tools::device::Description & description)
         if (it != m_devices.end() - 1) { *it = std::move(m_devices.back()); }
         m_devices.pop_back();
 
-        INFO("removing device ", manager->serial());
+        NOTICE("removing device ", manager->serial());
 
         deviceManagerRemoved.emit(*manager);
 
@@ -249,7 +249,7 @@ void Service::onDeviceRemoved(const tools::device::Description & description)
 
 void Service::onDisplayAdded(std::unique_ptr<tools::xlib::Display> & display)
 {
-    INFO("connected to display ", display->name());
+    NOTICE("connected to display ", display->name());
     auto displayManager = std::make_unique<DisplayManager>(std::move(display), m_loop);
 
     using namespace std::placeholders;
@@ -267,6 +267,6 @@ void Service::onDisplayAdded(std::unique_ptr<tools::xlib::Display> & display)
 void Service::onDisplayRemoved()
 {
     assert(m_displays.size() == 1);
-    INFO("disconnecting from display ", m_displays.front()->display().name());
+    NOTICE("disconnecting from display ", m_displays.front()->display().name());
     m_displays.clear();
 }

@@ -127,7 +127,7 @@ bool EffectManager::add(const std::string & name, const module_definition * defi
         (*definition->shutdown)(&hostDefinition, plugin);
         throw;
     }
-    VERBOSE("initialized static plugin <", name, ">");
+    INFO("initialized static plugin <", name, ">");
     return true;
 }
 
@@ -147,7 +147,7 @@ bool EffectManager::load(const std::string & name, std::string * error)
         return false;
     }
 
-    VERBOSE("loading ", name, " from ", fullPath);
+    INFO("loading ", name, " from ", fullPath);
 
     auto library = DynamicLibrary::load(fullPath, error);
     if (!library) { return false; }
@@ -234,7 +234,7 @@ void EffectManager::unload(PluginTracker & tracker)
         ERROR("unloading plugin ", tracker.name(), ": ", lastError);
         lastError.clear();
     }
-    VERBOSE("unloaded plugin <", tracker.name(), ">");
+    INFO("unloaded plugin <", tracker.name(), ">");
 }
 
 /** List of loaded plugins
@@ -273,7 +273,7 @@ EffectManager::effect_ptr EffectManager::createEffect(
     }
 
     if (!effect) {
-        VERBOSE("effect ", name, " not loaded, attempting auto-load");
+        DEBUG("effect ", name, " not loaded, attempting auto-load");
 
         std::string error;
         if (!load(name, &error)) {
