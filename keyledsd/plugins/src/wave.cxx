@@ -40,9 +40,9 @@ class WaveEffect final : public SimpleEffect
 {
     using KeyGroup = KeyDatabase::KeyGroup;
 public:
-    explicit WaveEffect(EffectService & service)
+    explicit WaveEffect(EffectService & service, milliseconds period)
      : m_service(service),
-       m_period(tools::parseDuration<milliseconds>(service.getConfig("period")).value_or(10s)),
+       m_period(period),
        m_keys(findGroup(service.keyGroups(), service.getConfig("group"))),
        m_phases(computePhases(service.keyDB(), m_keys,
                 tools::parseNumber(service.getConfig("length")).value_or(1000u),
@@ -51,6 +51,21 @@ public:
        m_buffer(*service.createRenderTarget())
     {
         std::fill(m_buffer.begin(), m_buffer.end(), transparent);
+    }
+
+    static WaveEffect * create(EffectService & service)
+    {
+        const auto & bounds = service.keyDB().bounds();
+        if (!(bounds.x0 < bounds.x1 && bounds.y0 < bounds.y1)) {
+            service.log(3, "effect requires a valid layout");
+            return nullptr;
+        }
+        auto period = tools::parseDuration<milliseconds>(service.getConfig("period")).value_or(10s);
+        if (period < 1s) {
+            service.log(3, "minimum value for period is 1000ms");
+            return nullptr;
+        }
+        return new WaveEffect(service, period);
     }
 
     void render(milliseconds elapsed, RenderTarget & target) override
@@ -174,25 +189,6 @@ private:
     milliseconds                    m_time = 0ms; ///< time since beginning of current cycle.
 };
 
-/****************************************************************************/
-
-class WaveEffectPlugin final : public SimplePlugin<WaveEffect> {
-public:
-    explicit WaveEffectPlugin(const char * name) : SimplePlugin(name) {}
-
-    Effect * createEffect(const std::string & name, EffectService & service) override
-    {
-        if (name != this->name()) { return nullptr; }
-
-        const auto & bounds = service.keyDB().bounds();
-        if (!(bounds.x0 < bounds.x1 && bounds.y0 < bounds.y1)) {
-            service.log(1, "effect requires a valid layout");
-            return nullptr;
-        }
-        return SimplePlugin<WaveEffect>::createEffect(name, service);
-    }
-};
-
-KEYLEDSD_EXPORT_PLUGIN("wave", WaveEffectPlugin);
+KEYLEDSD_SIMPLE_EFFECT("wave", WaveEffect);
 
 } // namespace keyleds::plugin

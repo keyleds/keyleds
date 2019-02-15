@@ -265,14 +265,16 @@ EffectManager::effect_ptr EffectManager::createEffect(
 {
     plugin::Effect * effect = nullptr;
     PluginTracker * tracker = nullptr;
+    bool sawName = false;
 
     // Look for a loaded plugin that can handle requested effect
     for (auto & info : m_plugins) {
+        if (name == info->name()) { sawName = true; }
         effect = info->instance()->createEffect(name, *service);
         if (effect) { tracker = info.get(); break; }
     }
 
-    if (!effect) {
+    if (!effect && !sawName) {
         DEBUG("effect ", name, " not loaded, attempting auto-load");
 
         std::string error;
@@ -284,10 +286,11 @@ EffectManager::effect_ptr EffectManager::createEffect(
         // Create effect from loaded plugin
         tracker = m_plugins.back().get();
         effect = tracker->instance()->createEffect(name, *service);
-        if (!effect) {
-            ERROR("error creating effect ", name, ": plugin returned nullptr");
-            return nullptr;
-        }
+    }
+
+    if (!effect) {
+        ERROR("error creating effect ", name, ": plugin returned nullptr");
+        return nullptr;
     }
 
     tracker->incrementUseCount();

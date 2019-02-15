@@ -48,7 +48,10 @@ public:
        m_keys(findGroup(service.keyGroups(), service.getConfig("group"))),
        m_buffer(*service.createRenderTarget())
     {
-        auto number = tools::parseNumber(service.getConfig("number")).value_or(8);
+        auto number = std::clamp(
+            unsigned(tools::parseNumber(service.getConfig("number")).value_or(8)),
+            1u, service.keyDB().size()
+        );
         m_stars.resize(number);
 
         // Get ready

@@ -20,7 +20,6 @@
 #include <cmath>
 
 using namespace std::literals::chrono_literals;
-using keyleds::tools::parseDuration;
 
 static constexpr auto pi = 3.14159265358979f;
 static constexpr auto white = keyleds::RGBAColor{255, 255, 255, 255};
@@ -33,8 +32,8 @@ class BreatheEffect final : public SimpleEffect
 {
     using KeyGroup = KeyDatabase::KeyGroup;
 public:
-    explicit BreatheEffect(EffectService & service)
-     : m_period(parseDuration<milliseconds>(service.getConfig("period")).value_or(10s)),
+    explicit BreatheEffect(EffectService & service, milliseconds period)
+     : m_period(period),
        m_keys(findGroup(service.keyGroups(), service.getConfig("group"))),
        m_buffer(*service.createRenderTarget())
     {
@@ -42,6 +41,16 @@ public:
         std::swap(color.alpha, m_alpha);
 
         std::fill(m_buffer.begin(), m_buffer.end(), color);
+    }
+
+    static BreatheEffect * create(EffectService & service)
+    {
+        auto period = tools::parseDuration<milliseconds>(service.getConfig("period")).value_or(10s);
+        if (period < 1s) {
+            service.log(3, "minimum value for period is 1000ms");
+            return nullptr;
+        }
+        return new BreatheEffect(service, period);
     }
 
     void render(milliseconds elapsed, RenderTarget & target) override

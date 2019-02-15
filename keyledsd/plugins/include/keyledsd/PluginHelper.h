@@ -20,8 +20,24 @@
 #include "keyledsd/RenderTarget.h"
 #include "keyledsd/plugin/interfaces.h"
 #include "keyledsd/plugin/module.h"
+#include <type_traits>
 
 namespace keyleds::plugin {
+
+/****************************************************************************/
+
+namespace detail {
+    template <typename C>
+    struct has_factory {
+    private:
+        template <typename U> static auto check(int) ->
+            std::is_same<decltype(U::create(std::declval<EffectService &>())), U*>;
+        template<typename> static std::false_type check(...);
+    public:
+        static constexpr bool value = decltype(check<C>(0))::value;
+    };
+    template <typename C> inline constexpr bool has_factory_v = has_factory<C>::value;
+}
 
 /****************************************************************************/
 
@@ -49,7 +65,13 @@ public:
 
     Effect * createEffect(const std::string & name, EffectService & service) override
     {
-        if (name == m_name) { return new T(service); }
+        if (name == m_name) {
+            if constexpr (detail::has_factory_v<T>) {
+                return T::create(service);
+            } else {
+                return new T(service);
+            }
+        }
         return nullptr;
     }
 
