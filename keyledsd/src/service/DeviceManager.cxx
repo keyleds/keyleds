@@ -111,9 +111,8 @@ void DeviceManager::setConfiguration(const Configuration * conf)
     m_activeEffects.clear();
 
     m_configuration = conf;
-    m_name = getName(*conf, m_serial);
+    m_name = getDeviceName(*conf, m_serial);
 }
-
 
 void DeviceManager::setContext(const string_map & context)
 {

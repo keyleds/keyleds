@@ -557,6 +557,13 @@ Configuration Configuration::loadFile(const std::string & path)
     return result;
 }
 
+std::string keyleds::service::getDeviceName(const Configuration & config, const std::string & serial)
+{
+    auto dit = std::find_if(config.devices.begin(), config.devices.end(),
+                            [&serial](auto & item) { return item.second == serial; });
+    return dit != config.devices.end() ? dit->first : serial;
+}
+
 /****************************************************************************/
 
 Configuration::Profile::Lookup::Lookup(string_map filters)

@@ -60,6 +60,8 @@ struct Configuration final
     profile_list        profiles;       ///< List of profile configurations
 };
 
+std::string getDeviceName(const Configuration & config, const std::string & serial);
+
 /****************************************************************************/
 
 /** EffectGroup configuration
