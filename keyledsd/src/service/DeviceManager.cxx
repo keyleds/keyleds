@@ -167,22 +167,16 @@ void DeviceManager::setPaused(bool val)
 std::string DeviceManager::getSerial(const tools::device::Description & description)
 {
     // Serial is stored on master USB device, so we walk up the hierarchy
-    const auto & usbDevDescription = description.parentWithType("usb", "usb_device");
-    auto it = std::find_if(
-        usbDevDescription.attributes().begin(), usbDevDescription.attributes().end(),
-        [](const auto & attr) { return attr.first == "serial"; }
-    );
-    if (it == usbDevDescription.attributes().end()) {
-        throw std::runtime_error("Device " + description.sysPath() + " has no serial");
+    auto usbDevDescription = description.parentWithType("usb", "usb_device");
+    if (!usbDevDescription) {
+        throw std::runtime_error("Device is not an usb device: " + description.sysPath());
     }
-    return it->second;
-}
 
-std::string DeviceManager::getName(const Configuration & config, const std::string & serial)
-{
-    auto dit = std::find_if(config.devices.begin(), config.devices.end(),
-                            [&serial](auto & item) { return item.second == serial; });
-    return dit != config.devices.end() ? dit->first : serial;
+    auto serial = getAttribute(*usbDevDescription, "serial");
+    if (!serial) {
+        throw std::runtime_error("Device has no serial: " + description.sysPath());
+    }
+    return *serial;
 }
 
 DeviceManager::dev_list DeviceManager::findEventDevices(const tools::device::Description & description)
@@ -191,7 +185,9 @@ DeviceManager::dev_list DeviceManager::findEventDevices(const tools::device::Des
     // to same USB device as ours
     dev_list result;
     const auto & usbdev = description.parentWithType("usb", "usb_device");
-    const auto & candidates = usbdev.descendantsWithType("input");
+    if (!usbdev) { return result; }
+
+    const auto & candidates = usbdev->descendantsWithType("input");
     for (const auto & candidate : candidates) {
         const auto & devNode = candidate.devNode();
         if (!devNode.empty()) {

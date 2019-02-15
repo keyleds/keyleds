@@ -24,7 +24,10 @@
 #define TOOLS_DEVICE_WATCHER_H_20E285D9
 
 #include "keyledsd/tools/Event.h"
+#include <chrono>
+#include <functional>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -70,17 +73,17 @@ public:
     using tag_list = std::vector<std::string>;
     using attribute_map = std::vector<std::pair<std::string, std::string>>;
 public:
-                        Description(struct udev_device * device);
+    explicit            Description(struct udev_device * device);
     explicit            Description(const Description & other);
                         Description(Description &&) = default;
                         ~Description();
     Description &       operator=(Description &&) = default;
 
     // Hierarchy navigation
-    Description         parent() const;
-    Description         parentWithType(const std::string & subsystem,
-                                       const std::string & devtype) const;
-    std::vector<Description> descendantsWithType(const std::string & subsystem) const;
+    std::optional<Description>  parent() const;
+    std::optional<Description>  parentWithType(const std::string & subsystem,
+                                               const std::string & devtype) const;
+    std::vector<Description>    descendantsWithType(const std::string & subsystem) const;
 
     // Simple device property queries
     std::string         devPath() const;
@@ -93,7 +96,7 @@ public:
     std::string         driver() const;
     bool                isInitialized() const;
     unsigned long long  seqNum() const;
-    unsigned long long  usecSinceInitialized() const;
+    std::chrono::microseconds timeSinceInitialized() const;
 
     // Structured device properties
     const property_map &    properties() const { return m_properties; };
@@ -111,6 +114,13 @@ private:
 inline bool operator==(const Description & a, const Description & b)
     { return a.sysPath() == b.sysPath(); }
 inline bool operator!=(const Description & a, const Description & b) { return !(a == b); }
+
+
+std::optional<std::reference_wrapper<const std::string>>
+getProperty(const Description & description, const char * name);
+
+std::optional<std::reference_wrapper<const std::string>>
+getAttribute(const Description & description, const char * name);
 
 /****************************************************************************/
 

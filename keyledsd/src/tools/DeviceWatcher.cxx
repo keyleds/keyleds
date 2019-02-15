@@ -78,27 +78,27 @@ Description::Description(const Description & other)
 
 Description::~Description() = default;
 
-Description Description::parent() const
+std::optional<Description> Description::parent() const
 {
     auto dev = udev_device_get_parent(m_device.get());  // unowned
-    if (dev == nullptr) {
-        throw Error("Device " + sysPath() + " has no parent");
+    if (dev) {
+        return Description(dev);
     }
-    return Description(dev);
+    return std::nullopt;
 }
 
-Description Description::parentWithType(const std::string & subsystem,
-                                        const std::string & devtype) const
+std::optional<Description> Description::parentWithType(const std::string & subsystem,
+                                                       const std::string & devtype) const
 {
     auto dev = udev_device_get_parent_with_subsystem_devtype(
         m_device.get(),
         subsystem.empty() ? nullptr : subsystem.c_str(),
         devtype.empty() ? nullptr : devtype.c_str()
     );
-    if (dev == nullptr) {
-        throw Error("No parent with specified type for device " + sysPath());
+    if (dev) {
+        return Description(dev);
     }
-    return Description(dev);
+    return std::nullopt;
 }
 
 std::vector<Description> Description::descendantsWithType(const std::string & subsystem) const
@@ -142,9 +142,33 @@ std::string Description::devNode() const { return safe(udev_device_get_devnode(m
 std::string Description::driver() const { return safe(udev_device_get_driver(m_device.get())); }
 bool Description::isInitialized() const { return udev_device_get_is_initialized(m_device.get()); }
 
-unsigned long long Description::usecSinceInitialized() const
+std::chrono::microseconds Description::timeSinceInitialized() const
 {
-    return udev_device_get_usec_since_initialized(m_device.get());
+    return std::chrono::microseconds(udev_device_get_usec_since_initialized(m_device.get()));
+}
+
+template <typename T>
+static std::optional<std::reference_wrapper<const std::string>>
+getMappingValue(const T & mapping, const char * key)
+{
+    auto it = std::find_if(mapping.begin(), mapping.end(),
+                           [key](const auto & attr) { return attr.first == key; });
+    if (it != mapping.end()) {
+        return it->second;
+    }
+    return std::nullopt;
+}
+
+std::optional<std::reference_wrapper<const std::string>>
+keyleds::tools::device::getProperty(const Description & description, const char * name)
+{
+    return getMappingValue(description.properties(), name);
+}
+
+std::optional<std::reference_wrapper<const std::string>>
+keyleds::tools::device::getAttribute(const Description & description, const char * name)
+{
+    return getMappingValue(description.attributes(), name);
 }
 
 /****************************************************************************/
@@ -331,20 +355,13 @@ bool FilteredDeviceWatcher::isVisible(const Description & dev) const
     if (!m_matchDevType.empty() && m_matchDevType != dev.devType()) {
         return false;
     }
-
     for (const auto & entry : m_matchAttributes) {
-        auto it = std::find_if(
-            dev.attributes().begin(), dev.attributes().end(),
-            [entry](const auto & attr) { return attr.first == entry.first; }
-        );
-        if (it == dev.attributes().end() || entry.second != it->second) { return false; }
+        auto value = getAttribute(dev, entry.first.c_str());
+        if (!value || value->get() != entry.second) { return false; }
     }
     for (const auto & entry : m_matchProperties) {
-        auto it = std::find_if(
-            dev.properties().begin(), dev.properties().end(),
-            [entry](const auto & attr) { return attr.first == entry.first; }
-        );
-        if (it == dev.properties().end() || entry.second != it->second) { return false; }
+        auto value = getProperty(dev, entry.first.c_str());
+        if (!value || value->get() != entry.second) { return false; }
     }
     return true;
 }

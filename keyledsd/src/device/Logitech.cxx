@@ -344,42 +344,36 @@ bool LogitechWatcher::isVisible(const tools::device::Description & dev) const
 
 bool LogitechWatcher::checkInterface(const tools::device::Description & dev) const
 {
-    try {
-        const auto & iface = dev.parentWithType("usb", "usb_interface");
-        const auto & it = std::find_if(
-            iface.attributes().begin(), iface.attributes().end(),
-            [](const auto & attr) { return attr.first == InterfaceProtocolAttr; }
-        );
-        if (it == iface.attributes().end()) {
-            ERROR("Device ", iface.sysPath(), " has not interface protocol attribute");
-            return false;
-        }
-        if (std::stoul(it->second, nullptr, 16) != ApplicationInterfaceProtocol) { return false; }
-
-    } catch (const tools::device::Error & err) {
-        DEBUG("Cannot check ", dev.sysPath(), " usb interface: ", err.what());
+    auto iface = dev.parentWithType("usb", "usb_interface");
+    if (!iface) {
+        DEBUG("Cannot check ", dev.sysPath(), ": no usb interface");
         return false;
     }
+
+    auto protocol = getAttribute(*iface, InterfaceProtocolAttr);
+    if (!protocol) {
+        ERROR("Device ", iface->sysPath(), " has not interface protocol attribute");
+        return false;
+    }
+    if (std::stoul(*protocol, nullptr, 16) != ApplicationInterfaceProtocol) { return false; }
+
     return true;
 }
 
 bool LogitechWatcher::checkDevice(const tools::device::Description & dev) const
 {
-    try {
-        const auto & usbdev = dev.parentWithType("usb", "usb_device");
-        const auto & it = std::find_if(
-            usbdev.attributes().begin(), usbdev.attributes().end(),
-            [](const auto & attr) { return attr.first == DeviceVendorAttr; }
-        );
-        if (it == usbdev.attributes().end()) {
-            ERROR("Device ", usbdev.sysPath(), " has not vendor id attribute");
-            return false;
-        }
-        if (std::stoul(it->second, nullptr, 16) != LOGITECH_VENDOR_ID) { return false; }
-
-    } catch (const tools::device::Error & err) {
-        DEBUG("Cannot check ", dev.sysPath(), " usb device: ", err.what());
+    auto usbdev = dev.parentWithType("usb", "usb_device");
+    if (!usbdev) {
+        DEBUG("Cannot check ", dev.sysPath(), ": no usb device");
         return false;
     }
+
+    auto vendor = getAttribute(*usbdev, DeviceVendorAttr);
+    if (!vendor) {
+        ERROR("Device ", usbdev->sysPath(), " has not vendor id attribute");
+        return false;
+    }
+    if (std::stoul(*vendor, nullptr, 16) != LOGITECH_VENDOR_ID) { return false; }
+
     return true;
 }
