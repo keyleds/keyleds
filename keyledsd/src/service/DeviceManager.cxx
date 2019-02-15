@@ -30,19 +30,36 @@
 
 LOGGING("dev-manager");
 
-using keyleds::service::DeviceManager;
+namespace keyleds::service {
 
+static constexpr int fallbackLayoutIndex = 2;
 static constexpr char defaultProfileName[] = "__default__";
 static constexpr char overlayProfileName[] = "__overlay__";
 
 /****************************************************************************/
 
-static std::string layoutName(const keyleds::device::Device & device)
+static std::string layoutName(const std::string & model, int layout)
 {
     std::ostringstream fileNameBuf;
     fileNameBuf.fill('0');
-    fileNameBuf <<device.model() <<'_' <<std::hex <<std::setw(4) <<device.layout() <<".yaml";
+    fileNameBuf <<model <<'_' <<std::hex <<std::setw(4) <<layout <<".yaml";
     return fileNameBuf.str();
+}
+
+static device::LayoutDescription loadLayout(const device::Device & device)
+{
+    auto attempts = std::vector<int>{ fallbackLayoutIndex };
+    if (device.hasLayout()) { attempts.insert(attempts.begin(), device.layout()); }
+
+    for (auto layoutId : attempts) {
+        auto name = layoutName(device.model(), layoutId);
+        try {
+            return device::LayoutDescription::loadFile(name);
+        } catch (std::runtime_error & error) {
+            ERROR("could not load layout <", name, ">: ", error.what());
+        }
+    }
+    return {};
 }
 
 /****************************************************************************/
@@ -186,15 +203,7 @@ DeviceManager::dev_list DeviceManager::findEventDevices(const tools::device::Des
 keyleds::KeyDatabase DeviceManager::setupKeyDatabase(device::Device & device)
 {
     // Load layout description file from disk
-    auto layout = device::LayoutDescription();
-    if (device.hasLayout()) {
-        auto name = layoutName(device);
-        try {
-            layout = device::LayoutDescription::loadFile(name);
-        } catch (std::runtime_error & error) {
-            ERROR("could not load layout <", name, ">: ", error.what());
-        }
-    }
+    auto layout = loadLayout(device);
 
     // Some keyboards do not report all keys, look for missing keys and patch device
     for (const auto & block : device.blocks()) {
@@ -372,3 +381,4 @@ DeviceManager::EffectGroup & DeviceManager::getEffectGroup(const Configuration::
     return m_effectGroups.back();
 }
 
+} // namespace keyleds::service
