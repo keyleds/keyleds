@@ -57,12 +57,12 @@ public:
     {
         const auto & bounds = service.keyDB().bounds();
         if (!(bounds.x0 < bounds.x1 && bounds.y0 < bounds.y1)) {
-            service.log(3, "effect requires a valid layout");
+            service.log(logging::info::value, "effect requires a valid layout");
             return nullptr;
         }
         auto period = tools::parseDuration<milliseconds>(service.getConfig("period")).value_or(10s);
         if (period < 1s) {
-            service.log(3, "minimum value for period is 1000ms");
+            service.log(logging::info::value, "minimum value for period is 1000ms");
             return nullptr;
         }
         return new WaveEffect(service, period);

@@ -55,7 +55,7 @@ public:
 
     const std::string & getFile(const std::string &) override;
 
-    void                log(unsigned, const char * msg) override;
+    void                log(logging::level_t, const char * msg) override;
 
 private:
     const DeviceManager &                       m_manager;

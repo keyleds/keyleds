@@ -83,7 +83,7 @@ std::unique_ptr<LuaEffect> LuaEffect::create(const std::string & name, EffectSer
 
     // Load script
     if (luaL_loadbuffer(lua, code.data(), code.size(), name.c_str()) != 0) {
-        service.log(2, lua_tostring(lua, -1));
+        service.log(logging::error::value, lua_tostring(lua, -1));
         return nullptr;
     }                                       // ^push (script)
 
@@ -298,7 +298,7 @@ void LuaEffect::handleKeyEvent(const KeyDatabase::Key & key, bool press)
 
 void LuaEffect::print(const std::string & msg) const
 {
-    m_service.log(4, msg.c_str());
+    m_service.log(logging::info::value, msg.c_str());
 }
 
 std::optional<keyleds::RGBAColor> LuaEffect::parseColor(const std::string & str) const
@@ -409,7 +409,7 @@ void LuaEffect::runThread(Thread & threadInfo, lua_State * thread, int nargs)
         case LUA_YIELD:
             if (lua_topointer(thread, 1) != const_cast<void *>(Environment::waitToken)) {
                 luaL_traceback(lua, thread, "invalid yield", 0);
-                m_service.log(1, lua_tostring(lua, -1));
+                m_service.log(logging::error::value, lua_tostring(lua, -1));
                 lua_pop(lua, 1);
                 break;
             }
@@ -418,14 +418,14 @@ void LuaEffect::runThread(Thread & threadInfo, lua_State * thread, int nargs)
             break;
         case LUA_ERRRUN:
             luaL_traceback(lua, thread, lua_tostring(thread, -1), 0);
-            m_service.log(1, lua_tostring(lua, -1));
+            m_service.log(logging::error::value, lua_tostring(lua, -1));
             lua_pop(lua, 1);
             break;
         case LUA_ERRMEM:
-            m_service.log(1, "out of memory");
+            m_service.log(logging::error::value, "out of memory");
             break;
         default:
-            m_service.log(1, "unexpected error");
+            m_service.log(logging::critical::value, "unexpected error");
     }
     if (terminate) {
         destroyThread(m_state.get(), threadInfo);

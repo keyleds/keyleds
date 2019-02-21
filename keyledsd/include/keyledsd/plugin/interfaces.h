@@ -18,6 +18,7 @@
 #define KEYLEDSD_EFFECT_INTERFACES_H_07881F1A
 
 #include "keyledsd/KeyDatabase.h"
+#include "keyledsd/logging.h"
 #include <string>
 #include <vector>
 
@@ -110,7 +111,7 @@ public:
 
     virtual const std::string & getFile(const std::string &) = 0;
 
-    virtual void                log(unsigned, const char *) = 0;
+    virtual void                log(logging::level_t, const char *) = 0;
 };
 
 /****************************************************************************/

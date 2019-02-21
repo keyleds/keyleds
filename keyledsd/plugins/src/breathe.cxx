@@ -47,7 +47,7 @@ public:
     {
         auto period = tools::parseDuration<milliseconds>(service.getConfig("period")).value_or(10s);
         if (period < 1s) {
-            service.log(3, "minimum value for period is 1000ms");
+            service.log(logging::error::value, "minimum value for period is 1000ms");
             return nullptr;
         }
         return new BreatheEffect(service, period);

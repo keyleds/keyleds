@@ -45,7 +45,7 @@ public:
         try {
             info.effect = LuaEffect::create(name, service, source);
         } catch (std::exception & err) {
-            service.log(2, err.what());
+            service.log(logging::error::value, err.what());
             return nullptr;
         }
 

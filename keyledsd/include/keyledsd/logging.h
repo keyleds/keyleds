@@ -30,6 +30,29 @@ class Policy;
 class Logger;
 using level_t = unsigned int;
 
+/** Log severity description
+ *
+ * Describes log severity: associated value and printing method.
+ */
+template <level_t L> struct level {
+    static constexpr level_t value = L;
+    template <typename...Args> static void print(const Logger & logger, Args && ...args);
+};
+template <level_t L> constexpr level_t level<L>::value;
+
+// See man sd-daemon
+using emergency = level<0u>;
+using alert = level<1u>;
+using critical = level<2u>;
+using error = level<3u>;
+using warning = level<4u>;
+using notice = level<5u>;
+using info = level<6u>;
+using debug = level<7u>;
+
+
+#ifdef KEYLEDSD_INTERNAL
+
 /****************************************************************************/
 
 /** Logging configuration singleton
@@ -132,17 +155,6 @@ private:
 * Log levels and printing
 *****************************************************************************/
 
-/** Log severity description
- *
- * Describes log severity: associated value and printing method.
- */
-template <level_t L> struct level {
-    static constexpr level_t value = L;
-    template <typename...Args> static void print(const Logger & logger, Args && ...args);
-};
-template <level_t L> constexpr level_t level<L>::value;
-
-
 template <level_t L> template <typename...Args>
 void level<L>::print(const Logger & logger, Args && ...args)
 {
@@ -152,16 +164,6 @@ void level<L>::print(const Logger & logger, Args && ...args)
     (buffer << ... << args);
     policy.write(value, logger.name(), buffer.str());
 }
-
-// See man sd-daemon
-using emergency = level<0u>;
-using alert = level<1u>;
-using critical = level<2u>;
-using error = level<3u>;
-using warning = level<4u>;
-using notice = level<5u>;
-using info = level<6u>;
-using debug = level<7u>;
 
 #ifdef NDEBUG
 template <> template<typename...Args> void debug::print(const Logger &, Args &&...) {}
@@ -180,6 +182,8 @@ template <> template<typename...Args> void debug::print(const Logger &, Args &&.
 #define DEBUG(...)      keyleds::logging::debug::print(l_logger, __VA_ARGS__)
 
 /****************************************************************************/
+
+#endif  // KEYLEDSD_INTERNAL
 
 } // namespace keyleds::logging
 

@@ -101,7 +101,7 @@ const std::string & EffectService::getFile(const std::string & name)
     return m_fileData;
 }
 
-void EffectService::log(unsigned level, const char * msg)
+void EffectService::log(logging::level_t level, const char * msg)
 {
     l_logger.print(level, m_configuration.name + ": " + msg);
 }
