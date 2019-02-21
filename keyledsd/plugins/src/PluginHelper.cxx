@@ -31,13 +31,23 @@ std::optional<detail::variant_wrapper> getConfig(const EffectService & service, 
     return std::nullopt;
 }
 
+std::optional<RGBAColor>
+detail::get_config<RGBAColor>::parse(const EffectService & service, const alternative & str)
+{
+    const auto & colors = service.colors();
+    auto it = std::find_if(colors.begin(), colors.end(),
+                           [&str](auto & item) { return item.first == str; });
+    if (it != colors.end()) { return it->second; }
+    return RGBAColor::parse(str);
+}
+
 std::optional<std::vector<RGBAColor>>
-detail::get_config<std::vector<RGBAColor>>::parse(const EffectService &, const alternative & seq)
+detail::get_config<std::vector<RGBAColor>>::parse(const EffectService & service, const alternative & seq)
 {
     std::optional<std::vector<RGBAColor>> result = std::vector<RGBAColor>{};
     std::for_each(seq.begin(), seq.end(),
-                  [&result](const auto & str) {
-                      auto color = RGBAColor::parse(str);
+                  [&result, &service](const auto & str) {
+                      auto color = get_config<RGBAColor>::parse(service, str);
                       if (color) { result->push_back(*color); }
                   });
     return result;

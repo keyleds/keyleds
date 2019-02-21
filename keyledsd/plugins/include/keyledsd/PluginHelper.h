@@ -71,8 +71,7 @@ namespace detail {
     template <> struct get_config<RGBAColor> {
         using alternative = std::string;
         using value_type = RGBAColor;
-        static std::optional<value_type> parse(const EffectService &, const alternative & str)
-            { return RGBAColor::parse(str); }
+        static std::optional<value_type> parse(const EffectService &, const alternative & str);
     };
 
     template <typename Rep, typename Period>

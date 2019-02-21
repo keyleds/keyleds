@@ -25,7 +25,7 @@
 #include <istream>
 #include <system_error>
 
-using keyleds::service::Configuration;
+namespace keyleds::service  {
 
 /****************************************************************************/
 
@@ -45,11 +45,12 @@ struct Configuration::Profile::Lookup::Entry
  * represent a type of object that can appear in the configuration file, and
  * knows how to interpret sub-items.
  */
-class ConfigurationParser final : public keyleds::tools::StackYAMLParser
+class ConfigurationParser final : public tools::StackYAMLParser
 {
     class StringSequenceBuildState;
     class StringMappingBuildState;
     class KeyGroupListState;
+    class ColorMappingBuildState;
     class EffectState;
     class EffectListState;
     class EffectGroupState;
@@ -201,6 +202,29 @@ private:
     std::string     m_currentAnchor;
     value_type      m_value;
     SubState        m_currentSubState = SubState::None;
+};
+
+
+/// Configuration builder state: with color mappings
+class ConfigurationParser::ColorMappingBuildState : public MappingState
+{
+public:
+    using value_type = std::vector<std::pair<std::string, RGBAColor>>;
+public:
+    void print(std::ostream & out) const override { out <<"color-mapping"; }
+
+    void scalarEntry(StackYAMLParser & parser, std::string_view key,
+                     std::string_view value, std::string_view) override
+    {
+        auto color = RGBAColor::parse(std::string(value));
+        if (!color) { throw parser.as<ConfigurationParser>().makeError("invalid color definition"); }
+        m_value.emplace_back(key, *color);
+    }
+
+    value_type &&   result() { return std::move(m_value); }
+
+private:
+    value_type      m_value;
 };
 
 
@@ -471,7 +495,7 @@ private:
 class ConfigurationParser::RootState final : public MappingState
 {
     enum class SubState {
-        None, Plugins, PluginPaths, Devices, KeyGroups, EffectGroups, Profiles
+        None, Plugins, PluginPaths, CustomColors, Devices, KeyGroups, EffectGroups, Profiles
     };
 public:
     using value_type = Configuration;
@@ -495,6 +519,10 @@ public:
     std::unique_ptr<State>
     mappingEntry(StackYAMLParser & parser, std::string_view key, std::string_view anchor) override
     {
+        if (key == "colors") {
+            m_currentSubState = SubState::CustomColors;
+            return std::make_unique<ColorMappingBuildState>();
+        }
         if (key == "devices") {
             m_currentSubState = SubState::Devices;
             return std::make_unique<StringMappingBuildState>();
@@ -532,6 +560,9 @@ public:
             break;
         case SubState::PluginPaths:
             m_value.pluginPaths = state.as<StringSequenceBuildState>().result();
+            break;
+        case SubState::CustomColors:
+            m_value.customColors = state.as<ColorMappingBuildState>().result();
             break;
         case SubState::Devices:
             m_value.devices = state.as<StringMappingBuildState>().result();
@@ -634,7 +665,7 @@ Configuration Configuration::loadFile(const std::string & path)
     return result;
 }
 
-std::string keyleds::service::getDeviceName(const Configuration & config, const std::string & serial)
+std::string getDeviceName(const Configuration & config, const std::string & serial)
 {
     auto dit = std::find_if(config.devices.begin(), config.devices.end(),
                             [&serial](auto & item) { return item.second == serial; });
@@ -681,3 +712,5 @@ Configuration::Profile::Lookup::buildRegexps(string_map filters)
                    });
     return result;
 }
+
+} // namespace keyleds::service

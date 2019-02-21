@@ -20,6 +20,7 @@
 #   error "Internal header - must not be pulled into plugins"
 #endif
 
+#include "keyledsd/colors.h"
 #include <iosfwd>
 #include <regex>
 #include <string>
@@ -47,6 +48,7 @@ struct Configuration final
     class ParseError : public std::runtime_error { using runtime_error::runtime_error; };
     using string_list = std::vector<std::string>;
     using path_list = std::vector<std::string>;
+    using color_map = std::vector<std::pair<std::string, RGBAColor>>;
     using device_map = std::vector<std::pair<std::string, std::string>>;
     using key_group_list = std::vector<KeyGroup>;
     using effect_group_list = std::vector<EffectGroup>;
@@ -58,6 +60,7 @@ struct Configuration final
     std::string         path;           ///< Path of configuration on disk
     string_list         plugins;        ///< List of plugins to load on startup
     path_list           pluginPaths;    ///< List of directories to search for plugins
+    color_map           customColors;   ///< Map of color names to RGBA values
     device_map          devices;        ///< Map of device serials to device names
     key_group_list      keyGroups;      ///< Map of key group names to lists of key names
     effect_group_list   effectGroups;   ///< Map of effect group names to configurations

@@ -32,10 +32,12 @@ using keyleds::service::EffectService;
 /****************************************************************************/
 
 EffectService::EffectService(const DeviceManager & manager,
-                             const Configuration::Effect & configuration,
+                             const Configuration & configuration,
+                             const Configuration::Effect & effectConfiguration,
                              std::vector<KeyGroup> keyGroups)
  : m_manager(manager),
    m_configuration(configuration),
+   m_effectConfiguration(effectConfiguration),
    m_keyGroups(std::move(keyGroups))
 {}
 
@@ -56,8 +58,11 @@ const keyleds::KeyDatabase & EffectService::keyDB() const
 const std::vector<EffectService::KeyGroup> & EffectService::keyGroups() const
     { return m_keyGroups; }
 
+const EffectService::color_map & EffectService::colors() const
+    { return m_configuration.customColors; }
+
 const EffectService::config_map & EffectService::configuration() const
-    { return m_configuration.items; }
+    { return m_effectConfiguration.items; }
 
 keyleds::RenderTarget * EffectService::createRenderTarget()
 {
@@ -95,5 +100,5 @@ const std::string & EffectService::getFile(const std::string & name)
 
 void EffectService::log(logging::level_t level, const char * msg)
 {
-    l_logger.print(level, m_configuration.name + ": " + msg);
+    l_logger.print(level, m_effectConfiguration.name + ": " + msg);
 }

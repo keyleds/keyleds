@@ -315,6 +315,10 @@ void LuaEffect::print(const std::string & msg) const
 
 std::optional<keyleds::RGBAColor> LuaEffect::parseColor(const std::string & str) const
 {
+    const auto & colors = m_service.colors();
+    auto it = std::find_if(colors.begin(), colors.end(),
+                           [&str](auto & item) { return item.first == str; });
+    if (it != colors.end()) { return it->second; }
     return RGBAColor::parse(str);
 }
 

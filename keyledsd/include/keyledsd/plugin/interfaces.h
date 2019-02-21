@@ -18,6 +18,7 @@
 #define KEYLEDSD_EFFECT_INTERFACES_H_07881F1A
 
 #include "keyledsd/KeyDatabase.h"
+#include "keyledsd/colors.h"
 #include "keyledsd/logging.h"
 #include <string>
 #include <variant>
@@ -89,6 +90,7 @@ class EffectService
 {
     using config_value_type = std::variant<std::string, std::vector<std::string>>;
 public:
+    using color_map = std::vector<std::pair<std::string, RGBAColor>>;
     using config_map = std::vector<std::pair<std::string, config_value_type>>;
 public:
             EffectService(const EffectService &) = delete;
@@ -102,6 +104,7 @@ public:
     virtual const KeyDatabase & keyDB() const = 0;          ///< Compiled key information
     virtual const std::vector<KeyDatabase::KeyGroup> & keyGroups() const = 0;    ///< Seen from effect scope
 
+    virtual const color_map &   colors() const = 0;
     virtual const config_map &  configuration() const = 0;
 
     [[nodiscard]]

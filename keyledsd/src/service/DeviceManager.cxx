@@ -364,7 +364,9 @@ DeviceManager::EffectGroup & DeviceManager::getEffectGroup(const Configuration::
     std::vector<EffectManager::effect_ptr> effects;
     for (const auto & effectConf : conf.effects) {
         auto effect = m_effectManager.createEffect(
-            effectConf.name, std::make_unique<EffectService>(*this, effectConf, keyGroups)
+            effectConf.name, std::make_unique<EffectService>(
+                *this, *m_configuration, effectConf, keyGroups
+            )
         );
         if (!effect) {
             ERROR("plugin for effect ", effectConf.name, " not found");

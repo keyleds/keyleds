@@ -37,7 +37,8 @@ class EffectService final : public plugin::EffectService
 {
     using KeyGroup = KeyDatabase::KeyGroup;
 public:
-    EffectService(const DeviceManager &, const Configuration::Effect &, std::vector<KeyGroup>);
+    EffectService(const DeviceManager &, const Configuration &,
+                  const Configuration::Effect &, std::vector<KeyGroup>);
     ~EffectService() override;
 
     const std::string & deviceName() const override;
@@ -47,6 +48,7 @@ public:
     const KeyDatabase & keyDB() const override;
     const std::vector<KeyGroup> & keyGroups() const override;
 
+    const color_map &   colors() const override;
     const config_map &  configuration() const override;
 
     RenderTarget *      createRenderTarget() override;
@@ -58,7 +60,8 @@ public:
 
 private:
     const DeviceManager &                       m_manager;
-    const Configuration::Effect &               m_configuration;
+    const Configuration &                       m_configuration;
+    const Configuration::Effect &               m_effectConfiguration;
     const std::vector<KeyGroup>                 m_keyGroups;
     std::vector<std::unique_ptr<RenderTarget>>  m_renderTargets;
     std::string                                 m_fileData;
