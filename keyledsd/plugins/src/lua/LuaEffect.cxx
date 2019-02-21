@@ -134,7 +134,7 @@ void LuaEffect::setupState()
     Environment(lua).openKeyleds(this);
 
     // Add debug module if configuration requests it
-    if (m_service.getConfig("debug") == "yes") {
+    if (getConfig<bool>(m_service, "debug").value_or(false)) {
         lua_pushcfunction(lua, luaopen_debug);
         lua_call(lua, 0, 0);
     }
@@ -160,7 +160,19 @@ void LuaEffect::setupState()
         lua_createtable(lua, 0, static_cast<int>(config.size()));
         for (const auto & item : config) {
             lua_pushlstring(lua, item.first.data(), item.first.size());
-            lua_pushlstring(lua, item.second.data(), item.second.size());
+            if (std::holds_alternative<std::string>(item.second)) {
+                const auto & value = std::get<std::string>(item.second);
+                lua_pushlstring(lua, value.data(), value.size());
+            } else if (std::holds_alternative<std::vector<std::string>>(item.second)) {
+                const auto & values = std::get<std::vector<std::string>>(item.second);
+                lua_createtable(lua, int(values.size()), 0);
+                for (std::size_t idx = 0; idx < values.size(); ++idx) {
+                    lua_pushlstring(lua, values[idx].data(), values[idx].size());
+                    lua_rawseti(lua, -2, int(idx));
+                }
+            } else {
+                assert(false);
+            }
             lua_rawset(lua, -3);
         }
         lua_setfield(lua, -2, "config");

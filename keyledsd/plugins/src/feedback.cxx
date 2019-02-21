@@ -39,10 +39,10 @@ class FeedbackEffect final : public SimpleEffect
 
 public:
     explicit FeedbackEffect(EffectService & service)
-     : m_color(RGBAColor::parse(service.getConfig("color")).value_or(white)),
-       m_sustain(parseDuration<milliseconds>(service.getConfig("sustain")).value_or(750ms)),
-       m_decay(parseDuration<milliseconds>(service.getConfig("decay")).value_or(500ms)),
-       m_buffer(*service.createRenderTarget())
+      : m_color(getConfig<RGBAColor>(service, "color").value_or(white)),
+        m_sustain(getConfig<milliseconds>(service, "sustain").value_or(750ms)),
+        m_decay(getConfig<milliseconds>(service, "decay").value_or(500ms)),
+        m_buffer(*service.createRenderTarget())
     {
         std::fill(m_buffer.begin(), m_buffer.end(), transparent);
     }

@@ -22,6 +22,13 @@ cmake_minimum_required (VERSION 3.0)
 option(WITH_LUA "build LUA scripting engine" ON)
 
 ##############################################################################
+# Sources
+
+set(common_plugin_SRCS
+    src/PluginHelper.cxx
+)
+
+##############################################################################
 # Dependencies
 
 find_package(PkgConfig)
@@ -33,7 +40,7 @@ endif(WITH_LUA)
 # Targets
 
 foreach(module breathe feedback fill stars wave)
-    add_library(fx_${module} MODULE src/${module}.cxx)
+    add_library(fx_${module} MODULE src/${module}.cxx ${common_plugin_SRCS})
     target_include_directories(fx_${module} PRIVATE "include")
     target_link_libraries(fx_${module} common)
     set_target_properties(fx_${module} PROPERTIES PREFIX "")
@@ -55,6 +62,7 @@ IF(WITH_LUA)
         src/lua/lua_common.cxx
         src/lua/lua_types.cxx
         src/lua.cxx
+        ${common_plugin_SRCS}
     )
     target_compile_options(fx_lua PRIVATE ${LUA_CFLAGS_OTHER})
     target_include_directories(fx_lua PRIVATE "include" ${LUA_INCLUDE_DIRS})

@@ -34,10 +34,10 @@ class BreatheEffect final : public SimpleEffect
 public:
     explicit BreatheEffect(EffectService & service, milliseconds period)
      : m_period(period),
-       m_keys(findGroup(service.keyGroups(), service.getConfig("group"))),
+       m_keys(getConfig<KeyGroup>(service, "group")),
        m_buffer(*service.createRenderTarget())
     {
-        auto color = RGBAColor::parse(service.getConfig("color")).value_or(white);
+        auto color = getConfig<RGBAColor>(service, "color").value_or(white);
         std::swap(color.alpha, m_alpha);
 
         std::fill(m_buffer.begin(), m_buffer.end(), color);
@@ -45,7 +45,7 @@ public:
 
     static BreatheEffect * create(EffectService & service)
     {
-        auto period = tools::parseDuration<milliseconds>(service.getConfig("period")).value_or(10s);
+        auto period = getConfig<milliseconds>(service, "period").value_or(10s);
         if (period < 1s) {
             service.log(logging::error::value, "minimum value for period is 1000ms");
             return nullptr;
@@ -68,17 +68,6 @@ public:
             for (auto & key : m_buffer) { key.alpha = alpha; }
         }
         blend(target, m_buffer);
-    }
-
-private:
-    static const std::optional<KeyGroup> findGroup(const std::vector<KeyGroup> & groups,
-                                                   const std::string & name)
-    {
-        if (name.empty()) { return std::nullopt; }
-        auto it = std::find_if(groups.begin(), groups.end(),
-                               [&](auto & group) { return group.name() == name; });
-        if (it == groups.end()) { return std::nullopt; }
-        return *it;
     }
 
 private:

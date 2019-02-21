@@ -56,16 +56,8 @@ const keyleds::KeyDatabase & EffectService::keyDB() const
 const std::vector<EffectService::KeyGroup> & EffectService::keyGroups() const
     { return m_keyGroups; }
 
-const EffectService::string_map & EffectService::configuration() const
+const EffectService::config_map & EffectService::configuration() const
     { return m_configuration.items; }
-
-const std::string & EffectService::getConfig(const char * key) const
-{
-    static const std::string empty;
-    auto it = std::find_if(m_configuration.items.begin(), m_configuration.items.end(),
-                           [key](const auto & item) { return item.first == key; });
-    return it != m_configuration.items.end() ? it->second : empty;
-}
 
 keyleds::RenderTarget * EffectService::createRenderTarget()
 {

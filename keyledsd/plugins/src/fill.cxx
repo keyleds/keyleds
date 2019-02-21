@@ -35,7 +35,7 @@ class FillEffect final : public SimpleEffect
 
 public:
     explicit FillEffect(EffectService & service)
-     : m_fill(RGBAColor::parse(service.getConfig("color")).value_or(transparent)),
+     : m_fill(getConfig<RGBAColor>(service, "color").value_or(transparent)),
        m_rules(buildRules(service))
     {}
 
@@ -57,13 +57,15 @@ private:
         auto rules = std::vector<Rule>();
         for (const auto & item : service.configuration()) {
             if (item.first == "color") { continue; }
+            if (!std::holds_alternative<std::string>(item.second)) { continue; }
+
             auto git = std::find_if(
                 service.keyGroups().begin(), service.keyGroups().end(),
                 [item](const auto & group) { return group.name() == item.first; }
             );
             if (git == service.keyGroups().end()) { continue; }
 
-            auto color = RGBAColor::parse(item.second);
+            auto color = RGBAColor::parse(std::get<std::string>(item.second));
             if (color) { rules.push_back({*git, *color}); }
         }
         return rules;

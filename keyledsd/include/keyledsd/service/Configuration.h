@@ -24,6 +24,7 @@
 #include <regex>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 namespace keyleds::service {
@@ -142,10 +143,11 @@ public:
  */
 struct Configuration::Effect final
 {
-    using string_map = std::vector<std::pair<std::string, std::string>>;
+    using value_type = std::variant<std::string, std::vector<std::string>>;
+    using value_map = std::vector<std::pair<std::string, value_type>>;
 
     std::string name;       ///< Effect name as registered in effect manager
-    string_map  items;      ///< Flat string map passed through to effect
+    value_map   items;      ///< Passed through to effect
 };
 
 /****************************************************************************/

@@ -50,6 +50,7 @@ class ConfigurationParser final : public keyleds::tools::StackYAMLParser
     class StringSequenceBuildState;
     class StringMappingBuildState;
     class KeyGroupListState;
+    class EffectState;
     class EffectListState;
     class EffectGroupState;
     class EffectGroupListState;
@@ -170,6 +171,47 @@ private:
 };
 
 
+/// Configuration builder state: within a plugin configuration
+class ConfigurationParser::EffectState final : public MappingState
+{
+public:
+    using value_type = Configuration::Effect::value_map;
+public:
+    void print(std::ostream & out) const override { out <<"effect"; }
+
+    std::unique_ptr<State> sequenceEntry(StackYAMLParser &, std::string_view, std::string_view) override
+    {
+        return std::make_unique<StringSequenceBuildState>();
+    }
+
+    void subStateEnd(StackYAMLParser & parser, State & state) override
+    {
+        auto values = state.as<StringSequenceBuildState>().result();
+
+        m_value.emplace_back(currentKey(), std::move(values));
+        MappingState::subStateEnd(parser, state);
+    }
+
+    void aliasEntry(StackYAMLParser & parser, std::string_view key,
+                    std::string_view anchor) override
+    {
+        m_value.emplace_back(key, parser.getScalarAlias(anchor));
+    }
+
+    void scalarEntry(StackYAMLParser & parser, std::string_view key,
+                     std::string_view value, std::string_view anchor) override
+    {
+        m_value.emplace_back(key, std::string(value));
+        if (!anchor.empty()) { parser.addScalarAlias(std::string(anchor), std::string(value)); }
+    }
+
+    value_type &&   result() { return std::move(m_value); }
+
+private:
+    value_type      m_value;
+};
+
+
 /// Configuration builder state: within an effect group's plugin list
 class ConfigurationParser::EffectListState final : public State
 {
@@ -180,19 +222,21 @@ public:
 
     std::unique_ptr<State> mappingStart(StackYAMLParser &, std::string_view) override
     {
-        return std::make_unique<StringMappingBuildState>();
+        return std::make_unique<EffectState>();
     }
 
     void subStateEnd(StackYAMLParser & parser, State & state) override
     {
         auto & builder = parser.as<ConfigurationParser>();
-        auto conf = state.as<StringMappingBuildState>().result();
+        auto conf = state.as<EffectState>().result();
         auto it_name = std::find_if(conf.cbegin(), conf.cend(),
                                     [](auto & item) { return item.first == "effect" ||
                                                              item.first == "plugin"; });
-        if (it_name == conf.end()) { throw builder.makeError("plugin configuration must have a name"); }
+        if (it_name == conf.end() || !std::holds_alternative<std::string>(it_name->second)) {
+            throw builder.makeError("plugin configuration must have a name");
+        }
 
-        auto name = it_name->second;
+        const auto name = std::move(std::get<std::string>(it_name->second));
         conf.erase(it_name);
 
         m_value.push_back({std::move(name), std::move(conf)});

@@ -43,11 +43,13 @@ public:
     explicit WaveEffect(EffectService & service, milliseconds period)
      : m_service(service),
        m_period(period),
-       m_keys(findGroup(service.keyGroups(), service.getConfig("group"))),
+       m_keys(getConfig<KeyGroup>(service, "group")),
        m_phases(computePhases(service.keyDB(), m_keys,
-                tools::parseNumber(service.getConfig("length")).value_or(1000u),
-                float(tools::parseNumber(service.getConfig("direction")).value_or(0)))),
-       m_colors(generateColorTable(parseColors(service))),
+                getConfig<unsigned long>(service, "length").value_or(1000u),
+                float(getConfig<unsigned long>(service, "direction").value_or(0)))),
+       m_colors(generateColorTable(
+           getConfig<std::vector<RGBAColor>>(service, "colors").value_or(std::vector<RGBAColor>{})
+       )),
        m_buffer(*service.createRenderTarget())
     {
         std::fill(m_buffer.begin(), m_buffer.end(), transparent);
@@ -60,7 +62,7 @@ public:
             service.log(logging::info::value, "effect requires a valid layout");
             return nullptr;
         }
-        auto period = tools::parseDuration<milliseconds>(service.getConfig("period")).value_or(10s);
+        auto period = getConfig<milliseconds>(service, "period").value_or(10s);
         if (period < 1s) {
             service.log(logging::info::value, "minimum value for period is 1000ms");
             return nullptr;
@@ -95,16 +97,6 @@ public:
     }
 
 private:
-    static const std::optional<KeyGroup> findGroup(const std::vector<KeyGroup> & groups,
-                                                   const std::string & name)
-    {
-        if (name.empty()) { return std::nullopt; }
-        auto it = std::find_if(groups.begin(), groups.end(),
-                               [&](auto & group) { return group.name() == name; });
-        if (it == groups.end()) { return std::nullopt; }
-        return *it;
-    }
-
     static std::vector<unsigned>
     computePhases(const KeyDatabase & keyDB, const std::optional<KeyGroup> & keys,
                   const unsigned long length, const float direction)
@@ -139,18 +131,6 @@ private:
             std::transform(keyDB.begin(), keyDB.end(), phases.begin(), keyPhase);
         }
         return phases;
-    }
-
-    static std::vector<RGBAColor> parseColors(const EffectService & service)
-    {
-        auto colors = std::vector<RGBAColor>();
-        for (const auto & item : service.configuration()) {
-            if (item.first.rfind("color", 0) == 0) {
-                auto color = RGBAColor::parse(item.second);
-                if (color) { colors.push_back(*color); }
-            }
-        }
-        return colors;
     }
 
     static std::vector<RGBAColor> generateColorTable(const std::vector<RGBAColor> & colors)

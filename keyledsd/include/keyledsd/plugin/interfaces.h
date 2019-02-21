@@ -20,6 +20,7 @@
 #include "keyledsd/KeyDatabase.h"
 #include "keyledsd/logging.h"
 #include <string>
+#include <variant>
 #include <vector>
 
 namespace keyleds {
@@ -86,10 +87,9 @@ protected:
 /// Facade to DeviceManager & configuration passed to plugins
 class EffectService
 {
-protected:
-    using string_map = std::vector<std::pair<std::string, std::string>>;
-
-            EffectService() = default;
+    using config_value_type = std::variant<std::string, std::vector<std::string>>;
+public:
+    using config_map = std::vector<std::pair<std::string, config_value_type>>;
 public:
             EffectService(const EffectService &) = delete;
     EffectService & operator=(const EffectService &) = delete;
@@ -102,8 +102,7 @@ public:
     virtual const KeyDatabase & keyDB() const = 0;          ///< Compiled key information
     virtual const std::vector<KeyDatabase::KeyGroup> & keyGroups() const = 0;    ///< Seen from effect scope
 
-    virtual const string_map &  configuration() const = 0;
-    virtual const std::string & getConfig(const char *) const = 0;
+    virtual const config_map &  configuration() const = 0;
 
     [[nodiscard]]
     virtual RenderTarget *      createRenderTarget() = 0;
@@ -112,6 +111,9 @@ public:
     virtual const std::string & getFile(const std::string &) = 0;
 
     virtual void                log(logging::level_t, const char *) = 0;
+
+protected:
+    EffectService() = default;
 };
 
 /****************************************************************************/

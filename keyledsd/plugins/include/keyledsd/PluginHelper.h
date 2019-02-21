@@ -20,6 +20,9 @@
 #include "keyledsd/RenderTarget.h"
 #include "keyledsd/plugin/interfaces.h"
 #include "keyledsd/plugin/module.h"
+#include "keyledsd/tools/utils.h"
+#include <chrono>
+#include <limits>
 #include <type_traits>
 
 namespace keyleds::plugin {
@@ -38,6 +41,105 @@ namespace detail {
     };
     template <typename C> inline constexpr bool has_factory_v = has_factory<C>::value;
 }
+
+namespace detail {
+    using variant_wrapper = std::reference_wrapper<const EffectService::config_map::value_type::second_type>;
+
+    template <typename T, typename = std::void_t<> > struct get_config {};
+
+    template <> struct get_config<std::string> {
+        using alternative = std::string;
+        using value_type = std::string;
+        static std::optional<value_type> parse(const EffectService &, const alternative & str)
+            { return str; }
+    };
+
+    template <typename T>
+    struct get_config<T, typename std::enable_if_t<std::is_integral_v<T>>> {
+        using alternative = std::string;
+        using value_type = std::remove_cv_t<T>;
+        static std::optional<value_type> parse(const EffectService &, const alternative & str) {
+            auto val = tools::parseNumber(str);
+            if (!val) { return std::nullopt; }
+            if (*val < std::numeric_limits<T>::min() || *val > std::numeric_limits<T>::max()) {
+                return std::nullopt;
+            }
+            return *val;
+        }
+    };
+
+    template <> struct get_config<RGBAColor> {
+        using alternative = std::string;
+        using value_type = RGBAColor;
+        static std::optional<value_type> parse(const EffectService &, const alternative & str)
+            { return RGBAColor::parse(str); }
+    };
+
+    template <typename Rep, typename Period>
+    struct get_config<std::chrono::duration<Rep, Period>> {
+        using alternative = std::string;
+        using value_type = std::chrono::duration<Rep, Period>;
+        static std::optional<value_type>
+        parse(const EffectService &, const alternative & str)
+            { return tools::parseDuration<std::chrono::duration<Rep, Period>>(str); }
+    };
+
+    template <>
+    struct get_config<std::vector<RGBAColor>> {
+        using alternative = std::vector<std::string>;
+        using value_type = std::vector<RGBAColor>;
+        static std::optional<value_type> parse(const EffectService &, const alternative & seq);
+    };
+
+    template <>
+    struct get_config<KeyDatabase::KeyGroup> {
+        using alternative = std::string;
+        using value_type = KeyDatabase::KeyGroup;
+        static std::optional<value_type> parse(const EffectService &, const alternative & str);
+    };
+
+}
+
+
+// Actual getConfig, retrieves a ref wrapper to variant value
+std::optional<detail::variant_wrapper> getConfig(const EffectService &, const char * key);
+
+template <typename T>
+std::optional<T> getConfig(EffectService & service, const char * key)
+{
+    using Alternative = typename detail::get_config<T>::alternative;
+    auto & Parser = detail::get_config<T>::parse;
+
+    const auto & result = getConfig(service, key);
+    if (!result) { return std::nullopt; }
+
+    if constexpr (std::is_same_v<Alternative, void>) {
+        return Parser(service, *result);
+    } else {
+        if (std::holds_alternative<Alternative>(result->get())) {
+            return Parser(service, std::get<Alternative>(result->get()));
+        }
+    }
+    return std::nullopt;
+}
+
+#ifndef KEYLEDS_IGNORE_COMPATIBILITY
+std::optional<std::vector<RGBAColor>>
+getColorsCompatibility(EffectService & service, const char * key);
+
+template <> std::optional<std::vector<RGBAColor>> inline
+getConfig<std::vector<RGBAColor>>(EffectService & service, const char * key)
+{
+    using Alternative = typename detail::get_config<std::vector<RGBAColor>>::alternative;
+    auto & Parser = detail::get_config<std::vector<RGBAColor>>::parse;
+
+    const auto & sequence = getConfig(service, key);
+    if (sequence && std::holds_alternative<Alternative>(sequence->get())) {
+        return Parser(service, std::get<Alternative>(sequence->get()));
+    }
+    return getColorsCompatibility(service, key);
+}
+#endif
 
 /****************************************************************************/
 

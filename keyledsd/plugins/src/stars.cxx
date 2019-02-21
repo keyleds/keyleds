@@ -43,15 +43,14 @@ class StarsEffect final : public SimpleEffect
 public:
     explicit StarsEffect(EffectService & service)
      : m_service(service),
-       m_colors(parseColors(service)),
-       m_duration(tools::parseDuration<milliseconds>(service.getConfig("duration")).value_or(1s)),
-       m_keys(findGroup(service.keyGroups(), service.getConfig("group"))),
+       m_colors(getConfig<std::vector<RGBAColor>>(service, "colors")
+                .value_or(std::vector<RGBAColor>{{255u, 255u, 255u, 255u}})),
+       m_duration(getConfig<milliseconds>(service, "duration").value_or(1s)),
+       m_keys(getConfig<KeyGroup>(service, "group")),
        m_buffer(*service.createRenderTarget())
     {
-        auto number = std::clamp(
-            unsigned(tools::parseNumber(service.getConfig("number")).value_or(8)),
-            1u, service.keyDB().size()
-        );
+        auto number = std::clamp(getConfig<unsigned>(service, "number").value_or(8),
+                                 1u, service.keyDB().size());
         m_stars.resize(number);
 
         // Get ready
@@ -62,28 +61,6 @@ public:
             rebirth(star);
             star.age = idx * m_duration / m_stars.size();
         }
-    }
-
-    static std::vector<RGBAColor> parseColors(const EffectService & service)
-    {
-        auto colors = std::vector<RGBAColor>();
-        for (const auto & item : service.configuration()) {
-            if (item.first.rfind("color", 0) == 0) {
-                auto color = RGBAColor::parse(item.second);
-                if (color) { colors.push_back(*color); }
-            }
-        }
-        return colors;
-    }
-
-    static const std::optional<KeyGroup> findGroup(const std::vector<KeyGroup> & groups,
-                                                   const std::string & name)
-    {
-        if (name.empty()) { return std::nullopt; }
-        auto it = std::find_if(groups.begin(), groups.end(),
-                               [&](auto & group) { return group.name() == name; });
-        if (it == groups.end()) { return std::nullopt; }
-        return *it;
     }
 
     void render(milliseconds elapsed, RenderTarget & target) override

@@ -38,7 +38,7 @@ class EffectService final : public plugin::EffectService
     using KeyGroup = KeyDatabase::KeyGroup;
 public:
     EffectService(const DeviceManager &, const Configuration::Effect &, std::vector<KeyGroup>);
-    ~EffectService();
+    ~EffectService() override;
 
     const std::string & deviceName() const override;
     const std::string & deviceModel() const override;
@@ -47,8 +47,7 @@ public:
     const KeyDatabase & keyDB() const override;
     const std::vector<KeyGroup> & keyGroups() const override;
 
-    const string_map &  configuration() const override;
-    const std::string & getConfig(const char *) const override;
+    const config_map &  configuration() const override;
 
     RenderTarget *      createRenderTarget() override;
     void                destroyRenderTarget(RenderTarget *) override;
