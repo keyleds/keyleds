@@ -49,24 +49,14 @@ effects:
               period: 8000
               length: 2000
               direction: 240
-              color0: 5f5fff
-              color1: 5f5fff
-              color2: 5f5fff
-              color3: 5f5fff
-              color4: 5f5fff
-              color5: 0f0f0f
+              colors: [5f5fff, 5f5fff, 5f5fff, 5f5fff, 5f5fff, 0f0f0f]
     rainbow:
         plugins:
             - effect: wave
               period: 5000      # cycle duration in ms
               length: 2000      # wavelength (1000 is keyboard size)
               direction: 240    # 0 for upwards, 90 rightwards, 180 downwards, ...
-              color0: red
-              color1: magenta
-              color2: blue
-              color3: cyan
-              color4: green
-              color5: yellow
+              colors: [red, magenta, blue, cyan, green, yellow]
     green-breathe:
         groups:
             special: [enter, backspace, tab]
@@ -91,9 +81,10 @@ effects:
             - effect: stars         # add some stars
               number: 30            # how many stars are visible at once
               duration: 3000        # how long a star remains visible (in ms)
-              color0: white         # colors to use for the stars. They are picked
-              color1: yellow        # randomly from that set. If not specified,
-              color2: beige         # you'll get all the rainbow.
+              colors:
+                - white             # colors to use for the stars. They are picked
+                - yellow            # randomly from that set. If not specified,
+                - beige             # you'll get all the rainbow.
     standby:
         plugins:
             - effect: fill
