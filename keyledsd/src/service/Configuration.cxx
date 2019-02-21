@@ -132,23 +132,55 @@ private:
 /// Configuration builder state: withing a key group list
 class ConfigurationParser::KeyGroupListState final : public MappingState
 {
+    enum class SubState { None, KeyGroupList, KeyNames };
 public:
     using value_type = Configuration::key_group_list;
 public:
     void print(std::ostream & out) const override { out <<"group-list"; }
 
-    std::unique_ptr<State> sequenceEntry(StackYAMLParser &, std::string_view, std::string_view anchor) override
+    std::unique_ptr<State>
+    mappingEntry(StackYAMLParser &, std::string_view, std::string_view anchor) override
     {
         m_currentAnchor = anchor;
+        m_currentSubState = SubState::KeyGroupList;
+        return std::make_unique<KeyGroupListState>();
+    }
+
+    std::unique_ptr<State>
+    sequenceEntry(StackYAMLParser &, std::string_view, std::string_view anchor) override
+    {
+        m_currentAnchor = anchor;
+        m_currentSubState = SubState::KeyNames;
         return std::make_unique<StringSequenceBuildState>();
     }
 
     void subStateEnd(StackYAMLParser & parser, State & state) override
     {
         auto & builder = parser.as<ConfigurationParser>();
-        auto keys = state.as<StringSequenceBuildState>().result();
-        for (auto & key : keys) {
-            std::transform(key.begin(), key.end(), key.begin(), ::toupper);
+        auto keys = std::vector<std::string>();
+
+        switch(m_currentSubState) {
+        case SubState::KeyGroupList: {
+            auto groups = state.as<KeyGroupListState>().result();
+
+            std::for_each(groups.begin(), groups.end(), [&keys](const auto & group) {
+                keys.reserve(keys.size() + group.keys.size());
+                std::copy(group.keys.begin(), group.keys.end(), std::back_inserter(keys));
+            });
+
+            m_value.reserve(m_value.size() + groups.size());
+            std::move(groups.begin(), groups.end(), std::back_inserter(m_value));
+            break;
+        }
+        case SubState::KeyNames: {
+            keys = state.as<StringSequenceBuildState>().result();
+            std::for_each(keys.begin(), keys.end(), [](auto & key) {
+                std::transform(key.begin(), key.end(), key.begin(), ::toupper);
+            });
+            break;
+        }
+        default:
+            assert(false);
         }
 
         if (!m_currentAnchor.empty()) { builder.addGroupAlias(m_currentAnchor, keys); }
@@ -168,6 +200,7 @@ public:
 private:
     std::string     m_currentAnchor;
     value_type      m_value;
+    SubState        m_currentSubState = SubState::None;
 };
 
 
