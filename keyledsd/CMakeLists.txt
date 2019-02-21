@@ -140,6 +140,7 @@ set_target_properties(common PROPERTIES PREFIX "keyleds_"
                                         SOVERSION ${PROJECT_VERSION_MAJOR})
 
 add_library(core STATIC ${core_SRCS})
+target_compile_definitions(core PRIVATE KEYLEDSD_INTERNAL)
 target_include_directories(core PUBLIC "include")
 target_include_directories(core SYSTEM PUBLIC ${X11_Xlib_INCLUDE_PATH} ${X11_Xinput_INCLUDE_PATH})
 target_link_libraries(core common
@@ -147,6 +148,7 @@ target_link_libraries(core common
 )
 
 add_executable(keyledsd ${service_SRCS})
+target_compile_definitions(keyledsd PRIVATE KEYLEDSD_INTERNAL)
 target_compile_definitions(keyledsd PRIVATE KEYLEDSD_MODULES_STATIC=1 $<$<BOOL:${NO_DBUS}>:NO_DBUS>)
 target_include_directories(keyledsd PRIVATE include ${LIBUV_INCLUDE_DIRS})
 target_link_libraries(keyledsd common core libkeyleds ${LIBUDEV} ${LIBUV_LIBRARIES})

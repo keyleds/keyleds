@@ -16,6 +16,9 @@
  */
 #ifndef KEYLEDSD_EFFECT_DEVICE_MANAGER_PROXY_H_2DC03730
 #define KEYLEDSD_EFFECT_DEVICE_MANAGER_PROXY_H_2DC03730
+#ifndef KEYLEDSD_INTERNAL
+#   error "Internal header - must not be pulled into plugins"
+#endif
 
 #include "keyledsd/plugin/interfaces.h"
 #include "keyledsd/service/Configuration.h"

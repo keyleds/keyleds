@@ -16,6 +16,9 @@
  */
 #ifndef KEYLEDSD_LAYOUTDESCRIPTION_H_FF3532D2
 #define KEYLEDSD_LAYOUTDESCRIPTION_H_FF3532D2
+#ifndef KEYLEDSD_INTERNAL
+#   error "Internal header - must not be pulled into plugins"
+#endif
 
 #include <iosfwd>
 #include <stdexcept>

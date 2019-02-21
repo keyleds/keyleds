@@ -16,6 +16,9 @@
  */
 #ifndef KEYLEDSD_DBUS_SERVICEADAPTOR_H_A616A05A
 #define KEYLEDSD_DBUS_SERVICEADAPTOR_H_A616A05A
+#ifndef KEYLEDSD_INTERNAL
+#   error "Internal header - must not be pulled into plugins"
+#endif
 
 #include <memory>
 #include <vector>

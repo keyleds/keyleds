@@ -16,6 +16,9 @@
  */
 #ifndef KEYLEDSD_EFFECT_STATIC_MODULE_REGISTRY_H_B1E3D20E
 #define KEYLEDSD_EFFECT_STATIC_MODULE_REGISTRY_H_B1E3D20E
+#ifndef KEYLEDSD_INTERNAL
+#   error "Internal header - must not be pulled into plugins"
+#endif
 
 #include <utility>
 #include <vector>

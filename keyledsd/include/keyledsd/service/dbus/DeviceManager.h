@@ -16,6 +16,9 @@
  */
 #ifndef KEYLEDSD_DBUS_DEVICEMANAGERADAPTOR_H_A3B0E2B4
 #define KEYLEDSD_DBUS_DEVICEMANAGERADAPTOR_H_A3B0E2B4
+#ifndef KEYLEDSD_INTERNAL
+#   error "Internal header - must not be pulled into plugins"
+#endif
 
 #include <string>
 

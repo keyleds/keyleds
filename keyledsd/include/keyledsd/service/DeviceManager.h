@@ -16,6 +16,9 @@
  */
 #ifndef KEYLEDSD_DEVICEMANAGER_H_0517383B
 #define KEYLEDSD_DEVICEMANAGER_H_0517383B
+#ifndef KEYLEDSD_INTERNAL
+#   error "Internal header - must not be pulled into plugins"
+#endif
 
 #include "keyledsd/device/Device.h"
 #include "keyledsd/service/Configuration.h"

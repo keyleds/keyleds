@@ -16,6 +16,9 @@
  */
 #ifndef KEYLEDSD_CONFIGURATION_H_603C2B68
 #define KEYLEDSD_CONFIGURATION_H_603C2B68
+#ifndef KEYLEDSD_INTERNAL
+#   error "Internal header - must not be pulled into plugins"
+#endif
 
 #include <iosfwd>
 #include <regex>

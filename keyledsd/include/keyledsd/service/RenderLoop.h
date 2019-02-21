@@ -16,6 +16,9 @@
  */
 #ifndef KEYLEDS_RENDER_LOOP_H_D7E4709F
 #define KEYLEDS_RENDER_LOOP_H_D7E4709F
+#ifndef KEYLEDSD_INTERNAL
+#   error "Internal header - must not be pulled into plugins"
+#endif
 
 #include "keyledsd/device/Device.h"
 #include "keyledsd/tools/AnimationLoop.h"

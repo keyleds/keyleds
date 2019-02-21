@@ -16,6 +16,9 @@
  */
 #ifndef KEYLEDSD_DISPLAYMANAGER_H_2ADCBC2A
 #define KEYLEDSD_DISPLAYMANAGER_H_2ADCBC2A
+#ifndef KEYLEDSD_INTERNAL
+#   error "Internal header - must not be pulled into plugins"
+#endif
 
 #include "keyledsd/tools/Event.h"
 #include "keyledsd/tools/XContextWatcher.h"

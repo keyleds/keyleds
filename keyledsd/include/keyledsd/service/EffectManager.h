@@ -16,6 +16,9 @@
  */
 #ifndef KEYLEDSD_EFFECT_EFFECT_MANAGER_H_E6520FC7
 #define KEYLEDSD_EFFECT_EFFECT_MANAGER_H_E6520FC7
+#ifndef KEYLEDSD_INTERNAL
+#   error "Internal header - must not be pulled into plugins"
+#endif
 
 #include "keyledsd/plugin/interfaces.h"
 #include <memory>

@@ -16,6 +16,9 @@
  */
 #ifndef KEYLEDSD_KEYLEDSSERVICE_884F711D
 #define KEYLEDSD_KEYLEDSSERVICE_884F711D
+#ifndef KEYLEDSD_INTERNAL
+#   error "Internal header - must not be pulled into plugins"
+#endif
 
 #include "keyledsd/device/Device.h"
 #include "keyledsd/device/Logitech.h"

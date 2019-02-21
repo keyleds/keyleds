@@ -16,6 +16,9 @@
  */
 #ifndef KEYLEDSD_KEYBOARD_H_F6DA7CD5
 #define KEYLEDSD_KEYBOARD_H_F6DA7CD5
+#ifndef KEYLEDSD_INTERNAL
+#   error "Internal header - must not be pulled into plugins"
+#endif
 
 #include "keyledsd/colors.h"
 #include <cstdint>
