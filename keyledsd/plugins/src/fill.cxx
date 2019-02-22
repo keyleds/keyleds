@@ -17,6 +17,7 @@
 #include "keyledsd/PluginHelper.h"
 #include "keyledsd/tools/utils.h"
 #include <algorithm>
+#include <limits>
 #include <vector>
 
 static constexpr auto transparent = keyleds::RGBAColor{0, 0, 0, 0};
@@ -27,53 +28,50 @@ namespace keyleds::plugin {
 
 class FillEffect final : public SimpleEffect
 {
-    struct Rule final
-    {
-        KeyDatabase::KeyGroup   keys;
-        RGBAColor               color;
-    };
+    enum class Mode { Blend, Overwrite };
 
 public:
     explicit FillEffect(EffectService & service)
-     : m_fill(getConfig<RGBAColor>(service, "color").value_or(transparent)),
-       m_rules(buildRules(service))
-    {}
-
-    void render(milliseconds, RenderTarget & target) override
+     : m_buffer(*service.createRenderTarget())
     {
-        if (m_fill.alpha > 0) {
-            std::fill(target.begin(), target.end(), m_fill);
-        }
-        for (const auto & rule : m_rules) {
-            for (const auto & key : rule.keys) {
-                target[key.index] = rule.color;
-            }
-        }
-    }
+        auto fillColor = getConfig<RGBAColor>(service, "color").value_or(transparent);
+        std::fill(m_buffer.begin(), m_buffer.end(), fillColor);
 
-private:
-    static std::vector<Rule> buildRules(const EffectService & service)
-    {
-        auto rules = std::vector<Rule>();
         for (const auto & item : service.configuration()) {
             if (item.first == "color") { continue; }
             if (!std::holds_alternative<std::string>(item.second)) { continue; }
 
-            auto git = std::find_if(
-                service.keyGroups().begin(), service.keyGroups().end(),
-                [item](const auto & group) { return group.name() == item.first; }
-            );
-            if (git == service.keyGroups().end()) { continue; }
+            auto group = parseConfig<KeyDatabase::KeyGroup>(service, item.first);
+            auto color = parseConfig<RGBAColor>(service, std::get<std::string>(item.second));
 
-            auto color = RGBAColor::parse(std::get<std::string>(item.second));
-            if (color) { rules.push_back({*git, *color}); }
+            if (group && color) {
+                std::for_each(group->begin(), group->end(), [this, &color](auto & key) {
+                    m_buffer[key.index] = *color;
+                });
+            }
         }
-        return rules;
+
+        bool hasAlpha = std::any_of(m_buffer.begin(), m_buffer.end(), [](auto & val) {
+            return val.alpha < std::numeric_limits<RGBAColor::channel_type>::max();
+        });
+        m_mode = hasAlpha ? Mode::Blend : Mode::Overwrite;
+    }
+
+    void render(milliseconds, RenderTarget & target) override
+    {
+        switch (m_mode) {
+        case Mode::Blend:
+            blend(target, m_buffer);
+            break;
+        case Mode::Overwrite:
+            std::copy(m_buffer.cbegin(), m_buffer.cend(), target.begin());
+            break;
+        }
     }
 
 private:
-    const RGBAColor         m_fill;     ///< fill whole target before applying rules
-    const std::vector<Rule> m_rules;    ///< each rule maps a key group to a color
+    RenderTarget &          m_buffer;   ///< this plugin's rendered state
+    Mode                    m_mode = Mode::Overwrite; ///< how to use target buffer
 };
 
 KEYLEDSD_SIMPLE_EFFECT("fill", FillEffect);

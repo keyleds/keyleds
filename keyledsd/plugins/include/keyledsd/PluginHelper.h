@@ -99,6 +99,9 @@ namespace detail {
 
 }
 
+template <typename T, typename Config = detail::get_config<T>>
+auto parseConfig(const EffectService & service, const typename Config::alternative & value)
+{ return Config::parse(service, value); }
 
 // Actual getConfig, retrieves a ref wrapper to variant value
 std::optional<detail::variant_wrapper> getConfig(const EffectService &, const char * key);
