@@ -89,7 +89,7 @@ keyboards:
         - {code: 0xe2, x: 137, y: 334, width: 56, height: 45}
         - {code: 0x2c, x: 193, y: 334, width: 259, height: 45}
         - {code: 0xe6, x: 453, y: 334, width: 56, height: 45}
-        - {code: 0xe7, x: 510, y: 334, width: 56, height: 45}
+        - {code: 0xe7, x: 510, y: 334, width: 56, height: 45, glyph: 'FN'}
         - {code: 0x65, x: 566, y: 334, width: 56, height: 45}
         - {code: 0xe4, x: 623, y: 334, width: 67, height: 45}
     - keys:
