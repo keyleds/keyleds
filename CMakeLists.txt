@@ -34,6 +34,7 @@ add_compile_options(
     $<$<COMPILE_LANGUAGE:CXX>:-Wcast-align>
     $<$<COMPILE_LANGUAGE:CXX>:-Wcast-qual>
     $<$<COMPILE_LANGUAGE:CXX>:-Wconversion>
+    $<$<COMPILE_LANGUAGE:CXX>:-Wold-style-cast>
     $<$<COMPILE_LANGUAGE:CXX>:-Wsign-conversion>
     $<$<COMPILE_LANGUAGE:CXX>:-Wshadow>
     $<$<COMPILE_LANGUAGE:CXX>:-Wstrict-overflow=3>

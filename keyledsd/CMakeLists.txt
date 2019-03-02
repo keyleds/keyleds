@@ -73,6 +73,7 @@ set(service_SRCS
     src/tools/XInputWatcher.cxx
     src/main.cxx
 )
+set_source_files_properties("src/device/Logitech.cxx" PROPERTIES COMPILE_FLAGS "-Wno-old-style-cast")
 
 set(test-common_SRCS
     tests/tools/utils.cxx

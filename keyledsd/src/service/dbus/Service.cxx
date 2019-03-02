@@ -35,7 +35,7 @@ static constexpr char interfaceName[] = "org.etherdream.keyleds.Service";
 static int getConfigurationPath(sd_bus *, const char *, const char *, const char *,
                                 sd_bus_message * reply, void * userdata, sd_bus_error *)
 {
-    auto adapter = reinterpret_cast<ServiceAdapter *>(userdata);
+    auto adapter = static_cast<ServiceAdapter *>(userdata);
     return sd_bus_message_append_basic(reply, 's',
         adapter->service().configuration().path.c_str()
     );
@@ -45,7 +45,7 @@ static int getContext(sd_bus *, const char *, const char *, const char *,
                       sd_bus_message * reply, void * userdata, sd_bus_error *)
 {
     int ret;
-    auto adapter = reinterpret_cast<ServiceAdapter *>(userdata);
+    auto adapter = static_cast<ServiceAdapter *>(userdata);
 
     ret = sd_bus_message_open_container(reply, SD_BUS_TYPE_ARRAY, "{ss}");
     if (ret < 0) { return ret; }
@@ -59,7 +59,7 @@ static int getContext(sd_bus *, const char *, const char *, const char *,
 static int getActive(sd_bus *, const char *, const char *, const char *,
                      sd_bus_message * reply, void * userdata, sd_bus_error *)
 {
-    auto adapter = reinterpret_cast<ServiceAdapter *>(userdata);
+    auto adapter = static_cast<ServiceAdapter *>(userdata);
     return sd_bus_message_append(reply, "b", adapter->service().active());
 }
 
@@ -67,7 +67,7 @@ static int setActive(sd_bus *, const char *, const char *, const char *,
                      sd_bus_message * value, void * userdata, sd_bus_error *)
 {
     int ret;
-    auto adapter = reinterpret_cast<ServiceAdapter *>(userdata);
+    auto adapter = static_cast<ServiceAdapter *>(userdata);
 
     int active;
     ret = sd_bus_message_read_basic(value, 'b', &active);
@@ -79,7 +79,7 @@ static int setActive(sd_bus *, const char *, const char *, const char *,
 static int getAutoQuit(sd_bus *, const char *, const char *, const char *,
                        sd_bus_message * reply, void * userdata, sd_bus_error *)
 {
-    auto adapter = reinterpret_cast<ServiceAdapter *>(userdata);
+    auto adapter = static_cast<ServiceAdapter *>(userdata);
     return sd_bus_message_append(reply, "b", adapter->service().autoQuit());
 }
 
@@ -87,7 +87,7 @@ static int setAutoQuit(sd_bus *, const char *, const char *, const char *,
                        sd_bus_message * value, void * userdata, sd_bus_error *)
 {
     int ret;
-    auto adapter = reinterpret_cast<ServiceAdapter *>(userdata);
+    auto adapter = static_cast<ServiceAdapter *>(userdata);
 
     int autoQuit;
     ret = sd_bus_message_read_basic(value, 'b', &autoQuit);
@@ -99,7 +99,7 @@ static int getDevices(sd_bus *, const char *, const char *, const char *,
                       sd_bus_message * reply, void * userdata, sd_bus_error *)
 {
     int ret;
-    auto adapter = reinterpret_cast<ServiceAdapter *>(userdata);
+    auto adapter = static_cast<ServiceAdapter *>(userdata);
 
     ret = sd_bus_message_open_container(reply, SD_BUS_TYPE_ARRAY, "o");
     if (ret < 0) { return ret; }
@@ -114,7 +114,7 @@ static int getPlugins(sd_bus *, const char *, const char *, const char *,
                       sd_bus_message * reply, void * userdata, sd_bus_error *)
 {
     int ret;
-    auto adapter = reinterpret_cast<ServiceAdapter *>(userdata);
+    auto adapter = static_cast<ServiceAdapter *>(userdata);
 
     ret = sd_bus_message_open_container(reply, SD_BUS_TYPE_ARRAY, "s");
     if (ret < 0) { return ret; }
@@ -128,7 +128,7 @@ static int getPlugins(sd_bus *, const char *, const char *, const char *,
 static int setContextValues(sd_bus_message * message, void *userdata, sd_bus_error *)
 {
     int ret;
-    auto adapter = reinterpret_cast<ServiceAdapter *>(userdata);
+    auto adapter = static_cast<ServiceAdapter *>(userdata);
     auto context = std::vector<std::pair<std::string, std::string>>();
 
     ret = sd_bus_message_enter_container(message, SD_BUS_TYPE_ARRAY, "{ss}");
@@ -149,7 +149,7 @@ static int setContextValues(sd_bus_message * message, void *userdata, sd_bus_err
 static int setContextValue(sd_bus_message * message, void *userdata, sd_bus_error *)
 {
     int ret;
-    auto adapter = reinterpret_cast<ServiceAdapter *>(userdata);
+    auto adapter = static_cast<ServiceAdapter *>(userdata);
 
     const char * key, * value;
     ret = sd_bus_message_read(message, "ss", &key, &value);
@@ -162,7 +162,7 @@ static int setContextValue(sd_bus_message * message, void *userdata, sd_bus_erro
 static int sendGenericEvent(sd_bus_message * message, void *userdata, sd_bus_error *)
 {
     int ret;
-    auto adapter = reinterpret_cast<ServiceAdapter *>(userdata);
+    auto adapter = static_cast<ServiceAdapter *>(userdata);
     auto data = std::vector<std::pair<std::string, std::string>>();
 
     ret = sd_bus_message_enter_container(message, SD_BUS_TYPE_ARRAY, "{ss}");
@@ -183,7 +183,7 @@ static int sendGenericEvent(sd_bus_message * message, void *userdata, sd_bus_err
 static int sendKeyEvents(sd_bus_message * message, void *userdata, sd_bus_error *)
 {
     int ret;
-    auto adapter = reinterpret_cast<ServiceAdapter *>(userdata);
+    auto adapter = static_cast<ServiceAdapter *>(userdata);
 
     const char * serial;
     uint16_t     key;

@@ -31,21 +31,21 @@ static constexpr char interfaceName[] = "org.etherdream.keyleds.DeviceManager";
 static int getSysPath(sd_bus *, const char *, const char *, const char *,
                       sd_bus_message * reply, void * userdata, sd_bus_error *)
 {
-    auto adapter = reinterpret_cast<DeviceManagerAdapter *>(userdata);
+    auto adapter = static_cast<DeviceManagerAdapter *>(userdata);
     return sd_bus_message_append_basic(reply, 's', adapter->device().sysPath().c_str());
 }
 
 static int getSerial(sd_bus *, const char *, const char *, const char *,
                      sd_bus_message * reply, void * userdata, sd_bus_error *)
 {
-    auto adapter = reinterpret_cast<DeviceManagerAdapter *>(userdata);
+    auto adapter = static_cast<DeviceManagerAdapter *>(userdata);
     return sd_bus_message_append_basic(reply, 's', adapter->device().serial().c_str());
 }
 
 static int getDevNode(sd_bus *, const char *, const char *, const char *,
                       sd_bus_message * reply, void * userdata, sd_bus_error *)
 {
-    auto adapter = reinterpret_cast<DeviceManagerAdapter *>(userdata);
+    auto adapter = static_cast<DeviceManagerAdapter *>(userdata);
     return sd_bus_message_append_basic(reply, 's', adapter->device().device().path().c_str());
 }
 
@@ -53,7 +53,7 @@ static int getEventDevices(sd_bus *, const char *, const char *, const char *,
                            sd_bus_message * reply, void * userdata, sd_bus_error *)
 {
     int ret;
-    auto adapter = reinterpret_cast<DeviceManagerAdapter *>(userdata);
+    auto adapter = static_cast<DeviceManagerAdapter *>(userdata);
 
     ret = sd_bus_message_open_container(reply, SD_BUS_TYPE_ARRAY, "s");
     if (ret < 0) { return ret; }
@@ -67,21 +67,21 @@ static int getEventDevices(sd_bus *, const char *, const char *, const char *,
 static int getName(sd_bus *, const char *, const char *, const char *,
                    sd_bus_message * reply, void * userdata, sd_bus_error *)
 {
-    auto adapter = reinterpret_cast<DeviceManagerAdapter *>(userdata);
+    auto adapter = static_cast<DeviceManagerAdapter *>(userdata);
     return sd_bus_message_append_basic(reply, 's', adapter->device().device().name().c_str());
 }
 
 static int getModel(sd_bus *, const char *, const char *, const char *,
                     sd_bus_message * reply, void * userdata, sd_bus_error *)
 {
-    auto adapter = reinterpret_cast<DeviceManagerAdapter *>(userdata);
+    auto adapter = static_cast<DeviceManagerAdapter *>(userdata);
     return sd_bus_message_append_basic(reply, 's', adapter->device().device().model().c_str());
 }
 
 static int getFirmware(sd_bus *, const char *, const char *, const char *,
                        sd_bus_message * reply, void * userdata, sd_bus_error *)
 {
-    auto adapter = reinterpret_cast<DeviceManagerAdapter *>(userdata);
+    auto adapter = static_cast<DeviceManagerAdapter *>(userdata);
     return sd_bus_message_append_basic(reply, 's', adapter->device().device().firmware().c_str());
 }
 
@@ -89,7 +89,7 @@ static int getKeys(sd_bus *, const char *, const char *, const char *,
                    sd_bus_message * reply, void * userdata, sd_bus_error *)
 {
     int ret;
-    auto adapter = reinterpret_cast<DeviceManagerAdapter *>(userdata);
+    auto adapter = static_cast<DeviceManagerAdapter *>(userdata);
 
     ret = sd_bus_message_open_container(reply, SD_BUS_TYPE_ARRAY, "(qs(qqqq))");
     if (ret < 0) { return ret; }
@@ -108,7 +108,7 @@ static int getKeys(sd_bus *, const char *, const char *, const char *,
 static int getPaused(sd_bus *, const char *, const char *, const char *,
                      sd_bus_message * reply, void * userdata, sd_bus_error *)
 {
-    auto adapter = reinterpret_cast<DeviceManagerAdapter *>(userdata);
+    auto adapter = static_cast<DeviceManagerAdapter *>(userdata);
     return sd_bus_message_append(reply, "b", adapter->device().paused());
 }
 
@@ -116,7 +116,7 @@ static int setPaused(sd_bus *, const char *, const char *, const char *,
                      sd_bus_message * value, void * userdata, sd_bus_error *)
 {
     int ret;
-    auto adapter = reinterpret_cast<DeviceManagerAdapter *>(userdata);
+    auto adapter = static_cast<DeviceManagerAdapter *>(userdata);
     int paused;
 
     ret = sd_bus_message_read_basic(value, 'b', &paused);

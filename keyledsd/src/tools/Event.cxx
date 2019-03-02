@@ -28,7 +28,7 @@ static void handleCloseCallback(uv_handle_t * ptr) { operator delete(ptr); }
 FDWatcher::FDWatcher(int fd, events ev, Callback<events>::function_type onReady, uv_loop_t & loop)
 {
     ready.connect(std::move(onReady));
-    m_handle = reinterpret_cast<uv_poll_t *>(operator new(sizeof(uv_poll_t)));
+    m_handle = static_cast<uv_poll_t *>(operator new(sizeof(uv_poll_t)));
     uv_poll_init(&loop, m_handle, fd);
     m_handle->data = this;
 
