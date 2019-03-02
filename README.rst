@@ -2,7 +2,7 @@
 |logo| keyleds |codacy|
 =======================
 
-Userspace service for Logitech keyboards with per-key RGB LEDs.
+Advanced RGB animation service for Logitech keyboards.
 
 Quick links:
 
@@ -11,7 +11,8 @@ Quick links:
 * `sample configuration`_
 * `issue tracker`_
 
-This project supports all Logitech RGB leds USB keyboards, on all keyboard layouts.
+This project supports all Logitech RGB keyboards, on all keyboard layouts. If yours doesn't
+work it's a bug, open a ticket.
 
 Features
 --------
@@ -24,17 +25,15 @@ Features
   - **Keypress feedback** effect.
   - **Fixed** colors.
   - **Breathing** effect.
-  - **Wave** effect.
+  - **Wave** and **cycle** effect.
   - **Stars** effect.
   - **Idle dimming** effect.
 
-* **Create your own effects** with the `LUA engine`_.
-* Several plugins can be active at once, and composited with **alpha blending** to
-  build complex effects.
+* **Script your own effects** with the `LUA engine`_. You can even make on-keyboard games.
 
-* Plays nicely with systemd sessions, detecting user switches so multiple users can
-  use the service without them fighting over keyboard control.
-* Supports multipe keyboards with different configuration per keyboard.
+* Mix and match several effects to build complex animations.
+
+* Multi-user, multi-keyboard support with per-user and per-keyboard configuration.
 
 And a few goodies:
 

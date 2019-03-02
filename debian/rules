@@ -4,8 +4,8 @@
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 export DEB_CFLAGS_MAINT_STRIP  = -O2
 export DEB_CXXFLAGS_MAINT_STRIP  = -O2
-export DEB_CFLAGS_MAINT_APPEND  = -Os
-export DEB_CXXFLAGS_MAINT_APPEND  = -Os
+export DEB_CFLAGS_MAINT_APPEND  = -Os -flto
+export DEB_CXXFLAGS_MAINT_APPEND  = -Os -flto
 LUA_ARCHS = amd64 arm64 armhf x86
 
 %:

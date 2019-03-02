@@ -46,7 +46,7 @@ All files must use:
 Code Conventions
 ----------------
 
-Code uses C++14, C99 and Python3.
+Code uses C++17, C99 and Python3.
 
 Braces:
 
@@ -67,13 +67,9 @@ Pointers, resources and ownership (C++):
 * Always use automatic pointers and specifically ``std::unique_ptr``. Do not
   introduce a ``std::shared_ptr`` without an *excellent* reason.
 * Raw pointers are non-owning. Reciprocal: raw owning pointers are forbidden.
-* Use of new and delete operators is forbidden. One exception: create QObject
-  instances with new is allowed if and only if its constructor is passed another
-  valid QObject as its parent argument. Such objects are disposed of automatically
-  by Qt, so the pointer returned by new is immediately non-owning.
+* Use of new and delete operators is forbidden. RenderTarget is the one and only exception.
 * Prefer references where appropriate.
-* Use RAII for all resource management, including external library objects. Either
-  specialize std::default_delete or use the custom deleter form of unique_ptr.
+* Use RAII for all resource management, including external library objects.
 
 Misc:
 
