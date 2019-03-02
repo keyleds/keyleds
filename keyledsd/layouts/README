@@ -4,6 +4,19 @@ Names follow format <model>_<layout>.yaml
            this is the product id on 16 bits followed by 4 0-bytes.
     layout: layout code from device, 2 bytes written in hexadecimal.
 
+Known models:
+    c32b:   G910        x
+    c330:   G410        x
+    c331:   G810    v5  x
+    c333:   G610        x
+    c335:   G910        x
+    c336:   G213        x
+    c337:   G810    v14 x
+    c338:   G610        x
+    c339:   GPro        x
+    c33a:   G413        not rgb
+    c33c:   G513        x
+
 Known layouts for feature 4540:
     0001:   American
     0002:   International (default)
