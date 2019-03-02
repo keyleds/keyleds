@@ -35,6 +35,7 @@ using keyleds::service::RenderLoop;
 RenderLoop::RenderLoop(device::Device & device, unsigned fps)
     : AnimationLoop(fps),
       m_device(device),
+      m_forceRefresh(false),
       m_state(renderTargetFor(device)),
       m_buffer(renderTargetFor(device))
 {
@@ -90,6 +91,7 @@ bool RenderLoop::render(milliseconds elapsed)
                             // The inbound report queue.
 
         // Compute diff between old LED state and new LED state
+        bool forceRefresh = m_forceRefresh.exchange(false, std::memory_order_relaxed);
         bool hasChanges = false;
         auto oldKeyIt = m_state.cbegin();
         auto newKeyIt = m_buffer.cbegin();
@@ -100,7 +102,7 @@ bool RenderLoop::render(milliseconds elapsed)
             const size_t numBlockKeys = block.keys().size();
             m_directives.clear();
             for (size_t kIdx = 0; kIdx < numBlockKeys; ++kIdx) {
-                if (*oldKeyIt != *newKeyIt) {
+                if (forceRefresh || *oldKeyIt != *newKeyIt) {
                     m_directives.push_back({
                         block.keys()[kIdx], newKeyIt->red, newKeyIt->green, newKeyIt->blue
                     });

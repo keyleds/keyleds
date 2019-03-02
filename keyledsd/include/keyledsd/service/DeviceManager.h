@@ -100,6 +100,7 @@ public:
     void                    handleGenericEvent(const string_map &);
     void                    handleKeyEvent(int, bool);
     void                    setPaused(bool);
+    void                    forceRefresh() { m_renderLoop.forceRefresh(); }
 
 private:
     // Static loaders, invoked once at manager creation to set it up

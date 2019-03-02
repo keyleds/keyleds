@@ -148,7 +148,12 @@ static void handleSignalEvent(const Options & options, keyleds::service::Service
                     service.setConfiguration(Configuration::loadFile(options.configPath));
                 } catch (std::exception & error) {
                     CRITICAL("reloading failed: ", error.what());
+                    break;
                 }
+                break;
+            case SIGUSR1:
+                NOTICE("forcing device refresh");
+                service.forceRefreshDevices();
                 break;
         }
     }
@@ -237,7 +242,7 @@ int main(int argc, char * argv[])
 
         // Register signals and go
         auto sigFdWatcher = std::unique_ptr<tools::FDWatcher>();
-        int sigFd = openSignalSocket({SIGINT, SIGTERM, SIGQUIT, SIGHUP});
+        int sigFd = openSignalSocket({SIGINT, SIGTERM, SIGQUIT, SIGHUP, SIGUSR1});
         if (sigFd >= 0) {
             sigFdWatcher = std::make_unique<tools::FDWatcher>(
                 sigFd, tools::FDWatcher::Read,

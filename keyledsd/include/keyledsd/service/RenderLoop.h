@@ -23,6 +23,7 @@
 #include "keyledsd/device/Device.h"
 #include "keyledsd/tools/AnimationLoop.h"
 #include "keyledsd/RenderTarget.h"
+#include <atomic>
 #include <mutex>
 #include <vector>
 
@@ -43,6 +44,8 @@ class RenderLoop final : public tools::AnimationLoop
 public:
     RenderLoop(device::Device &, unsigned fps);
     ~RenderLoop() override;
+
+    void                forceRefresh() { m_forceRefresh.store(true, std::memory_order_relaxed); }
 
     /// Returns a lock that bars the render loop from using renderers while it is held
     /// Holding it is mandatory for modifying any renderer or the list itself
@@ -68,6 +71,8 @@ private:
     device::Device &    m_device;               ///< The device to render to
     renderer_list       m_renderers;            ///< Current list of renderers (unowned)
     std::mutex          m_mRenderers;           ///< Controls access to m_renderers
+
+    std::atomic<bool>   m_forceRefresh;         ///< Force one-time full refresh at next render
 
     RenderTarget        m_state;                ///< Current state of the device
     RenderTarget        m_buffer;               ///< Buffer to render into, avoids re-creating it

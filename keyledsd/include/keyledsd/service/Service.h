@@ -76,6 +76,7 @@ public:
     void                setContext(const string_map &);
     void                handleGenericEvent(const string_map &);
     void                handleKeyEvent(const std::string &, int, bool);
+    void                forceRefreshDevices();
 
     // signals
     /// Fires whenever a device is added - whether it is in devices list is undefined

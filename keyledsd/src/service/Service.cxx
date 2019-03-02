@@ -167,6 +167,12 @@ void Service::handleKeyEvent(const std::string & devNode, int key, bool press)
     }
 }
 
+void Service::forceRefreshDevices()
+{
+    for (auto & device : m_devices) { device->forceRefresh(); }
+}
+
+
 /****************************************************************************/
 
 void Service::onConfigurationFileChanged(FileWatcher::Event event)
