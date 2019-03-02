@@ -33,8 +33,8 @@ endif()
 set(common_SRCS
     src/tools/accelerated.c
     src/tools/accelerated_plain.c
-    $<$<BOOL:KEYLEDSD_USE_SSE2>:src/tools/accelerated_sse2.c>
-    $<$<BOOL:KEYLEDSD_USE_AVX2>:src/tools/accelerated_avx2.c>
+    $<$<BOOL:${KEYLEDSD_USE_SSE2}>:src/tools/accelerated_sse2.c>
+    $<$<BOOL:${KEYLEDSD_USE_AVX2}>:src/tools/accelerated_avx2.c>
     src/tools/utils.cxx
     src/KeyDatabase.cxx
     src/RenderTarget.cxx

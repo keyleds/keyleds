@@ -45,7 +45,7 @@ KEYLEDSD_EXPORT KeyDatabase::KeyDatabase(key_list keys)
 {
 #ifndef NDEBUG
     for (auto it = m_keys.begin(); it != m_keys.end(); ++it) {
-        assert(it->index == std::distance(m_keys.begin(), it));
+        assert(it->index == static_cast<std::size_t>(std::distance(m_keys.begin(), it)));
     }
 #endif
 }
