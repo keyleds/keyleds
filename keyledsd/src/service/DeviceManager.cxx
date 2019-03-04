@@ -15,63 +15,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "keyledsd/service/DeviceManager.h"
+#include "keyledsd/service/DeviceManager_util.h"
 
 #include "config.h"
-#include "keyledsd/device/LayoutDescription.h"
-#include "keyledsd/device/Logitech.h"
 #include "keyledsd/logging.h"
 #include "keyledsd/service/EffectService.h"
-#include "keyledsd/tools/Paths.h"
+#include "keyledsd/tools/DeviceWatcher.h"
 #include <algorithm>
 #include <cassert>
-#include <iomanip>
-#include <sstream>
 #include <unistd.h>
 
 LOGGING("dev-manager");
 
 namespace keyleds::service {
 
-static constexpr int fallbackLayoutIndex = 2;
 static constexpr char defaultProfileName[] = "__default__";
 static constexpr char overlayProfileName[] = "__overlay__";
-
-/****************************************************************************/
-
-static std::string layoutName(const std::string & model, int layout)
-{
-    std::ostringstream fileNameBuf;
-    fileNameBuf.fill('0');
-    fileNameBuf <<model <<'_' <<std::hex <<std::setw(4) <<layout <<".yaml";
-    return fileNameBuf.str();
-}
-
-static device::LayoutDescription loadLayout(const device::Device & device)
-{
-    auto attempts = std::vector<int>{ fallbackLayoutIndex };
-    if (device.hasLayout()) { attempts.insert(attempts.begin(), device.layout()); }
-
-    for (auto layoutId : attempts) {
-        auto name = layoutName(device.model(), layoutId);
-        try {
-            auto result = device::LayoutDescription::loadFile(name);
-            DEBUG("loaded layout <", name, ">");
-            return result;
-        } catch (std::runtime_error & error) {
-            ERROR("could not load layout <", name, ">: ", error.what());
-        }
-    }
-    return {};
-}
-
-/****************************************************************************/
-
-DeviceManager::EffectGroup::EffectGroup(std::string name, effect_list && effects)
- : m_name(std::move(name)),
-   m_effects(std::move(effects))
-{}
-
-DeviceManager::EffectGroup::~EffectGroup() = default;
 
 /****************************************************************************/
 
@@ -164,114 +123,6 @@ void DeviceManager::setPaused(bool val)
     m_renderLoop.setPaused(val);
 }
 
-std::string DeviceManager::getSerial(const tools::device::Description & description)
-{
-    // Serial is stored on master USB device, so we walk up the hierarchy
-    auto usbDevDescription = description.parentWithType("usb", "usb_device");
-    if (!usbDevDescription) {
-        throw std::runtime_error("Device is not an usb device: " + description.sysPath());
-    }
-
-    auto serial = getAttribute(*usbDevDescription, "serial");
-    if (!serial) {
-        throw std::runtime_error("Device has no serial: " + description.sysPath());
-    }
-    return *serial;
-}
-
-DeviceManager::dev_list DeviceManager::findEventDevices(const tools::device::Description & description)
-{
-    // Event devices are any device detected as input devices and attached
-    // to same USB device as ours
-    dev_list result;
-    const auto & usbdev = description.parentWithType("usb", "usb_device");
-    if (!usbdev) { return result; }
-
-    const auto & candidates = usbdev->descendantsWithType("input");
-    for (const auto & candidate : candidates) {
-        const auto & devNode = candidate.devNode();
-        if (!devNode.empty()) {
-            result.emplace_back(devNode);
-        }
-    }
-    return result;
-}
-
-keyleds::KeyDatabase DeviceManager::setupKeyDatabase(device::Device & device)
-{
-    // Load layout description file from disk
-    auto layout = loadLayout(device);
-
-    // Some keyboards do not report all keys, look for missing keys and patch device
-    for (const auto & block : device.blocks()) {
-        std::vector<device::Device::key_id_type> keyIds;
-
-        for (const auto & key : layout.keys) {
-            if (key.block != block.id()) { continue; }
-            if (key.code > std::numeric_limits<device::Device::key_id_type>::max()) {
-                WARNING("invalid key code ", key.code, " in layout");
-                continue;
-            }
-            if (std::find(block.keys().begin(), block.keys().end(), key.code) == block.keys().end()) {
-                keyIds.push_back(static_cast<device::Device::key_id_type>(key.code));
-            }
-        }
-        if (!keyIds.empty()) {
-            DEBUG("patching ", keyIds.size(), " missing keys in block ", block.name());
-            device.patchMissingKeys(block, keyIds);
-        }
-    }
-
-    return buildKeyDatabase(device, layout);
-}
-
-keyleds::KeyDatabase
-DeviceManager::buildKeyDatabase(const device::Device & device, const device::LayoutDescription & layout)
-{
-    std::vector<KeyDatabase::Key> db;
-    RenderTarget::size_type keyIndex = 0;
-    for (const auto & block : device.blocks()) {
-        for (unsigned kidx = 0; kidx < block.keys().size(); ++kidx) {
-            const auto keyId = block.keys()[kidx];
-            auto spurious = false;
-            std::string name;
-            auto position = KeyDatabase::Rect{0, 0, 0, 0};
-
-            auto it = std::find_if(
-                layout.spurious.cbegin(), layout.spurious.cend(),
-                [&](const auto & pos) { return pos.first == block.id() && pos.second == keyId; }
-            );
-            if (it != layout.spurious.cend()) {
-                DEBUG("marking <", int(block.id()), ", ", int(keyId), "> as spurious");
-                spurious = true;
-            }
-
-            for (const auto & key : layout.keys) {
-                if (key.block == block.id() && key.code == keyId) {
-                    name = key.name;
-                    position = {
-                        KeyDatabase::position_type(key.position.x0),
-                        KeyDatabase::position_type(key.position.y0),
-                        KeyDatabase::position_type(key.position.x1),
-                        KeyDatabase::position_type(key.position.y1)
-                    };
-                    break;
-                }
-            }
-            if (name.empty()) { name = device.resolveKey(block.id(), keyId); }
-
-            db.push_back({
-                keyIndex,
-                spurious ? 0 : device.decodeKeyId(block.id(), keyId),
-                spurious ? std::string() : std::move(name),
-                position
-            });
-            ++keyIndex;
-        }
-    }
-    return KeyDatabase(db);
-}
-
 /// Applies the configuration to a string_map, matching profiles and resolving
 /// effect names. Returns the list of Effect entries in the configuration that
 /// should be loaded for the context. Returned list references Configuration
@@ -336,18 +187,18 @@ std::vector<keyleds::plugin::Effect *> DeviceManager::loadEffects(const string_m
     std::vector<Effect *> effectPtrs;
     for (const auto & effectGroup : effectGroups) {
         const auto & loadedEffectGroup = getEffectGroup(*effectGroup);
-        const auto & effects = loadedEffectGroup.effects();
+        const auto & effects = loadedEffectGroup.effects;
         std::transform(effects.begin(), effects.end(), std::back_inserter(effectPtrs),
                        [](const auto & ptr) { return ptr.get(); });
     }
     return effectPtrs;
 }
 
-DeviceManager::EffectGroup & DeviceManager::getEffectGroup(const Configuration::EffectGroup & conf)
+const detail::EffectGroup & DeviceManager::getEffectGroup(const Configuration::EffectGroup & conf)
 {
-    auto eit = std::find_if(m_effectGroups.begin(), m_effectGroups.end(),
-                            [&](const auto & group) { return group.name() == conf.name; });
-    if (eit != m_effectGroups.end()) { return *eit; }
+    auto eit = std::find_if(m_effectGroups.cbegin(), m_effectGroups.cend(),
+                            [&](const auto & group) { return group.name == conf.name; });
+    if (eit != m_effectGroups.cend()) { return *eit; }
 
     // Load key groups
     std::vector<KeyDatabase::KeyGroup> keyGroups;
@@ -376,7 +227,7 @@ DeviceManager::EffectGroup & DeviceManager::getEffectGroup(const Configuration::
         effects.emplace_back(std::move(effect));
     }
 
-    m_effectGroups.emplace_back(conf.name, std::move(effects));
+    m_effectGroups.push_back({conf.name, std::move(effects)});
     return m_effectGroups.back();
 }
 

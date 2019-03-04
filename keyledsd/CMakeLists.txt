@@ -62,6 +62,7 @@ set(service_SRCS
     $<$<NOT:$<BOOL:${NO_DBUS}>>:src/service/dbus/DeviceManager.cxx>
     $<$<NOT:$<BOOL:${NO_DBUS}>>:src/service/dbus/Service.cxx>
     src/service/DeviceManager.cxx
+    src/service/DeviceManager_util.cxx
     src/service/DisplayManager.cxx
     src/service/EffectService.cxx
     src/service/Service.cxx
