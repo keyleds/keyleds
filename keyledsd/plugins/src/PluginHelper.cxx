@@ -91,7 +91,7 @@ getColorsCompatibility(EffectService & service, const char * key)
     if (result.empty()) { return std::nullopt; }
 
     service.log(logging::warning::value, numeredListDeprecationMessage);
-    return std::move(result);
+    return result;
 }
 #endif
 
