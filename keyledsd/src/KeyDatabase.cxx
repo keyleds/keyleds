@@ -40,7 +40,7 @@ static unsigned relationIndex(const KeyDatabase::Key & a, const KeyDatabase::Key
 
 KEYLEDSD_EXPORT KeyDatabase::KeyDatabase(key_list keys)
  : m_keys(std::move(keys)),
-   m_bounds(computeBounds(m_keys)),
+   m_bounds(::keyleds::bounds(m_keys.cbegin(), m_keys.cend())),
    m_relations(computeRelations(m_keys))
 {
 #ifndef NDEBUG
@@ -80,23 +80,6 @@ KEYLEDSD_EXPORT double KeyDatabase::angle(const Key & a, const Key & b) const no
     auto xb = double(b.position.x1 + b.position.x0) / 2.0;
     auto yb = double(b.position.y1 + b.position.y0) / 2.0;
     return std::atan2(ya - yb, xb - xa);    // note: y axis is inverted
-}
-
-KeyDatabase::Rect KeyDatabase::computeBounds(const key_list & keys)
-{
-    auto result = Rect{
-        keys.front().position.x0,
-        keys.front().position.y0,
-        keys.front().position.x1,
-        keys.front().position.y1
-    };
-    for (const auto & key : keys) {
-        if (key.position.x0 < result.x0) { result.x0 = key.position.x0; }
-        if (key.position.y0 < result.y0) { result.y0 = key.position.y0; }
-        if (key.position.x1 > result.x1) { result.x1 = key.position.x1; }
-        if (key.position.y1 > result.y1) { result.y1 = key.position.y1; }
-    }
-    return result;
 }
 
 KeyDatabase::relation_list KeyDatabase::computeRelations(const key_list & keys)

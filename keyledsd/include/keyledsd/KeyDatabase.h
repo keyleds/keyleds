@@ -18,6 +18,7 @@
 #define KEYLEDSD_KEYDATABASE_H_E8A1B5AF
 
 #include "keyledsd/RenderTarget.h"
+#include <algorithm>
 #include <iosfwd>
 #include <iterator>
 #include <string>
@@ -90,8 +91,6 @@ public:
     template<typename S, typename C> KeyGroup makeGroup(S && name, const C &) const;
 
 private:
-    /// Computes m_bounds, invoked once at initialization
-    static Rect computeBounds(const key_list &);
     static relation_list computeRelations(const key_list &);
 
 private:
@@ -157,11 +156,7 @@ public:
 public:
                     KeyGroup() = default;
                     KeyGroup(std::string, key_list keys);
-                    KeyGroup(const KeyGroup &) = default;
-                    KeyGroup(KeyGroup &&) noexcept = default;
                     ~KeyGroup();
-    KeyGroup &      operator=(const KeyGroup &) = default;
-    KeyGroup &      operator=(KeyGroup &&) = default;
 
     const std::string & name() const noexcept { return m_name; }
 
@@ -214,6 +209,28 @@ inline void swap(KeyDatabase::KeyGroup & lhs, KeyDatabase::KeyGroup & rhs) noexc
     swap(lhs.m_name, rhs.m_name);
     swap(lhs.m_keys, rhs.m_keys);
 }
+
+/****************************************************************************/
+
+template <typename It> inline
+std::enable_if_t<std::is_convertible_v<typename std::iterator_traits<It>::value_type, const KeyDatabase::Key &>,
+                 KeyDatabase::Rect>
+bounds(It from, It to)
+{
+    auto result = KeyDatabase::Rect{from->position.x0, from->position.y0,
+                                    from->position.x1, from->position.y1};
+    std::for_each(++from, to, [&result](const auto & key) {
+        if (key.position.x0 < result.x0) { result.x0 = key.position.x0; }
+        if (key.position.y0 < result.y0) { result.y0 = key.position.y0; }
+        if (key.position.x1 > result.x1) { result.x1 = key.position.x1; }
+        if (key.position.y1 > result.y1) { result.y1 = key.position.y1; }
+    });
+    return result;
+}
+
+inline KeyDatabase::Rect bounds(const KeyDatabase & db) { return db.bounds(); } // use cached value
+
+/****************************************************************************/
 
 template<typename It>
 KeyDatabase::KeyGroup KeyDatabase::makeGroup(std::string name, It first, It last) const
