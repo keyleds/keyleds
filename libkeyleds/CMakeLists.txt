@@ -28,6 +28,7 @@ set(libkeyleds_SRCS
     src/error.c
     src/feature_core.c
     src/feature_gamemode.c
+    src/feature_gkeys.c
     src/feature_layout.c
     src/feature_leds.c
     src/feature_reportrate.c

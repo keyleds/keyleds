@@ -38,6 +38,7 @@ struct main_modes {
 int main_help(int argc, char * argv[]);
 int main_list(int argc, char * argv[]);
 int main_info(int argc, char * argv[]);
+int main_gkeys(int argc, char * argv[]);
 int main_get_leds(int argc, char * argv[]);
 int main_set_leds(int argc, char * argv[]);
 int main_gamemode(int argc, char * argv[]);
@@ -49,6 +50,8 @@ static const struct main_modes main_modes[] = {
       "Usage: %s [-dqv] %s\n" },
     { "info", main_info,
       "Usage: %s [-dqv] %s [-d device]\n" },
+    { "gkeys", main_gkeys,
+      "Usage: %s [-dqv] %s [-d device] on|off\n" },
     { "get-leds", main_get_leds,
       "Usage: %s [-dqv] %s [-d device] [key1 [key2 [...]]]\n" },
     { "set-leds", main_set_leds,
@@ -226,6 +229,7 @@ int main_info(int argc, char * argv[])
     struct keyleds_device_version * info;
     unsigned feature_count;
     const char ** feature_names;
+    unsigned gkeys_number;
     unsigned * report_rates;
     struct keyleds_keyblocks_info * led_info;
     int result = EXIT_SUCCESS;
@@ -296,6 +300,11 @@ int main_info(int argc, char * argv[])
     (void)putchar('\n');
     free(feature_names);
 
+    /* GKeys features */
+    if (keyleds_gkeys_count(device, KEYLEDS_TARGET_DEFAULT, &gkeys_number)) {
+        (void)printf("G-keys: %u\n", gkeys_number);
+    }
+
     /* Reportrate feature */
     if (keyleds_get_reportrates(device, KEYLEDS_TARGET_DEFAULT, &report_rates)) {
         unsigned current_rate = 0;
@@ -325,6 +334,69 @@ int main_info(int argc, char * argv[])
 err_main_info_close:
     keyleds_close(device);
     return result;
+}
+
+/****************************************************************************/
+
+struct gkeys_options {
+    const char *    device;
+    bool            enable;
+};
+
+bool parse_gkeys_options(int argc, char * argv[],
+                         /*@out@*/ struct gkeys_options * options)
+{
+    int opt;
+    options->device = NULL;
+    options->enable = true;
+
+    reset_getopt(argc, argv, "+d:");
+
+    while((opt = getopt(argc, argv, "+d:")) != -1) {
+        switch(opt) {
+        case 'd':
+            if (options->device != NULL) {
+                fprintf(stderr, "%s: -d option can only be used once.\n", argv[0]);
+                return false;
+            }
+            options->device = optarg;
+            break;
+        default:
+            return false;
+        }
+    }
+
+    if (optind == argc) {
+        fprintf(stderr, "%s: either on or off is required.\n", argv[0]);
+        return false;
+    }
+
+    if (strcmp(argv[optind], "on") == 0) {
+        options->enable = true;
+    } else if (strcmp(argv[optind], "off") == 0) {
+        options->enable = false;
+    } else {
+        fprintf(stderr, "%s: either on or off is required.\n", argv[0]);
+        return false;
+    }
+    return true;
+}
+
+int main_gkeys(int argc, char * argv[])
+{
+    struct gkeys_options options;
+    Keyleds * device;
+
+    if (!parse_gkeys_options(argc, argv, &options)) { return 1; }
+
+    device = auto_select_device(options.device);
+    if (device == NULL) { return 2; }
+
+    if (!keyleds_gkeys_enable(device, KEYLEDS_TARGET_DEFAULT, options.enable)) {
+        fprintf(stderr, "Setting G-keys mode info failed: %s\n", keyleds_get_error_str());
+        return 3;
+    }
+    return 0;
 }
 
 /****************************************************************************/
