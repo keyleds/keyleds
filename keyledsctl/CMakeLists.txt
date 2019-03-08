@@ -24,6 +24,12 @@ project(keyledsctl VERSION 1.0 LANGUAGES C)
 set(keyledsctl_SRCS
     src/dev_enum.c
     src/logging.c
+    src/keyledsctl_gamemode.c
+    src/keyledsctl_get_leds.c
+    src/keyledsctl_gkeys.c
+    src/keyledsctl_info.c
+    src/keyledsctl_list.c
+    src/keyledsctl_set_leds.c
     src/keyledsctl.c
     src/utils.c
 )
