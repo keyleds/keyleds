@@ -29,12 +29,16 @@
 LOGGING("render-loop");
 
 using keyleds::service::RenderLoop;
+using namespace std::literals::chrono_literals;
+
+static constexpr auto initialCommitDelay = 0us;
 
 /****************************************************************************/
 
 RenderLoop::RenderLoop(device::Device & device, unsigned fps)
     : AnimationLoop(fps),
       m_device(device),
+      m_commitDelay(initialCommitDelay),
       m_forceRefresh(false),
       m_state(renderTargetFor(device)),
       m_buffer(renderTargetFor(device))
@@ -120,7 +124,10 @@ bool RenderLoop::render(milliseconds elapsed)
         }
 
         // Commit color changes, if any
-        if (hasChanges) { m_device.commitColors(); }
+        if (hasChanges) {
+            std::this_thread::sleep_for(m_commitDelay);
+            m_device.commitColors();
+        }
 
         using std::swap;
         swap(m_state, m_buffer);
@@ -152,7 +159,10 @@ void RenderLoop::run()
                 if (!error.recoverable()) { throw; }
 
                 // Recover from error, giving some delay to the device
-                WARNING("error on device: ", error.what(), " re-syncing device");
+                ERROR("error on device: ", error.what(), " re-syncing device");
+                m_commitDelay += 10us;
+                WARNING("increased commit delay to ", m_commitDelay.count(), "us");
+
                 unsigned attempt;
                 for (attempt = 0; attempt < 5; ++attempt) {
                     std::this_thread::sleep_for(std::chrono::milliseconds(attempt * 100));

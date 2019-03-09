@@ -24,6 +24,7 @@
 #include "keyledsd/tools/AnimationLoop.h"
 #include "keyledsd/RenderTarget.h"
 #include <atomic>
+#include <chrono>
 #include <mutex>
 #include <vector>
 
@@ -72,6 +73,7 @@ private:
     renderer_list       m_renderers;            ///< Current list of renderers (unowned)
     std::mutex          m_mRenderers;           ///< Controls access to m_renderers
 
+    std::chrono::microseconds   m_commitDelay;  ///< Wait that amount between sending and committing
     std::atomic<bool>   m_forceRefresh;         ///< Force one-time full refresh at next render
 
     RenderTarget        m_state;                ///< Current state of the device
