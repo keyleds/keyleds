@@ -33,7 +33,7 @@
 #cmakedefine KEYLEDSD_USE_SSE2
 #cmakedefine KEYLEDSD_USE_AVX2
 #define KEYLEDSD_APP_ID         (0x4)
-#define KEYLEDSD_RENDER_FPS     (12)
+#define KEYLEDSD_RENDER_FPS     (16)
 
 // Feature detection results
 #cmakedefine HAVE_BUILTIN_CPU_SUPPORTS

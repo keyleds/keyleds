@@ -42,7 +42,7 @@ void AnimationLoop::start()
 void AnimationLoop::stop()
 {
 #ifndef NDEBUG
-    auto now = std::chrono::steady_clock::now();
+    auto now = clock::now();
 #endif
     {
         std::lock_guard<std::mutex> lock(m_mRunStatus);
@@ -54,7 +54,7 @@ void AnimationLoop::stop()
 #ifndef NDEBUG
     DEBUG("stop request fulfilled in ",
           std::chrono::duration_cast<std::chrono::microseconds>(
-              std::chrono::steady_clock::now() - now
+              clock::now() - now
           ).count(), "us");
 #endif
 }
@@ -77,7 +77,7 @@ void AnimationLoop::setPaused(bool paused)
 void AnimationLoop::run()
 {
     DEBUG("AnimationLoop(", this, ") started");
-    auto now = std::chrono::steady_clock::now();
+    auto now = clock::now();
     auto nextDraw = now;
 
     std::unique_lock<std::mutex> lock(m_mRunStatus);
@@ -97,10 +97,10 @@ void AnimationLoop::run()
                 // Actual intention here would be:
                 //     m_cRunStatus.wait_until(lock, nextDraw);
                 lock.unlock();
-                std::this_thread::sleep_for(nextDraw - std::chrono::steady_clock::now());
+                std::this_thread::sleep_for(nextDraw - clock::now());
                 lock.lock();
             }
-            now = std::chrono::steady_clock::now();
+            now = clock::now();
         }
 
         lock.unlock();

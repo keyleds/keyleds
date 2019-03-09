@@ -40,6 +40,7 @@ namespace keyleds::tools {
 class AnimationLoop
 {
 protected:
+    using clock = std::chrono::steady_clock;
     using milliseconds = std::chrono::duration<unsigned, std::milli>;
 public:
     explicit        AnimationLoop(unsigned fps);

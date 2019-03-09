@@ -29,12 +29,21 @@
 LOGGING("render-loop");
 
 using keyleds::service::RenderLoop;
+using namespace std::literals::chrono_literals;
+
+static constexpr auto errorGracePeriod = 60s;
+struct commitDelay {    // Delay between sending color data and commit command.
+    static constexpr std::chrono::microseconds initial = 0ms;
+    static constexpr std::chrono::microseconds increment = 1000us;
+    static constexpr std::chrono::microseconds max = 8ms;
+};
 
 /****************************************************************************/
 
 RenderLoop::RenderLoop(device::Device & device, unsigned fps)
     : AnimationLoop(fps),
       m_device(device),
+      m_commitDelay(commitDelay::initial),
       m_forceRefresh(false),
       m_state(renderTargetFor(device)),
       m_buffer(renderTargetFor(device))
@@ -120,7 +129,10 @@ bool RenderLoop::render(milliseconds elapsed)
         }
 
         // Commit color changes, if any
-        if (hasChanges) { m_device.commitColors(); }
+        if (hasChanges) {
+            std::this_thread::sleep_for(m_commitDelay);
+            m_device.commitColors();
+        }
 
         using std::swap;
         swap(m_state, m_buffer);
@@ -150,21 +162,30 @@ void RenderLoop::run()
             } catch (device::Device::error & error) {
                 // Something went wrong, we will attempt to recover
                 if (!error.recoverable()) { throw; }
+                ERROR("error on device: ", error.what(), ", re-syncing device");
+
+                // If errors happen in succession, increase commit delay.
+                // Some devices are slow and need significant time before commit.
+                auto now = clock::now();
+                if (now - m_lastErrorTime < errorGracePeriod && m_commitDelay < commitDelay::max)
+                {
+                    m_commitDelay += commitDelay::increment;
+                    WARNING("increased commit delay to ", m_commitDelay.count(), "us");
+                }
+                m_lastErrorTime = now;
 
                 // Recover from error, giving some delay to the device
-                WARNING("error on device: ", error.what(), " re-syncing device");
-                unsigned attempt;
-                for (attempt = 0; attempt < 5; ++attempt) {
+                bool success = false;
+                for (unsigned attempt = 0; !success && attempt < 5; ++attempt) {
                     std::this_thread::sleep_for(std::chrono::milliseconds(attempt * 100));
-                    if (m_device.resync()) { break; }
+                    success = m_device.resync();
                 }
 
-                // If recovery failed, re-throw initial error
-                if (attempt >= 5) { throw; }
+                if (!success) { throw; }
             }
         }
     } catch (device::Device::error & error) {
-        if (!error.expected()) { ERROR("device error: ", error.what()); }
+        if (!error.expected()) { ERROR("device error: ", error.what(), ", stopping animation"); }
     } catch (std::exception & error) {
         ERROR(error.what());
     }
