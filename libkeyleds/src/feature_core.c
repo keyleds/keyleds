@@ -153,7 +153,7 @@ KEYLEDS_EXPORT uint16_t keyleds_get_feature_id(struct keyleds_device * device,
     }
 
     /* Add it to the cache for next time */
-    feature_id = (uint8_t)((data[0] << 8) | data[1]);
+    feature_id = (uint16_t)((data[0] << 8) | data[1]);
     device->features = realloc(device->features, (idx + 2) * sizeof(device->features[0]));
     device->features[idx].target_id = target_id;
     device->features[idx].id = feature_id;

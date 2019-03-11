@@ -26,7 +26,7 @@
 namespace keyleds { class KeyDatabase; }
 namespace keyleds::device {
     class Device;
-    class LayoutDescription;
+    struct LayoutDescription;
 }
 namespace keyleds::tools::device { class Description; }
 
