@@ -17,6 +17,8 @@
 cmake_minimum_required (VERSION 3.0)
 project (keyleds LANGUAGES C CXX)
 
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMakeModules" ${CMAKE_MODULE_PATH})
+
 ##############################################################################
 # Settings
 

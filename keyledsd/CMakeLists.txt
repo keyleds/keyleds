@@ -174,6 +174,14 @@ IF(GTEST_FOUND)
     add_test(NAME common COMMAND test-common)
 ENDIF(GTEST_FOUND)
 
+find_package(benchmark)
+IF(benchmark_FOUND)
+    find_package(Threads REQUIRED)
+
+    add_executable(bench-rendertarget tests/RenderTarget_bench.cxx)
+    target_include_directories(bench-rendertarget SYSTEM PRIVATE ${benchmark_INCLUDE_DIRS})
+    target_link_libraries(bench-rendertarget common ${benchmark_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+ENDIF(benchmark_FOUND)
 
 ##############################################################################
 # Subtargets and data files
