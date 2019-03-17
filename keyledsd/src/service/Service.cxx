@@ -80,36 +80,39 @@ Service::Service(EffectManager & effectManager, tools::FileWatcher & fileWatcher
                  Configuration configuration, uv_loop_t & loop)
     : m_effectManager(effectManager),
       m_fileWatcher(fileWatcher),
+      m_configuration(std::move(configuration)),
       m_loop(loop),
       m_deviceWatcher(loop)
 {
     using namespace std::placeholders;
     connect(m_deviceWatcher.deviceAdded, this, std::bind(&Service::onDeviceAdded, this, _1));
     connect(m_deviceWatcher.deviceRemoved, this, std::bind(&Service::onDeviceRemoved, this, _1));
-    setConfiguration(std::move(configuration));
+    m_fileWatcherSub = m_fileWatcher.subscribe(
+        m_configuration.path, FileWatcher::Event::CloseWrite,
+        std::bind(&Service::onConfigurationFileChanged, this, _1)
+    );
     DEBUG("created");
 }
 
-Service::~Service()
-{
-    setActive(false);
-    m_devices.clear();
-}
-
-void Service::init()
-{
-    try {
-        auto display = std::make_unique<tools::xlib::Display>();
-        onDisplayAdded(display);
-    } catch (tools::xlib::Error & err) {
-        CRITICAL("X display initialization failed: ", err.what());
-        uv_stop(&m_loop);
-        return;
-    }
-    setActive(true);
-}
+Service::~Service() = default;
 
 /****************************************************************************/
+
+void Service::addDisplay(std::unique_ptr<tools::xlib::Display> display)
+{
+    auto displayManager = std::make_unique<DisplayManager>(std::move(display), m_loop);
+
+    using namespace std::placeholders;
+    connect(displayManager->contextChanged, this,
+            std::bind(&Service::setContext, this, _1));
+    connect(displayManager->keyEventReceived, this,
+            std::bind(&Service::handleKeyEvent, this, _1, _2, _3));
+
+    displayManager->scanDevices();
+    setContext(displayManager->currentContext());
+
+    m_displays.emplace_back(std::move(displayManager));
+}
 
 void Service::setConfiguration(Configuration config)
 {
@@ -135,13 +138,6 @@ void Service::setConfiguration(Configuration config)
 void Service::setAutoQuit(bool val)
 {
     m_autoQuit = val;
-}
-
-void Service::setActive(bool val)
-{
-    NOTICE("switching to ", val ? "active" : "inactive", " mode");
-    m_deviceWatcher.setActive(val);
-    m_active = val;
 }
 
 void Service::setContext(const string_map & context)
@@ -249,30 +245,4 @@ void Service::onDeviceRemoved(const tools::device::Description & description)
             uv_stop(&m_loop);
         }
     }
-}
-
-/****************************************************************************/
-
-void Service::onDisplayAdded(std::unique_ptr<tools::xlib::Display> & display)
-{
-    NOTICE("connected to display ", display->name());
-    auto displayManager = std::make_unique<DisplayManager>(std::move(display), m_loop);
-
-    using namespace std::placeholders;
-    connect(displayManager->contextChanged, this,
-            std::bind(&Service::setContext, this, _1));
-    connect(displayManager->keyEventReceived, this,
-            std::bind(&Service::handleKeyEvent, this, _1, _2, _3));
-
-    displayManager->scanDevices();
-    setContext(displayManager->currentContext());
-
-    m_displays.emplace_back(std::move(displayManager));
-}
-
-void Service::onDisplayRemoved()
-{
-    assert(m_displays.size() == 1);
-    NOTICE("disconnecting from display ", m_displays.front()->display().name());
-    m_displays.clear();
 }

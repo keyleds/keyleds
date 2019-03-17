@@ -25,6 +25,7 @@
 #include "keyledsd/service/StaticModuleRegistry.h"
 #include "keyledsd/tools/Event.h"
 #include "keyledsd/tools/FileWatcher.h"
+#include "keyledsd/tools/XWindow.h"
 #include <clocale>
 #include <csignal>
 #include <cstring>
@@ -231,6 +232,15 @@ int main(int argc, char * argv[])
         );
         service.setAutoQuit(options->autoQuit);
 
+        try {
+            auto display = std::make_unique<tools::xlib::Display>();
+            NOTICE("connected to display ", display->name());
+            service.addDisplay(std::move(display));
+        } catch (tools::xlib::Error & err) {
+            CRITICAL("X display initialization failed: ", err.what());
+            return 2;
+        }
+
 #ifndef NO_DBUS
         auto serviceAdapter = service::dbus::ServiceAdapter(bus, service);
         auto dbusFdWatcher = tools::FDWatcher(
@@ -251,7 +261,6 @@ int main(int argc, char * argv[])
             );
         }
 
-        service.init();
         uv_run(&main_loop, UV_RUN_DEFAULT);
     }
     uv_run(&main_loop, UV_RUN_NOWAIT);  // let closed handles cleanup

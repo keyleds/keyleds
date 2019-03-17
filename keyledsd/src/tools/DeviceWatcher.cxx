@@ -21,6 +21,7 @@
 #include <libudev.h>
 #include <stdexcept>
 #include <string>
+#include <uv.h>
 
 using keyleds::tools::device::Description;
 using keyleds::tools::device::DeviceWatcher;
@@ -173,16 +174,26 @@ keyleds::tools::device::getAttribute(const Description & description, const char
 
 /****************************************************************************/
 
-DeviceWatcher::DeviceWatcher(uv_loop_t & loop, struct udev * udev)
+DeviceWatcher::DeviceWatcher(uv_loop_t & loop, bool active, struct udev * udev)
     : m_loop(loop),
-      m_udev(udev == nullptr ? udev_new() : udev_ref(udev))
+      m_udev(udev == nullptr ? udev_new() : udev_ref(udev)),
+      m_scan(std::make_unique<uv_timer_t>())
 {
     if (m_udev == nullptr) {
         throw Error("udev initialization failed");
     }
+    uv_timer_init(&m_loop, m_scan.get());
+    m_scan->data = this;
+    setActive(active);
 }
 
-DeviceWatcher::~DeviceWatcher() = default;
+DeviceWatcher::~DeviceWatcher()
+{
+    // The actual closing is aysnchronous, so we defer deletion in a callback
+    uv_close(reinterpret_cast<uv_handle_t *>(m_scan.release()), [](uv_handle_t * ptr) {
+        delete reinterpret_cast<uv_timer_t *>(ptr);
+    });
+}
 
 void DeviceWatcher::scan()
 {
@@ -246,7 +257,10 @@ void DeviceWatcher::setActive(bool active)
             std::bind(&DeviceWatcher::onMonitorReady, this),
             m_loop
         );
-        scan();
+
+        uv_timer_start(m_scan.get(), [](uv_timer_t * handle) {
+            static_cast<DeviceWatcher *>(handle->data)->scan();
+        }, 0, 0);
 
     } else {
         m_fdWatcher = nullptr;
@@ -289,10 +303,6 @@ void DeviceWatcher::setupMonitor(struct udev_monitor &) const { /* empty */ }
 bool DeviceWatcher::isVisible(const Description &) const { return true; }
 
 /****************************************************************************/
-
-FilteredDeviceWatcher::FilteredDeviceWatcher(uv_loop_t & loop, struct udev * udev)
- : DeviceWatcher(loop, udev)
-{}
 
 void FilteredDeviceWatcher::setSubsystem(std::string val)
 {

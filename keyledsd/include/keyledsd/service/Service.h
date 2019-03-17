@@ -65,14 +65,12 @@ public:
     const Configuration & configuration() const { return m_configuration; }
     bool                autoQuit() const { return m_autoQuit; }
     const string_map &  context() const { return m_context; }
-    bool                active() const { return m_active; }
     const device_list & devices() const { return m_devices; }
 
-    void                init();             ///< Invoked once to complete event-loop-depenent setup
+    void                addDisplay(std::unique_ptr<tools::xlib::Display>);
 
     void                setConfiguration(Configuration);
     void                setAutoQuit(bool);
-    void                setActive(bool val);
     void                setContext(const string_map &);
     void                handleGenericEvent(const string_map &);
     void                handleKeyEvent(const std::string &, int, bool);
@@ -89,8 +87,6 @@ private:
     void                onConfigurationFileChanged(FileWatcher::Event);
     void                onDeviceAdded(const tools::device::Description &);
     void                onDeviceRemoved(const tools::device::Description &);
-    void                onDisplayAdded(std::unique_ptr<tools::xlib::Display> &);
-    void                onDisplayRemoved();
 private:
     EffectManager &     m_effectManager;    ///< Controls lifecycle of effects (injected)
     FileWatcher &       m_fileWatcher;      ///< Connection to inotify
@@ -99,7 +95,6 @@ private:
     bool                m_autoQuit = false; ///< Quit when last device is removed?
 
     string_map          m_context;          ///< Current context. Used when instanciating new managers
-    bool                m_active = false;   ///< If clear, the service stops watching devices
     device_list         m_devices;          ///< Map of serial number to DeviceManager instances
     display_list        m_displays;         ///< Connections to X displays
 

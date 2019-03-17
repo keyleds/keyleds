@@ -38,6 +38,9 @@ struct udev_monitor;
 struct udev_enumerate;
 struct udev_device;
 
+struct uv_timer_s;
+using uv_timer_t = struct uv_timer_s;
+
 /****************************************************************************/
 
 namespace keyleds::tools::device {
@@ -142,7 +145,8 @@ class DeviceWatcher
 private:
     using device_list = std::vector<Description>;
 public:
-    explicit            DeviceWatcher(uv_loop_t & loop, struct udev * udev = nullptr);
+    explicit            DeviceWatcher(uv_loop_t & loop, bool active = true,
+                                      struct udev * udev = nullptr);
     virtual             ~DeviceWatcher();
 
     void                scan();                 ///< Rescans system's devices actively
@@ -162,13 +166,14 @@ private:
     void                onMonitorReady();
 
 private:
-    bool                            m_active = false; ///< If set, the watcher is monitoring
-                                                            ///  device changes
     uv_loop_t &                     m_loop;         ///< Event loop
     udev_ptr<struct udev>           m_udev;         ///< Connection to udev, or nullptr
+    bool                            m_active = false;///< If set, the watcher is monitoring
+                                                            ///  device changes
     udev_ptr<struct udev_monitor>   m_monitor;      ///< Monitoring endpoint, or nullptr
     std::unique_ptr<FDWatcher>      m_fdWatcher;    ///< Monitors udev socket
     device_list                     m_known;        ///< List of device descriptions
+    std::unique_ptr<uv_timer_t>     m_scan;         ///< Used to schedule scans
 };
 
 /****************************************************************************/
@@ -182,7 +187,7 @@ private:
 class FilteredDeviceWatcher : public DeviceWatcher
 {
 public:
-    explicit FilteredDeviceWatcher(uv_loop_t & loop, struct udev * udev = nullptr);
+    using DeviceWatcher::DeviceWatcher;
 
     void    setSubsystem(std::string val);
     void    setDevType(std::string val);

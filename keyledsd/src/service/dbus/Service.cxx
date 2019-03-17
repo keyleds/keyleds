@@ -56,26 +56,6 @@ static int getContext(sd_bus *, const char *, const char *, const char *,
     return sd_bus_message_close_container(reply);
 }
 
-static int getActive(sd_bus *, const char *, const char *, const char *,
-                     sd_bus_message * reply, void * userdata, sd_bus_error *)
-{
-    auto adapter = static_cast<ServiceAdapter *>(userdata);
-    return sd_bus_message_append(reply, "b", adapter->service().active());
-}
-
-static int setActive(sd_bus *, const char *, const char *, const char *,
-                     sd_bus_message * value, void * userdata, sd_bus_error *)
-{
-    int ret;
-    auto adapter = static_cast<ServiceAdapter *>(userdata);
-
-    int active;
-    ret = sd_bus_message_read_basic(value, 'b', &active);
-    if (ret < 0) { return ret; }
-    adapter->service().setActive(bool(active));
-    return 0;
-}
-
 static int getAutoQuit(sd_bus *, const char *, const char *, const char *,
                        sd_bus_message * reply, void * userdata, sd_bus_error *)
 {
@@ -206,7 +186,6 @@ static constexpr sd_bus_vtable interfaceVtable[] = {
     SD_BUS_VTABLE_START(0),
     SD_BUS_PROPERTY("configurationPath", "s", getConfigurationPath, 0, 0),
     SD_BUS_PROPERTY("context", "a{ss}", getContext, 0, 0),
-    SD_BUS_WRITABLE_PROPERTY("active", "b", getActive, setActive, 0, 0),
     SD_BUS_WRITABLE_PROPERTY("autoQuit", "b", getAutoQuit, setAutoQuit, 0, 0),
     SD_BUS_PROPERTY("devices", "ao", getDevices, 0, 0),
     SD_BUS_PROPERTY("plugins", "as", getPlugins, 0, 0),

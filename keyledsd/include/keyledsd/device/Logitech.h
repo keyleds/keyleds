@@ -112,7 +112,8 @@ private:
 class LogitechWatcher : public tools::device::FilteredDeviceWatcher
 {
 public:
-    explicit LogitechWatcher(uv_loop_t & loop, struct udev * udev = nullptr);
+    explicit LogitechWatcher(uv_loop_t & loop, bool active = true,
+                             struct udev * udev = nullptr);
     bool    isVisible(const tools::device::Description & dev) const override;
 private:
     bool    checkInterface(const tools::device::Description & dev) const;
