@@ -38,7 +38,7 @@ protected:
         {3, 13, "BOTTOMLEFT"s,  {10, 80, 20, 90}},
         {4, 14, "INSIDE"s,      {40, 50, 50, 60}}
     });
-    const KeyDatabase::size_type NKEYS = m_db.size();
+    const unsigned NKEYS = 5;
 };
 
 

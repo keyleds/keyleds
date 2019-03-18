@@ -29,7 +29,8 @@ using keyleds::KeyDatabase;
 template <class T> T abs_difference(T a, T b) { return a > b ? a - b : b - a; }
 
 // Return index in relation table for key pair, given a.index < b.index
-static unsigned relationIndex(const KeyDatabase::Key & a, const KeyDatabase::Key & b, KeyDatabase::size_type N)
+static std::size_t relationIndex(const KeyDatabase::Key & a, const KeyDatabase::Key & b,
+                                 KeyDatabase::size_type N)
 {
     // Relations are stored in pyramidal array
     return a.index * (2 * N - 1 - a.index) / 2 + b.index - a.index - 1;

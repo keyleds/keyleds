@@ -21,7 +21,7 @@
 #include "config.h"
 
 
-KEYLEDSD_EXPORT void blend_avx2(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
+KEYLEDSD_EXPORT void blend_avx2(uint8_t * restrict dst, const uint8_t * restrict src, size_t length)
 {
     assert((uintptr_t)dst % 32 == 0);   // AVX2 requires 32-bytes aligned data
     assert((uintptr_t)src % 32 == 0);   // AVX2 requires 32-bytes aligned data
@@ -68,7 +68,7 @@ KEYLEDSD_EXPORT void blend_avx2(uint8_t * restrict dst, const uint8_t * restrict
     } while (--length > 0);
 }
 
-KEYLEDSD_EXPORT void multiply_avx2(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
+KEYLEDSD_EXPORT void multiply_avx2(uint8_t * restrict dst, const uint8_t * restrict src, size_t length)
 {
     assert((uintptr_t)dst % 32 == 0);   // AVX2 requires 32-bytes aligned data
     assert((uintptr_t)src % 32 == 0);   // AVX2 requires 32-bytes aligned data

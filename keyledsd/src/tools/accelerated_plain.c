@@ -20,7 +20,7 @@
 #include "config.h"
 
 
-KEYLEDSD_EXPORT void blend_plain(uint8_t * restrict a, const uint8_t * restrict b, unsigned length)
+KEYLEDSD_EXPORT void blend_plain(uint8_t * restrict a, const uint8_t * restrict b, size_t length)
 {
     assert((uintptr_t)a % 8 == 0);    // Not a requirement, but lets compiler optimize stuff
     assert((uintptr_t)b % 8 == 0);    // Not a requirement, but lets compiler optimize stuff
@@ -41,7 +41,7 @@ KEYLEDSD_EXPORT void blend_plain(uint8_t * restrict a, const uint8_t * restrict 
     } while (--length > 0);
 }
 
-KEYLEDSD_EXPORT void multiply_plain(uint8_t * restrict a, const uint8_t * restrict b, unsigned length)
+KEYLEDSD_EXPORT void multiply_plain(uint8_t * restrict a, const uint8_t * restrict b, size_t length)
 {
     assert((uintptr_t)a % 8 == 0);    // Not a requirement, but lets compiler optimize stuff
     assert((uintptr_t)b % 8 == 0);    // Not a requirement, but lets compiler optimize stuff

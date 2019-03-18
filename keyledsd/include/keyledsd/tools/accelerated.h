@@ -18,11 +18,13 @@
 #define TOOLS_ACCELERATED_H_D3D3B426
 
 #ifdef __cplusplus
+#include <cstddef>
 #include <cstdint>
 
 namespace keyleds::tools {
 extern "C" {
 #else
+#include <stddef.h>
 #include <stdint.h>
 #endif
 
@@ -43,7 +45,7 @@ extern "C" {
  * @param length The number of colors in the arrays. Must be a multiple of 4.
  * @note Arrays must not overlap.
  */
-void blend(uint8_t * a, const uint8_t * b, unsigned length);
+void blend(uint8_t * a, const uint8_t * b, size_t length);
 
 /** Multiply two R8G8B8A8 color streams
  *
@@ -58,37 +60,37 @@ void blend(uint8_t * a, const uint8_t * b, unsigned length);
  * @param length The number of colors in the arrays. Must be a multiple of 4.
  * @note Arrays must not overlap.
  */
-void multiply(uint8_t * a, const uint8_t * b, unsigned length);
+void multiply(uint8_t * a, const uint8_t * b, size_t length);
 
 #ifdef __cplusplus
     namespace detail {  // exposed for testing purposes
 #endif
-        void blend_plain(uint8_t * a, const uint8_t * b, unsigned length);
-        void blend_sse2(uint8_t * a, const uint8_t * b, unsigned length);
-        void blend_avx2(uint8_t * a, const uint8_t * b, unsigned length);
-        void multiply_plain(uint8_t * a, const uint8_t * b, unsigned length);
-        void multiply_sse2(uint8_t * a, const uint8_t * b, unsigned length);
-        void multiply_avx2(uint8_t * a, const uint8_t * b, unsigned length);
+        void blend_plain(uint8_t * a, const uint8_t * b, size_t length);
+        void blend_sse2(uint8_t * a, const uint8_t * b, size_t length);
+        void blend_avx2(uint8_t * a, const uint8_t * b, size_t length);
+        void multiply_plain(uint8_t * a, const uint8_t * b, size_t length);
+        void multiply_sse2(uint8_t * a, const uint8_t * b, size_t length);
+        void multiply_avx2(uint8_t * a, const uint8_t * b, size_t length);
 #ifdef __cplusplus
     } // namespace detail
 
     namespace architecture {
         struct plain {
-            static inline void blend(uint8_t * a, const uint8_t * b, unsigned length)
+            static inline void blend(uint8_t * a, const uint8_t * b, size_t length)
                 { detail::blend_plain(a, b, length); }
-            static inline void multiply(uint8_t * a, const uint8_t * b, unsigned length)
+            static inline void multiply(uint8_t * a, const uint8_t * b, size_t length)
                 { detail::multiply_plain(a, b, length); }
         };
         struct sse2 {
-            static inline void blend(uint8_t * a, const uint8_t * b, unsigned length)
+            static inline void blend(uint8_t * a, const uint8_t * b, size_t length)
                 { detail::blend_sse2(a, b, length); }
-            static inline void multiply(uint8_t * a, const uint8_t * b, unsigned length)
+            static inline void multiply(uint8_t * a, const uint8_t * b, size_t length)
                 { detail::multiply_sse2(a, b, length); }
         };
         struct avx2 {
-            static inline void blend(uint8_t * a, const uint8_t * b, unsigned length)
+            static inline void blend(uint8_t * a, const uint8_t * b, size_t length)
                 { detail::blend_avx2(a, b, length); }
-            static inline void multiply(uint8_t * a, const uint8_t * b, unsigned length)
+            static inline void multiply(uint8_t * a, const uint8_t * b, size_t length)
                 { detail::multiply_avx2(a, b, length); }
         };
     } // namespace architecture

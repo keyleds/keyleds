@@ -49,8 +49,8 @@ public:
        m_keys(getConfig<KeyGroup>(service, "group")),
        m_buffer(*service.createRenderTarget())
     {
-        auto number = std::clamp(getConfig<unsigned>(service, "number").value_or(8),
-                                 1u, service.keyDB().size());
+        auto number = std::clamp(getConfig<KeyDatabase::size_type>(service, "number").value_or(8),
+                                 KeyDatabase::size_type{1u}, service.keyDB().size());
         m_stars.resize(number);
 
         // Get ready

@@ -22,7 +22,7 @@
 /* blend */
 
 #ifdef HAVE_BUILTIN_CPU_SUPPORTS
-static USED void (*resolve_blend(void))(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
+static USED void (*resolve_blend(void))(uint8_t * restrict dst, const uint8_t * restrict src, size_t length)
 {
 #  if defined __GNUC__ && !defined __clang__
     __builtin_cpu_init();
@@ -37,18 +37,18 @@ static USED void (*resolve_blend(void))(uint8_t * restrict dst, const uint8_t * 
 }
 
 #  ifdef HAVE_IFUNC_ATTRIBUTE
-KEYLEDSD_EXPORT void blend(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
+KEYLEDSD_EXPORT void blend(uint8_t * restrict dst, const uint8_t * restrict src, size_t length)
     __attribute__((ifunc("resolve_blend")));
 #  else
-static void (*resolved_blend)(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length);
-KEYLEDSD_EXPORT void blend(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
+static void (*resolved_blend)(uint8_t * restrict dst, const uint8_t * restrict src, size_t length);
+KEYLEDSD_EXPORT void blend(uint8_t * restrict dst, const uint8_t * restrict src, size_t length)
 {
     if (resolved_blend == 0) { resolved_blend = resolve_blend(); }
     (*resolved_blend)(dst, src, length);
 }
 #  endif
 #else
-KEYLEDSD_EXPORT void blend(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
+KEYLEDSD_EXPORT void blend(uint8_t * restrict dst, const uint8_t * restrict src, size_t length)
     { blend_plain(dst, src, length); }
 #endif
 
@@ -56,7 +56,7 @@ KEYLEDSD_EXPORT void blend(uint8_t * restrict dst, const uint8_t * restrict src,
 /* multiply */
 
 #ifdef HAVE_BUILTIN_CPU_SUPPORTS
-static USED void (*resolve_multiply(void))(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
+static USED void (*resolve_multiply(void))(uint8_t * restrict dst, const uint8_t * restrict src, size_t length)
 {
 #  if defined __GNUC__ && !defined __clang__
     __builtin_cpu_init();
@@ -71,17 +71,17 @@ static USED void (*resolve_multiply(void))(uint8_t * restrict dst, const uint8_t
 }
 
 #  ifdef HAVE_IFUNC_ATTRIBUTE
-KEYLEDSD_EXPORT void multiply(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
+KEYLEDSD_EXPORT void multiply(uint8_t * restrict dst, const uint8_t * restrict src, size_t length)
     __attribute__((ifunc("resolve_multiply")));
 #  else
-static void (*resolved_multiply)(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length);
-KEYLEDSD_EXPORT void multiply(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
+static void (*resolved_multiply)(uint8_t * restrict dst, const uint8_t * restrict src, size_t length);
+KEYLEDSD_EXPORT void multiply(uint8_t * restrict dst, const uint8_t * restrict src, size_t length)
 {
     if (resolved_multiply == 0) { resolved_multiply = resolve_multiply(); }
     (*resolved_multiply)(dst, src, length);
 }
 #  endif
 #else
-KEYLEDSD_EXPORT void multiply(uint8_t * restrict dst, const uint8_t * restrict src, unsigned length)
+KEYLEDSD_EXPORT void multiply(uint8_t * restrict dst, const uint8_t * restrict src, size_t length)
     { multiply_plain(dst, src, length); }
 #endif

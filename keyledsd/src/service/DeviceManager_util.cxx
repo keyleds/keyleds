@@ -93,7 +93,7 @@ std::string getSerial(const tools::device::Description & description)
 static KeyDatabase buildKeyDatabase(const device::Device & device, const device::LayoutDescription & layout)
 {
     std::vector<KeyDatabase::Key> db;
-    RenderTarget::size_type keyIndex = 0;
+    KeyDatabase::Key::index_type keyIndex = 0;
     for (const auto & block : device.blocks()) {
         for (unsigned kidx = 0; kidx < block.keys().size(); ++kidx) {
             const auto keyId = block.keys()[kidx];

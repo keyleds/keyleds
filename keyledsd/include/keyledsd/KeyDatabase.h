@@ -43,7 +43,7 @@ public:
 
     struct Key final
     {
-        using index_type = RenderTarget::size_type;
+        using index_type = unsigned int;
 
         index_type      index;      ///< index in render targets
         int             keyCode;    ///< linux input event code
@@ -65,8 +65,8 @@ public:
     using value_type = key_list::value_type;
     using const_reference = key_list::const_reference;
     using const_iterator = key_list::const_iterator;
-    using difference_type = signed int;     // narrow down vector's size
-    using size_type = unsigned int;         // narrow down vector's size
+    using difference_type = key_list::difference_type;
+    using size_type = key_list::size_type;
 public:
                     KeyDatabase() = default;
     explicit        KeyDatabase(key_list keys);
@@ -78,7 +78,7 @@ public:
     const_iterator  begin() const { return m_keys.cbegin(); }
     const_iterator  end() const { return m_keys.cend(); }
     bool            empty() const noexcept { return m_keys.empty(); }
-    size_type       size() const noexcept { return size_type(m_keys.size()); }
+    size_type       size() const noexcept { return m_keys.size(); }
     const_reference operator[](size_type idx) const { return m_keys[idx]; }
 
     Rect            bounds() const noexcept { return m_bounds; }

@@ -48,8 +48,8 @@ RenderLoop::RenderLoop(device::Device & device, unsigned fps)
 {
     auto nb = std::accumulate(m_device.blocks().begin(), m_device.blocks().end(), std::size_t{0},
                               [](auto val, auto & block) { return val + block.keys().size(); });
-    m_state = RenderTarget(static_cast<RenderTarget::size_type>(nb));
-    m_buffer = RenderTarget(static_cast<RenderTarget::size_type>(nb));
+    m_state = RenderTarget(nb);
+    m_buffer = RenderTarget(nb);
 
     // Ensure no allocation happens in render()
     auto max = std::accumulate(m_device.blocks().begin(), m_device.blocks().end(), std::size_t{0},
