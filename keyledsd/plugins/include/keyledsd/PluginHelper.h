@@ -147,14 +147,12 @@ getConfig<std::vector<RGBAColor>>(EffectService & service, const char * key)
 
 /** Empty implementation for the Effect and Renderer interface, for simple effects.
  */
-class SimpleEffect : public Effect, public Renderer
+class SimpleEffect : public Effect
 {
 public:
     void    handleContextChange(const string_map &) override {}
     void    handleGenericEvent(const string_map &) override {}
     void    handleKeyEvent(const KeyDatabase::Key &, bool) override {}
-
-    Renderer * renderer() override { return this; }
 };
 
 

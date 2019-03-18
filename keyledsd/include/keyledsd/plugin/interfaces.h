@@ -18,16 +18,12 @@
 #define KEYLEDSD_EFFECT_INTERFACES_H_07881F1A
 
 #include "keyledsd/KeyDatabase.h"
+#include "keyledsd/RenderTarget.h"
 #include "keyledsd/colors.h"
 #include "keyledsd/logging.h"
 #include <string>
 #include <variant>
 #include <vector>
-
-namespace keyleds {
-    class RenderTarget;
-    class Renderer;
-}
 
 namespace keyleds::plugin {
 
@@ -37,7 +33,7 @@ class EffectService;
 // IMPLEMENTED BY PLUGIN
 
 /// Core object used by DeviceManager and RenderLoop
-class Effect
+class Effect : public Renderer
 {
 protected:
     using string_map = std::vector<std::pair<std::string, std::string>>;
@@ -56,10 +52,6 @@ public:
 
     /// Invoked whenever the user presses or releases a key while the plugin is active.
     virtual void    handleKeyEvent(const KeyDatabase::Key &, bool press) = 0;
-
-    /// Return a Renderer interface that can draw the effect into a RenderTarget
-    [[nodiscard]]
-    virtual Renderer * renderer() = 0;
 
 protected:
     Effect() = default;

@@ -86,8 +86,7 @@ void DeviceManager::setContext(const string_map & context)
 
     std::vector<Renderer *> renderers;
     renderers.reserve(m_activeEffects.size());
-    std::transform(m_activeEffects.begin(), m_activeEffects.end(), std::back_inserter(renderers),
-                   [](const auto & effect) { return effect->renderer(); });
+    std::copy(m_activeEffects.begin(), m_activeEffects.end(), std::back_inserter(renderers));
     m_renderLoop.renderers() = std::move(renderers);
 }
 
