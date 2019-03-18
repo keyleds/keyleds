@@ -97,17 +97,15 @@ static KeyDatabase buildKeyDatabase(const device::Device & device, const device:
     for (const auto & block : device.blocks()) {
         for (unsigned kidx = 0; kidx < block.keys().size(); ++kidx) {
             const auto keyId = block.keys()[kidx];
-            auto spurious = false;
             std::string name;
             auto position = KeyDatabase::Rect{0, 0, 0, 0};
 
-            auto it = std::find_if(
+            bool spurious = std::any_of(
                 layout.spurious.cbegin(), layout.spurious.cend(),
                 [&](const auto & pos) { return pos.first == block.id() && pos.second == keyId; }
             );
-            if (it != layout.spurious.cend()) {
+            if (spurious) {
                 DEBUG("marking <", int(block.id()), ", ", int(keyId), "> as spurious");
-                spurious = true;
             }
 
             for (const auto & key : layout.keys) {

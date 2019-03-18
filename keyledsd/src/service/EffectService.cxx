@@ -67,7 +67,7 @@ const EffectService::config_map & EffectService::configuration() const
 keyleds::RenderTarget * EffectService::createRenderTarget()
 {
     m_renderTargets.push_back(
-        std::make_unique<RenderTarget>(m_manager.getRenderTarget())
+        std::make_unique<RenderTarget>(m_manager.keyDB().size())
     );
     DEBUG("created RenderTarget(", m_renderTargets.back().get(), ")");
     return m_renderTargets.back().get();

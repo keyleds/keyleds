@@ -58,9 +58,6 @@ public:
     /// calling their render method.
     renderer_list &     renderers() { return m_renderers; }
 
-    /// Creates a new render target matching the layout of given device
-    static RenderTarget renderTargetFor(const device::Device &);
-
 private:
     bool                render(milliseconds) override;
     void                run() override;

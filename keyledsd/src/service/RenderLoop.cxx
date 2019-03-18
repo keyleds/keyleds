@@ -44,15 +44,16 @@ RenderLoop::RenderLoop(device::Device & device, unsigned fps)
     : AnimationLoop(fps),
       m_device(device),
       m_commitDelay(commitDelay::initial),
-      m_forceRefresh(false),
-      m_state(renderTargetFor(device)),
-      m_buffer(renderTargetFor(device))
+      m_forceRefresh(false)
 {
+    auto nb = std::accumulate(m_device.blocks().begin(), m_device.blocks().end(), std::size_t{0},
+                              [](auto val, auto & block) { return val + block.keys().size(); });
+    m_state = RenderTarget(static_cast<RenderTarget::size_type>(nb));
+    m_buffer = RenderTarget(static_cast<RenderTarget::size_type>(nb));
+
     // Ensure no allocation happens in render()
-    std::size_t max = 0;
-    for (const auto & block : m_device.blocks()) {
-        max = std::max(max, block.keys().size());
-    }
+    auto max = std::accumulate(m_device.blocks().begin(), m_device.blocks().end(), std::size_t{0},
+                               [](auto val, auto & block) { return std::max(val, block.keys().size()); });
     m_directives.reserve(max);
 }
 
@@ -64,18 +65,6 @@ RenderLoop::~RenderLoop() = default;
 std::unique_lock<std::mutex> RenderLoop::lock()
 {
     return std::unique_lock<std::mutex>(m_mRenderers);
-}
-
-/** Create render target for a device.
- * @param device Device to create a render target for.
- * @return Newly created render target.
- */
-keyleds::RenderTarget RenderLoop::renderTargetFor(const device::Device & device)
-{
-    return RenderTarget(std::accumulate(
-        device.blocks().begin(), device.blocks().end(), RenderTarget::size_type{0},
-        [](auto sum, const auto & block) { return sum + block.keys().size(); }
-    ));
 }
 
 /** Rendering method

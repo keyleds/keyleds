@@ -75,8 +75,6 @@ public:
     const device::Device &  device() const { return *m_device; }
     const KeyDatabase &     keyDB() const { return m_keyDB; }
 
-    auto                    getRenderTarget() const { return RenderLoop::renderTargetFor(*m_device); }
-
           bool              paused() const { return m_renderLoop.paused(); }
 
 public:
