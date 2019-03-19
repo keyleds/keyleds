@@ -84,10 +84,10 @@ void DeviceManager::setContext(const string_map & context)
         effect->handleContextChange(context);
     }
 
-    std::vector<Renderer *> renderers;
+    auto & renderers = m_renderLoop.renderers();
+    renderers.clear();
     renderers.reserve(m_activeEffects.size());
     std::copy(m_activeEffects.begin(), m_activeEffects.end(), std::back_inserter(renderers));
-    m_renderLoop.renderers() = std::move(renderers);
 }
 
 void DeviceManager::handleFileEvent(FileWatcher::Event, uint32_t, const std::string &)
