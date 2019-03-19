@@ -24,15 +24,16 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMakeModules" ${CMAKE_MODULE_PATH})
 
 include(GNUInstallDirs)
 
-option(WITH_PYTHON "build python bindings" OFF)
 option(WITH_KEYLEDSD "build keyledsd daemon" ON)
+option(WITH_PYTHON "build python bindings" OFF)
+option(WITH_TESTS "build test suite" OFF)
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
 
 add_compile_options(
-    -Wall -Wextra -Werror
+    -Wall -Wextra
     $<$<COMPILE_LANGUAGE:CXX>:-Wcast-align>
     $<$<COMPILE_LANGUAGE:CXX>:-Wcast-qual>
     $<$<COMPILE_LANGUAGE:CXX>:-Wconversion>
@@ -45,10 +46,10 @@ add_compile_options(
 ##############################################################################
 # Global dependencies
 
-find_package(GTest)
-IF(GTEST_FOUND)
+IF(WITH_TESTS)
+    find_package(GTest REQUIRED)
     enable_testing()
-ENDIF(GTEST_FOUND)
+ENDIF(WITH_TESTS)
 
 ##############################################################################
 # Include subprojects

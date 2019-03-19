@@ -162,8 +162,8 @@ ENDIF()
 ##############################################################################
 # Tests
 
-find_package(GTest)
-IF(GTEST_FOUND)
+IF(WITH_TESTS)
+    find_package(GTest REQUIRED)
     find_package(Threads REQUIRED)
 
     add_executable(test-common ${test-common_SRCS})
@@ -172,16 +172,14 @@ IF(GTEST_FOUND)
     target_link_libraries(test-common common ${GTEST_BOTH_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 
     add_test(NAME common COMMAND test-common)
-ENDIF(GTEST_FOUND)
 
-find_package(benchmark)
-IF(benchmark_FOUND)
-    find_package(Threads REQUIRED)
-
-    add_executable(bench-rendertarget tests/RenderTarget_bench.cxx)
-    target_include_directories(bench-rendertarget SYSTEM PRIVATE ${benchmark_INCLUDE_DIRS})
-    target_link_libraries(bench-rendertarget common ${benchmark_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
-ENDIF(benchmark_FOUND)
+    find_package(benchmark)
+    IF(benchmark_FOUND)
+        add_executable(bench-rendertarget tests/RenderTarget_bench.cxx)
+        target_include_directories(bench-rendertarget SYSTEM PRIVATE ${benchmark_INCLUDE_DIRS})
+        target_link_libraries(bench-rendertarget common ${benchmark_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+    ENDIF(benchmark_FOUND)
+ENDIF(WITH_TESTS)
 
 ##############################################################################
 # Subtargets and data files
