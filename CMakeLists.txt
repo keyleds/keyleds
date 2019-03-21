@@ -55,6 +55,7 @@ ENDIF(WITH_TESTS)
 # Include subprojects
 
 add_subdirectory(libkeyleds)
+add_subdirectory(libkeyleds2)
 add_subdirectory(keyledsctl)
 IF (WITH_KEYLEDSD)
     add_subdirectory(keyledsd)
