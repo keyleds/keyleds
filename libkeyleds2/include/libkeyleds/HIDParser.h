@@ -18,18 +18,13 @@
 #define LIBKEYLEDS_HIDPARSER_H_92AAA3A9
 
 #include <cstdint>
+#include <numeric>
 #include <optional>
 #include <vector>
 
 namespace libkeyleds::hid {
 
-// enum class HIDTag : uint8_t;
-// enum class HIDCollectionType : uint8_t;
-// enum class HIDUsagePage : uint16_t;
-// enum class HIDUsage : uint32_t;
-//
-
-enum class HIDTag : uint8_t {
+enum class Tag : uint8_t {
     // Main tags
     Input           = 0b1000'00 << 2,
     Output          = 0b1001'00 << 2,
@@ -66,7 +61,7 @@ enum class HIDTag : uint8_t {
     Invalid         = 0b1111'11 << 2
 };
 
-enum class HIDCollectionType : uint8_t {
+enum class CollectionType : uint8_t {
     Physical = 0x00,
     Application = 0x01,
     Logical = 0x02,
@@ -76,7 +71,7 @@ enum class HIDCollectionType : uint8_t {
     UsageModifier = 0x06
 };
 
-enum class HIDUsagePage : uint16_t {
+enum class UsagePage : uint16_t {
     Undefined = 0x00,
     GenericDesktopControls = 0x01,
     SimulationControls = 0x02,
@@ -104,7 +99,7 @@ enum class HIDUsagePage : uint16_t {
     VendorEnd = 0xffff
 };
 
-enum class HIDUsage : uint32_t {
+enum class Usage : uint32_t {
     Undefined = 0x00000000,
 
     // GenericDesktopControls
@@ -116,6 +111,17 @@ enum class HIDUsage : uint32_t {
     Keypad = 0x00010007,
     MultiAxisControler = 0x00010008,
     TabletPCSystemControls = 0x00010009,
+    X = 0x00010030,
+    Y = 0x00010031,
+    Z = 0x00010032,
+    Rx = 0x00010033,
+    Ry = 0x00010034,
+    Rz = 0x00010035,
+    Slider = 0x00010036,
+    Dial = 0x00010037,
+    Wheel = 0x00010038,
+    HatSwitch = 0x00010039,
+    ResolutionMultiplier = 0x00010048,
 
     // Consumer
     ConsumerControl = 0x000c0001,
@@ -136,44 +142,62 @@ enum class HIDUsage : uint32_t {
 
 /****************************************************************************/
 
-struct HIDLocalItem
+struct ReportDescriptor
 {
-    HIDTag      tag;
-    uint32_t    value;
+    using collection_index = unsigned;
+    static constexpr collection_index no_collection = std::numeric_limits<collection_index>::max();
+
+    struct Collection
+    {
+        collection_index        parent;
+        CollectionType          type;
+        Usage                   usage;
+        std::vector<collection_index> children; ///< index of subcollections
+    };
+
+    struct LocalItem
+    {
+        Tag      tag;
+        uint32_t    value;
+    };
+
+    struct Field
+    {
+        collection_index        collectionIdx;
+
+        Tag                     tag;
+        uint32_t                flags;
+        UsagePage               usagePage;
+        int32_t                 logicalMinimum;
+        int32_t                 logicalMaximum;
+        std::optional<int32_t>  physicalMinimum;
+        std::optional<int32_t>  physicalMaximum;
+        uint32_t                unit;           // nibble field
+        signed                  exponent;
+        uint8_t                 reportSize;     // in bits
+        uint8_t                 reportCount;    // each being reportSize bits
+        std::vector<LocalItem>  items;
+    };
+
+    struct Report
+    {
+        static constexpr uint8_t invalid_id = 0;
+
+        uint8_t                 id;
+        std::vector<Field>      fields;
+    };
+
+public:
+    std::vector<Collection>  collections;
+    std::vector<Report>      reports;
 };
 
-struct HIDMainItem
+class parse_error : public std::runtime_error
 {
-    HIDTag          tag;
-    uint32_t        flags;
-    HIDUsagePage    usagePage;
-    int32_t         logicalMinimum;
-    int32_t         logicalMaximum;
-    std::optional<int32_t>  physicalMinimum;
-    std::optional<int32_t>  physicalMaximum;
-    uint32_t        unit;           // nibble field
-    signed          exponent;
-    uint8_t         reportSize;     // in bits
-    uint8_t         reportCount;    // each being reportSize bits
-
-    std::vector<HIDLocalItem> items;
+    using std::runtime_error::runtime_error;
 };
 
-struct HIDReport
-{
-    uint8_t                     id;       // 0 for invalid
-    std::vector<HIDMainItem>    items;
-};
-
-struct HIDCollection
-{
-    HIDCollectionType           type;
-    HIDUsage                    usage;
-    std::vector<HIDCollection>  subcollections;
-    std::vector<HIDReport>      reports;
-};
-
-std::optional<HIDCollection> parse(const uint8_t * data, std::size_t length);
+std::optional<ReportDescriptor> parse(const uint8_t * data, std::size_t length);
 
 /****************************************************************************/
 
