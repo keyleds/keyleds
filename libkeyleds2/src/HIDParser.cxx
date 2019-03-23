@@ -107,7 +107,7 @@ public:
         const uint8_t * ptr = data;
         const uint8_t * const endptr = data + length;
 
-        while (ptr < endptr) {
+        while (ptr < endptr && !m_error) {
             if (*ptr == 0xfe) { // Long item
                 if (ptr + 2 > endptr) { return false; }
                 ptr += 3 + *(ptr + 1);
@@ -136,8 +136,10 @@ public:
             }
         }
 
-        if (m_currentCollection != ReportDescriptor::no_collection) { return false; }
-        return true;
+        if (m_currentCollection != ReportDescriptor::no_collection) {
+            m_error = "missing endCollection item";
+        }
+        return !m_error;
     }
 
     ReportDescriptor result() {
@@ -148,8 +150,8 @@ private:
     void mainItem(Item item)
     {
         switch (item.tag) {
-        case Tag::Input:            [[fallthrough]]
-        case Tag::Output:           [[fallthrough]]
+        case Tag::Input:            [[fallthrough]];
+        case Tag::Output:           [[fallthrough]];
         case Tag::Feature:          dataField(item); break;
         case Tag::Collection:       beginCollection(item); break;
         case Tag::EndCollection:    endCollection(); break;
@@ -176,7 +178,8 @@ private:
     void endCollection()
     {
         if (m_currentCollection == ReportDescriptor::no_collection) {
-            throw parse_error("unexpected endCollection item");
+            m_error = "unexpected endCollection item";
+            return;
         }
         m_currentCollection = m_collections[m_currentCollection].parent;
     }
@@ -187,7 +190,7 @@ private:
         field.collectionIdx = m_currentCollection;
 
         auto rit = std::find_if(m_reports.begin(), m_reports.end(),
-                                [reportId](const auto & report) { return report.id == reportId; });
+                                [id=reportId](const auto & report) { return report.id == id; });
         if (rit == m_reports.end()) {
             m_reports.push_back({reportId, {}});
             rit = m_reports.end() - 1;
@@ -270,7 +273,10 @@ private:
 
     void popState()
     {
-        if (m_stateStack.empty()) { throw parse_error("unexpected Pop item"); }
+        if (m_stateStack.empty()) {
+            m_error = "unexpected Pop item";
+            return;
+        }
         m_state = std::move(m_stateStack.top());
         m_stateStack.pop();
     }
@@ -280,9 +286,9 @@ private:
     std::vector<Report>             m_reports;          ///< reports in descriptor
     unsigned                        m_currentCollection = ReportDescriptor::no_collection;
                                                         ///< index into m_collections
-
     std::vector<Item>               m_state;            ///< both local and global items for next field
     std::stack<std::vector<Item>>   m_stateStack;       ///< capture of m_state on PUSH/POP directives
+    const char *                    m_error = nullptr;
 };
 
 } // namespace

@@ -57,12 +57,13 @@ IF(WITH_TESTS)
     find_package(Threads REQUIRED)
 
     add_executable(test-libkeyleds2 ${test-libkeyleds2_SRCS})
-    target_compile_options(test-libkeyleds2 PRIVATE "-Wno-unevaluated-expression")
     target_include_directories(test-libkeyleds2 SYSTEM PRIVATE ${GTEST_INCLUDE_DIRS})
     target_link_libraries(test-libkeyleds2 libkeyleds2 ${GTEST_BOTH_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
-
     add_test(NAME libkeyleds2 COMMAND test-libkeyleds2)
 ENDIF(WITH_TESTS)
+
+add_executable(fuzz-hidparser tests/HIDParser_fuzz.cxx)
+target_link_libraries(fuzz-hidparser libkeyleds2)
 
 ##############################################################################
 # Install
