@@ -22,10 +22,14 @@ project(libkeyleds2 VERSION 0.1 LANGUAGES CXX)
 # Sources
 
 set(libkeyleds2_SRCS
+    src/HIDEndpoint.cxx
     src/HIDParser.cxx
+    src/utils.cxx
 )
 
 set(test-libkeyleds2_SRCS
+    tests/AsyncTest.cxx
+    tests/HIDEndpoint.cxx
     tests/HIDParser.cxx
 )
 
@@ -57,7 +61,7 @@ IF(WITH_TESTS)
     find_package(Threads REQUIRED)
 
     add_executable(test-libkeyleds2 ${test-libkeyleds2_SRCS})
-    target_include_directories(test-libkeyleds2 SYSTEM PRIVATE ${GTEST_INCLUDE_DIRS})
+    target_include_directories(test-libkeyleds2 SYSTEM PRIVATE "tests" ${GTEST_INCLUDE_DIRS})
     target_link_libraries(test-libkeyleds2 libkeyleds2 ${GTEST_BOTH_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
     add_test(NAME libkeyleds2 COMMAND test-libkeyleds2)
 ENDIF(WITH_TESTS)
