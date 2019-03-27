@@ -31,6 +31,7 @@ set(test-libkeyleds2_SRCS
     tests/AsyncTest.cxx
     tests/HIDEndpoint.cxx
     tests/HIDParser.cxx
+    tests/RingBuffer.cxx
 )
 
 ##############################################################################

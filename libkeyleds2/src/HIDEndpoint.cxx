@@ -18,14 +18,13 @@
 
 #include "config.h"
 #include "libkeyleds/RingBuffer.h"
+
 #include <cassert>
-#include <cerrno>
 #include <cstdint>
 #include <unistd.h>
 #include "uv.h"
 #include <vector>
 
-#include <iostream>
 
 using std::literals::chrono_literals::operator""ms;
 
@@ -155,7 +154,6 @@ struct Endpoint::implementation::State::Inactive final : public State
 {
     void enter(implementation & impl) const override
     {
-        std::cerr <<"entering Inactive" <<std::endl;
         if (!impl.m_queue.empty()) { sendNextCommand(impl); }
     }
 
@@ -178,11 +176,8 @@ struct Endpoint::implementation::State::Inactive final : public State
 
 struct Endpoint::implementation::State::Sending final : public State
 {
-    void enter(implementation &) const override { std::cerr <<"entering Sending" <<std::endl; }
-
     void onFrameReceived(implementation & impl, Frame frame) const override
     {
-        std::cerr <<"Sending::onFrameReceived" <<std::endl;
         if (impl.m_queue.front().receiveCb(frame)) {
             uv_cancel(reinterpret_cast<uv_req_t *>(&impl.m_outRequest));
             transition<SendingReplyReceived>(impl);
@@ -191,7 +186,6 @@ struct Endpoint::implementation::State::Sending final : public State
 
     void onCommandSent(implementation & impl, uv_fs_t & req) const override
     {
-        std::cerr <<"Sending::onCommandSent" <<std::endl;
         if (!uv_is_active(reinterpret_cast<uv_handle_t*>(&impl.m_commandTimeout))) {
             req.result = UV_ETIMEDOUT;
         }
@@ -207,13 +201,11 @@ struct Endpoint::implementation::State::Sending final : public State
 
     void onTimeout(implementation & impl) const override
     {
-        std::cerr <<"Sending::onTimeout" <<std::endl;
         uv_cancel(reinterpret_cast<uv_req_t *>(&impl.m_outRequest));
     }
 
     void scheduleDeletion(implementation & impl) const override
     {
-        std::cerr <<"Sending::scheduleDeletion" <<std::endl;
         impl.m_deleteRef += 1;
         uv_cancel(reinterpret_cast<uv_req_t *>(&impl.m_outRequest));
         impl.m_queue.front().errorCb(UV_ECANCELED);
@@ -223,24 +215,15 @@ struct Endpoint::implementation::State::Sending final : public State
 
 struct Endpoint::implementation::State::SendingReplyReceived final : public State
 {
-    void enter(implementation &) const override { std::cerr <<"entering SendingReplyReceived" <<std::endl; }
-
     void onCommandSent(implementation & impl, uv_fs_t &) const override
     {
-        std::cerr <<"SendingReplyReceived::onCommandSent" <<std::endl;
         uv_timer_stop(&impl.m_commandTimeout);
         impl.m_queue.pop();
         transition<Inactive>(impl);
     }
 
-    void onTimeout(implementation &) const override
-    {
-        std::cerr <<"SendingReplyReceived::onTimeout" <<std::endl;
-    }
-
     void scheduleDeletion(implementation & impl) const override
     {
-        std::cerr <<"SendingReplyReceived::scheduleDeletion" <<std::endl;
         impl.m_deleteRef += 1;
         transition<SendingPendingDelete>(impl);
     }
@@ -248,11 +231,8 @@ struct Endpoint::implementation::State::SendingReplyReceived final : public Stat
 
 struct Endpoint::implementation::State::AwaitingReply final : public State
 {
-    void enter(implementation &) const override { std::cerr <<"entering AwaitingReply" <<std::endl; }
-
     void onFrameReceived(implementation & impl, Frame frame) const override
     {
-        std::cerr <<"AwaitingReply::onFrameReceived" <<std::endl;
         if (impl.m_queue.front().receiveCb(frame)) {
             uv_timer_stop(&impl.m_commandTimeout);
             impl.m_queue.pop();
@@ -262,7 +242,6 @@ struct Endpoint::implementation::State::AwaitingReply final : public State
 
     void onTimeout(implementation & impl) const override
     {
-        std::cerr <<"AwaitingReplyState::onTimeout" <<std::endl;
         impl.m_queue.front().errorCb(UV_ETIMEDOUT);
         impl.m_queue.pop();
         transition<Inactive>(impl);
@@ -270,10 +249,8 @@ struct Endpoint::implementation::State::AwaitingReply final : public State
 };
 
 struct Endpoint::implementation::State::SendingPendingDelete final : public State {
-    void enter(implementation &) const override { std::cerr <<"entering SendingPendingDelete" <<std::endl; }
     void onCommandSent(implementation & impl, uv_fs_t &) const override
     {
-        std::cerr <<"SendingPendingDelete::onCommandSent" <<std::endl;
         impl.m_queue.pop();
         if (--impl.m_deleteRef == 0) { delete &impl; }
     }

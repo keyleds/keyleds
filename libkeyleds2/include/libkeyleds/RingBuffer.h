@@ -17,13 +17,16 @@
 #ifndef LIBKEYLEDS_RINGBUFFER_H_289A3A05
 #define LIBKEYLEDS_RINGBUFFER_H_289A3A05
 
+#include <new>
 #include <type_traits>
+
 
 namespace libkeyleds {
 
 template <typename T, std::size_t Slots>
 class RingBuffer final
 {
+    using slot_type = typename std::aligned_storage<sizeof(T), alignof(T)>::type;
 public:
     using value_type = T;
     using size_type = std::size_t;
@@ -32,16 +35,21 @@ public:
 
 public:
     RingBuffer() = default;
-    ~RingBuffer() noexcept(std::is_nothrow_destructible_v<T>)
+    ~RingBuffer() noexcept(noexcept(clear()))
     {
-        clear();
+        this->clear();
     }
 
     RingBuffer(const RingBuffer &) = delete;
     RingBuffer & operator=(const RingBuffer &) = delete;
 
-    reference       front() { return *m_read; }
-    const_reference front() const { return *m_read; };
+#ifdef __cpp_lib_launder
+    reference       front() { return *std::launder(reinterpret_cast<T*>(m_read)); }
+    const_reference front() const { return *std::launder(reinterpret_cast<const T*>(m_read)); };
+#else
+    reference       front() { return *reinterpret_cast<T*>(m_read); }
+    const_reference front() const { return *reinterpret_cast<const T*>(m_read); };
+#endif
 
     template <typename U = T>
     std::enable_if_t<std::is_copy_constructible_v<U>, void>
@@ -49,6 +57,7 @@ public:
     {
         new (m_write) T(val);
         if (++m_write >= storageEnd()) { m_write = storageBegin(); }
+        if (m_write == m_read) { m_write = nullptr; }
     }
 
     template <typename U = T>
@@ -57,6 +66,7 @@ public:
     {
         new (m_write) T(std::move(val));
         if (++m_write >= storageEnd()) { m_write = storageBegin(); }
+        if (m_write == m_read) { m_write = nullptr; }
     }
 
     template<typename ... Args>
@@ -64,20 +74,26 @@ public:
     {
         new (m_write) T(std::forward<Args>(args)...);
         if (++m_write >= storageEnd()) { m_write = storageBegin(); }
+        if (m_write == m_read) { m_write = nullptr; }
     }
 
     void pop() noexcept(std::is_nothrow_destructible_v<T>)
     {
-        m_read->~T();
+#ifdef __cpp_lib_launder
+        std::launder(reinterpret_cast<T*>(m_read))->~T();
+#else
+        reinterpret_cast<T*>(m_read)->~T();
+#endif
+        if (!m_write) { m_write = m_read; }
         if (++m_read >= storageEnd()) { m_read = storageBegin(); }
     }
 
     void clear() noexcept(std::is_nothrow_destructible_v<T>)
     {
-        if constexpr (!std::is_trivially_destructible_v<T>) {
-            while (!this->empty()) { this->pop(); }
+        if constexpr (std::is_trivially_destructible_v<T>) {
+            m_write = m_read;
         } else {
-            m_read = m_write;
+            while (!this->empty()) { this->pop(); }
         }
     }
 
@@ -88,23 +104,24 @@ public:
 
     size_type size() const noexcept
     {
-        return m_read <= m_write
-            ? size_type(m_write - m_read)
-            : size_type(storageEnd() - m_read) + size_type(m_write - storageBegin());
+        return m_write == nullptr ? Slots
+             : m_read <= m_write  ? size_type(m_write - m_read)
+                                  : size_type(storageEnd() - m_read) +
+                                    size_type(m_write - storageBegin());
     }
 
     size_type capacity() const noexcept { return Slots; }
     size_type max_size() const noexcept { return Slots; }
 
 private:
-    T *         storageBegin() { return reinterpret_cast<T*>(&m_storage[0]); }
-    const T *   storageBegin() const { return reinterpret_cast<const T*>(&m_storage[0]); }
-    T *         storageEnd() { return storageBegin() + Slots; }
-    const T *   storageEnd() const { return storageBegin() + Slots; }
+    slot_type *         storageBegin() { return &m_storage[0]; }
+    const slot_type *   storageBegin() const { return &m_storage[0]; }
+    slot_type *         storageEnd() { return storageBegin() + Slots; }
+    const slot_type *   storageEnd() const { return storageBegin() + Slots; }
 private:
-    char    m_storage[sizeof(T[Slots])];
-    T *     m_read = storageBegin();
-    T *     m_write = storageBegin();
+    slot_type   m_storage[Slots];
+    slot_type * m_read = &m_storage[0];
+    slot_type * m_write = &m_storage[0];    ///< nullptr when buffer is full
 };
 
 
