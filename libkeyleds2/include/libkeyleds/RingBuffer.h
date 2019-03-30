@@ -34,7 +34,7 @@ public:
     using const_reference = T const &;
 
 public:
-    RingBuffer() = default;
+    RingBuffer() noexcept = default;
     ~RingBuffer() noexcept(noexcept(clear()))
     {
         this->clear();
@@ -97,12 +97,12 @@ public:
         }
     }
 
-    bool empty() const noexcept
+    [[nodiscard]] bool empty() const noexcept
     {
         return m_read == m_write;
     }
 
-    size_type size() const noexcept
+    [[nodiscard]] size_type size() const noexcept
     {
         return m_write == nullptr ? Slots
              : m_read <= m_write  ? size_type(m_write - m_read)
@@ -110,14 +110,14 @@ public:
                                     size_type(m_write - storageBegin());
     }
 
-    size_type capacity() const noexcept { return Slots; }
-    size_type max_size() const noexcept { return Slots; }
+    [[nodiscard]] size_type capacity() const noexcept { return Slots; }
+    [[nodiscard]] size_type max_size() const noexcept { return Slots; }
 
 private:
-    slot_type *         storageBegin() { return &m_storage[0]; }
-    const slot_type *   storageBegin() const { return &m_storage[0]; }
-    slot_type *         storageEnd() { return storageBegin() + Slots; }
-    const slot_type *   storageEnd() const { return storageBegin() + Slots; }
+    [[nodiscard]] slot_type *       storageBegin() noexcept { return &m_storage[0]; }
+    [[nodiscard]] const slot_type * storageBegin() const noexcept { return &m_storage[0]; }
+    [[nodiscard]] slot_type *       storageEnd() noexcept { return storageBegin() + Slots; }
+    [[nodiscard]] const slot_type * storageEnd() const noexcept { return storageBegin() + Slots; }
 private:
     slot_type   m_storage[Slots];
     slot_type * m_read = &m_storage[0];
