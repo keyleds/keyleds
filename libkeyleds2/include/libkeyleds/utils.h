@@ -28,7 +28,7 @@ class FileDescriptor final
 public:
                 FileDescriptor() = default;
                 FileDescriptor(std::nullptr_t) {}
-    explicit    FileDescriptor(fd_type fd) : m_fd(fd) {}
+    explicit    FileDescriptor(fd_type fd) : m_fd(fd >= 0 ? fd : invalid_fd) {}
                 FileDescriptor(FileDescriptor && other) { std::swap(m_fd, other.m_fd); }
                 ~FileDescriptor() { this->reset(); }
 
