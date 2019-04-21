@@ -3,7 +3,28 @@ Release Notes
 #############
 
 *****************************
-1.0.0 - current release
+1.1.0 - current release
+*****************************
+
+Released on April 21st, 2019
+
+New features:
+
+- Add G-key manipulation support in hardware library and command-line tool.
+- Added heatmap effect to track most frequently used keys.
+
+Misc:
+
+- Many code quality improvements.
+
+Bugfixes:
+
+- Fix compilation using gcc 9.
+- Command line tool no longer truncate feature identifiers.
+- Add workaround for g510 to account for its much slower speed when updating leds — #34.
+
+*****************************
+1.0.0
 *****************************
 
 Released on March 2nd, 2019

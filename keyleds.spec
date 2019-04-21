@@ -10,7 +10,7 @@
 
 Summary: Logitech Keyboard per-key lighting control
 Name: keyleds
-Version: 1.0.0
+Version: 1.1.0
 Release: 1%{?dist}
 License: GPL-3.0+
 Group: Applications/System
