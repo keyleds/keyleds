@@ -4,6 +4,8 @@
 
 Advanced RGB animation service for Logitech keyboards.
 
+|animation|
+
 Quick links:
 
 * `installing`_
@@ -58,3 +60,7 @@ Feedback, feature ideas, pull requests are welcome!
    :alt:
 .. |codacy| image:: https://api.codacy.com/project/badge/Grade/c0737da40c404e9d9b675197a3567048
    :target: https://www.codacy.com/project/spectras/keyleds/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=spectras/keyleds&amp;utm_campaign=Badge_Grade_Dashboard
+.. |animation| image:: animation.gif
+   :width: 320px
+   :height: 128px
+
