@@ -115,6 +115,8 @@ bool keyleds_gamemode_reset(Keyleds * device, uint8_t target_id);   /* remove al
 
 bool keyleds_gkeys_count(Keyleds * device, uint8_t target_id, unsigned * nb);
 bool keyleds_gkeys_enable(Keyleds * device, uint8_t target_id, bool enabled);
+bool keyleds_mkeys_set(Keyleds * device, uint8_t target_id, unsigned char mask);
+bool keyleds_mrkeys_set(Keyleds * device, uint8_t target_id, unsigned char mask);
 
 /****************************************************************************/
 /* Keyboard layout feature */

@@ -29,6 +29,14 @@ enum gkeys_feature_function {    /* Function table for KEYLEDS_FEATURE_GKEYS */
     F_ENABLE_GKEYS = 2,
 };
 
+enum mkeys_feature_function {    /* Function table for KEYLEDS_FEATURE_MKEYS */
+    F_SET_MKEYS = 1,
+};
+
+enum mrkeys_feature_function {   /* Function table for KEYLEDS_FEATURE_MRKEYS */
+    F_SET_MRKEYS = 0,
+};
+
 /** Get the number of GKeys.
  * @param device Open device as returned by keyleds_open().
  * @param target_id Device's target identifier. See keyleds_open().
@@ -65,6 +73,42 @@ KEYLEDS_EXPORT bool keyleds_gkeys_enable(Keyleds * device, uint8_t target_id, bo
     if (keyleds_call(device, NULL, 0,
                      target_id, KEYLEDS_FEATURE_GKEYS, F_ENABLE_GKEYS,
                      1, (uint8_t[]){(uint8_t)(enabled ? 1u : 0u)}) < 0) {
+        return false;
+    }
+    return true;
+}
+
+/** Set lit MKeys
+ * @param device Open device as returned by keyleds_open().
+ * @param target_id Device's target identifier. See keyleds_open().
+ * @param mask A bit mask of MKeys leds to turn on, bit0 for M1, bit1 for M2, …
+ * @return `true` on success, `false` on error.
+ */
+KEYLEDS_EXPORT bool keyleds_mkeys_set(Keyleds * device, uint8_t target_id, unsigned char mask)
+{
+    assert(device != NULL);
+
+    if (keyleds_call(device, NULL, 0,
+                     target_id, KEYLEDS_FEATURE_MKEYS, F_SET_MKEYS,
+                     1, (uint8_t[]){mask}) < 0) {
+        return false;
+    }
+    return true;
+}
+
+/** Set lit MRKeys
+ * @param device Open device as returned by keyleds_open().
+ * @param target_id Device's target identifier. See keyleds_open().
+ * @param mask A bit mask of MRKeys leds to turn on, bit0 for MR.
+ * @return `true` on success, `false` on error.
+ */
+KEYLEDS_EXPORT bool keyleds_mrkeys_set(Keyleds * device, uint8_t target_id, unsigned char mask)
+{
+    assert(device != NULL);
+
+    if (keyleds_call(device, NULL, 0,
+                     target_id, KEYLEDS_FEATURE_MRKEYS, F_SET_MRKEYS,
+                     1, (uint8_t[]){mask}) < 0) {
         return false;
     }
     return true;
