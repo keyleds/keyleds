@@ -188,11 +188,13 @@ KEYLEDS_EXPORT uint8_t keyleds_get_feature_index(struct keyleds_device * device,
     /* This one is hardcoded at a specific slot */
     if (feature_id == KEYLEDS_FEATURE_FEATURE) { return KEYLEDS_FEATURE_IDX_FEATURE; }
 
-    /* See whether we have it cached alread */
+    /* See whether we have it cached already */
     for (idx = 0; device->features[idx].id != 0; idx += 1) {
         if (device->features[idx].target_id == target_id &&
             device->features[idx].id == feature_id) {
-            return device->features[idx].index;
+            feature_idx = device->features[idx].index;
+            if (feature_idx == 0) { keyleds_set_error(KEYLEDS_ERROR_FEATURE_NOT_FOUND); }
+            return feature_idx;
         }
     }
 
@@ -205,10 +207,6 @@ KEYLEDS_EXPORT uint8_t keyleds_get_feature_index(struct keyleds_device * device,
     }
 
     feature_idx = data[0];
-    if (feature_idx == 0) {
-        keyleds_set_error(KEYLEDS_ERROR_FEATURE_NOT_FOUND);
-        return 0;
-    }
 
     /* Add it to the cache for next time */
     device->features = realloc(device->features, (idx + 2) * sizeof(device->features[0]));
@@ -219,7 +217,13 @@ KEYLEDS_EXPORT uint8_t keyleds_get_feature_index(struct keyleds_device * device,
     device->features[idx].hidden = (data[1] & (1<<6)) != 0;
     device->features[idx].obsolete = (data[1] & (1<<7)) != 0;
     device->features[idx + 1].id = 0;
-    KEYLEDS_LOG(DEBUG, "feature %04x is at %d [%02x]",
-                       feature_id, feature_idx, data[1]);
+
+    if (feature_idx == 0) {
+        keyleds_set_error(KEYLEDS_ERROR_FEATURE_NOT_FOUND);
+        KEYLEDS_LOG(DEBUG, "feature %04x unavailable", feature_id);
+    } else {
+        KEYLEDS_LOG(DEBUG, "feature %04x is at %d [%02x]", feature_id, feature_idx, data[1]);
+    }
+
     return feature_idx;
 }

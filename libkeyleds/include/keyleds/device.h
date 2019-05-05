@@ -27,12 +27,12 @@ struct keyleds_device_reports {
 #define DEVICE_REPORT_INVALID   (0xff)
 
 struct keyleds_device_feature {
-    uint8_t     target_id;
-    uint16_t    id;
-    uint8_t     index;
-    bool        reserved;
-    bool        hidden;
-    bool        obsolete;
+    uint16_t    id;                             /* feature identifier from features.h */
+    uint8_t     target_id;                      /* target device for feature */
+    uint8_t     index;                          /* position of feature */
+    bool        reserved:1;
+    bool        hidden:1;
+    bool        obsolete:1;
 };
 
 struct keyleds_device {
@@ -45,7 +45,11 @@ struct keyleds_device {
     unsigned    max_report_size;                /* maximum number of bytes in a report */
 
     struct keyleds_device_feature * features;   /* feature index cache */
+
+    keyleds_gkeys_cb gkeys_cb;                  /* callback to invoke on gkey presses */
+    void *      userdata;                       /* for library user */
 };
+
 
 /****************************************************************************/
 /* Core functions */
@@ -57,6 +61,8 @@ bool keyleds_receive(Keyleds * device, uint8_t target_id, uint8_t feature_idx,
 ssize_t keyleds_call(Keyleds * device, /*@null@*/ /*@out@*/ uint8_t * result, size_t result_len,
                      uint8_t target_id, uint16_t feature_id, uint8_t function,
                      size_t length, const uint8_t * data);
+
+void keyleds_gkeys_filter(Keyleds * device, uint8_t buffer[], ssize_t buflen);
 
 /****************************************************************************/
 /* Helpers */

@@ -78,13 +78,29 @@ KEYLEDS_EXPORT bool keyleds_gkeys_enable(Keyleds * device, uint8_t target_id, bo
     return true;
 }
 
+/** Enable or disable custom GKeys behavior.
+ * @param device Open device as returned by keyleds_open().
+ * @param target_id Device's target identifier. See keyleds_open().
+ * @param cb Device's target identifier. See keyleds_open().
+ * @param userdata `true` to enable, `false` to disable. When disabled, keys map to F keys.
+ */
+KEYLEDS_EXPORT void keyleds_gkeys_set_cb(Keyleds * device, uint8_t target_id,
+                                         keyleds_gkeys_cb cb, void * userdata)
+{
+    keyleds_get_feature_index(device, target_id, KEYLEDS_FEATURE_GKEYS);
+    keyleds_get_feature_index(device, target_id, KEYLEDS_FEATURE_MKEYS);
+    keyleds_get_feature_index(device, target_id, KEYLEDS_FEATURE_MRKEYS);
+    device->gkeys_cb = cb;
+    device->userdata = userdata;
+}
+
 /** Set lit MKeys
  * @param device Open device as returned by keyleds_open().
  * @param target_id Device's target identifier. See keyleds_open().
  * @param mask A bit mask of MKeys leds to turn on, bit0 for M1, bit1 for M2, …
  * @return `true` on success, `false` on error.
  */
-KEYLEDS_EXPORT bool keyleds_mkeys_set(Keyleds * device, uint8_t target_id, unsigned char mask)
+KEYLEDS_EXPORT bool keyleds_mkeys_set(Keyleds * device, uint8_t target_id, uint8_t mask)
 {
     assert(device != NULL);
 
@@ -102,7 +118,7 @@ KEYLEDS_EXPORT bool keyleds_mkeys_set(Keyleds * device, uint8_t target_id, unsig
  * @param mask A bit mask of MRKeys leds to turn on, bit0 for MR.
  * @return `true` on success, `false` on error.
  */
-KEYLEDS_EXPORT bool keyleds_mrkeys_set(Keyleds * device, uint8_t target_id, unsigned char mask)
+KEYLEDS_EXPORT bool keyleds_mrkeys_set(Keyleds * device, uint8_t target_id, uint8_t mask)
 {
     assert(device != NULL);
 
@@ -112,4 +128,29 @@ KEYLEDS_EXPORT bool keyleds_mrkeys_set(Keyleds * device, uint8_t target_id, unsi
         return false;
     }
     return true;
+}
+
+void keyleds_gkeys_filter(Keyleds * device, uint8_t message[], ssize_t buflen)
+{
+    if (buflen < 5) { return; }
+
+    keyleds_gkeys_cb callback = device->gkeys_cb;
+    if (!callback) { return; }
+
+    uint8_t target_id = message[1];
+    uint8_t feature_idx = message[2];
+    keyleds_gkeys_type_t key_type;
+
+    if (feature_idx == keyleds_get_feature_index(device, target_id, KEYLEDS_FEATURE_GKEYS)) {
+        key_type = KEYLEDS_GKEYS_GKEY;
+    } else if (feature_idx == keyleds_get_feature_index(device, target_id, KEYLEDS_FEATURE_GKEYS)) {
+        key_type = KEYLEDS_GKEYS_MKEY;
+    } else if (feature_idx == keyleds_get_feature_index(device, target_id, KEYLEDS_FEATURE_GKEYS)) {
+        key_type = KEYLEDS_GKEYS_MRKEY;
+    } else {
+        return;
+    }
+
+    callback(device, target_id, key_type,
+             (uint16_t)(message[3] << 8 | message[4]), device->userdata);
 }

@@ -56,6 +56,8 @@ KEYLEDS_EXPORT Keyleds * keyleds_open(const char * path, uint8_t app_id)
     dev->app_id = app_id;
     do { dev->ping_seq = (uint8_t)rand(); } while (dev->ping_seq == 0);
     dev->timeout = KEYLEDS_CALL_TIMEOUT_US;
+    dev->gkeys_cb = NULL;
+    dev->userdata = NULL;
 
     /* Open device */
     KEYLEDS_LOG(DEBUG, "Opening device %s", path);
@@ -164,7 +166,7 @@ KEYLEDS_EXPORT bool keyleds_flush_fd(Keyleds * device)
 
     fcntl(device->fd, F_SETFL, O_NONBLOCK);
     while ((nread = read(device->fd, buffer, device->max_report_size + 1)) > 0) {
-        /* do nothing */
+        keyleds_gkeys_filter(device, buffer, nread);
     }
     if (errno != EAGAIN) {
         keyleds_set_error_errno();
@@ -313,6 +315,8 @@ bool keyleds_receive(Keyleds * device, uint8_t target_id, uint8_t feature_idx,
             keyleds_set_error(KEYLEDS_ERROR_IO_LENGTH);
             return false;
         }
+
+        keyleds_gkeys_filter(device, message, nread);
 
     } while(!(
         message[1] == target_id && (                /* message is from this device */

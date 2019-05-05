@@ -113,10 +113,20 @@ bool keyleds_gamemode_reset(Keyleds * device, uint8_t target_id);   /* remove al
 /****************************************************************************/
 /* GKeys feature */
 
+typedef enum {
+    KEYLEDS_GKEYS_GKEY,
+    KEYLEDS_GKEYS_MKEY,
+    KEYLEDS_GKEYS_MRKEY,
+} keyleds_gkeys_type_t;
+
+typedef void (*keyleds_gkeys_cb)(Keyleds * device, uint8_t target_id,
+                                 keyleds_gkeys_type_t, uint16_t mask, void *);
+
 bool keyleds_gkeys_count(Keyleds * device, uint8_t target_id, unsigned * nb);
 bool keyleds_gkeys_enable(Keyleds * device, uint8_t target_id, bool enabled);
-bool keyleds_mkeys_set(Keyleds * device, uint8_t target_id, unsigned char mask);
-bool keyleds_mrkeys_set(Keyleds * device, uint8_t target_id, unsigned char mask);
+void keyleds_gkeys_set_cb(Keyleds * device, uint8_t target_id, keyleds_gkeys_cb, void * userdata);
+bool keyleds_mkeys_set(Keyleds * device, uint8_t target_id, uint8_t mask);
+bool keyleds_mrkeys_set(Keyleds * device, uint8_t target_id, uint8_t mask);
 
 /****************************************************************************/
 /* Keyboard layout feature */
