@@ -20,6 +20,7 @@
 #include "keyledsd/tools/Event.h"
 #include <functional>
 #include <sys/inotify.h>
+#include <string>
 #include <vector>
 
 namespace keyleds::tools {
