@@ -192,7 +192,8 @@ std::string xlib::Window::getProperty(Atom atom, Atom type) const
                            False, type,
                            &actualType, &actualFormat,
                            &nItems, &bytesAfter, &value) != Success ||
-        actualType != type) {
+        actualType != type ||
+        actualFormat == 0) {
         return std::string();
     }
 
