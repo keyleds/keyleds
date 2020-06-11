@@ -398,7 +398,7 @@ cdef class KeyBlock:
             result = PyTuple_New(self.nb_keys)
             for idx in range(self.nb_keys):
                 keycolor = KeyColor()
-                keycolor.keycode = keys[idx].keycode
+                keycolor.keycode = pykeyleds.keyleds_translate_scancode(self.block_id, keys[idx].id)
                 keycolor.id = keys[idx].id
                 keycolor.color = Color(keys[idx].red, keys[idx].green, keys[idx].blue)
                 Py_INCREF(keycolor) # SET_ITEM steals the ref
@@ -418,7 +418,6 @@ cdef class KeyBlock:
         keys = <keyleds_key_color*>malloc(sizeof(keyleds_key_color) * count)
         try:
             for idx in range(count):
-                keys[idx].keycode = colors[idx].keycode
                 keys[idx].id = colors[idx].id
                 keys[idx].red = colors[idx].color.red
                 keys[idx].green = colors[idx].color.green

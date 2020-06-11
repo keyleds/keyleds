@@ -120,5 +120,5 @@ cdef extern from "keyleds.h":
     const char * keyleds_lookup_string(const keyleds_indexed_string *, unsigned id)
     unsigned keyleds_string_id(const keyleds_indexed_string *, const char * str)
 
-    unsigned keyleds_translate_scancode(uint8_t scancode)
-    uint8_t keyleds_translate_keycode(unsigned keycode)
+    unsigned keyleds_translate_scancode(keyleds_block_id_t block, uint8_t scancode)
+    bint keyleds_translate_keycode(unsigned keycode, keyleds_block_id_t * block, uint8_t * scancode)
