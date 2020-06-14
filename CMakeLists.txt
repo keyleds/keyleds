@@ -1,5 +1,5 @@
 # Keyleds -- Gaming keyboard tool
-# Copyright (C) 2017 Julien Hartmann, juli1.hartmann@gmail.com
+# Copyright (C) 2017-2020 Julien Hartmann, juli1.hartmann@gmail.com
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 cmake_minimum_required (VERSION 3.0)
-project (keyleds VERSION 1.1.0 LANGUAGES C CXX)
+project (keyleds VERSION 1.1.1 LANGUAGES C CXX)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMakeModules" ${CMAKE_MODULE_PATH})
 

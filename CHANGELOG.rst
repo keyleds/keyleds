@@ -3,7 +3,23 @@ Release Notes
 #############
 
 *****************************
-1.1.0 - current release
+1.1.1 - current release
+*****************************
+
+Released on June 15th, 2020
+
+Misc:
+
+- Add M-keys and MR-keys manipulation support in hardware library.
+
+Bugfixes:
+
+- Fix compilation using gcc 10 — #49, courtesy of @domrim.
+- Fix python bindings for libkeyleds — #52.
+- Fix failure on some versions of Xlib — #40.
+
+*****************************
+1.1.0
 *****************************
 
 Released on April 21st, 2019

@@ -1,7 +1,7 @@
 #
 # spec file for package keyleds
 #
-# Copyright (c) 2017-2018 Julien Hartmann <juli1.hartmann@gmail.com>
+# Copyright (c) 2017-2020 Julien Hartmann <juli1.hartmann@gmail.com>
 #
 # All modifications and additions to the file contributed by third parties
 # remain the property of their copyright owners, unless otherwise agreed
@@ -10,7 +10,7 @@
 
 Summary: Logitech Keyboard per-key lighting control
 Name: keyleds
-Version: 1.1.0
+Version: 1.1.1
 Release: 1%{?dist}
 License: GPL-3.0+
 Group: Applications/System
