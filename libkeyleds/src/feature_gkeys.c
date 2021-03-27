@@ -143,14 +143,14 @@ void keyleds_gkeys_filter(Keyleds * device, uint8_t message[], ssize_t buflen)
 
     if (feature_idx == keyleds_get_feature_index(device, target_id, KEYLEDS_FEATURE_GKEYS)) {
         key_type = KEYLEDS_GKEYS_GKEY;
-    } else if (feature_idx == keyleds_get_feature_index(device, target_id, KEYLEDS_FEATURE_GKEYS)) {
+    } else if (feature_idx == keyleds_get_feature_index(device, target_id, KEYLEDS_FEATURE_MKEYS)) {
         key_type = KEYLEDS_GKEYS_MKEY;
-    } else if (feature_idx == keyleds_get_feature_index(device, target_id, KEYLEDS_FEATURE_GKEYS)) {
+    } else if (feature_idx == keyleds_get_feature_index(device, target_id, KEYLEDS_FEATURE_MRKEYS)) {
         key_type = KEYLEDS_GKEYS_MRKEY;
     } else {
         return;
     }
 
     callback(device, target_id, key_type,
-             (uint16_t)(message[3] << 8 | message[4]), device->userdata);
+             (uint16_t)(message[5] << 8 | message[4]), device->userdata);
 }
