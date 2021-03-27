@@ -2,6 +2,13 @@
 Release Notes
 #############
 
+Unreleased
+
+Bugfixes:
+
+- Fix G-keys mask and M/MR keys — #63, courtesy of @nickbclifford.
+
+
 *****************************
 1.1.1 - current release
 *****************************
