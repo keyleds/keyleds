@@ -17,7 +17,7 @@ plugins: [lua]
 
 # Generic key groups, available to all profiles
 # Recognized key names can come either from a layout file or from
-# libkeyleds dictionnary, in libkeyelds/src/strings.c section keycode_names
+# libkeyleds dictionary, in libkeyelds/src/strings.c section keycode_names
 groups:
     special: [game, light]
     functions: [F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12]
