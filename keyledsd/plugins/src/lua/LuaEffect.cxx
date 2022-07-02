@@ -19,6 +19,7 @@
 #include "lua/Environment.h"
 #include "lua/lua_common.h"
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <cstring>
 #include <lua.hpp>
