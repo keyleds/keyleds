@@ -201,6 +201,11 @@ bool enum_list_devices(struct dev_enum_item ** out, unsigned * out_nb)
         fill_info_structure(usbdev, hiddev, &items[items_nb]);
         items_nb += 1;
 
+        /* FIXME 'items'
+         * dev_enum_udev.c:200:9: error: Common realloc mistake: 'items' nulled but not freed upon failure [memleakOnRealloc]
+         *     items = realloc(items, (items_nb + 1) * sizeof(items[0]));
+         */
+
 err_enum_release_device:
         udev_device_unref(hiddev);
     }

@@ -67,9 +67,14 @@ bool enum_list_devices(struct dev_enum_item ** out, unsigned * out_nb)
             items[items_nb].vendor_id = devinfo.vendor;
             items[items_nb].product_id = devinfo.product;
             items[items_nb].serial = NULL;
-            items[items_nb].description = NULL; /*FIXME*/
+            items[items_nb].description = NULL;
             items_nb += 1;
         }
+
+        /* FIXME 'items'
+         * dev_enum_hard.c:64:13: error: Common realloc mistake: 'items' nulled but not freed upon failure [memleakOnRealloc]
+         *  items = realloc(items, (items_nb + 1) * sizeof(struct dev_enum_item));
+         */
 
         keyleds_close(device);
     }
