@@ -104,7 +104,7 @@ static std::string canonicalPath(const std::string & path)
 std::vector<std::string> keyleds::tools::paths::getPaths(XDG type, bool extra)
 {
     auto specIt = std::find_if(variables.begin(), variables.end(),
-                               [type](auto & item) { return item.type == type; });
+                               [type](const auto & item) { return item.type == type; });
     if (specIt == variables.end()) {
         throw std::out_of_range("Invalid XDG variable");
     }
