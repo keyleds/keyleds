@@ -163,7 +163,7 @@ std::vector<keyleds::plugin::Effect *> DeviceManager::loadEffects(const string_m
     for (const auto & name : profile->effectGroups) {
         auto eit = std::find_if(m_configuration->effectGroups.begin(),
                                 m_configuration->effectGroups.end(),
-                                [&name](auto & group) { return group.name == name; });
+                                [&name](const auto & group) { return group.name == name; });
         if (eit == m_configuration->effectGroups.end()) {
             ERROR("profile <", profile->name, "> references unknown effect group <", name, ">");
             continue;
@@ -174,7 +174,7 @@ std::vector<keyleds::plugin::Effect *> DeviceManager::loadEffects(const string_m
         for (const auto & name : overlayProfile->effectGroups) {
             auto eit = std::find_if(m_configuration->effectGroups.begin(),
                                     m_configuration->effectGroups.end(),
-                                    [&name](auto & group) { return group.name == name; });
+                                    [&name](const auto & group) { return group.name == name; });
             if (eit == m_configuration->effectGroups.end()) {
                 ERROR("profile <", profile->name, "> references unknown effect group <", name, ">");
                 continue;

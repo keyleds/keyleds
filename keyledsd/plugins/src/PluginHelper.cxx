@@ -26,7 +26,7 @@ std::optional<detail::variant_wrapper> getConfig(const EffectService & service, 
 {
     const auto & config = service.configuration();
     auto it = std::find_if(config.begin(), config.end(),
-                           [key](auto & item) { return item.first == key; });
+                           [key](const auto & item) { return item.first == key; });
     if (it != config.end()) { return std::ref(it->second); }
     return std::nullopt;
 }
@@ -36,7 +36,7 @@ detail::get_config<RGBAColor>::parse(const EffectService & service, const altern
 {
     const auto & colors = service.colors();
     auto it = std::find_if(colors.begin(), colors.end(),
-                           [&str](auto & item) { return item.first == str; });
+                           [&str](const auto & item) { return item.first == str; });
     if (it != colors.end()) { return it->second; }
     return RGBAColor::parse(str);
 }
@@ -75,10 +75,8 @@ getColorsCompatibility(EffectService & service, const char * key)
 {
     using std::to_string;
     auto result = std::vector<RGBAColor>{};
-
-    std::string currentKey;
     for (unsigned idx = 0; ; ++idx) {
-        currentKey = key;
+        std::string currentKey = key;
         currentKey.pop_back();
         currentKey += to_string(idx);
         auto value = getConfig(service, currentKey.c_str());

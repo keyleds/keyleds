@@ -45,13 +45,13 @@ public:
             auto color = parseConfig<RGBAColor>(service, std::get<std::string>(item.second));
 
             if (group && color) {
-                std::for_each(group->begin(), group->end(), [this, &color](auto & key) {
+                std::for_each(group->begin(), group->end(), [this, &color](const auto & key) {
                     m_buffer[key.index] = *color;
                 });
             }
         }
 
-        bool hasAlpha = std::any_of(m_buffer.begin(), m_buffer.end(), [](auto & val) {
+        bool hasAlpha = std::any_of(m_buffer.begin(), m_buffer.end(), [](const auto & val) {
             return val.alpha < std::numeric_limits<RGBAColor::channel_type>::max();
         });
         m_mode = hasAlpha ? Mode::Blend : Mode::Overwrite;

@@ -57,8 +57,10 @@ TEST_F(KeyDatabaseTest, requirements) {
         static_assert(std::is_swappable_v<KeyDatabase::const_iterator>);
         static_assert(std::is_same_v<decltype(*i), const KeyDatabase::value_type &>);
         static_assert(std::is_convertible_v<decltype(++i), KeyDatabase::const_iterator>);
+        // cppcheck-suppress postfixOperator
         static_assert(std::is_convertible_v<decltype(i++), KeyDatabase::const_iterator>);
         static_assert(std::is_convertible_v<decltype(--i), KeyDatabase::const_iterator>);
+        // cppcheck-suppress postfixOperator
         static_assert(std::is_convertible_v<decltype(i--), KeyDatabase::const_iterator>);
         static_assert(std::is_convertible_v<decltype(i == j), bool>);
         static_assert(std::is_convertible_v<decltype(i != j), bool>);
@@ -78,17 +80,18 @@ TEST_F(KeyDatabaseTest, construct) {
 TEST_F(KeyDatabaseTest, iterator) {
     // Range-for to sum indices
     unsigned sum = 0;
+    // cppcheck-suppress useStlAlgorithm
     for (auto & item : m_db) { sum += item.index; }
     EXPECT_EQ((m_db.size()-1) * m_db.size() / 2, sum);
 
     // STL algorithm to sum indices
     sum = std::accumulate(m_db.begin(), m_db.end(), 0u,
-                          [](unsigned val, auto & key) { return val + key.index; });
+                          [](unsigned val, const auto & key) { return val + key.index; });
     EXPECT_EQ((m_db.size()-1) * m_db.size() / 2, sum);
 
     // STL find some arbitrary key
     auto it = std::find_if(m_db.begin(), m_db.end(),
-                           [&](auto & key) { return key.name == m_db[3].name; });
+                           [&](const auto & key) { return key.name == m_db[3].name; });
     EXPECT_EQ(m_db.begin() + 3, it);
 }
 
@@ -142,8 +145,10 @@ TEST_F(KeyGroupTest, requirements) {
         static_assert(std::is_swappable_v<KeyDatabase::KeyGroup::const_iterator>);
         static_assert(std::is_same_v<decltype(*i), const KeyDatabase::KeyGroup::value_type &>);
         static_assert(std::is_convertible_v<decltype(++i), KeyDatabase::KeyGroup::const_iterator>);
+        // cppcheck-suppress postfixOperator
         static_assert(std::is_convertible_v<decltype(i++), KeyDatabase::KeyGroup::const_iterator>);
         static_assert(std::is_convertible_v<decltype(--i), KeyDatabase::KeyGroup::const_iterator>);
+        // cppcheck-suppress postfixOperator
         static_assert(std::is_convertible_v<decltype(i--), KeyDatabase::KeyGroup::const_iterator>);
         static_assert(std::is_convertible_v<decltype(i == j), bool>);
         static_assert(std::is_convertible_v<decltype(i != j), bool>);
@@ -182,17 +187,18 @@ TEST_F(KeyGroupTest, construct) {
 TEST_F(KeyGroupTest, iterator) {
     // Range-for to sum indices
     unsigned sum = 0;
+    // cppcheck-suppress useStlAlgorithm
     for (auto & key : bottom) { sum += key.index; }
     EXPECT_EQ(4, sum);
 
     // STL algorithm to sum indices
     sum = std::accumulate(bottom.begin(), bottom.end(), 0u,
-                          [](unsigned val, auto & key) { return val + key.index; });
+                          [](unsigned val, const auto & key) { return val + key.index; });
     EXPECT_EQ(4, sum);
 
     // STL find some arbitrary key
     auto it = std::find_if(bottom.begin(), bottom.end(),
-                           [](auto & key) { return key.name == "BOTTOMLEFT"; });
+                           [](const auto & key) { return key.name == "BOTTOMLEFT"; });
     EXPECT_EQ(bottom.begin() + 1, it);
 
 }
@@ -205,7 +211,7 @@ TEST_F(KeyGroupTest, clear) {
 
 TEST_F(KeyGroupTest, erase) {
     auto copy = bottom;
-    auto it = std::find_if(copy.begin(), copy.end(), [](auto & key) { return key.name == "BOTTOMRIGHT"; });
+    auto it = std::find_if(copy.begin(), copy.end(), [](const auto & key) { return key.name == "BOTTOMRIGHT"; });
     ASSERT_NE(copy.end(), it);
     copy.erase(it);
     EXPECT_EQ(copy, m_db.makeGroup("test", std::vector{"BOTTOMLEFT"s}));

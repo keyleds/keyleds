@@ -41,8 +41,10 @@ TEST(RenderTargetTest, requirements) {
         static_assert(std::is_swappable_v<RenderTarget::iterator>);
         static_assert(std::is_same_v<decltype(*i), RenderTarget::value_type &>);
         static_assert(std::is_convertible_v<decltype(++i), RenderTarget::iterator>);
+        // cppcheck-suppress postfixOperator
         static_assert(std::is_convertible_v<decltype(i++), RenderTarget::iterator>);
         static_assert(std::is_convertible_v<decltype(--i), RenderTarget::iterator>);
+        // cppcheck-suppress postfixOperator
         static_assert(std::is_convertible_v<decltype(i--), RenderTarget::iterator>);
         static_assert(std::is_convertible_v<decltype(i == j), bool>);
         static_assert(std::is_convertible_v<decltype(i != j), bool>);
@@ -56,8 +58,10 @@ TEST(RenderTargetTest, requirements) {
         static_assert(std::is_swappable_v<RenderTarget::const_iterator>);
         static_assert(std::is_same_v<decltype(*i), const RenderTarget::value_type &>);
         static_assert(std::is_convertible_v<decltype(++i), RenderTarget::const_iterator>);
+        // cppcheck-suppress postfixOperator
         static_assert(std::is_convertible_v<decltype(i++), RenderTarget::const_iterator>);
         static_assert(std::is_convertible_v<decltype(--i), RenderTarget::const_iterator>);
+        // cppcheck-suppress postfixOperator
         static_assert(std::is_convertible_v<decltype(i--), RenderTarget::const_iterator>);
         static_assert(std::is_convertible_v<decltype(i == j), bool>);
         static_assert(std::is_convertible_v<decltype(i != j), bool>);
@@ -96,6 +100,7 @@ TEST(RenderTargetTest, move) {
     EXPECT_EQ(RGBAColor(0x11, 0x22, 0x33, 0x44), targetA[0]);
 
     targetB = RenderTarget(13);
+    // cppcheck-suppress redundantAssignment
     targetB = std::move(targetA);   // move assignment, non-empty target
     EXPECT_TRUE(targetA.empty());
     ASSERT_FALSE(targetB.empty());
@@ -110,8 +115,8 @@ TEST(RenderTargetTest, move) {
 
 TEST(RenderTargetTest, iterator) {
     auto target = RenderTarget(7);
-
     for (auto & item : target) {
+        // cppcheck-suppress useStlAlgorithm
         item = RGBAColor{0x11, 0x22, 0x33, 0x44};
     }
     for (auto & item : const_cast<const RenderTarget &>(target)) {
